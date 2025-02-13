@@ -1,12 +1,16 @@
 #' Calculate Gene Signature Scores using Score-Based Approaches
 #'
 #' This function calculates a gene signature score for each sample based on one or more predefined gene sets
-#' (signatures). Two methods are available:
+#' (signatures).
 #'
 #' \describe{
+#' This function calculates a gene signature score for each sample based on one or more predefined gene sets
+#' (signatures). Two methods are available:
+#'
 #'   \item{\code{ssGSEA}}{
-#'     Uses the single-sample Gene Set Enrichment Analysis (ssGSEA) method from the
-#'     \code{GSVA} package to compute an enrichment score for each signature in each sample.
+#'     Uses the single-sample Gene Set Enrichment Analysis (ssGSEA) method to compute an enrichment score
+#'     for each signature in each sample. This method uses the \code{gsva()} function from the \code{GSVA} package
+#'     to compute an enrichment score, representing the absolute enrichment of each gene set in each sample.
 #'   }
 #'   \item{\code{logmedian}}{
 #'     Computes, for each sample, the score as the sum of the normalized (log2-median-centered)
@@ -25,19 +29,13 @@
 #'   or \code{"logmedian"}. Defaults to \code{"logmedian"}.
 #'
 #' @return A list containing the calculated scores for each gene signature. Each element of the list
-#' corresponds to one signature (named accordingly) and is a data frame with the following columns:
+#' corresponds to one signature (named accordingly) and is a data frame with the following attributes:
 #' \describe{
 #'   \item{sample}{The sample identifier (matching the column names of the input data).}
 #'   \item{score}{The calculated gene signature score for the corresponding sample.}
-#'   \item{<metadata>}{Any additional columns from the \code{metadata} data frame provided by the user, if available.}
+#'   \item{(metadata)}{Any additional columns from the \code{metadata} data frame provided by the user, if available.}
 #' }
 #'
-#' @details
-#' \strong{ssGSEA:} This method uses the \code{gsva()} function from the \code{GSVA} package to compute an enrichment score,
-#' representing the absolute enrichment of each gene set in each sample.
-#'
-#' \strong{logmedian:} This method log2-transforms the expression values, centers each gene at its median,
-#' and calculates the average of these centered values for the genes in each signature.
 #'
 #' @examples
 #' \dontrun{
@@ -61,82 +59,16 @@
 #'
 #' @export
 CalculateScores <- function(data, metadata, gene_sets, method = c("ssGSEA", "logmedian")) {
+  method <- match.arg(method)  # Validate method input
 
-  # Compares the provided method value against the allowed options (c("ssGSEA", "logmedian")).
-  # If the user does not explicitly provide a value, it will choose the default (the first element in the allowed values, if not overridden).
-  method <- match.arg(method)
-
-  # Ensure data is in the proper format
-  if (!is.list(data)) stop("Error: data must be a data-frame")
-  if (!is.list(metadata)) stop("Error: metadata must be a data-frame")
+  if (!is.data.frame(data)) stop("Error: data must be a data-frame")
+  if (!is.null(metadata) && !is.data.frame(metadata)) stop("Error: metadata must be a data-frame")
   if (!is.list(gene_sets)) stop("Error: gene_sets must be a list")
 
-  # Create new variable with sample name, will be used for merging purposes
-  metadata$sample <- row.names(metadata)
-
-  # Initialise results list
-  ResultsList <- list()
-
-  if(method == "ssGSEA"){
-
-    # For each signature in gene_sets, compute ssGSEA scores.
-    for (sig in names(gene_sets)){
-
-      # create a list per signature, so that the results are one data frame per signature
-      siglist <- list(gene_sets[[sig]])
-      names(siglist) <- c(sig)
-
-      mtx <- as.matrix(log2(data))
-      ssgsea_results <- gsva(expr=mtx,
-                             gset.idx.list=siglist,
-                             method="ssgsea",
-                             kcdf="Gaussian") #suitable when input expression values are continuous, such as RNA-seq log-CPMs, log-RPKMs or log-TPMs.
-
-      # Formatting results to a data-frame
-      ssgsea_results <- as.data.frame(ssgsea_results)
-      ssgsea_results$signature <- row.names(ssgsea_results)
-      ssgsea_results <- melt(ssgsea_results)
-      colnames(ssgsea_results) <- c("signature","sample","score")
-      ssgsea_results$signature <- NULL # remove, resulting list will have one entry per signature
-
-      # merge metadata with results, if metadata is available
-      if(!is.null(metadata)) ssgsea_results <- merge(ssgsea_results,metadata, by="sample")
-      # remove redundant information
-      row.names(ssgsea_results) <- NULL
-      # create new entry for each signature
-      ResultsList[[sig]] <- ssgsea_results
-
-    }
-
-
-
-  } else if(method == "logmedian"){
-
-    for (sig in names(gene_sets)){
-
-      signature <- gene_sets[[sig]]
-      data_subset <- na.omit(subset(log2(data+1), row.names(log2(data+1)) %in% signature)) # log(data + 1) to not have Inf values
-      data_subset <- data_subset-apply(data_subset, 1, median) # center gene in its log2 median
-
-      dfScore <- colSums(data_subset) # sum based on its enrichment (if depleted, -1 of the expression; otherwise, sum; only works because expression in zero is zero - log2(x+1))
-      dfScore <- dfScore/nrow(data_subset) # vector
-      dfScore <- data.frame(sample=names(dfScore), # create data frame
-                            score=dfScore)
-
-      if(!is.null(metadata)){
-        # merge metadata with results, if metadata is available
-        dfScore <- merge(dfScore, metadata, by="sample")
-      }
-
-      # remove redundant information
-      row.names(dfScore) <- NULL
-      # create new entry for each signature
-      ResultsList[[sig]] <- dfScore
-
-    }
-
-
+  # Call appropriate function based on method
+  if (method == "ssGSEA") {
+    return(CalculateScores_ssGSEA(data, metadata, gene_sets))
+  } else if (method == "logmedian") {
+    return(CalculateScores_logmedian(data, metadata, gene_sets))
   }
-
-  return(ResultsList)
 }

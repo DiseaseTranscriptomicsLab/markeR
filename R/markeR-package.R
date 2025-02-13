@@ -30,5 +30,9 @@
 #' - Machine-learning models for phenotype classification.
 #' - Tools for validating and refining gene signatures.
 #'
+#'
 #' @keywords internal
+#' @docType package
+#' @name markeR
+#' @aliases markeR-package
 "_PACKAGE"

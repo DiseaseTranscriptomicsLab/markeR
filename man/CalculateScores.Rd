@@ -22,34 +22,32 @@ or \code{"logmedian"}. Defaults to \code{"logmedian"}.}
 }
 \value{
 A list containing the calculated scores for each gene signature. Each element of the list
-corresponds to one signature (named accordingly) and is a data frame with the following columns:
+corresponds to one signature (named accordingly) and is a data frame with the following attributes:
 \describe{
 \item{sample}{The sample identifier (matching the column names of the input data).}
 \item{score}{The calculated gene signature score for the corresponding sample.}
-\item{\if{html}{\out{<metadata>}}}{Any additional columns from the \code{metadata} data frame provided by the user, if available.}
+\item{(metadata)}{Any additional columns from the \code{metadata} data frame provided by the user, if available.}
 }
 }
 \description{
 This function calculates a gene signature score for each sample based on one or more predefined gene sets
-(signatures). Two methods are available:
+(signatures).
 }
 \details{
 \describe{
+This function calculates a gene signature score for each sample based on one or more predefined gene sets
+(signatures). Two methods are available:
+
 \item{\code{ssGSEA}}{
-Uses the single-sample Gene Set Enrichment Analysis (ssGSEA) method from the
-\code{GSVA} package to compute an enrichment score for each signature in each sample.
+Uses the single-sample Gene Set Enrichment Analysis (ssGSEA) method to compute an enrichment score
+for each signature in each sample. This method uses the \code{gsva()} function from the \code{GSVA} package
+to compute an enrichment score, representing the absolute enrichment of each gene set in each sample.
 }
 \item{\code{logmedian}}{
 Computes, for each sample, the score as the sum of the normalized (log2-median-centered)
 expression values of the signature genes divided by the number of genes in the signature.
 }
 }
-
-\strong{ssGSEA:} This method uses the \code{gsva()} function from the \code{GSVA} package to compute an enrichment score,
-representing the absolute enrichment of each gene set in each sample.
-
-\strong{logmedian:} This method log2-transforms the expression values, centers each gene at its median,
-and calculates the average of these centered values for the genes in each signature.
 }
 \examples{
 \dontrun{

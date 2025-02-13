@@ -2,4 +2,3 @@
 
 export(CalculateScores)
 export(PlotScores)
-export(wrap_title)

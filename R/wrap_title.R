@@ -10,7 +10,7 @@
 #' @return A character string with the title wrapped into multiple lines. Each line will not exceed the specified width,
 #'   with breaks prioritized by symbols when nearby, and capital letters used only when no symbols are present.
 #'
-#' @export
+#' @keywords internal
 wrap_title <- function(title, width = 30) {
   if (nchar(title) <= width) {
     return(title)  # No need to wrap if it fits

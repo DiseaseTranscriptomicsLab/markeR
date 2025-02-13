@@ -20,3 +20,4 @@ This function wraps long titles into multiple lines to fit a specified width, pr
 underscores, hyphens, and colons when they are close to the wrap point. If no special symbol is found nearby, the function
 will break the title at the first capital letter. If neither is found, the title is broken at the specified width.
 }
+\keyword{internal}
