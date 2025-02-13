@@ -14,8 +14,8 @@ You can install the development version of markeR from
 [GitHub](https://github.com/) with:
 
 ``` r
-# install.packages("pak")
-pak::pak("ritamtbsilva/markeR")
+# install.packages("devtools")
+devtools::install_github("ritamtbsilva/markeR")
 ```
 
 ## Example
