@@ -1,0 +1,15 @@
+Package: markeR
+Title: A Toolkit for Evaluating Gene Signatures as Phenotype Markers in R
+Version: 0.0.0.9000
+Authors@R: 
+    person("Rita", "Martins-Silva", email = "rita.silva@medicina.ulisboa.pt", role = c("aut", "cre"))
+Description: 
+    markeR provides a suite of methods for using gene sets (signatures) to quantify and evaluate the 
+    extent to which a given gene signature marks a specific phenotype. The package implements various 
+    scoring, enrichment and classification approaches, along with tools to compute 
+    performance metrics and visualize results, making it a valuable resource for transcriptomics research (bulk RNA-seq).
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
