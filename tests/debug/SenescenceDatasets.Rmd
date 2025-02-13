@@ -1,0 +1,14 @@
+---
+title: "Debugging"
+output: html_notebook
+---
+ 
+```{r}
+corrcounts_merge <- readRDS("~/VersionControl/senescence_benchmarking/Data/corrcounts_merge.rds")
+metadata_merge <- readRDS("~/VersionControl/senescence_benchmarking/Data/metadata_merge.rds")
+```
+
+```{r}
+
+```
+
