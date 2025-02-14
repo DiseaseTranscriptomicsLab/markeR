@@ -23,7 +23,7 @@ You can install the development version of markeR from
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("ritamtbsilva/markeR")
+devtools::install_github("DiseaseTranscriptomicsLab/markeR")
 ```
 
 ## Methods
