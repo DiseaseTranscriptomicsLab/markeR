@@ -11,7 +11,7 @@ CalculateScores(data, metadata, gene_sets, method = c("ssGSEA", "logmedian"))
 and the column names should contain sample identifiers. \strong{(Required)}}
 
 \item{metadata}{A data frame describing the attributes of each sample. Each row corresponds to a sample and each column to an attribute.
-The row names of \code{metadata} must match the sample identifiers (i.e., the column names of \code{data}).
+The first column of \code{metadata} should be the sample identifiers (i.e., the column names of \code{data}).
 Defaults to \code{NULL} if no metadata is provided.}
 
 \item{gene_sets}{A named list where each element is a vector of gene names corresponding to a gene signature.

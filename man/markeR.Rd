@@ -38,13 +38,18 @@ on gene signature scores.
 }
 }
 
-\section{Features}{
+\section{Main Functions and Future Modules}{
 
+The current release of \strong{markeR} includes two primary functions for score-based analysis:
 \itemize{
-\item Flexible tools for computing gene signature scores.
-\item Visualization functions to compare signatures across conditions.
-\item Machine-learning models for phenotype classification.
-\item Tools for validating and refining gene signatures.
+\item \code{\link{CalculateScores}}: Calculates gene signature scores for each sample using either the ssGSEA or log2 median-centered method.
+\item \code{\link{PlotScores}}: Visualizes the calculated scores across conditions using violin plots.
+}
+Future updates will expand the package with similar pairs of functions for:
+\itemize{
+\item Enrichment-based analysis (to calculate and visualize GSEA statistics).
+\item Classification-based analysis (to train classifiers, for example, using Random Forests, and to evaluate performance, e.g., via ROC curves).
+\item Gene-level visualization modules that display the expression patterns of individual genes within the signatures, for example, using heatmaps.
 }
 }
 
@@ -52,4 +57,3 @@ on gene signature scores.
 \strong{Maintainer}: Rita Martins-Silva \email{rita.silva@medicina.ulisboa.pt}
 
 }
-\keyword{internal}
