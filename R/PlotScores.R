@@ -32,6 +32,8 @@
 #'   **(Optional)**
 #' @param legend_nrow An optional numeric value specifying the number of rows in the legend. If \code{NULL}, the default number of rows is determined by ggplot2.
 #'   **(Optional)**
+#' @param pointSize An optional numeric value specifying the size of the points. If \code{NULL}, the default number is 2.
+#'   **(Optional)**
 #'
 #' @return A combined ggplot object (created using \code{ggpubr::ggarrange} and \code{ggpubr::annotate_figure})
 #'   that displays a grid of violin plots. Each plot corresponds to one gene signature.
@@ -48,7 +50,7 @@
 #' @export
 PlotScores <- function(ResultsList, ColorVariable = NULL, GroupingVariable, method = c("ssGSEA", "logmedian"),
                        ColorValues = NULL, ConnectGroups = FALSE, ncol = NULL, nrow = NULL,
-                       widthTitle = 10, y_limits = NULL, legend_nrow = NULL, free_scales=FALSE) {
+                       widthTitle = 10, y_limits = NULL, legend_nrow = NULL, free_scales=FALSE, pointSize=2) {
 
   # Initialize an empty list to store individual ggplot objects.
   plot_list <- list()
@@ -66,9 +68,9 @@ PlotScores <- function(ResultsList, ColorVariable = NULL, GroupingVariable, meth
 
     # Add jittered points, optionally colored by ColorVariable.Default: Brewer Pallette "Paired"
     if (!is.null(ColorVariable)) {
-      p <- p + ggplot2::geom_jitter(ggplot2::aes_string(color = ColorVariable), size = 2, alpha = 0.5)
+      p <- p + ggplot2::geom_jitter(ggplot2::aes_string(color = ColorVariable), size = pointSize, alpha = 0.5)
     } else {
-      p <- p + ggplot2::geom_jitter(size = 2, alpha = 0.5) + ggplot2::scale_color_brewer(palette = "Paired")
+      p <- p + ggplot2::geom_jitter(size = pointSize, alpha = 0.5) + ggplot2::scale_color_brewer(palette = "Paired")
     }
 
     # Overlay violin plots.

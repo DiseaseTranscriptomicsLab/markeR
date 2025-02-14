@@ -16,7 +16,8 @@ PlotScores(
   widthTitle = 10,
   y_limits = NULL,
   legend_nrow = NULL,
-  free_scales = FALSE
+  free_scales = FALSE,
+  pointSize = 2
 )
 }
 \arguments{
@@ -55,6 +56,9 @@ Default is 10.}
 \strong{(Optional)}}
 
 \item{legend_nrow}{An optional numeric value specifying the number of rows in the legend. If \code{NULL}, the default number of rows is determined by ggplot2.
+\strong{(Optional)}}
+
+\item{pointSize}{An optional numeric value specifying the size of the points. If \code{NULL}, the default number is 2.
 \strong{(Optional)}}
 }
 \value{
