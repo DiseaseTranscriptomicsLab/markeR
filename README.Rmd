@@ -16,6 +16,7 @@ knitr::opts_chunk$set(
 # markeR
 
 <!-- badges: start -->
+![Development Status](https://img.shields.io/badge/status-development-yellowgreen)
 <!-- badges: end -->
 
 

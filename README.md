@@ -4,6 +4,9 @@
 # markeR
 
 <!-- badges: start -->
+
+![Development
+Status](https://img.shields.io/badge/status-development-yellowgreen)
 <!-- badges: end -->
 
 **markeR** provides a suite of methods for using gene sets (signatures)
