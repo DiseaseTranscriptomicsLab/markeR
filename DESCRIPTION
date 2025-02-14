@@ -14,7 +14,16 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports:
+    ggplot2,
+    ggpubr,
+    grid,
+    knitr,
+    reshape2,
+    rmarkdown,
     roxygen2
 Suggests: 
+    devtools,
+    markdown,
+    renv,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
