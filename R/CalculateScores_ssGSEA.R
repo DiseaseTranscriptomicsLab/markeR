@@ -10,9 +10,6 @@
 #' @keywords internal
 CalculateScores_ssGSEA <- function(data, metadata = NULL, gene_sets) {
 
-  # Convert metadata row names to a sample column for merging
-  if (!is.null(metadata)) metadata$sample <- row.names(metadata)
-
   ResultsList <- list()
 
   for (sig in names(gene_sets)) {
@@ -20,7 +17,7 @@ CalculateScores_ssGSEA <- function(data, metadata = NULL, gene_sets) {
     names(siglist) <- c(sig)
 
     mtx <- as.matrix(log2(data))
-    ssgsea_results <- gsva(expr = mtx, gset.idx.list = siglist, method = "ssgsea", kcdf = "Gaussian")
+    ssgsea_results <- GSVA::gsva(expr = mtx, gset.idx.list = siglist, method = "ssgsea", kcdf = "Gaussian",verbose=FALSE)
 
     # Format results
     ssgsea_results <- as.data.frame(ssgsea_results)

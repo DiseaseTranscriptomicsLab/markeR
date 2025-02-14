@@ -21,7 +21,7 @@
 #' @param data A data frame of normalised (non-transformed) counts where each row is a gene and each column is a sample. The row names should contain gene names
 #'   and the column names should contain sample identifiers. **(Required)**
 #' @param metadata A data frame describing the attributes of each sample. Each row corresponds to a sample and each column to an attribute.
-#'   The row names of \code{metadata} must match the sample identifiers (i.e., the column names of \code{data}).
+#'   The first column of \code{metadata} should be the sample identifiers (i.e., the column names of \code{data}).
 #'   Defaults to \code{NULL} if no metadata is provided.
 #' @param gene_sets A named list where each element is a vector of gene names corresponding to a gene signature.
 #'   The name of each list element should be the label for that signature. **(Required)**
@@ -59,11 +59,16 @@
 #'
 #' @export
 CalculateScores <- function(data, metadata, gene_sets, method = c("ssGSEA", "logmedian")) {
+
   method <- match.arg(method)  # Validate method input
 
   if (!is.data.frame(data)) stop("Error: data must be a data-frame")
   if (!is.null(metadata) && !is.data.frame(metadata)) stop("Error: metadata must be a data-frame")
   if (!is.list(gene_sets)) stop("Error: gene_sets must be a list")
+
+  # Change first column name to default name "sample", for merging purposes
+  if (!is.null(metadata)) colnames(metadata)[1] <- "sample"
+
 
   # Call appropriate function based on method
   if (method == "ssGSEA") {
