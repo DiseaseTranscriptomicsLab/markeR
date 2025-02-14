@@ -6,7 +6,12 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of markeR is to …
+**markeR** provides a suite of methods for using gene sets (signatures)
+to quantify and evaluate the extent to which a given gene signature
+marks a specific phenotype. The package implements various scoring,
+enrichment and classification approaches, along with tools to compute
+performance metrics and visualize results, making it a valuable resource
+for transcriptomics research (bulk RNA-seq).
 
 ## Installation
 
@@ -18,33 +23,133 @@ You can install the development version of markeR from
 devtools::install_github("ritamtbsilva/markeR")
 ```
 
+## Methods
+
+The package implements three main approaches for gene signature
+analysis:
+
+**1. Score-based Methods:**
+
+These approaches compute a numerical score representing the expression
+of a gene signature per sample.
+
+-   **Log2 Median-Centered Scoring:** Measures signature expression by
+    centering expression values relative to their median.
+-   **Single-Sample Gene Set Enrichment Analysis (ssGSEA):** Calculates
+    an enrichment score for a given gene set in each sample.
+
+**2. Enrichment-based Methods:**
+
+These methods evaluate whether a gene signature is significantly
+enriched in a ranked gene list.
+
+-   **Gene Set Enrichment Analysis (GSEA):** A rank-based method for
+    testing enrichment significance in predefined gene sets.
+
+**3. Classification-based Methods:**
+
+These approaches classify samples into phenotypic groups based on gene
+signature expression.
+
+-   **Random Forest Classification:** Uses decision trees to predict
+    sample labels based on gene signature scores.
+
+## Main Functions and Future Modules
+
+The current release of **markeR** includes two primary functions for
+score-based analysis:
+
+-   **CalculateScores:** Calculates gene signature scores for each
+    sample using either the ssGSEA or log2 median-centered method.
+-   **PlotScores:** Visualizes the calculated scores across conditions
+    using violin plots.
+
+Future updates will expand the package with additional pairs of
+functions to:
+
+-   Perform enrichment-based analysis (to calculate and visualize GSEA
+    statistics).
+-   Conduct classification-based analysis (to train classifiers, e.g.,
+    using Random Forests, and to evaluate performance via ROC curves).
+-   Provide gene-level visualization modules (e.g., heatmaps) to display
+    expression patterns of individual genes within signatures.
+
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+This example demonstrates the calculation of a log2-median-centered
+score using mock RNA-seq expression data. The dataset is derived from
+the Marthandan et al. (2016) study (GSE63577) and includes fibroblast
+samples under replicative senescent and proliferative conditions. (see
+`?counts_example` and `?metadata_example` for more details).This example
+showcases how to compute gene expression scores by applying the
+log2-median-centered transformation.
+
+We are using as an example a very simple senescence gene signature,
+composed of the genes usually associated with senescence.
 
 ``` r
 library(markeR)
-## basic example code
 ```
-
-What is special about using `README.Rmd` instead of just `README.md`?
-You can include R chunks like so:
 
 ``` r
-summary(cars)
-#>      speed           dist       
-#>  Min.   : 4.0   Min.   :  2.00  
-#>  1st Qu.:12.0   1st Qu.: 26.00  
-#>  Median :15.0   Median : 36.00  
-#>  Mean   :15.4   Mean   : 42.98  
-#>  3rd Qu.:19.0   3rd Qu.: 56.00  
-#>  Max.   :25.0   Max.   :120.00
+# Define simple Senescence Signature
+SimpleSenescenceSignature <- c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2")
 ```
 
-You’ll still need to render `README.Rmd` regularly, to keep `README.md`
-up-to-date. `devtools::build_readme()` is handy for this.
+``` r
+data(metadata_example)
+data(counts_example)
 
-You can also embed plots, for example:
+# Load example data
+head(metadata_example)
+#>       sampleID      DatasetID   CellType     Condition       SenescentType
+#> 252 SRR1660534 Marthandan2016 Fibroblast     Senescent Telomere shortening
+#> 253 SRR1660535 Marthandan2016 Fibroblast     Senescent Telomere shortening
+#> 254 SRR1660536 Marthandan2016 Fibroblast     Senescent Telomere shortening
+#> 255 SRR1660537 Marthandan2016 Fibroblast Proliferative                none
+#> 256 SRR1660538 Marthandan2016 Fibroblast Proliferative                none
+#> 257 SRR1660539 Marthandan2016 Fibroblast Proliferative                none
+#>                         Treatment
+#> 252 PD72 (Replicative senescence)
+#> 253 PD72 (Replicative senescence)
+#> 254 PD72 (Replicative senescence)
+#> 255                         young
+#> 256                         young
+#> 257                         young
+counts_example[1:5,1:5]
+#>          SRR1660534 SRR1660535 SRR1660536 SRR1660537 SRR1660538
+#> A1BG        9.94566   9.476768   8.229231   8.515083   7.806479
+#> A1BG-AS1   12.08655  11.550303  12.283976   7.580694   7.312666
+#> A2M        77.50289  56.612839  58.860268   8.997624   6.981857
+#> A4GALT     14.74183  15.226083  14.815891  14.675780  15.222488
+#> AAAS       47.92755  46.292377  43.965972  47.109493  47.213739
+```
 
-In that case, don’t forget to commit and push the resulting figure
-files, so they display on GitHub and CRAN.
+``` r
+df_Scores <- CalculateScores(data = counts_example, 
+                             metadata = metadata_example, 
+                             method = "logmedian", 
+                             gene_sets = list(Senescence=SimpleSenescenceSignature))
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red   
+  "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
+)
+ 
+plt <- PlotScores(ResultsList = df_Scores, 
+                  ColorVariable = "SenescentType", 
+                  GroupingVariable="Condition",  
+                  method ="logmedian", 
+                  ColorValues = senescence_triggers_colors, 
+                  ConnectGroups=TRUE, 
+                  ncol = NULL, 
+                  nrow = NULL, 
+                  widthTitle=20, 
+                  y_limits = NULL, 
+                  legend_nrow = 1, 
+                  pointSize=4)  
+
+ggpubr::annotate_figure(plt, top = grid::textGrob("Marthandan et al. 2016", gp = grid::gpar(cex = 1.3, fontsize = 12)))
+```
+
+<img src="man/figures/README-exampleScore-1.png" width="40%" />
