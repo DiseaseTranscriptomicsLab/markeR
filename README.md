@@ -26,36 +26,18 @@ You can install the development version of markeR from
 devtools::install_github("DiseaseTranscriptomicsLab/markeR")
 ```
 
-## Methods
-
-The package implements three main approaches for gene signature
-analysis:
-
-**1. Score-based Methods:**
-
-These approaches compute a numerical score representing the expression
-of a gene signature per sample.
-
--   **Log2 Median-Centered Scoring:** Measures signature expression by
-    centering expression values relative to their median.
--   **Single-Sample Gene Set Enrichment Analysis (ssGSEA):** Calculates
-    an enrichment score for a given gene set in each sample.
-
-**2. Enrichment-based Methods:**
-
-These methods evaluate whether a gene signature is significantly
-enriched in a ranked gene list.
-
--   **Gene Set Enrichment Analysis (GSEA):** A rank-based method for
-    testing enrichment significance in predefined gene sets.
-
-**3. Classification-based Methods:**
-
-These approaches classify samples into phenotypic groups based on gene
-signature expression.
-
--   **Random Forest Classification:** Uses decision trees to predict
-    sample labels based on gene signature scores.
+<!-- ## Methods -->
+<!-- The package implements three main approaches for gene signature analysis: -->
+<!-- **1. Score-based Methods:**   -->
+<!-- These approaches compute a numerical score representing the expression of a gene signature per sample. -->
+<!-- - **Log2 Median-Centered Scoring:** Measures signature expression by centering expression values relative to their median. -->
+<!-- - **Single-Sample Gene Set Enrichment Analysis (ssGSEA):** Calculates an enrichment score for a given gene set in each sample. -->
+<!-- **2. Enrichment-based Methods:**   -->
+<!-- These methods evaluate whether a gene signature is significantly enriched in a ranked gene list. -->
+<!-- - **Gene Set Enrichment Analysis (GSEA):** A rank-based method for testing enrichment significance in predefined gene sets. -->
+<!-- **3. Classification-based Methods:**   -->
+<!-- These approaches classify samples into phenotypic groups based on gene signature expression. -->
+<!-- - **Random Forest Classification:** Uses decision trees to predict sample labels based on gene signature scores. -->
 
 ## Main Functions and Future Modules
 
