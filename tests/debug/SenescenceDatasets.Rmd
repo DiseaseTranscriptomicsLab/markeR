@@ -2,7 +2,9 @@
 title: "Debugging"
 output: html_notebook
 ---
- 
+
+# Import Data
+
 ```{r}
 corrcounts_merge <- readRDS("~/VersionControl/senescence_benchmarking/Data/corrcounts_merge.rds")
 metadata_merge <- readRDS("~/VersionControl/senescence_benchmarking/Data/metadata_merge.rds")
@@ -11,6 +13,8 @@ SenescenceSignatures <- readRDS("~/VersionControl/senescence_benchmarking/Common
 
 ```{r}
 library(markeR)
+library(ggplot2)
+library(ggpubr)
 ?markeR
 ```
 
@@ -80,7 +84,275 @@ cellTypes_colors <- c(
   "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
 )
 
-PlotScores(ResultsList = df_logmedian, ColorVariable = "CellType", GroupingVariable="Condition",  method ="logmedian", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 6, nrow = 2, widthTitle=20, y_limits = NULL, legend_nrow = 2)
+PlotScores(ResultsList = df_logmedian, ColorVariable = "CellType", GroupingVariable="Condition",  method ="logmedian", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 6, nrow = 2, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL)
 
 ```
+
+```{r}
+wrap_title_aux <- function(title, width = 30) {
+  if (nchar(title) <= width) {
+    return(title)  # No need to wrap if it fits
+  }
+  
+  wrapped_title <- ""
+  while (nchar(title) > width) {
+    # Find positions of capital letters and symbols near the wrap point
+    capital_pos <- gregexpr("[A-Z]", title)[[1]]
+    symbol_pos <- gregexpr("(_|-|:)", title)[[1]]
+    
+    # Check for symbol breaks within the last few characters (width - 5 to width)
+    valid_symbol_breaks <- symbol_pos[symbol_pos >= (width - 5) & symbol_pos <= width]
+    
+    if (length(valid_symbol_breaks) > 0) {
+      # If a suitable symbol is found, break at the first valid symbol
+      break_at <- valid_symbol_breaks[1]
+    } else {
+      # If no suitable symbol, look for capital letters within the same range
+      valid_capital_breaks <- capital_pos[capital_pos >= (width - 5) & capital_pos <= width]
+      
+      if (length(valid_capital_breaks) > 0) {
+        # If a capital letter is found, break just before the capital letter
+        break_at <- valid_capital_breaks[1] - 1
+      } else {
+        # If no suitable symbol or capital letter, break at width
+        break_at <- width
+      }
+    }
+    
+    # Append the wrapped line
+    wrapped_title <- paste0(wrapped_title, substr(title, 1, break_at), "\n")
+    
+    # Update title with the remaining text after the break
+    title <- substr(title, break_at + 1, nchar(title))
+  }
+  
+  # Add the remaining part of the title
+  wrapped_title <- paste0(wrapped_title, title)
+  
+  return(wrapped_title)
+}
+```
+
+
+```{r fig.width=12, fig.height=8}
+
+plotlist <- list()
+
+for (sig in names(df_ssGSEA)){
+  
+  df_subset_ssGSEA <- df_ssGSEA[[sig]]
+  df_subset_logmedian <- df_logmedian[[sig]]
+  
+  df_subset_merge <- merge(df_subset_ssGSEA,df_subset_logmedian,by="sample")
+  
+  # Wrap the signature name using the helper function
+  wrapped_title <- wrap_title_aux(sig, width = 20)  
+  
+  plotlist[[sig]] <- ggplot2::ggplot(df_subset_merge, aes(x=score.x, y=score.y)) +
+    geom_point(size=4, alpha=0.8, fill="darkgrey", shape=21) +
+    theme_bw() +
+    xlab("ssGSEA Enrichment Score") +
+    ylab("Normalised Signature Score") +
+    ggtitle(wrapped_title) +
+    theme(plot.title = ggplot2::element_text(hjust = 0.5, size=10),
+          plot.subtitle = ggplot2::element_text(hjust = 0.5)) 
+  
+}
+
+ggpubr::ggarrange(plotlist=plotlist, nrow=3, ncol=4, align = "h")
+```
+
+# Debugging
+
+## Individual Genes
+
+- Violin Expression Plots
+- Expression Heatmap
+- Correlation Heatmap
+- ROC / AUC
+- Cohen's d
+
+```{r}
+
+VisualiseIndividualGenes <- function(data, metadata, gene_sets, method = c("violins","expr_heatmap","corr_heatmap","roc","effectsize","all"), plot=TRUE){
+  
+  method <- match.arg(method)  # Validate method input
+  
+  if (!is.data.frame(data)) stop("Error: data must be a data-frame")
+  if (!is.null(metadata) && !is.data.frame(metadata)) stop("Error: metadata must be a data-frame")
+  if (!is.list(gene_sets)) stop("Error: gene_sets must be a list")
+  
+  ResultsList <- list()
+  
+  if (method == "violins" | method == "all"){
+    
+    ResultsList[["violins"]] <- IndividualGenes_Violins(data=data, metadata=metadata,gene_sets=gene_sets,plot=plot)
+    
+  } else if (method == "expr_heatmap" | method == "all"){
+    
+    ResultsList[["expr_heatmap"]] <- IndividualGenes_ExprHeatmap(data=data, metadata=metadata,gene_sets=gene_sets,plot=plot)
+    
+  } else if (method == "corr_heatmap" | method == "all"){
+    
+    ResultsList[["corr_heatmap"]] <- IndividualGenes_CorrHeatmap(data=data, metadata=metadata,gene_sets=gene_sets,plot=plot)
+    
+  } else if (method == "roc" | method == "all"){
+    
+    ResultsList[["roc"]] <- IndividualGenes_ROC(data=data, metadata=metadata,gene_sets=gene_sets,plot=plot)
+    
+  } else if (method == "effectsize" | method == "all"){
+    
+    ResultsList[["effectsize"]] <- IndividualGenes_EffectSize(data=data, metadata=metadata,gene_sets=gene_sets,plot=plot)
+    
+  }
+  
+  
+}
+
+```
+
+```{r}
+
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red  
+  "Radiation" = "#BDBDBD",  # Medium gray  
+  "DNA damage" = "#64B5F6",  # Brighter blue  
+  "Telomere shortening" = "#4FC3F7",  # Vivid sky blue  
+  "DNA demethylation" = "#BA68C8",  # Rich lavender  
+  "Oxidative stress" = "#FDD835",  # Strong yellow  
+  "Conditioned Medium" = "#F2994A",  # Warm orange  
+  "Oncogene" = "#81C784",  # Medium green  
+  "Lipid Accumulation" = "#E57373",  # Coral  
+  "Calcium influx" = "#26A69A",  # Deep teal  
+  "Plasma membrane dysruption" = "#D32F2F",  # Strong salmon  
+  "OSKM factors" = "#FFB74D",  # Bright peach  
+  "YAP KO" = "#9575CD"  # Deep pastel purple  
+)
+
+
+IndividualGenes_Violins(data = corrcounts_merge, metadata = metadata_merge, genes = c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"), GroupingVariable = "Condition", plot=T, ncol=NULL, nrow=2, divide="CellType", invert_divide=FALSE,ColorValues=senescence_triggers_colors, pointSize=2, ColorVariable="SenescentType", title="Senescence", widthTitle=16,y_limits = NULL,legend_nrow=4, xlab="Condição",colorlab="teste") 
+```
+
+
+```{r}
+# plot is a boolean stating if the plot should be printed
+IndividualGenes_Violins <- function(data, metadata=NULL, genes,GroupingVariable, plot=TRUE, ncol=NULL, nrow=NULL, divide=NULL, invert_divide=FALSE, ColorValues=NULL, pointSize=2, ColorVariable=NULL,title=NULL, widthTitle=16,y_limits = NULL, legend_nrow = NULL,xlab=NULL, colorlab=NULL){
+  
+  set.seed("1234")
+  
+  if (length(genes) >20) warning("Number of genes is too high. Consider a smaller set of genes.")
+  
+  # Wrap the signature name using the helper function
+  wrapped_title <- wrap_title(title, width = widthTitle)
+  
+  datasub <- data[row.names(data) %in% genes,]
+  n <- nrow(data[row.names(data) %in% genes,])
+  
+  datasub$gene <- row.names(datasub)
+  datasub <- reshape2::melt((datasub))
+  datasub$value <- log2(datasub$value)
+  colnames(datasub) <- c("gene","sample","expression")
+  
+  
+  if (!is.null(metadata)) colnames(metadata)[1] <- "sample"
+  if(!is.null(metadata)) datasub <- merge(datasub,metadata, by="sample")
+  
+  # Determine grid layout
+  if (is.null(ncol) && is.null(nrow)) {
+    
+    ncol <- ceiling(sqrt(n))
+    nrow <- ceiling(n / ncol)
+    
+  } else if (is.null(ncol)){
+    
+    ncol <- ceiling(n / nrow)
+    
+  } else if (is.null(nrow)){
+    
+    nrow <- ceiling(n / ncol)    
+    
+  }
+  
+  plt <- ggplot2::ggplot(datasub, ggplot2::aes_string(y = "expression",x=GroupingVariable)) 
+  
+  # Add jittered points, optionally colored by ColorVariable.Default: Brewer Pallette "Paired"
+  if (!is.null(ColorVariable)) {
+    plt <- plt + ggplot2::geom_jitter(ggplot2::aes_string(color = ColorVariable), size = pointSize, alpha = 0.5)
+  } else {
+    plt <- plt + ggplot2::geom_jitter(size = pointSize, alpha = 0.5) + ggplot2::scale_color_brewer(palette = "Paired")
+  }
+  
+  
+  # If ColorValues is provided, use a manual color scale; otherwise, if ColorVariable is provided,
+  # use a default brewer palette.
+  if (!is.null(ColorValues)) {
+    plt <- plt + ggplot2::scale_color_manual(values = ColorValues)
+  } else if (!is.null(ColorVariable)) {
+    plt <- plt + ggplot2::scale_color_brewer(palette = "Paired")
+  }
+  
+  # Adjust legend rows if legend_nrow is specified
+  if (!is.null(legend_nrow)) {
+    plt <- plt + ggplot2::guides(color = ggplot2::guide_legend(nrow = legend_nrow))
+  }  
+  
+  # Add violin
+  plt <- plt + ggplot2::geom_violin(alpha=0.4)  
+  
+  if (!is.null(divide)){ 
+    if (!invert_divide){
+      plt <- plt +
+        ggh4x::facet_grid2( gene ~ .data[[divide]], 
+                            scales = "free", 
+                            independent= "y")     
+    } else {
+      plt <- plt +
+        ggh4x::facet_grid2( .data[[divide]] ~ gene, 
+                            scales = "free", 
+                            independent= "y") # labeller = label_wrap_gen(width = 2, multi_line = TRUE)
+    }
+    
+  } else{
+    
+    plt <- plt +
+      ggplot2::facet_wrap( . ~ gene, 
+                           scales = "free", 
+                           ncol=ncol,
+                           nrow=nrow)
+    
+  }
+  
+  # If y_limits is specified, crop the plot without adjusting the data (violins).
+  
+  if (!is.null(y_limits)) {
+    plt <- plt + ggplot2::coord_cartesian(ylim = y_limits)
+  }
+  
+  # Change labels 
+  if(is.null(xlab)){
+    xlab <- GroupingVariable
+  } else if (is.null(colorlab)){
+    colorlab <- ""
+  }
+  
+  plt <- plt + ggplot2::labs(title = title, color = colorlab, x = xlab, y = "Expression (log2CPM)")
+  
+  # change theme
+  plt <- plt + theme_classic() + 
+    theme(axis.text.x = element_text(angle = 45, hjust=1),
+          plot.title = element_text(hjust = 0.5),
+          legend.position = "bottom") 
+  
+  if(plot){
+    print(plt)
+  }
+  
+  invisible(list(plot=plt,
+                 data=datasub))
+}
+
+```
+
+
 
