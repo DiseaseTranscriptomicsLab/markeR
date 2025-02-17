@@ -34,6 +34,8 @@
 #'   **(Optional)**
 #' @param pointSize An optional numeric value specifying the size of the points. If \code{NULL}, the default number is 2.
 #'   **(Optional)**
+#' @param xlab Optional parameter, specifying the name of the x label. Default is the name of the Grouping Variable
+#'   **(Optional)**
 #'
 #' @return A combined ggplot object (created using \code{ggpubr::ggarrange} and \code{ggpubr::annotate_figure})
 #'   that displays a grid of violin plots. Each plot corresponds to one gene signature.
@@ -50,7 +52,7 @@
 #' @export
 PlotScores <- function(ResultsList, ColorVariable = NULL, GroupingVariable, method = c("ssGSEA", "logmedian"),
                        ColorValues = NULL, ConnectGroups = FALSE, ncol = NULL, nrow = NULL,
-                       widthTitle = 10, y_limits = NULL, legend_nrow = NULL, free_scales=FALSE, pointSize=2) {
+                       widthTitle = 10, y_limits = NULL, legend_nrow = NULL, pointSize=2, xlab=NULL) {
 
   # Initialize an empty list to store individual ggplot objects.
   plot_list <- list()
@@ -116,21 +118,39 @@ PlotScores <- function(ResultsList, ColorVariable = NULL, GroupingVariable, meth
     plot_list[[signature]] <- p
   }
 
+
+  n <- length(plot_list)
+
   # Determine grid layout
-  if (is.null(ncol) || is.null(nrow)) {
-    n <- length(plot_list)
+  if (is.null(ncol) && is.null(nrow)) {
+
     ncol <- ceiling(sqrt(n))
     nrow <- ceiling(n / ncol)
+
+  } else if (is.null(ncol)){
+
+    ncol <- ceiling(n / nrow)
+
+  } else if (is.null(nrow)){
+
+    nrow <- ceiling(n / ncol)
+
   }
+
 
   # Combine plots
   combined_plot <- ggpubr::ggarrange(plotlist = plot_list, ncol = ncol, nrow = nrow, common.legend = TRUE, align = "h")
 
   # Annotate with axis labels
+  # Change labels
+  if(is.null(xlab)){
+    xlab <- GroupingVariable
+  }
+
   combined_plot <- ggpubr::annotate_figure(combined_plot,
                                            left = grid::textGrob(ifelse(method == "ssGSEA", "ssGSEA Enrichment Score", "Normalized Signature Score"),
                                                                  rot = 90, vjust = 1, gp = grid::gpar(cex = 1.3, fontsize = 10)),
-                                           bottom = grid::textGrob(GroupingVariable, gp = grid::gpar(cex = 1.3, fontsize = 10)))
+                                           bottom = grid::textGrob(xlab, gp = grid::gpar(cex = 1.3, fontsize = 10)))
 
   return(combined_plot)
 }
