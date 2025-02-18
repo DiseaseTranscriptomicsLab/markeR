@@ -159,9 +159,9 @@ IndividualGenes_Violins <- function(data, metadata=NULL, genes,GroupingVariable,
   plt <- plt + ggplot2::labs(title = title, color = colorlab, x = xlab, y = "Expression (log2CPM)")
 
   # change theme
-  plt <- plt + theme_classic() +
-    theme(axis.text.x = element_text(angle = 45, hjust=1),
-          plot.title = element_text(hjust = 0.5),
+  plt <- plt + ggplot2::theme_classic() +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust=1),
+          plot.title = ggplot2::element_text(hjust = 0.5),
           legend.position = "bottom")
 
   if(plot){

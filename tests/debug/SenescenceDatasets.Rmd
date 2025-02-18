@@ -193,7 +193,7 @@ senescence_triggers_colors <- c(
 )
 
 
-IndividualGenes_Violins(data = corrcounts_merge, metadata = metadata_merge, genes = c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"), GroupingVariable = "Condition", plot=T, ncol=NULL, nrow=2, divide="CellType", invert_divide=FALSE,ColorValues=senescence_triggers_colors, pointSize=2, ColorVariable="SenescentType", title="Senescence", widthTitle=16,y_limits = NULL,legend_nrow=4, xlab="Condição",colorlab="teste") 
+IndividualGenes_Violins(data = corrcounts_merge, metadata = metadata_merge, genes = c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"), GroupingVariable = "Condition", plot=T, ncol=NULL, nrow=2, divide="CellType", invert_divide=FALSE,ColorValues=senescence_triggers_colors, pointSize=2, ColorVariable="SenescentType", title="Senescence", widthTitle=16,y_limits = NULL,legend_nrow=4, xlab="Condition",colorlab="") 
 ```
  
 

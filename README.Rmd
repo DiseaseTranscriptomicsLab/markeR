@@ -120,3 +120,31 @@ ggpubr::annotate_figure(plt, top = grid::textGrob("Marthandan et al. 2016", gp =
 
 ```
  
+
+```{r exampleviolins, fig.width=6, fig.height=3, out.width="70%", warning=FALSE, message=FALSE}
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red   
+  "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
+)
+
+
+IndividualGenes_Violins(data = counts_example, 
+                        metadata = metadata_example, 
+                        genes = SimpleSenescenceSignature, 
+                        GroupingVariable = "Condition", 
+                        plot=T, 
+                        ncol=NULL, 
+                        nrow=1, 
+                        divide=NULL, 
+                        invert_divide=FALSE,
+                        ColorValues=senescence_triggers_colors, 
+                        pointSize=2, 
+                        ColorVariable="SenescentType", 
+                        title="Senescence Genes", 
+                        widthTitle=16,
+                        y_limits = NULL,
+                        legend_nrow=1, 
+                        xlab="Condition",
+                        colorlab="") 
+```
