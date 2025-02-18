@@ -16,8 +16,8 @@ PlotScores(
   widthTitle = 10,
   y_limits = NULL,
   legend_nrow = NULL,
-  free_scales = FALSE,
-  pointSize = 2
+  pointSize = 2,
+  xlab = NULL
 )
 }
 \arguments{
@@ -59,6 +59,9 @@ Default is 10.}
 \strong{(Optional)}}
 
 \item{pointSize}{An optional numeric value specifying the size of the points. If \code{NULL}, the default number is 2.
+\strong{(Optional)}}
+
+\item{xlab}{Optional parameter, specifying the name of the x label. Default is the name of the Grouping Variable
 \strong{(Optional)}}
 }
 \value{
