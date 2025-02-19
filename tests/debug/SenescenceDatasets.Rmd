@@ -171,7 +171,8 @@ ggpubr::ggarrange(plotlist=plotlist, nrow=3, ncol=4, align = "h")
 - Correlation Heatmap
 - ROC / AUC
 - Cohen's d
- 
+
+### Violin Expression Plots
 
 ```{r fig.width=8, fig.height=6}
 
@@ -195,7 +196,36 @@ senescence_triggers_colors <- c(
 
 IndividualGenes_Violins(data = corrcounts_merge, metadata = metadata_merge, genes = c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"), GroupingVariable = "Condition", plot=T, ncol=NULL, nrow=2, divide="CellType", invert_divide=FALSE,ColorValues=senescence_triggers_colors, pointSize=2, ColorVariable="SenescentType", title="Senescence", widthTitle=16,y_limits = NULL,legend_nrow=4, xlab="Condition",colorlab="") 
 ```
+
+
+
+### Correlation Heatmap
+
+
+```{r}
+data=corrcounts_merge
+metadata=metadata_merge
+
+
+```
+
+```{r fig.width=8, fig.height=3}
+options(error=recover)
+CorrelationHeatmap(data=corrcounts_merge, 
+                   metadata=metadata_merge, 
+                   genes=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"), 
+                   separate.by="Condition", 
+                   method="spearman", 
+                   plot=TRUE, 
+                   colorlist=list(low="#3F4193",
+                                  mid="#F9F4AE",
+                                  high="#B44141"), 
+                   limits_colorscale=c(-1,1), 
+                   widthTitle=16, 
+                   ncol=NULL, 
+                   nrow=1, 
+                   detailedresults=FALSE, 
+                   title=NULL)
+```
  
-
-
 
