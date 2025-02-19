@@ -44,7 +44,21 @@
 #' }
 #'
 #' @export
-CorrelationHeatmap <- function(data, metadata=NULL, genes, separate.by=NULL, method="pearson", plot=TRUE, colorlist=list(low = "blue", mid = "white", high = "red"), limits_colorscale=NULL, widthTitle=16, ncol=NULL, nrow=NULL, detailedresults=FALSE, title=NULL){
+CorrelationHeatmap <- function(data,
+                               metadata=NULL,
+                               genes,
+                               separate.by=NULL,
+                               method="pearson",
+                               plot=TRUE,
+                               colorlist=list(low = "blue", mid = "white", high = "red"),
+                               limits_colorscale=NULL,
+                               widthTitle=16,
+                               ncol=NULL,
+                               nrow=NULL,
+                               detailedresults=FALSE,
+                               title=NULL,
+                               cluster_rows=FALSE,
+                               cluster_rows=FALSE){
 
   resultsList <- list()
   resultsList[["data"]]<- list()
