@@ -75,7 +75,7 @@ CorrelationHeatmap <- function(data, metadata=NULL, genes, separate.by=NULL, met
       df_data_merge <- as.data.frame(rbind(df_data_merge,
                                            cbind(corrmat_ggplot,condition)))
 
-      plt <- ggplot2::ggplot(corrmat_ggplot, aes(Var1, Var2, fill = value))
+      plt <- ggplot2::ggplot(corrmat_ggplot, ggplot2::aes(Var1, Var2, fill = value))
 
       # add tiles
       plt <- plt +
