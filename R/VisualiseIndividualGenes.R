@@ -60,7 +60,9 @@
 #' The function returns a list of plots. If `method = "all"`, all available visualizations are included.
 #'
 #' @export
-VisualiseIndividualGenes <- function(data, metadata, gene_sets,
+VisualiseIndividualGenes <- function(data,
+                                     metadata,
+                                     genes,
                                      method = c("violins","expr_heatmap","corr_heatmap","roc","effectsize","all"),
                                      plot = TRUE,
                                      GroupingVariable = NULL,
@@ -83,6 +85,9 @@ VisualiseIndividualGenes <- function(data, metadata, gene_sets,
   if (!is.data.frame(data)) stop("Error: data must be a data-frame")
   if (!is.null(metadata) && !is.data.frame(metadata)) stop("Error: metadata must be a data-frame")
   if (!is.list(gene_sets)) stop("Error: gene_sets must be a list")
+
+  if (length(genes) >20) warning("Number of genes is too high. Consider a smaller set of genes.")
+
 
   ResultsList <- list()
 

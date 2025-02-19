@@ -30,7 +30,7 @@ IndividualGenes_Violins(
 
 \item{metadata}{An optional data frame containing sample metadata. The first column must match the sample IDs from \code{data}. \strong{(Optional)}}
 
-\item{genes}{A character vector of gene names to be plotted. If more than 20 genes are provided, a warning is issued. \strong{(Required)}}
+\item{genes}{A character vector of gene names to be plotted.  \strong{(Required)}}
 
 \item{GroupingVariable}{A character string specifying the column in \code{metadata} used for grouping samples on the x-axis. \strong{(Required)}}
 

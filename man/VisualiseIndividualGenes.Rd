@@ -7,7 +7,7 @@
 VisualiseIndividualGenes(
   data,
   metadata,
-  gene_sets,
+  genes,
   method = c("violins", "expr_heatmap", "corr_heatmap", "roc", "effectsize", "all"),
   plot = TRUE,
   GroupingVariable = NULL,
@@ -32,6 +32,8 @@ The row names should be gene identifiers.}
 
 \item{metadata}{A data frame containing sample metadata. The first column should contain
 sample identifiers matching the column names of \code{data}.}
+
+\item{genes}{A character vector of gene names to be plotted. If more than 20 genes are provided, a warning is issued.}
 
 \item{method}{A character string specifying which visualization method to use.
 Options are \code{"violins"}, \code{"expr_heatmap"}, \code{"corr_heatmap"}, \code{"roc"}, \code{"effectsize"}, or \code{"all"}.
@@ -77,8 +79,6 @@ Default is the name of \code{GroupingVariable}.}
 
 \item{colorlab}{An optional character string specifying the legend title for the color variable.
 Default is \code{NULL}.}
-
-\item{genes}{A character vector of gene names to be plotted. If more than 20 genes are provided, a warning is issued.}
 }
 \value{
 A named list where each selected method (e.g., \code{"violins"}, \code{"expr_heatmap"}, etc.) is a key.

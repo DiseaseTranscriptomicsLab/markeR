@@ -5,7 +5,7 @@
 #'
 #' @param data A data frame containing gene expression values with row names as gene names and column names as sample IDs. **(Required)**
 #' @param metadata An optional data frame containing sample metadata. The first column must match the sample IDs from `data`. **(Optional)**
-#' @param genes A character vector of gene names to be plotted. If more than 20 genes are provided, a warning is issued. **(Required)**
+#' @param genes A character vector of gene names to be plotted.  **(Required)**
 #' @param GroupingVariable A character string specifying the column in `metadata` used for grouping samples on the x-axis. **(Required)**
 #' @param plot A logical value indicating whether to print the plot. If `FALSE`, only the output list is returned. Default is `TRUE`. **(Optional)**
 #' @param ncol An optional numeric value specifying the number of columns in the facet grid. If not provided, it is computed automatically. Only applicable if `divide` is `NULL`. **(Optional)**
@@ -54,8 +54,6 @@
 IndividualGenes_Violins <- function(data, metadata=NULL, genes,GroupingVariable, plot=TRUE, ncol=NULL, nrow=NULL, divide=NULL, invert_divide=FALSE, ColorValues=NULL, pointSize=2, ColorVariable=NULL,title=NULL, widthTitle=16,y_limits = NULL, legend_nrow = NULL,xlab=NULL, colorlab=NULL){
 
   set.seed("1234")
-
-  if (length(genes) >20) warning("Number of genes is too high. Consider a smaller set of genes.")
 
   # Wrap the signature name using the helper function
   wrapped_title <- wrap_title(title, width = widthTitle)
