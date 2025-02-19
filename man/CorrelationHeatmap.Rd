@@ -2,7 +2,7 @@
 % Please edit documentation in R/CorrelationHeatmap.R
 \name{CorrelationHeatmap}
 \alias{CorrelationHeatmap}
-\title{Generate a Correlation Heatmap}
+\title{CorrelationHeatmap: Generate correlation heatmaps with optional grouping}
 \usage{
 CorrelationHeatmap(
   data,
@@ -10,72 +10,92 @@ CorrelationHeatmap(
   genes,
   separate.by = NULL,
   method = "pearson",
-  plot = TRUE,
   colorlist = list(low = "blue", mid = "white", high = "red"),
   limits_colorscale = NULL,
   widthTitle = 16,
-  ncol = NULL,
-  nrow = NULL,
+  title = NULL,
+  cluster_rows = TRUE,
+  cluster_columns = TRUE,
   detailedresults = FALSE,
-  title = NULL
+  legend_position = c("right", "top"),
+  titlesize = 20
 )
 }
 \arguments{
-\item{data}{A numeric matrix or data frame where rows represent genes and columns represent samples.}
+\item{data}{A numeric counts data frame where rows correspond to genes and columns to samples.}
 
-\item{metadata}{Optional. A data frame containing metadata information for the samples.
-The first column must contain sample IDs matching the column names in \code{data}.}
+\item{metadata}{A data frame containing metadata. Required if \code{separate.by} is specified.}
 
-\item{genes}{A character vector of gene names to include in the heatmap.}
+\item{genes}{A character vector of gene names to be included in the correlation analysis.}
 
-\item{separate.by}{Optional. A column name from \code{metadata} to separate heatmaps by different conditions.}
+\item{separate.by}{A character string specifying a column in \code{metadata} to separate heatmaps by (e.g., "Condition").}
 
-\item{method}{Character. Correlation method to be used to compute a correlation matrix using the
-\code{corr}function. One of \code{"pearson"} (default), \code{"spearman"}, or \code{"kendall"}.}
+\item{method}{Correlation method: \code{"pearson"} (default), \code{"spearman"}, or \code{"kendall"}.}
 
-\item{plot}{Logical. If \code{TRUE} (default), the resulting heatmap(s) will be displayed.}
+\item{colorlist}{A named list specifying the colors for the heatmap (\code{low}, \code{mid}, \code{high}), corresponding to the limits of the colorscale.}
 
-\item{colorlist}{Optional. A named list specifying colors for the heatmap gradient.
-Default: \code{list(low = "blue", mid = "white", high = "red")}.}
+\item{limits_colorscale}{A numeric vector of length 3 defining the limits for the color scale (default: min, 0, max).}
 
-\item{limits_colorscale}{Optional. Numeric vector of length 2 specifying limits for the color scale.
-Numbers outside this range will be displayed in grey.}
+\item{widthTitle}{Numeric value controlling the width of the plot title. Default is \code{16}.}
 
-\item{widthTitle}{Integer. Maximum character width for wrapping plot titles. Default is \code{16}.}
+\item{title}{A string specifying the main title of the heatmap(s).}
 
-\item{ncol}{Optional. Number of columns for arranging multiple plots when \code{separate.by} is used.}
+\item{cluster_rows}{Logical; whether to cluster rows (default = \code{TRUE}).}
 
-\item{nrow}{Optional. Number of rows for arranging multiple plots when \code{separate.by} is used.}
+\item{cluster_columns}{Logical; whether to cluster columns (default = \code{TRUE}).}
 
-\item{detailedresults}{Logical. If \code{TRUE}, additional details including correlation matrices are returned.}
+\item{detailedresults}{Logical; if \code{TRUE}, additional analysis results are stored in the output list (default = \code{FALSE}).}
 
-\item{title}{Optional. A character string specifying the title of the heatmap.}
+\item{legend_position}{Character; position of the legend (\code{"right"} \link{default} or \code{"top"}).}
+
+\item{titlesize}{Numeric; font size of the heatmap title (default = \code{20}).}
 }
 \value{
-A named list with the following elements:
+A list containing:
 \describe{
-\item{\code{data}}{A data frame containing the transformed correlation values used for plotting.}
-\item{\code{plot}}{A ggplot2 plot object or a combined plot (if \code{separate.by} is specified).}
-\item{\code{aux}}{A list containing additional data when \code{detailedresults = TRUE}, including:
+\item{\code{data}}{Correlation matrices for each condition (or a single matrix if \code{separate.by = NULL}).}
+\item{\code{plot}}{The generated heatmap object(s).}
+\item{\code{aux}}{A list containing additional analysis results if \code{detailedresults = TRUE}.
 \describe{
-\item{\code{method}}{The correlation method used (\code{"pearson"}, \code{"spearman"}, or \code{"kendall"}).}
-\item{\code{corrmatrix}}{A numeric correlation matrix of genes.}
-\item{\code{metadata}}{(Only if \code{separate.by} is used) A metadata subset for the condition.}
-\item{\code{corrmatrix_ggplot}}{(Only if \code{separate.by} is used) A melted version of \code{corrmatrix} in long format for plotting.}
-\item{\code{plot}}{(Only if \code{separate.by} is used) The individual correlation heatmap for the condition.}
+\item{If \code{separate.by} is specified:}{
+A list where each element corresponds to a different condition. Each sublist contains:
+\itemize{
+\item \code{method}: The correlation method used.
+\item \code{corrmatrix}: The computed correlation matrix for that condition.
+\item \code{metadata}: The subset of metadata corresponding to the condition.
+\item \code{heatmap}: The \code{ComplexHeatmap} object before being drawn.
+}
+}
+\item{If \code{separate.by = NULL} (single heatmap case):}{
+A list containing:
+\itemize{
+\item \code{method}: The correlation method.
+\item \code{corrmatrix}: The computed correlation matrix.
+}
+}
 }
 }
 }
 }
 \description{
-This function computes and visualizes a correlation heatmap for a given set of genes.
-Optionally, the heatmap can be generated separately for different conditions based on metadata.
+This function generates correlation heatmaps using the \code{ComplexHeatmap} package. It allows users
+to compute correlation matrices for a set of genes and visualize them in a heatmap. If a grouping
+variable is provided (\code{separate.by}), multiple heatmaps are created, each corresponding to a different
+level of the grouping variable.
 }
 \examples{
 \dontrun{
-data <- matrix(rnorm(100), nrow=10, dimnames = list(paste0("Gene", 1:10), paste0("Sample", 1:10)))
-metadata <- data.frame(SampleID = paste0("Sample", 1:10), Condition = rep(c("A", "B"), each = 5))
-CorrelationHeatmap(data, metadata, genes = rownames(data), separate.by = "Condition")
+data_matrix <- matrix(rnorm(100), nrow = 10, ncol = 10)
+rownames(data_matrix) <- paste0("Gene", 1:10)
+colnames(data_matrix) <- paste0("Sample", 1:10)
+
+# Basic usage
+result <- CorrelationHeatmap2(data_matrix, genes = rownames(data_matrix))
+
+# Using metadata to separate by condition
+metadata <- data.frame(Sample = colnames(data_matrix),
+                       Condition = rep(c("A", "B"), each = 5))
+result <- CorrelationHeatmap2(data_matrix, metadata, genes = rownames(data_matrix), separate.by = "Condition")
 }
 
 }

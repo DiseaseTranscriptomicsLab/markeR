@@ -1,229 +1,204 @@
-#' Generate a Correlation Heatmap
+#' CorrelationHeatmap: Generate correlation heatmaps with optional grouping
 #'
-#' This function computes and visualizes a correlation heatmap for a given set of genes.
-#' Optionally, the heatmap can be generated separately for different conditions based on metadata.
+#' This function generates correlation heatmaps using the `ComplexHeatmap` package. It allows users
+#' to compute correlation matrices for a set of genes and visualize them in a heatmap. If a grouping
+#' variable is provided (`separate.by`), multiple heatmaps are created, each corresponding to a different
+#' level of the grouping variable.
 #'
-#' @param data A numeric matrix or data frame where rows represent genes and columns represent samples.
-#' @param metadata Optional. A data frame containing metadata information for the samples.
-#'   The first column must contain sample IDs matching the column names in `data`.
-#' @param genes A character vector of gene names to include in the heatmap.
-#' @param separate.by Optional. A column name from `metadata` to separate heatmaps by different conditions.
-#' @param method Character. Correlation method to be used to compute a correlation matrix using the
-#'   `corr`function. One of `"pearson"` (default), `"spearman"`, or `"kendall"`.
-#' @param plot Logical. If `TRUE` (default), the resulting heatmap(s) will be displayed.
-#' @param colorlist Optional. A named list specifying colors for the heatmap gradient.
-#'   Default: `list(low = "blue", mid = "white", high = "red")`.
-#' @param limits_colorscale Optional. Numeric vector of length 2 specifying limits for the color scale.
-#'   Numbers outside this range will be displayed in grey.
-#' @param widthTitle Integer. Maximum character width for wrapping plot titles. Default is `16`.
-#' @param ncol Optional. Number of columns for arranging multiple plots when `separate.by` is used.
-#' @param nrow Optional. Number of rows for arranging multiple plots when `separate.by` is used.
-#' @param detailedresults Logical. If `TRUE`, additional details including correlation matrices are returned.
-#' @param title Optional. A character string specifying the title of the heatmap.
+#' @param data A numeric counts data frame where rows correspond to genes and columns to samples.
+#' @param metadata A data frame containing metadata. Required if `separate.by` is specified.
+#' @param genes A character vector of gene names to be included in the correlation analysis.
+#' @param separate.by A character string specifying a column in `metadata` to separate heatmaps by (e.g., "Condition").
+#' @param method Correlation method: `"pearson"` (default), `"spearman"`, or `"kendall"`.
+#' @param colorlist A named list specifying the colors for the heatmap (`low`, `mid`, `high`), corresponding to the limits of the colorscale.
+#' @param limits_colorscale A numeric vector of length 3 defining the limits for the color scale (default: min, 0, max).
+#' @param widthTitle Numeric value controlling the width of the plot title. Default is `16`.
+#' @param title A string specifying the main title of the heatmap(s).
+#' @param cluster_rows Logical; whether to cluster rows (default = `TRUE`).
+#' @param cluster_columns Logical; whether to cluster columns (default = `TRUE`).
+#' @param detailedresults Logical; if `TRUE`, additional analysis results are stored in the output list (default = `FALSE`).
+#' @param legend_position Character; position of the legend (`"right"` [default] or `"top"`).
+#' @param titlesize Numeric; font size of the heatmap title (default = `20`).
 #'
-#' @return A named list with the following elements:
+#' @return A list containing:
 #'   \describe{
-#'     \item{`data`}{A data frame containing the transformed correlation values used for plotting.}
-#'     \item{`plot`}{A ggplot2 plot object or a combined plot (if `separate.by` is specified).}
-#'     \item{`aux`}{A list containing additional data when `detailedresults = TRUE`, including:
+#'     \item{`data`}{Correlation matrices for each condition (or a single matrix if `separate.by = NULL`).}
+#'     \item{`plot`}{The generated heatmap object(s).}
+#'     \item{`aux`}{A list containing additional analysis results if `detailedresults = TRUE`.
 #'       \describe{
-#'         \item{`method`}{The correlation method used (`"pearson"`, `"spearman"`, or `"kendall"`).}
-#'         \item{`corrmatrix`}{A numeric correlation matrix of genes.}
-#'         \item{`metadata`}{(Only if `separate.by` is used) A metadata subset for the condition.}
-#'         \item{`corrmatrix_ggplot`}{(Only if `separate.by` is used) A melted version of `corrmatrix` in long format for plotting.}
-#'         \item{`plot`}{(Only if `separate.by` is used) The individual correlation heatmap for the condition.}
+#'         \item{If `separate.by` is specified:}{
+#'           A list where each element corresponds to a different condition. Each sublist contains:
+#'           \itemize{
+#'             \item `method`: The correlation method used.
+#'             \item `corrmatrix`: The computed correlation matrix for that condition.
+#'             \item `metadata`: The subset of metadata corresponding to the condition.
+#'             \item `heatmap`: The `ComplexHeatmap` object before being drawn.
+#'           }
+#'         }
+#'         \item{If `separate.by = NULL` (single heatmap case):}{
+#'           A list containing:
+#'           \itemize{
+#'             \item `method`: The correlation method.
+#'             \item `corrmatrix`: The computed correlation matrix.
+#'           }
+#'         }
 #'       }
 #'     }
 #'   }
 #'
 #' @examples
 #' \dontrun{
-#' data <- matrix(rnorm(100), nrow=10, dimnames = list(paste0("Gene", 1:10), paste0("Sample", 1:10)))
-#' metadata <- data.frame(SampleID = paste0("Sample", 1:10), Condition = rep(c("A", "B"), each = 5))
-#' CorrelationHeatmap(data, metadata, genes = rownames(data), separate.by = "Condition")
+#' data_matrix <- matrix(rnorm(100), nrow = 10, ncol = 10)
+#' rownames(data_matrix) <- paste0("Gene", 1:10)
+#' colnames(data_matrix) <- paste0("Sample", 1:10)
+#'
+#' # Basic usage
+#' result <- CorrelationHeatmap2(data_matrix, genes = rownames(data_matrix))
+#'
+#' # Using metadata to separate by condition
+#' metadata <- data.frame(Sample = colnames(data_matrix),
+#'                        Condition = rep(c("A", "B"), each = 5))
+#' result <- CorrelationHeatmap2(data_matrix, metadata, genes = rownames(data_matrix), separate.by = "Condition")
 #' }
 #'
 #' @export
-CorrelationHeatmap <- function(data,
-                               metadata=NULL,
-                               genes,
-                               separate.by=NULL,
-                               method="pearson",
-                               plot=TRUE,
-                               colorlist=list(low = "blue", mid = "white", high = "red"),
-                               limits_colorscale=NULL,
-                               widthTitle=16,
-                               ncol=NULL,
-                               nrow=NULL,
-                               detailedresults=FALSE,
-                               title=NULL,
-                               cluster_rows=FALSE,
-                               cluster_cols=FALSE){
+# funciona menos nrow e ncol
+CorrelationHeatmap <- function(data, metadata = NULL, genes, separate.by = NULL,
+                                method = "pearson", colorlist = list(low = "blue", mid = "white", high = "red"),
+                                limits_colorscale = NULL, widthTitle = 16, title = NULL,
+                                cluster_rows = TRUE, cluster_columns = TRUE,
+                                detailedresults = FALSE, legend_position = c("right", "top"), titlesize=20) {
+
+  # Choose legend position: "side" (vertical) or "top" (horizontal)
+  legend_position <- match.arg(legend_position)
+  if (legend_position == "right") {
+    leg_side <- "right"
+    leg_direction <- "vertical"
+    title_leg <- paste0(method, "'s \ncoefficient")
+  } else {
+    leg_side <- "top"
+    leg_direction <- "horizontal"
+    title_leg <- paste0(method, "'s coefficient")
+  }
 
   resultsList <- list()
-  resultsList[["data"]]<- list()
+  resultsList[["data"]] <- list()
   resultsList[["plot"]] <- list()
   resultsList[["aux"]] <- list()
 
-  data <- data[row.names(data) %in% genes,]
-
+  # Subset data to selected genes
+  data <- data[rownames(data) %in% genes, , drop = FALSE]
 
   if (!is.null(separate.by) && is.null(metadata)) {
+    stop("separate.by is not NULL but metadata is missing. Please specify metadata.")
+  }
 
-    stop("separate.by is not NULL but metadata is. Please specify metadata.")
-
-  } else if (!is.null(separate.by) && !is.null(metadata)){ # if we have a condition for division
-
-    df_data_merge <- data.frame(NULL)
-    resultsList_aux <- list()
-
-    for (condition in unique(metadata[,separate.by])){
-
-      metadata_subset <- subset(metadata, get(separate.by) == condition)
-      data_subset <- data[,metadata_subset[,1]] # first column of metadata needs to be sample ID
-      data_subset <- log2(data_subset)
-      corrmat <- stats::cor(t(data_subset), method=method)
-      corrmat_ggplot <- reshape2::melt(corrmat)  # Melt the matrix into long format
-
-      # concatenate everything
-      df_data_merge <- as.data.frame(rbind(df_data_merge,
-                                           cbind(corrmat_ggplot,condition)))
-
-      plt <- ggplot2::ggplot(corrmat_ggplot, ggplot2::aes(Var1, Var2, fill = value))
-
-      # add tiles
-      plt <- plt +
-        ggplot2::geom_tile()
-
-      # change colors
-      plt <- plt +
-        ggplot2::scale_fill_gradient2(low = colorlist[["low"]], high = colorlist[["high"]], mid = colorlist[["mid"]],
-                                      midpoint = 0, limits = limits_colorscale, space = "Lab",
-                                      name= paste0(method, "'s \ncoefficient"), na.value = "#DBDBDB")
+  # Helper function: create a heatmap using ComplexHeatmap
+  create_heatmap <- function(corrmat, annot_title = NULL, direct="horizontal", titleleg="") {
+    col_fun <- circlize::colorRamp2(
+      if (is.null(limits_colorscale)) c(min(corrmat), 0, max(corrmat)) else limits_colorscale,
+      unname(colorlist)
+    )
+    ht <- ComplexHeatmap::Heatmap(
+      corrmat,
+      name = titleleg,  # Shared legend name
+      col = col_fun,
+      cluster_rows = cluster_rows,
+      cluster_columns = cluster_columns,
+      show_row_names = TRUE,
+      show_column_names = TRUE,
+      heatmap_legend_param = list(
+        title = titleleg,
+        direction = direct,
+        title_gp = grid::gpar(fontsize = 12),   # Legend title size
+        labels_gp = grid::gpar(fontsize = 10),  # Legend label size
+        legend_height = unit(2, "cm"),          # Adjust legend height
+        legend_width = unit(4, "cm")            # Adjust legend width
+      ),
+      column_title = annot_title
+    )
+    return(ht)
+  }
 
 
+  if (!is.null(separate.by)) {
+    df_data_merge <- list()
+    heatmap_list <- list()
+    conditions <- unique(metadata[[separate.by]])
 
-
-
-      # change theme
-      plt <- plt +
-        ggplot2::theme_minimal()
-
-      # Change plot title
-      wrapped_title <- wrap_title(condition, width = widthTitle)
-      plt <- plt + ggplot2::ggtitle(wrapped_title)
-
-      # change labels
-      plt <- plt +
-        ggplot2::labs(x = " ", y = " ") +
-        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1),
-                       axis.text.y = ggplot2::element_text(angle = 0, hjust = 1),
-                       plot.title = ggplot2::element_text(hjust = 0.5))
-
-
-      # save to an aux variable that will be used for plotting the combined plot
-      resultsList_aux[[condition]] <- plt
-
-      if(detailedresults){
-
-        resultsList[["aux"]][[condition]] <- list()
-        resultsList[["aux"]][[condition]][["method"]] <- method
-        resultsList[["aux"]][[condition]][["corrmatrix"]] <- corrmat
-        resultsList[["aux"]][[condition]][["metadata"]] <- metadata_subset
-        resultsList[["aux"]][[condition]][["corrmatrix_ggplot"]]  <- corrmat_ggplot
-        resultsList[["aux"]][[condition]][["plot"]] <- plt
-
+    for (cond in conditions) {
+      metadata_subset <- subset(metadata, get(separate.by) == cond)
+      # Assume the first column of metadata contains sample IDs
+      samples <- metadata_subset[,1]
+      data_subset <- data[, samples, drop = FALSE]
+      # Check if there are at least 2 samples to compute correlation
+      if (ncol(data_subset) < 2) {
+        warning(paste("Not enough samples for condition", cond, "to compute correlation. Skipping."))
+        next
       }
+      data_subset <- log2(data_subset)
+      corrmat <- stats::cor(t(data_subset), method = method)
+      df_data_merge[[cond]] <- corrmat
 
+      ht <- create_heatmap(corrmat, annot_title = cond, direct=leg_direction, titleleg=title_leg)
+      heatmap_list[[cond]] <- ht
 
+      if (detailedresults) {
+        resultsList[["aux"]][[cond]] <- list(
+          method = method,
+          corrmatrix = corrmat,
+          metadata = metadata_subset,
+          heatmap = ht
+        )
+      }
     }
 
-    n <- length(resultsList_aux)
-    # Determine grid layout
-    if (is.null(ncol) && is.null(nrow)) {
-
-      ncol <- ceiling(sqrt(n))
-      nrow <- ceiling(n / ncol)
-
-    } else if (is.null(ncol)){
-
-      ncol <- ceiling(n / nrow)
-
-    } else if (is.null(nrow)){
-
-      nrow <- ceiling(n / ncol)
-
+    if (length(heatmap_list) == 0) {
+      stop("No valid conditions with enough samples found.")
     }
 
-    combined_plot <- ggpubr::ggarrange(plotlist = resultsList_aux, ncol = ncol, nrow = nrow, common.legend = TRUE, align = "h")
-
-    if (!is.null(title)) {
-
-      wrapped_title <- wrap_title(title, width = widthTitle)
-      combined_plot <- ggpubr::annotate_figure(combined_plot,
-                                               top = grid::textGrob(wrapped_title, gp = grid::gpar(cex = 1.3, fontsize = 10)))
+    # Combine heatmaps using the '+' operator to merge legends
+    combined_ht <- heatmap_list[[conditions[1]]]
+    if (length(heatmap_list) > 1) {
+      for (i in 2:length(conditions)) {
+        if (!is.null(heatmap_list[[conditions[i]]])) {
+          combined_ht <- combined_ht + heatmap_list[[conditions[i]]]
+        }
+      }
     }
 
-    if(plot) print(combined_plot)
+    combined_ht <- ComplexHeatmap::draw(combined_ht,
+                                        merge_legend = TRUE,
+                                        heatmap_legend_side = leg_side,
+                                        annotation_legend_side = leg_side,
+                                        column_title = if (!is.null(title)) wrap_title(title, width = widthTitle) else NULL,
+                                        column_title_gp = grid::gpar(fontsize = titlesize))
+
+
 
     resultsList[["data"]] <- df_data_merge
-    resultsList[["plot"]] <- combined_plot
+    resultsList[["plot"]] <- combined_ht
 
-  } else { #plot everything together if no dividing condition is specified
-
+  } else {
+    # Single heatmap (no separate.by)
     data <- log2(data)
-    corrmat <- stats::cor(t(data), method=method)
-    corrmat_ggplot <- reshape2::melt(corrmat)  # Melt the matrix into long format
+    corrmat <- stats::cor(t(data), method = method)
+    ht <- create_heatmap(corrmat, direct=leg_direction, titleleg=title_leg)
+    ht_drawn <- ComplexHeatmap::draw(ht,
+                                     heatmap_legend_side = leg_side,
+                                     annotation_legend_side = leg_side,
+                                     column_title = if (!is.null(title)) wrap_title(title, width = widthTitle) else NULL,
+                                     column_title_gp = grid::gpar(fontsize = titlesize))
 
-    plt <- ggplot2::ggplot(corrmat_ggplot, aes(Var1, Var2, fill = value))
+    resultsList[["data"]] <- corrmat
+    resultsList[["plot"]] <- ht_drawn
 
-    # add tiles
-    plt <- plt +
-      ggplot2::geom_tile()
-
-    # change colors
-    plt <- plt +
-      ggplot2::scale_fill_gradient2(low = colorlist[["low"]], high = colorlist[["high"]], mid = colorlist[["mid"]],
-                                    midpoint = 0, limits = limits_colorscale, space = "Lab",
-                                    name= paste0(method, "'s \ncoefficient"), na.value = "#DBDBDB")
-
-
-    # change labels
-    plt <- plt +
-      ggplot2::labs(x = " ", y = " ") +
-      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1),
-                     axis.text.y = ggplot2::element_text(angle = 0, hjust = 1),
-                     plot.title = ggplot2::element_text(hjust = 0.5))
-
-    # change theme
-    plt <- plt +
-      ggplot2::theme_minimal()
-
-    if (!is.null(title)) {
-
-      # Change plot title
-      wrapped_title <- wrap_title(title, width = widthTitle)
-      plt <- plt + ggplot2::ggtitle(widthTitle)
-
+    if (detailedresults) {
+      resultsList[["aux"]] <- list(method = method, corrmatrix = corrmat)
     }
-
-    # if user wants to print the plot
-    if(plot) print(plt)
-
-    resultsList[["data"]] <- corrmat_ggplot
-    resultsList[["plot"]] <- plt
-
-    if(detailedresults){
-
-      resultsList[["aux"]][["method"]] <- method
-      resultsList[["aux"]][["corrmatrix"]] <- corrmat
-
-    }
-
 
   }
 
   invisible(resultsList)
-
-
 }
+
