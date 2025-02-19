@@ -49,6 +49,17 @@ score-based analysis:
 -   **PlotScores:** Visualizes the calculated scores across conditions
     using violin plots.
 
+It also includes some functions for visualising individual genes from a
+gene signature:
+
+-   **IndividualGenes\_Violins:** creates violin plots of gene
+    expression data with jittered points and optional faceting, allowing
+    for visualization of individual gene expression distributions across
+    sample groups.
+-   **CorrelationHeatmap:** computes and visualizes a correlation
+    heatmap for a given set of genes. Optionally, the heatmap can be
+    generated separately for different conditions based on metadata.
+
 Future updates will expand the package with additional pairs of
 functions to:
 
@@ -56,7 +67,7 @@ functions to:
     statistics).
 -   Conduct classification-based analysis (to train classifiers, e.g.,
     using Random Forests, and to evaluate performance via ROC curves).
--   Provide gene-level visualization modules (e.g., heatmaps) to display
+-   Provide additional gene-level visualization modules to display
     expression patterns of individual genes within signatures.
 
 ## Example
@@ -110,34 +121,7 @@ counts_example[1:5,1:5]
 #> AAAS       47.92755  46.292377  43.965972  47.109493  47.213739
 ```
 
-``` r
-df_Scores <- CalculateScores(data = counts_example, 
-                             metadata = metadata_example, 
-                             method = "logmedian", 
-                             gene_sets = list(Senescence=SimpleSenescenceSignature))
-
-senescence_triggers_colors <- c(
-  "none" = "#E57373",  # Soft red   
-  "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
-)
- 
-plt <- PlotScores(ResultsList = df_Scores, 
-                  ColorVariable = "SenescentType", 
-                  GroupingVariable="Condition",  
-                  method ="logmedian", 
-                  ColorValues = senescence_triggers_colors, 
-                  ConnectGroups=TRUE, 
-                  ncol = NULL, 
-                  nrow = NULL, 
-                  widthTitle=20, 
-                  y_limits = NULL, 
-                  legend_nrow = 1, 
-                  pointSize=4)  
-
-ggpubr::annotate_figure(plt, top = grid::textGrob("Marthandan et al. 2016", gp = grid::gpar(cex = 1.3, fontsize = 12)))
-```
-
-<img src="man/figures/README-exampleScore-1.png" width="40%" />
+### Visualise Individual Genes from Senescence Signature
 
 ``` r
 senescence_triggers_colors <- c(
@@ -167,3 +151,89 @@ IndividualGenes_Violins(data = counts_example,
 ```
 
 <img src="man/figures/README-exampleviolins-1.png" width="70%" />
+
+``` r
+CorrelationHeatmap(data=counts_example, 
+                   metadata=metadata_example, 
+                   genes=SimpleSenescenceSignature, 
+                   separate.by="Condition", 
+                   method="spearman", 
+                   plot=TRUE, 
+                   colorlist=list(low="#3F4193",
+                                  mid="#F9F4AE",
+                                  high="#B44141"), 
+                   limits_colorscale=c(-1,1), 
+                   widthTitle=16, 
+                   ncol=NULL, 
+                   nrow=1, 
+                   detailedresults=FALSE, 
+                   title="Senescence Genes")
+```
+
+<img src="man/figures/README-example_heatmap-1.png" width="70%" />
+
+### Calculate Senescence Scores
+
+The following example uses the **“logmedian”** method for score
+calculation.
+
+``` r
+df_Scores <- CalculateScores(data = counts_example, 
+                             metadata = metadata_example, 
+                             method = "logmedian", 
+                             gene_sets = list(Senescence=SimpleSenescenceSignature))
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red   
+  "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
+)
+ 
+plt <- PlotScores(ResultsList = df_Scores, 
+                  ColorVariable = "SenescentType", 
+                  GroupingVariable="Condition",  
+                  method ="logmedian", 
+                  ColorValues = senescence_triggers_colors, 
+                  ConnectGroups=TRUE, 
+                  ncol = NULL, 
+                  nrow = NULL, 
+                  widthTitle=20, 
+                  y_limits = NULL, 
+                  legend_nrow = 1, 
+                  pointSize=4)  
+
+ggpubr::annotate_figure(plt, top = grid::textGrob("Marthandan et al. 2016", gp = grid::gpar(cex = 1.3, fontsize = 12)))
+```
+
+<img src="man/figures/README-exampleScore-1.png" width="40%" />
+
+The following example uses the **“ssGSEA”** method for score
+calculation.
+
+``` r
+df_Scores <- CalculateScores(data = counts_example, 
+                             metadata = metadata_example, 
+                             method = "ssGSEA", 
+                             gene_sets = list(Senescence=SimpleSenescenceSignature))
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red   
+  "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
+)
+ 
+plt <- PlotScores(ResultsList = df_Scores, 
+                  ColorVariable = "SenescentType", 
+                  GroupingVariable="Condition",  
+                  method ="ssGSEA", 
+                  ColorValues = senescence_triggers_colors, 
+                  ConnectGroups=TRUE, 
+                  ncol = NULL, 
+                  nrow = NULL, 
+                  widthTitle=20, 
+                  y_limits = NULL, 
+                  legend_nrow = 1, 
+                  pointSize=4)  
+
+ggpubr::annotate_figure(plt, top = grid::textGrob("Marthandan et al. 2016", gp = grid::gpar(cex = 1.3, fontsize = 12)))
+```
+
+<img src="man/figures/README-exampleScore_2-1.png" width="40%" />
