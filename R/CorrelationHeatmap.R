@@ -58,7 +58,7 @@ CorrelationHeatmap <- function(data,
                                detailedresults=FALSE,
                                title=NULL,
                                cluster_rows=FALSE,
-                               cluster_rows=FALSE){
+                               cluster_cols=FALSE){
 
   resultsList <- list()
   resultsList[["data"]]<- list()
