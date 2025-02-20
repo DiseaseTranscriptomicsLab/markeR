@@ -51,8 +51,11 @@ cellTypes_colors <- c(
   "Neuronal" = "#779ECB",     # Strong Pastel Blue  
   "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
 )
+ 
+cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the first that appears in the ggplot
+                    B=c("Proliferative","Quiescent"))
 
-PlotScores(ResultsList = df_ssGSEA, ColorVariable = "CellType", GroupingVariable="Condition",  method ="ssGSEA", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 6, nrow = 2, widthTitle=20, y_limits = NULL, legend_nrow = 2)
+PlotScores(ResultsList = df_ssGSEA, ColorVariable = "CellType", GroupingVariable="Condition",  method ="ssGSEA", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 6, nrow = 2, widthTitle=20, y_limits = NULL, legend_nrow = 2,cond_cohend=cond_cohend)
 
 ```
 
@@ -84,7 +87,10 @@ cellTypes_colors <- c(
   "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
 )
 
-PlotScores(ResultsList = df_logmedian, ColorVariable = "CellType", GroupingVariable="Condition",  method ="logmedian", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 6, nrow = 2, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL)
+cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the first that appears in the ggplot
+                    B=c("Proliferative","Quiescent"))
+
+PlotScores(ResultsList = df_logmedian, ColorVariable = "CellType", GroupingVariable="Condition",  method ="logmedian", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 6, nrow = 2, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend)
 
 ```
 
@@ -260,4 +266,4 @@ ExpressionHeatmap(data=corrcounts_merge,
 
 ```
 
-  
+

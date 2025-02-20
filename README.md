@@ -212,21 +212,26 @@ senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
   "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
 )
- 
-plt <- PlotScores(ResultsList = df_Scores, 
-                  ColorVariable = "SenescentType", 
-                  GroupingVariable="Condition",  
-                  method ="logmedian", 
-                  ColorValues = senescence_triggers_colors, 
-                  ConnectGroups=TRUE, 
-                  ncol = NULL, 
-                  nrow = NULL, 
-                  widthTitle=20, 
-                  y_limits = NULL, 
-                  legend_nrow = 1, 
-                  pointSize=4)  
 
-ggpubr::annotate_figure(plt, top = grid::textGrob("Marthandan et al. 2016", gp = grid::gpar(cex = 1.3, fontsize = 12)))
+cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the first that appears in the ggplot
+                    B=c("Proliferative"))
+
+PlotScores(ResultsList = df_Scores, 
+           ColorVariable = "SenescentType", 
+           GroupingVariable="Condition",  
+           method ="logmedian", 
+           ColorValues = senescence_triggers_colors, 
+           ConnectGroups=TRUE, 
+           ncol = NULL, 
+           nrow = NULL, 
+           widthTitle=20, 
+           y_limits = NULL, 
+           legend_nrow = 1, 
+           pointSize=4,
+           cond_cohend=cond_cohend,
+           title="Marthandan et al. 2016",
+           labsize=7, 
+           titlesize = 10)  
 ```
 
 <img src="man/figures/README-exampleScore-1.png" width="40%" />
@@ -244,21 +249,23 @@ senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
   "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
 )
- 
-plt <- PlotScores(ResultsList = df_Scores, 
-                  ColorVariable = "SenescentType", 
-                  GroupingVariable="Condition",  
-                  method ="ssGSEA", 
-                  ColorValues = senescence_triggers_colors, 
-                  ConnectGroups=TRUE, 
-                  ncol = NULL, 
-                  nrow = NULL, 
-                  widthTitle=20, 
-                  y_limits = NULL, 
-                  legend_nrow = 1, 
-                  pointSize=4)  
 
-ggpubr::annotate_figure(plt, top = grid::textGrob("Marthandan et al. 2016", gp = grid::gpar(cex = 1.3, fontsize = 12)))
+PlotScores(ResultsList = df_Scores, 
+           ColorVariable = "SenescentType", 
+           GroupingVariable="Condition",  
+           method ="ssGSEA", 
+           ColorValues = senescence_triggers_colors, 
+           ConnectGroups=TRUE, 
+           ncol = NULL, 
+           nrow = NULL, 
+           widthTitle=20, 
+           y_limits = NULL, 
+           legend_nrow = 1, 
+           pointSize=4,
+           cond_cohend=cond_cohend,
+           title="Marthandan et al. 2016",
+           labsize=7, 
+           titlesize = 10)  
 ```
 
 <img src="man/figures/README-exampleScore_2-1.png" width="40%" />
