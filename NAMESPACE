@@ -2,6 +2,7 @@
 
 export(CalculateScores)
 export(CorrelationHeatmap)
+export(ExpressionHeatmap)
 export(IndividualGenes_Violins)
 export(PlotScores)
 export(VisualiseIndividualGenes)

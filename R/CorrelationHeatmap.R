@@ -112,8 +112,8 @@ CorrelationHeatmap <- function(data, metadata = NULL, genes, separate.by = NULL,
         direction = direct,
         title_gp = grid::gpar(fontsize = 12),   # Legend title size
         labels_gp = grid::gpar(fontsize = 10),  # Legend label size
-        legend_height = unit(2, "cm"),          # Adjust legend height
-        legend_width = unit(4, "cm")            # Adjust legend width
+        legend_height = grid::unit(2, "cm"),          # Adjust legend height
+        legend_width = grid::unit(4, "cm")            # Adjust legend width
       ),
       column_title = annot_title
     )

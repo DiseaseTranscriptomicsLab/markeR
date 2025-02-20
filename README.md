@@ -59,6 +59,8 @@ gene signature:
 -   **CorrelationHeatmap:** computes and visualizes a correlation
     heatmap for a given set of genes. Optionally, the heatmap can be
     generated separately for different conditions based on metadata.
+-   **ExpressionHeatmap:** generates an expression heatmap with
+    customizable sample annotations for a given set of genes.
 
 Future updates will expand the package with additional pairs of
 functions to:
@@ -124,6 +126,30 @@ counts_example[1:5,1:5]
 ### Visualise Individual Genes from Senescence Signature
 
 ``` r
+annotation_colors <- list( 
+  Condition = c(
+    "Senescent"     = "#65AC7C",  # Example color: greenish
+    "Proliferative" = "#5F90D4"  # Example color: blueish 
+  )
+)
+
+ExpressionHeatmap(data=counts_example, 
+                  metadata = metadata_example, 
+                  genes=SimpleSenescenceSignature,  
+                  annotate.by = c("Condition"),
+                  annotation_colors = annotation_colors,
+                  colorlist = list(low = "#3F4193", mid = "#F9F4AE", high = "#B44141"),
+                  cluster_rows = TRUE, 
+                  cluster_columns = TRUE,
+                  title = "Senescence Genes", 
+                  titlesize = 20,
+                  legend_position = "right",
+                  scale_position="right")
+```
+
+<img src="man/figures/README-example_exprheatmap-1.png" width="70%" />
+
+``` r
 senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
   "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
@@ -154,20 +180,19 @@ IndividualGenes_Violins(data = counts_example,
 
 ``` r
 CorrelationHeatmap(data=counts_example, 
-                   metadata=metadata_example, 
+                   metadata = metadata_example, 
                    genes=SimpleSenescenceSignature, 
-                   separate.by="Condition", 
-                   method="spearman", 
-                   plot=TRUE, 
-                   colorlist=list(low="#3F4193",
-                                  mid="#F9F4AE",
-                                  high="#B44141"), 
-                   limits_colorscale=c(-1,1), 
-                   widthTitle=16, 
-                   ncol=NULL, 
-                   nrow=1, 
-                   detailedresults=FALSE, 
-                   title="Senescence Genes")
+                   separate.by = "Condition", 
+                   method = "spearman",  
+                   colorlist = list(low = "#3F4193", mid = "#F9F4AE", high = "#B44141"),
+                   limits_colorscale = c(-1,0,1), 
+                   widthTitle = 16, 
+                   title = "Senescence Genes", 
+                   cluster_rows = TRUE, 
+                   cluster_columns = TRUE,  
+                   detailedresults = FALSE, 
+                   legend_position="right",
+                   titlesize=20)
 ```
 
 <img src="man/figures/README-example_heatmap-1.png" width="70%" />

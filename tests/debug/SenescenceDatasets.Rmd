@@ -166,11 +166,10 @@ ggpubr::ggarrange(plotlist=plotlist, nrow=3, ncol=4, align = "h")
 
 ## Individual Genes
 
-- Violin Expression Plots
 - Expression Heatmap
-- Correlation Heatmap
 - ROC / AUC
 - Cohen's d
+- PCA with genes from signatures only
 
 ### Violin Expression Plots
 
@@ -202,30 +201,63 @@ IndividualGenes_Violins(data = corrcounts_merge, metadata = metadata_merge, gene
 ### Correlation Heatmap
 
 
-```{r}
-data=corrcounts_merge
-metadata=metadata_merge
-
-
-```
-
-```{r fig.width=8, fig.height=3}
+```{r fig.width=8, fig.height=4}
 options(error=recover)
 CorrelationHeatmap(data=corrcounts_merge, 
-                   metadata=metadata_merge, 
+                   metadata = metadata_merge, 
                    genes=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"), 
-                   separate.by="Condition", 
-                   method="spearman", 
-                   plot=TRUE, 
-                   colorlist=list(low="#3F4193",
-                                  mid="#F9F4AE",
-                                  high="#B44141"), 
-                   limits_colorscale=c(-1,1), 
-                   widthTitle=16, 
-                   ncol=NULL, 
-                   nrow=1, 
-                   detailedresults=FALSE, 
-                   title=NULL)
-```
- 
+                   separate.by = "Condition", 
+                   method = "pearson",  
+                   colorlist = list(low = "#3F4193", mid = "#F9F4AE", high = "#B44141"),
+                   limits_colorscale = c(-1,0,1), 
+                   widthTitle = 16, 
+                   title = "test", 
+                   cluster_rows = TRUE, 
+                   cluster_columns = TRUE,  
+                   detailedresults = FALSE, 
+                   legend_position="right",
+                   titlesize=20)
 
+
+```
+
+
+
+
+### Expression Heatmaps
+
+```{r fig.width=10, fig.height=4}
+options(error=recover)
+
+annotation_colors <- list(
+  CellType = c(
+    "Fibroblast"   = "#FF6961",   # Strong Pastel Red  
+    "Keratinocyte" = "#FFB347",   # Strong Pastel Orange  
+    "Melanocyte"   = "#FFD700",   # Strong Pastel Yellow  
+    "Endothelial"  = "#77DD77",   # Strong Pastel Green  
+    "Neuronal"     = "#779ECB",   # Strong Pastel Blue  
+    "Mesenchymal"  = "#C27BA0"    # Strong Pastel Purple  
+  ),
+  Condition = c(
+    "Senescent"     = "#65AC7C",  # Example color: greenish
+    "Proliferative" = "#5F90D4",  # Example color: blueish
+    "Quiescent"     = "#EDA03E"   # Example color: orange
+  )
+)
+
+ExpressionHeatmap(data=corrcounts_merge, 
+                  metadata = metadata_merge, 
+                  genes=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"),  
+                  annotate.by = c("CellType","Condition"),
+                  annotation_colors = annotation_colors,
+                  colorlist = list(low = "#3F4193", mid = "#F9F4AE", high = "#B44141"),
+                  cluster_rows = TRUE, 
+                  cluster_columns = FALSE,
+                  title = "test", 
+                  titlesize = 20,
+                  legend_position = "right",
+                  scale_position="right")
+
+```
+
+  
