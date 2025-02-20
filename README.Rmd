@@ -186,7 +186,7 @@ senescence_triggers_colors <- c(
   "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
 )
 
-cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the first that appears in the ggplot
+cond_cohend <- list(A=c("Senescent"),  
                     B=c("Proliferative"))
 
 PlotScores(ResultsList = df_Scores, 
@@ -221,6 +221,9 @@ senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
   "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
 )
+
+cond_cohend <- list(A=c("Senescent"),  
+                    B=c("Proliferative"))
 
 PlotScores(ResultsList = df_Scores, 
            ColorVariable = "SenescentType", 
