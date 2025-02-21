@@ -197,6 +197,30 @@ CorrelationHeatmap(data=counts_example,
 
 <img src="man/figures/README-example_heatmap-1.png" width="70%" />
 
+``` r
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red   
+  "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
+)
+ 
+ROCandAUCplot(counts_example, 
+              metadata_example, 
+              condition_var = "Condition", 
+              class = "Senescent", 
+              group_var=NULL,
+              genes=SimpleSenescenceSignature, 
+              plot_type = "all",
+              heatmap_params = list(col = list( "#F9F4AE" ,"#B44141"),
+                                    limits = c(0.5,1),
+                                    cluster_rows=T),
+              roc_params = list(nrow=2,
+                                ncol=3,
+                                colors=senescence_triggers_colors),
+              commomplot_params = list(widths=c(0.5,0.3)))
+```
+
+<img src="man/figures/README-rocAUCexample-1.png" width="90%" />
+
 ### Calculate Senescence Scores
 
 The following example uses the **“logmedian”** method for score
