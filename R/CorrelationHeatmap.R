@@ -62,7 +62,6 @@
 #' }
 #'
 #' @export
-# funciona menos nrow e ncol
 CorrelationHeatmap <- function(data, metadata = NULL, genes, separate.by = NULL,
                                 method = "pearson", colorlist = list(low = "blue", mid = "white", high = "red"),
                                 limits_colorscale = NULL, widthTitle = 16, title = NULL,
