@@ -13,11 +13,15 @@ PlotScores(
   ConnectGroups = FALSE,
   ncol = NULL,
   nrow = NULL,
+  title = NULL,
   widthTitle = 10,
+  titlesize = 12,
   y_limits = NULL,
   legend_nrow = NULL,
   pointSize = 2,
-  xlab = NULL
+  xlab = NULL,
+  labsize = 10,
+  cond_cohend = NULL
 )
 }
 \arguments{
@@ -48,9 +52,13 @@ If not provided, the function will compute a near-square grid (e.g., for 20 sign
 \item{nrow}{An optional numeric value specifying the number of rows in the grid layout. If not provided,
 it is computed based on the number of signatures and \code{ncol}.}
 
+\item{title}{A string specifying the main title of the grid of plots.}
+
 \item{widthTitle}{An optional integer specifying the maximum width of the title before inserting line breaks.
 Titles will break at \verb{_}, \code{-}, or \code{:} where possible, or at the exact width if no such character is found.
 Default is 10.}
+
+\item{titlesize}{Numeric; font size of the main title of the grid of plots (default = \code{14}).}
 
 \item{y_limits}{An optional numeric vector of length 2 specifying the limits of the y-axis. If \code{NULL}, the y-axis will adjust automatically.
 \strong{(Optional)}}
@@ -63,6 +71,12 @@ Default is 10.}
 
 \item{xlab}{Optional parameter, specifying the name of the x label. Default is the name of the Grouping Variable
 \strong{(Optional)}}
+
+\item{labsize}{Numeric; font size of the plot's axis labels (default = \code{14}).}
+
+\item{cond_cohend}{An optional named list specifying the two groups for which Cohen's d effect size should be calculated.
+The list should contain exactly two named elements (e.g., \code{list("GroupA" = c("Condition1"), "GroupB" = c("Condition2", "Condition3"))}).
+If not provided, Cohen's d is not computed. Currently only working for two groups. \strong{(Optional)}}
 }
 \value{
 A combined ggplot object (created using \code{ggpubr::ggarrange} and \code{ggpubr::annotate_figure})
