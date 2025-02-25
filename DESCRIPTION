@@ -14,18 +14,29 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports:
+    circlize,
+    ComplexHeatmap,
+    ggh4x,
     ggplot2,
     ggpubr,
     grid,
+    gridExtra,
+    GSVA,
     knitr,
+    pROC,
+    RColorBrewer,
     reshape2,
     rmarkdown,
-    roxygen2
+    roxygen2,
+    rstatix,
+    scales,
+    stats,
+    testthat,
+    utils
 Suggests: 
     devtools,
     markdown,
-    renv,
-    testthat (>= 3.0.0)
+    renv
 Config/testthat/edition: 3
 Depends: 
     R (>= 3.5)
