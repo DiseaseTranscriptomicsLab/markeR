@@ -101,8 +101,8 @@ ROCandAUCplot <- function(data, metadata,
 
   data <- data[genes,]
 
-  # Convert count data to log2 scale (avoid log(0) issues by adding 1)
-  count_data_log2 <- as.data.frame(t(log2(data + 1)))
+  # Convert count data to log2 scale
+  count_data_log2 <- as.data.frame(t(log2(data )))
   count_data_log2 <- cbind(sample = row.names(count_data_log2), count_data_log2)
   row.names(count_data_log2) <- NULL
 
