@@ -267,135 +267,10 @@ ExpressionHeatmap(data=corrcounts_merge,
 
 
 
-### ROC/AUC
-
-```{r}
-options(error=recover)
-ROCandAUCplot(corrcounts_merge, metadata_merge, genes=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"))
-```
-
-```{r}
-ROCandAUCplot <- function(data, metadata, 
-                          genes=NULL, 
-                          condition_var = "Condition", 
-                          positive_class = "Senescent",
-                          group_var = "CellType", plot=TRUE,nrow=NULL,ncol=NULL) {
-  
-  # If genes are not specified, use all available genes; otherwise, ensure gene is in the data
-  if (is.null(genes)) {
-    genes <- rownames(data)
-  } else {
-    genes <- genes[genes %in% row.names(data)]
-  }
-  
-  if (!all(colnames(data) %in% metadata[,1])) stop("Not all samples in the data are described in the metadata.")
-  
-  # subset and order metadata based on data, just in case..
-  row.names(metadata) <- metadata[,1]
-  colnames(metadata)[1] <- "sample"
-  metadata <- metadata[colnames(data),]
-  
-  # Convert count data to log2 scale (avoid log(0) issues by adding 1)
-  count_data_log2 <- as.data.frame(t(log2(data)))  
-  count_data_log2 <- cbind(sample = row.names(count_data_log2), count_data_log2)
-  row.names(count_data_log2) <- NULL
-  
-  # Merge metadata with count data using base R
-  data_roc <- merge(metadata, count_data_log2, by = "sample")
-  
-  if (length(genes)>30) warning("Number of genes to be analysed is too high. Consider using a smaller set of genes.")
-  
-  # Ensure group_var exists in metadata
-  if (!group_var %in% colnames(metadata)) {
-    stop(paste("Error: The specified group_var", group_var, "is not found in the metadata."))
-  }
-  
-  groups <- unique(data_roc[[group_var]])
-  
-  roc_df <- data.frame()
-  auc_values <- data.frame(Gene = character(), Group = character(), AUC = numeric())
-  
-  for (gene in genes) {
-    for (group in groups) {
-      
-      # Subset data for the current group
-      subset_data <- data_roc[data_roc[[group_var]] == group, ]
-      
-      # Convert condition to binary labels (1 for positive_class, 0 for others)
-      subset_data$Binary_Label <- as.numeric(subset_data[[condition_var]] == positive_class)
-      
-      # Compute ROC curve
-      roc_obj <- pROC::roc(subset_data$Binary_Label, subset_data[[gene]], direction = "<", quiet = TRUE)
-      
-      # Adjust AUC if needed (ensure AUC is always ≥ 0.5)
-      auc_value <- pROC::auc(roc_obj)
-      if (auc_value < 0.5) {
-        auc_value <- 1 - auc_value  
-        roc_obj <- pROC::roc(subset_data$Binary_Label, subset_data[[gene]], direction = ">", quiet = TRUE)
-      }
-      
-      # Store ROC curve points
-      roc_points <- data.frame(
-        FPR = rev(1 - roc_obj$specificities),
-        TPR = rev(roc_obj$sensitivities),
-        Gene = gene,
-        Group = group
-      )
-      roc_df <- rbind(roc_df, roc_points)
-      
-      # Store AUC values
-      auc_values <- rbind(auc_values, data.frame(Gene = gene, Group = group, AUC = auc_value))
-    }
-  }
-  
-  
-  n <- length(unique(roc_df$Gene))
-
-  # Determine grid layout
-  if (is.null(ncol) && is.null(nrow)) {
-
-    ncol <- ceiling(sqrt(n))
-    nrow <- ceiling(n / ncol)
-
-  } else if (is.null(ncol)){
-
-    ncol <- ceiling(n / nrow)
-
-  } else if (is.null(nrow)){
-
-    nrow <- ceiling(n / ncol)
-
-  }
-
-  
-  # Plot ROC curves
-  roc_plot <- ggplot(roc_df, ggplot2::aes(x = FPR, y = TPR, color = Group, group = Group)) +
-    ggplot2::geom_line(size = 1) +
-    ggplot2::facet_wrap(~ Gene, scales = "free", ncol = ncol, nrow=nrow) +
-    ggplot2::theme_minimal() +
-    ggplot2::labs(title = paste("ROC Curves for Each Gene Across", group_var),
-         x = "False Positive Rate (1 - Specificity)", 
-         y = "True Positive Rate (Sensitivity)") +
-    ggplot2::theme(legend.position = "bottom",
-          plot.title = ggplot2::element_text(hjust = 0.5)) +
-    ggplot2::geom_abline(linetype = "dashed", color = "gray") +  # Add diagonal reference line
-    ggplot2::scale_color_brewer(palette = "Paired") +
-    ggplot2::labs(color = group_var)
-  
-  if(plot) print(roc_plot)
-  
-  invisible(list(roc_plot = roc_plot, auc_values = auc_values))
-}
-
-
-```
-
-
+### ROC/AUC 
 
 ```{r fig.width=10, fig.height=4}
-options(error=recover)
 
- 
 cellTypes_colors <- c(
   "Fibroblast" = "#FF6961",   # Strong Pastel Red  
   "Keratinocyte" = "#FFB347", # Strong Pastel Orange  
@@ -420,9 +295,22 @@ ROCandAUCplot(corrcounts_merge,
                                 colors=cellTypes_colors),
               commomplot_params = list(widths=c(0.5,0.5)))
 
- 
+
 ```
- 
 
+### Cohen's d
 
+```{r}
+CohenDHeatmap(corrcounts_merge, 
+              metadata_merge, 
+              genes=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"),
+              condition_var = "Condition", 
+              class = "Senescent", 
+              group_var = "CellType",
+              title = NULL,
+              widthTitle = 16,
+              heatmap_params = list(col = list( "#F9F4AE" ,"#B44141"),
+                                    limits = NULL,
+                                    cluster_rows=T))
+```
 
