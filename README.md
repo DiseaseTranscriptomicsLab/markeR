@@ -64,6 +64,9 @@ gene signature:
 -   **ROCandAUCplot:** computes ROC curves and AUC values for each gene
     based on gene expression data and sample metadata. It can generate
     ROC plots, an AUC heatmap, or both arranged side‐by‐side.
+-   **CohenDHeatmap:** computes Cohen’s d for each gene based on gene
+    expression data and sample metadata. The resulting effect sizes are
+    then visualized as a heatmap.
 
 Future updates will expand the package with additional pairs of
 functions to:
@@ -223,6 +226,20 @@ ROCandAUCplot(counts_example,
 ```
 
 <img src="man/figures/README-rocAUCexample-1.png" width="90%" />
+
+``` r
+CohenDHeatmap(counts_example, 
+              metadata_example, 
+              genes=SimpleSenescenceSignature,
+              condition_var = "Condition", 
+              class = "Senescent", 
+              group_var = NULL,  
+              heatmap_params = list(col = list( "#F9F4AE" ,"#B44141"),
+                                    limits = NULL,
+                                    cluster_rows=T))
+```
+
+<img src="man/figures/README-cohendexample-1.png" width="60%" />
 
 ### Calculate Senescence Scores
 

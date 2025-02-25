@@ -67,6 +67,7 @@ It also includes some functions for visualising individual genes from a gene sig
 - **CorrelationHeatmap:**  computes and visualizes a correlation heatmap for a given set of genes. Optionally, the heatmap can be generated separately for different conditions based on metadata.
 - **ExpressionHeatmap:** generates an expression heatmap with customizable sample annotations for a given set of genes.
 - **ROCandAUCplot:** computes ROC curves and AUC values for each gene based on gene expression data and sample metadata. It can generate ROC plots, an AUC heatmap, or both arranged side‐by‐side.
+- **CohenDHeatmap:** computes Cohen's d for each gene based on gene expression data and sample metadata. The resulting effect sizes are then visualized as a heatmap.
 
 Future updates will expand the package with additional pairs of functions to:
 
@@ -193,6 +194,18 @@ ROCandAUCplot(counts_example,
                                 ncol=3,
                                 colors=senescence_triggers_colors),
               commomplot_params = list(widths=c(0.5,0.3)))
+```
+
+```{r cohendexample, fig.width=6, fig.height=4, out.width="60%", warning=FALSE, message=FALSE}
+CohenDHeatmap(counts_example, 
+              metadata_example, 
+              genes=SimpleSenescenceSignature,
+              condition_var = "Condition", 
+              class = "Senescent", 
+              group_var = NULL,  
+              heatmap_params = list(col = list( "#F9F4AE" ,"#B44141"),
+                                    limits = NULL,
+                                    cluster_rows=T))
 ```
 
 
