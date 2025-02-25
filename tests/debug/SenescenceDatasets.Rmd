@@ -172,8 +172,7 @@ ggpubr::ggarrange(plotlist=plotlist, nrow=3, ncol=4, align = "h")
 
 ## Individual Genes
 
-- Expression Heatmap
-- ROC / AUC
+
 - Cohen's d
 - PCA with genes from signatures only
 

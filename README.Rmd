@@ -66,6 +66,7 @@ It also includes some functions for visualising individual genes from a gene sig
 - **IndividualGenes_Violins:** creates violin plots of gene expression data with jittered points and optional faceting, allowing for visualization of individual gene expression distributions across sample groups.
 - **CorrelationHeatmap:**  computes and visualizes a correlation heatmap for a given set of genes. Optionally, the heatmap can be generated separately for different conditions based on metadata.
 - **ExpressionHeatmap:** generates an expression heatmap with customizable sample annotations for a given set of genes.
+- **ROCandAUCplot:** computes ROC curves and AUC values for each gene based on gene expression data and sample metadata. It can generate ROC plots, an AUC heatmap, or both arranged side‐by‐side.
 
 Future updates will expand the package with additional pairs of functions to:
 
