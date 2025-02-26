@@ -12,9 +12,9 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
-Additional_repositories: https://bioconductor.org/packages/release/bioc
+RoxygenNote: 7.3.2 
 Imports:
+    BiocManager,
     circlize,
     ComplexHeatmap,
     ggh4x,
