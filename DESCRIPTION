@@ -15,13 +15,13 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports:
     circlize,
-    ComplexHeatmap,
+    ComplexHeatmap (<= 2.10.0),
     ggh4x,
     ggplot2,
     ggpubr,
     grid,
     gridExtra,
-    GSVA,
+    GSVA  (<= 1.42.0),
     knitr,
     pROC,
     RColorBrewer,
@@ -32,7 +32,9 @@ Imports:
     scales,
     stats,
     testthat,
-    utils
+    utils,
+    MatrixStats (<= 1.1.0),
+    curl (<= 5.2.3)
 Suggests: 
     devtools,
     markdown,
