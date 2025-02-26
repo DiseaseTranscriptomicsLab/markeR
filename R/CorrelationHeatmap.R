@@ -61,6 +61,14 @@
 #' result <- CorrelationHeatmap2(data_matrix, metadata, genes = rownames(data_matrix), separate.by = "Condition")
 #' }
 #'
+#' @importFrom grid gpar
+#' @importFrom grid grid.text
+#' @importFrom grid unit
+#' @importFrom ComplexHeatmap Heatmap
+#' @importFrom ComplexHeatmap draw
+#' @importFrom circlize colorRamp2
+#' @importFrom stats cor
+#'
 #' @export
 CorrelationHeatmap <- function(data, metadata = NULL, genes, separate.by = NULL,
                                 method = "pearson", colorlist = list(low = "blue", mid = "white", high = "red"),

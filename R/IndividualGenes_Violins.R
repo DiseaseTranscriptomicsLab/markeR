@@ -32,6 +32,10 @@
 #' facets are created using `ggh4x::facet_grid2()`.
 #' Color customization is available via `ColorVariable` and `ColorValues`.
 #'
+#' @importFrom reshape2 melt
+#' @import ggplot2
+#' @importFrom ggh4x facet_grid2
+#'
 #' @export
 #' @examples
 #' # Example dataset

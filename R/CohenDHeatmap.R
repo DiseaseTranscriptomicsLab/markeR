@@ -54,6 +54,12 @@
 #'                           heatmap_params = list(limits = c(-2, 2)))
 #' }
 #'
+#' @importFrom grid gpar
+#' @importFrom grid grid.text
+#' @importFrom ComplexHeatmap Heatmap
+#' @importFrom ComplexHeatmap draw
+#' @importFrom circlize colorRamp2
+#'
 #' @export
 CohenDHeatmap <- function(data, metadata,
                           genes = NULL,
@@ -162,7 +168,7 @@ CohenDHeatmap <- function(data, metadata,
     col = c("#F9F4AE" ,"#B44141"),
     name = "Cohen's d"
   )
-  heatmap_params_local <- utils::modifyList(heatmap_defaults, heatmap_params)
+  heatmap_params_local <- modifyList(heatmap_defaults, heatmap_params)
 
   # Use user-provided limits or default ones
   if (is.null(heatmap_params_local$limits)) {

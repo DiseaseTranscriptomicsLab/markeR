@@ -55,6 +55,12 @@
 #' The individual plots are arranged into a grid using \code{ggpubr::ggarrange}, with a near-square layout if
 #' \code{ncol} and \code{nrow} are not explicitly provided.
 #'
+#' @importFrom ggpubr ggarrange
+#' @importFrom ggpubr annotate_figure
+#' @import ggplot2
+#' @importFrom grid textGrob
+#' @importFrom grid gpar
+#' @importFrom rstatix cohens_d
 #' @export
 PlotScores <- function(ResultsList, ColorVariable = NULL, GroupingVariable, method = c("ssGSEA", "logmedian"),
                        ColorValues = NULL, ConnectGroups = FALSE, ncol = NULL, nrow = NULL, title=NULL,

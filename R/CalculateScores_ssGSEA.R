@@ -6,6 +6,10 @@
 #' @param metadata A data frame containing sample metadata (optional).
 #' @param gene_sets A named list of gene signatures.
 #'
+#' @importFrom GSVA gsva
+#' @importFrom reshape2 melt
+#' @importFrom reshape2 melt
+#'
 #' @return A list of data frames containing ssGSEA scores for each signature.
 #' @keywords internal
 CalculateScores_ssGSEA <- function(data, metadata = NULL, gene_sets) {

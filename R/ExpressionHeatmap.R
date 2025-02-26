@@ -61,6 +61,13 @@
 #' result$plot
 #' }
 #'
+#' @importFrom grid gpar
+#' @importFrom ComplexHeatmap Heatmap
+#' @importFrom ComplexHeatmap draw
+#' @importFrom ComplexHeatmap HeatmapAnnotation
+#' @importFrom circlize colorRamp2
+#' @importFrom RColorBrewer brewer.pal
+#'
 #' @export
 ExpressionHeatmap <- function(data, metadata = NULL, genes, annotate.by = NULL,
                               annotation_colors = NULL,

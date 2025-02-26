@@ -71,6 +71,20 @@
 #'                           commomplot_params = list(widths = c(1, 1)))
 #' }
 #'
+#' @importFrom pROC roc
+#' @importFrom pROC auc
+#' @importFrom scales hue_pal
+#' @import ggplot2
+#' @importFrom circlize colorRamp2
+#' @importFrom utils modifyList
+#' @importFrom stats reshape
+#' @importFrom ComplexHeatmap Heatmap
+#' @importFrom ComplexHeatmap draw
+#' @importFrom grid gpar
+#' @importFrom grid grid.text
+#' @importFrom grid grid.grabExpr
+#' @importFrom gridExtra grid.arrange
+#'
 #' @export
 ROCandAUCplot <- function(data, metadata,
                           genes = NULL,
