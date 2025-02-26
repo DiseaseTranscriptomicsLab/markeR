@@ -16,13 +16,13 @@ RoxygenNote: 7.3.2
 Additional_repositories: https://bioconductor.org/packages/release/bioc
 Imports:
     circlize,
-    ComplexHeatmap (<= 2.10.0),
+    ComplexHeatmap,
     ggh4x,
     ggplot2,
     ggpubr,
     grid,
     gridExtra,
-    GSVA  (<= 1.42.0),
+    GSVA,
     knitr,
     pROC,
     RColorBrewer,
