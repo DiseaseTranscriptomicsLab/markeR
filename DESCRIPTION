@@ -33,9 +33,7 @@ Imports:
     scales,
     stats,
     testthat,
-    utils,
-    MatrixStats (<= 1.1.0),
-    curl (<= 5.2.3)
+    utils
 Suggests: 
     devtools,
     markdown,
