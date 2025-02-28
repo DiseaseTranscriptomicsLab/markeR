@@ -14,8 +14,17 @@ and the column names should contain sample identifiers. \strong{(Required)}}
 The first column of \code{metadata} should be the sample identifiers (i.e., the column names of \code{data}).
 Defaults to \code{NULL} if no metadata is provided.}
 
-\item{gene_sets}{A named list where each element is a vector of gene names corresponding to a gene signature.
-The name of each list element should be the label for that signature. \strong{(Required)}}
+\item{gene_sets}{Gene set input. \strong{(Required)}
+
+If using \strong{unidirectional} gene sets, provide a named list where each element is a vector of gene names representing a gene signature.
+The names of the list elements should correspond to the labels for each signature.
+
+If using \strong{bidirectional} gene sets, provide a named list where each element is a data frame. The names of the list elements should
+correspond to the labels for each signature, and each data frame should contain the following structure:
+\itemize{
+\item The \strong{first column} should contain gene names.
+\item The \strong{second column} should indicate the expected direction of enrichment (1 for upregulated genes, -1 for downregulated genes).
+}}
 
 \item{method}{A character string indicating the scoring method to use. Options are \code{"ssGSEA"}
 or \code{"logmedian"}. Defaults to \code{"logmedian"}.}

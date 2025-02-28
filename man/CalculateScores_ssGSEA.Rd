@@ -11,7 +11,17 @@ CalculateScores_ssGSEA(data, metadata = NULL, gene_sets)
 
 \item{metadata}{A data frame containing sample metadata (optional).}
 
-\item{gene_sets}{A named list of gene signatures.}
+\item{gene_sets}{Gene set input. \strong{(Required)}
+
+If using \strong{unidirectional} gene sets, provide a named list where each element is a vector of gene names representing a gene signature.
+The names of the list elements should correspond to the labels for each signature.
+
+If using \strong{bidirectional} gene sets, provide a named list where each element is a data frame. The names of the list elements should
+correspond to the labels for each signature, and each data frame should contain the following structure:
+\itemize{
+\item The \strong{first column} should contain gene names.
+\item The \strong{second column} should indicate the expected direction of enrichment (1 for upregulated genes, -1 for downregulated genes).
+}}
 }
 \value{
 A list of data frames containing ssGSEA scores for each signature.

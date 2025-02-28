@@ -9,14 +9,40 @@ CalculateScores_logmedian(data, metadata = NULL, gene_sets)
 \arguments{
 \item{data}{A data frame of normalized counts where each row is a gene and each column is a sample.}
 
-\item{metadata}{A data frame containing sample metadata (optional).}
+\item{metadata}{A data frame containing sample metadata (optional). If provided, the resulting scores will be merged with metadata.}
 
-\item{gene_sets}{A named list of gene signatures.}
+\item{gene_sets}{A named list representing gene sets. \strong{(Required)}
+\itemize{
+\item \strong{Unidirectional gene sets:} Each element should be a vector of gene names representing a signature.
+\itemize{
+\item The names of the list elements serve as labels for the signatures.
+}
+\item \strong{Bidirectional gene sets:} Each element should be a data frame with:
+\itemize{
+\item The \strong{first column} containing gene names.
+\item The \strong{second column} specifying the expected direction of enrichment:
+\itemize{
+\item \code{1} for upregulated genes.
+\item \code{-1} for downregulated genes.
+}
+}
+}}
 }
 \value{
-A list of data frames containing log-median scores for each signature.
+A list of data frames containing log-median scores for each signature. If \code{metadata} is provided, it is merged with the scores.
 }
 \description{
-Computes a log2-median-centered score for each sample based on signature gene expression.
+Computes log2-median-centered scores for each sample based on gene signature expression.
 }
-\keyword{internal}
+\examples{
+\dontrun{
+data <- matrix(rnorm(1000), nrow = 100, ncol = 10)
+colnames(data) <- paste0("Sample_", 1:10)
+rownames(data) <- paste0("Gene_", 1:100)
+gene_sets <- list(
+  Signature_A = sample(rownames(data), 10),
+  Signature_B = data.frame(Gene = sample(rownames(data), 10), Direction = sample(c(1, -1), 10, replace = TRUE))
+)
+scores <- CalculateScores_logmedian(data, gene_sets = gene_sets)
+}
+}

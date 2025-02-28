@@ -102,7 +102,7 @@ library(markeR)
 
 ``` r
 # Define simple Senescence Signature
-SimpleSenescenceSignature <- c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2")
+SimpleSenescenceSignature <- c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2", "LMNB1", "MKI67" )
 ```
 
 ``` r
@@ -151,7 +151,7 @@ ExpressionHeatmap(data=counts_example,
                   annotation_colors = annotation_colors,
                   colorlist = list(low = "#3F4193", mid = "#F9F4AE", high = "#B44141"),
                   cluster_rows = TRUE, 
-                  cluster_columns = TRUE,
+                  cluster_columns = FALSE,
                   title = "Senescence Genes", 
                   titlesize = 20,
                   legend_position = "right",
@@ -187,7 +187,7 @@ IndividualGenes_Violins(data = counts_example,
                         colorlab="") 
 ```
 
-<img src="man/figures/README-exampleviolins-1.png" width="70%" />
+<img src="man/figures/README-exampleviolins-1.png" width="80%" />
 
 ``` r
 CorrelationHeatmap(data=counts_example, 
@@ -224,7 +224,7 @@ ROCandAUCplot(counts_example,
               heatmap_params = list(col = list( "#F9F4AE" ,"#B44141"),
                                     limits = c(0.5,1),
                                     cluster_rows=T),
-              roc_params = list(nrow=2,
+              roc_params = list(nrow=3,
                                 ncol=3,
                                 colors=senescence_triggers_colors),
               commomplot_params = list(widths=c(0.5,0.3)))
@@ -306,7 +306,40 @@ PlotScores(ResultsList = df_Scores,
            titlesize = 10)  
 ```
 
-<img src="man/figures/README-exampleScore-1.png" width="60%" />
+<img src="man/figures/README-exampleScore-1.png" width="40%" />
+
+Given that some of the genes are expected to be upregulated, while
+others to be downregulated in senescence, we can also consider a
+*bidirectional signature*.
+
+``` r
+SimpleSenescenceSignature_bidirectional <- data.frame(gene=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2", "LMNB1", "MKI67" ),
+                                                      enrichment=c(1,1,1,1,1,-1,-1))
+
+df_Scores <- CalculateScores(data = counts_example, 
+                             metadata = metadata_example, 
+                             method = "logmedian", 
+                             gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional))
+
+PlotScores(ResultsList = df_Scores, 
+           ColorVariable = "SenescentType", 
+           GroupingVariable="Condition",  
+           method ="logmedian", 
+           ColorValues = senescence_triggers_colors, 
+           ConnectGroups=TRUE, 
+           ncol = NULL, 
+           nrow = NULL, 
+           widthTitle=20, 
+           y_limits = NULL, 
+           legend_nrow = 1, 
+           pointSize=4,
+           cond_cohend=cond_cohend,
+           title="Marthandan et al. 2016",
+           labsize=7, 
+           titlesize = 10)  
+```
+
+<img src="man/figures/README-exampleScore_bidirectional-1.png" width="40%" />
 
 The following example uses the **“ssGSEA”** method for score
 calculation.
