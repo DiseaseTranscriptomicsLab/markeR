@@ -68,6 +68,7 @@ It also includes some functions for visualising individual genes from a gene sig
 - **ExpressionHeatmap:** generates an expression heatmap with customizable sample annotations for a given set of genes.
 - **ROCandAUCplot:** computes ROC curves and AUC values for each gene based on gene expression data and sample metadata. It can generate ROC plots, an AUC heatmap, or both arranged side‐by‐side.
 - **CohenDHeatmap:** computes Cohen's d for each gene based on gene expression data and sample metadata. The resulting effect sizes are then visualized as a heatmap.
+- **plotPCA:** performs PCA on a given dataset and visualizes the results using ggplot2. It allows users to specify genes of interest (to understand if they are sufficient to explain the main variance in the data), customize scaling and centering, and color points based on a metadata variable.
 
 Future updates will expand the package with additional pairs of functions to:
 
@@ -209,11 +210,36 @@ CohenDHeatmap(counts_example,
 ```
 
 
+
+```{r pca, fig.width=7, fig.height=3, out.width="60%", warning=FALSE, message=FALSE}
+
+annotation_colors <- c(  
+    "Senescent"     = "#65AC7C",  # Example color: greenish
+    "Proliferative" = "#5F90D4"  # Example color: blueish 
+)
+
+ 
+plotPCA(data = counts_example, 
+        metadata = metadata_example, 
+        genes=SimpleSenescenceSignature, 
+        scale=FALSE, 
+        center=TRUE, 
+        PCs=list(c(1,2), c(2,3), c(3,4)), 
+        ColorVariable="Condition",
+        ColorValues=annotation_colors,
+        pointSize=5,
+        legend_nrow=1, 
+        ncol=3, 
+        nrow=NULL)
+```
+
+
+
 ### Calculate Senescence Scores
 
 The following example uses the **"logmedian"** method for score calculation.
 
-```{r exampleScore, fig.width=3, fig.height=4, out.width="40%", warning=FALSE, message=FALSE}
+```{r exampleScore, fig.width=3, fig.height=4, out.width="60%", warning=FALSE, message=FALSE}
 df_Scores <- CalculateScores(data = counts_example, 
                              metadata = metadata_example, 
                              method = "logmedian", 

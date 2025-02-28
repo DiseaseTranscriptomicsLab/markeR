@@ -15,6 +15,7 @@ SenescenceSignatures <- readRDS("~/VersionControl/senescence_benchmarking/Common
 library(markeR)
 library(ggplot2)
 library(ggpubr)
+library(edgeR)
 ?markeR
 ```
 
@@ -172,8 +173,6 @@ ggpubr::ggarrange(plotlist=plotlist, nrow=3, ncol=4, align = "h")
 
 ## Individual Genes
 
-
-- Cohen's d
 - PCA with genes from signatures only
 
 ### Violin Expression Plots
@@ -313,4 +312,49 @@ CohenDHeatmap(corrcounts_merge,
                                     limits = NULL,
                                     cluster_rows=T))
 ```
+
+### PCA with genes from signature only
+
+```{r fig.width=8, fig.height=4}
+
+  CellTypecols = c(
+    "Fibroblast"   = "#FF6961",   # Strong Pastel Red  
+    "Keratinocyte" = "#FFB347",   # Strong Pastel Orange  
+    "Melanocyte"   = "#FFD700",   # Strong Pastel Yellow  
+    "Endothelial"  = "#77DD77",   # Strong Pastel Green  
+    "Neuronal"     = "#779ECB",   # Strong Pastel Blue  
+    "Mesenchymal"  = "#C27BA0"    # Strong Pastel Purple  
+  )
+
+sencols <- c(
+  "Senescent" = "#D32F2F",  # Strong salmon  
+  "Quiescent" = "#FFB74D",  # Bright peach  
+  "Proliferative" = "#9575CD"  # Deep pastel purple  
+)
+ 
+plotPCA(data=corrcounts_merge, 
+        metadata=metadata_merge, 
+        genes=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"), 
+        scale=FALSE, 
+        center=TRUE, 
+        PCs=list(c(1,2), c(2,3), c(3,4)), 
+        ColorVariable="Condition",
+        ColorValues=sencols,
+        pointSize=5,
+        legend_nrow=1, 
+        ncol=3, 
+        nrow=NULL)
+```
+
+```{r}
+
+#' @importFrom edgeR DGEList
+#' @importFrom stats prcomp
+#' @import ggplot2
+#' @importFrom ggpubr ggarrange
+
+
+```
+
+
 

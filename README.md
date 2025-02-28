@@ -67,6 +67,11 @@ gene signature:
 -   **CohenDHeatmap:** computes Cohen’s d for each gene based on gene
     expression data and sample metadata. The resulting effect sizes are
     then visualized as a heatmap.
+-   **plotPCA:** performs PCA on a given dataset and visualizes the
+    results using ggplot2. It allows users to specify genes of interest
+    (to understand if they are sufficient to explain the main variance
+    in the data), customize scaling and centering, and color points
+    based on a metadata variable.
 
 Future updates will expand the package with additional pairs of
 functions to:
@@ -241,6 +246,29 @@ CohenDHeatmap(counts_example,
 
 <img src="man/figures/README-cohendexample-1.png" width="60%" />
 
+``` r
+annotation_colors <- c(  
+    "Senescent"     = "#65AC7C",  # Example color: greenish
+    "Proliferative" = "#5F90D4"  # Example color: blueish 
+)
+
+ 
+plotPCA(data = counts_example, 
+        metadata = metadata_example, 
+        genes=SimpleSenescenceSignature, 
+        scale=FALSE, 
+        center=TRUE, 
+        PCs=list(c(1,2), c(2,3), c(3,4)), 
+        ColorVariable="Condition",
+        ColorValues=annotation_colors,
+        pointSize=5,
+        legend_nrow=1, 
+        ncol=3, 
+        nrow=NULL)
+```
+
+<img src="man/figures/README-pca-1.png" width="60%" />
+
 ### Calculate Senescence Scores
 
 The following example uses the **“logmedian”** method for score
@@ -278,7 +306,7 @@ PlotScores(ResultsList = df_Scores,
            titlesize = 10)  
 ```
 
-<img src="man/figures/README-exampleScore-1.png" width="40%" />
+<img src="man/figures/README-exampleScore-1.png" width="60%" />
 
 The following example uses the **“ssGSEA”** method for score
 calculation.
