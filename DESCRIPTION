@@ -16,7 +16,7 @@ RoxygenNote: 7.3.2
 Additional_repositories: https://bioconductor.org/packages/release/bioc
 Imports:
     BiocManager,
-    GSVA (<= 1.42.0),
+    GSVA,
     circlize,
     ComplexHeatmap,
     ggh4x,
