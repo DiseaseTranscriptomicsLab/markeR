@@ -8,7 +8,7 @@ PlotScores(
   ResultsList,
   ColorVariable = NULL,
   GroupingVariable,
-  method = c("ssGSEA", "logmedian"),
+  method = c("ssGSEA", "logmedian", "ranking"),
   ColorValues = NULL,
   ConnectGroups = FALSE,
   ncol = NULL,
@@ -36,8 +36,8 @@ If \code{NULL} (default), the "Paired" brewer pallette is applied.}
 \item{GroupingVariable}{A character string indicating the column name in each data frame that will be used for grouping
 on the x-axis. \strong{(Required)}}
 
-\item{method}{A character string indicating the scoring method used when running \code{CalculateScores}. Options are \code{"ssGSEA"}
-or \code{"logmedian"}. \strong{This argument is mandatory.}}
+\item{method}{A character string indicating the scoring method used when running \code{CalculateScores}. Options are \code{"ssGSEA"},
+\code{"logmedian"} or \code{"ranking"}. \strong{This argument is mandatory.}}
 
 \item{ColorValues}{An optional named vector that maps the unique values of \code{ColorVariable} to specific colors.
 If not provided, a default brewer palette ("Paired") will be used.}
