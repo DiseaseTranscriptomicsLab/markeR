@@ -95,59 +95,6 @@ PlotScores(ResultsList = df_logmedian, ColorVariable = "CellType", GroupingVaria
 
 ```
 
-Try scores with bidirectional signatures
-
-```{r}
-bidirectsigs <- readRDS("~/VersionControl/senescence_benchmarking/CommonFiles/SenescenceSignatures_complete_newCellAge.RDS")
-for (sig in names(bidirectsigs)){
-  sigdf <- bidirectsigs[[sig]]
-  sigdf <- sigdf[,1:2] # remove the third column, if applicable
-  if(any(sigdf[,2]=="not_reported")){
-    sigdf <- sigdf[,1]
-    bidirectsigs[[sig]] <- sigdf
-    next 
-  }
-  sigdf[,2] <- ifelse(sigdf[,2]=="enriched",1,-1)
-  bidirectsigs[[sig]] <- sigdf
-}
-bidirectsigs
-
-```
-
-```{r fig.width=8, fig.height=10}
-df_logmedian <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge, method = "logmedian", gene_sets = bidirectsigs)
-
-senescence_triggers_colors <- c(
-  "none" = "#E57373",  # Soft red  
-  "Radiation" = "#BDBDBD",  # Medium gray  
-  "DNA damage" = "#64B5F6",  # Brighter blue  
-  "Telomere shortening" = "#4FC3F7",  # Vivid sky blue  
-  "DNA demethylation" = "#BA68C8",  # Rich lavender  
-  "Oxidative stress" = "#FDD835",  # Strong yellow  
-  "Conditioned Medium" = "#F2994A",  # Warm orange  
-  "Oncogene" = "#81C784",  # Medium green  
-  "Lipid Accumulation" = "#E57373",  # Coral  
-  "Calcium influx" = "#26A69A",  # Deep teal  
-  "Plasma membrane dysruption" = "#D32F2F",  # Strong salmon  
-  "OSKM factors" = "#FFB74D",  # Bright peach  
-  "YAP KO" = "#9575CD"  # Deep pastel purple  
-)
-
-cellTypes_colors <- c(
-  "Fibroblast" = "#FF6961",   # Strong Pastel Red  
-  "Keratinocyte" = "#FFB347", # Strong Pastel Orange  
-  "Melanocyte" = "#FFD700",   # Strong Pastel Yellow  
-  "Endothelial" = "#77DD77",  # Strong Pastel Green  
-  "Neuronal" = "#779ECB",     # Strong Pastel Blue  
-  "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
-)
-
-cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the first that appears in the ggplot
-                    B=c("Proliferative","Quiescent"))
-
-PlotScores(ResultsList = df_logmedian, ColorVariable = "CellType", GroupingVariable="Condition",  method ="logmedian", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 3, nrow = 3, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend)
-
-```
 
 
 ```{r}
@@ -224,9 +171,222 @@ for (sig in names(df_ssGSEA)){
 ggpubr::ggarrange(plotlist=plotlist, nrow=3, ncol=4, align = "h")
 ```
 
-# Debugging
+## Bidirectional gene signatures
 
-## Individual Genes
+Try scores with bidirectional signatures
+
+```{r}
+bidirectsigs <- readRDS("~/VersionControl/senescence_benchmarking/CommonFiles/SenescenceSignatures_complete_newCellAge.RDS")
+for (sig in names(bidirectsigs)){
+  sigdf <- bidirectsigs[[sig]]
+  sigdf <- sigdf[,1:2] # remove the third column, if applicable
+  if(any(sigdf[,2]=="not_reported")){
+    sigdf <- sigdf[,1]
+    bidirectsigs[[sig]] <- sigdf
+    next 
+  }
+  sigdf[,2] <- ifelse(sigdf[,2]=="enriched",1,-1)
+  bidirectsigs[[sig]] <- sigdf
+}
+bidirectsigs
+
+```
+
+```{r fig.width=8, fig.height=10}
+df_logmedian <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge, method = "logmedian", gene_sets = bidirectsigs)
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red  
+  "Radiation" = "#BDBDBD",  # Medium gray  
+  "DNA damage" = "#64B5F6",  # Brighter blue  
+  "Telomere shortening" = "#4FC3F7",  # Vivid sky blue  
+  "DNA demethylation" = "#BA68C8",  # Rich lavender  
+  "Oxidative stress" = "#FDD835",  # Strong yellow  
+  "Conditioned Medium" = "#F2994A",  # Warm orange  
+  "Oncogene" = "#81C784",  # Medium green  
+  "Lipid Accumulation" = "#E57373",  # Coral  
+  "Calcium influx" = "#26A69A",  # Deep teal  
+  "Plasma membrane dysruption" = "#D32F2F",  # Strong salmon  
+  "OSKM factors" = "#FFB74D",  # Bright peach  
+  "YAP KO" = "#9575CD"  # Deep pastel purple  
+)
+
+cellTypes_colors <- c(
+  "Fibroblast" = "#FF6961",   # Strong Pastel Red  
+  "Keratinocyte" = "#FFB347", # Strong Pastel Orange  
+  "Melanocyte" = "#FFD700",   # Strong Pastel Yellow  
+  "Endothelial" = "#77DD77",  # Strong Pastel Green  
+  "Neuronal" = "#779ECB",     # Strong Pastel Blue  
+  "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
+)
+
+cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the first that appears in the ggplot
+                    B=c("Proliferative","Quiescent"))
+
+PlotScores(ResultsList = df_logmedian, ColorVariable = "CellType", GroupingVariable="Condition",  method ="logmedian", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 3, nrow = 3, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend)
+
+```
+
+## Ranking 
+
+```{r}
+data <- corrcounts_merge
+metadata <- metadata_merge
+```
+
+```{r}
+
+ 
+
+getRanking <- function(data,sample, geneset){
+  
+  expressiongene <- data[,sample] # isolate one sample and get the expression of all genes
+  names(expressiongene) <- row.names(data) # name vector
+  expressiongene <- expressiongene[order(expressiongene, decreasing = F)] # order vector from least expressed to most expressed
+  ranking <- match(geneset,names(expressiongene)) # see where genes in the geneset appear in the ordered list of genes 
+  ranking <- as.vector(na.omit(ranking)) # omit genes that were not found
+  
+  return(sum(ranking)) # return also number of genes found
+  
+}
+
+
+CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
+  
+  ResultsList <- list()
+  
+  if (!is.data.frame(data)) stop("Error: data must be a data-frame")
+  if (!is.null(metadata) && !is.data.frame(metadata)) stop("Error: metadata must be a data-frame")
+  if (!is.list(gene_sets)) stop("Error: gene_sets must be a list")
+
+  # Change first column name to default name "sample", for merging purposes
+  if (!is.null(metadata)) colnames(metadata)[1] <- "sample"
+  
+  # define universe of genes
+  universe_genes <- row.names(data)
+  ranking_genes <- c(1:length(universe_genes))
+  
+  for (sig in names(gene_sets)) {
+    
+    signature <- gene_sets[[sig]]
+    
+    if (is.data.frame(signature)) {  # If a data frame, check enrichment direction
+      
+      # number of values in the enrichment column
+      nb_factors <- length(unique(signature[, 2]))
+      
+      if (nb_factors > 1) {  # Both up (1) and down (-1) genes
+        
+        message(paste0("Considering bidirectional gene signature mode for signature ", sig))
+        
+        totalnb_genes <- sum(signature[,1] %in% row.names(data))
+        
+        signaturegenes_up <- signature[signature[,2]==1,1]
+        signaturegenes_down <- signature[signature[,2]==-1,1]
+        
+        # Apply getRanking function to each sample (column)
+        rankings_up <-   sapply(colnames(data), function(sample) getRanking(data, sample, signaturegenes_up))
+        rankings_dowm <-   sapply(colnames(data), function(sample) getRanking(data, sample, signaturegenes_down))
+        
+        ranking_final <- (rankings_up-rankings_dowm)/length(universe_genes)
+        ranking_final <- data.frame(sample=colnames(data),
+                                    score=ranking_final)
+        
+        
+        
+        
+      } else {  # Only one known direction (up or down)
+        
+        message(paste0("Considering unidirectional gene signature mode for signature ", sig))
+        
+        signaturegenes <- signature[,1]
+        totalnb_genes <- sum(signaturegenes %in% row.names(data))
+        
+        # Apply getRanking function to each sample (column) 
+        rankings <-   sapply(colnames(data), function(sample) getRanking(data, sample, signaturegenes))
+        
+        ranking_final <- rankings/length(universe_genes)
+        ranking_final <- data.frame(sample=colnames(data),
+                                    score=ranking_final)
+        
+        
+      }
+    } else {  # If vector of genes (unidirectional)
+      message(paste0("Considering unidirectional gene signature mode for signature ", sig))
+      
+      
+      signaturegenes <- signature 
+      totalnb_genes <- sum(signaturegenes %in% row.names(data))
+      
+      # Apply getRanking function to each sample (column) 
+      rankings <-   sapply(colnames(data), function(sample) getRanking(data, sample, signaturegenes))
+      
+      ranking_final <- rankings/length(universe_genes)
+      ranking_final <- data.frame(sample=colnames(data),
+                                  score=ranking_final)
+      
+    }
+    
+    if (!is.null(metadata)) ranking_final <- merge(ranking_final, metadata, by = "sample")
+    
+    row.names(ranking_final) <- NULL
+    
+    ResultsList[[sig]] <- ranking_final
+    
+  }
+  
+  return(ResultsList)
+}
+
+```
+
+ 
+- include in plotScores the new option for ranking
+- include in calculateScores the new option for ranking
+
+
+```{r  fig.width=8, fig.height=10}
+ 
+df_ranking <- CalculateScores_Ranking(corrcounts_merge, metadata_merge,bidirectsigs)
+
+
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red  
+  "Radiation" = "#BDBDBD",  # Medium gray  
+  "DNA damage" = "#64B5F6",  # Brighter blue  
+  "Telomere shortening" = "#4FC3F7",  # Vivid sky blue  
+  "DNA demethylation" = "#BA68C8",  # Rich lavender  
+  "Oxidative stress" = "#FDD835",  # Strong yellow  
+  "Conditioned Medium" = "#F2994A",  # Warm orange  
+  "Oncogene" = "#81C784",  # Medium green  
+  "Lipid Accumulation" = "#E57373",  # Coral  
+  "Calcium influx" = "#26A69A",  # Deep teal  
+  "Plasma membrane dysruption" = "#D32F2F",  # Strong salmon  
+  "OSKM factors" = "#FFB74D",  # Bright peach  
+  "YAP KO" = "#9575CD"  # Deep pastel purple  
+)
+
+cellTypes_colors <- c(
+  "Fibroblast" = "#FF6961",   # Strong Pastel Red  
+  "Keratinocyte" = "#FFB347", # Strong Pastel Orange  
+  "Melanocyte" = "#FFD700",   # Strong Pastel Yellow  
+  "Endothelial" = "#77DD77",  # Strong Pastel Green  
+  "Neuronal" = "#779ECB",     # Strong Pastel Blue  
+  "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
+)
+
+cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the first that appears in the ggplot
+                    B=c("Quiescent"))
+
+options(error=recover)
+PlotScores(ResultsList = df_ranking, ColorVariable = "CellType", GroupingVariable="Condition",  method ="logmedian", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 3, nrow = 3, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend)
+
+```
+
+
+
+# Individual Genes
 
 - PCA with genes from signatures only
 
@@ -372,21 +532,21 @@ CohenDHeatmap(corrcounts_merge,
 
 ```{r fig.width=8, fig.height=4}
 
-  CellTypecols = c(
-    "Fibroblast"   = "#FF6961",   # Strong Pastel Red  
-    "Keratinocyte" = "#FFB347",   # Strong Pastel Orange  
-    "Melanocyte"   = "#FFD700",   # Strong Pastel Yellow  
-    "Endothelial"  = "#77DD77",   # Strong Pastel Green  
-    "Neuronal"     = "#779ECB",   # Strong Pastel Blue  
-    "Mesenchymal"  = "#C27BA0"    # Strong Pastel Purple  
-  )
+CellTypecols = c(
+  "Fibroblast"   = "#FF6961",   # Strong Pastel Red  
+  "Keratinocyte" = "#FFB347",   # Strong Pastel Orange  
+  "Melanocyte"   = "#FFD700",   # Strong Pastel Yellow  
+  "Endothelial"  = "#77DD77",   # Strong Pastel Green  
+  "Neuronal"     = "#779ECB",   # Strong Pastel Blue  
+  "Mesenchymal"  = "#C27BA0"    # Strong Pastel Purple  
+)
 
 sencols <- c(
   "Senescent" = "#D32F2F",  # Strong salmon  
   "Quiescent" = "#FFB74D",  # Bright peach  
   "Proliferative" = "#9575CD"  # Deep pastel purple  
 )
- 
+
 plotPCA(data=corrcounts_merge, 
         metadata=metadata_merge, 
         genes=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"), 

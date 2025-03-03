@@ -45,7 +45,8 @@ The current release of **markeR** includes two primary functions for
 score-based analysis:
 
 -   **CalculateScores:** Calculates gene signature scores for each
-    sample using either the ssGSEA or log2 median-centered method.
+    sample using either the ssGSEA, log2 median-centered or ranking
+    method.
 -   **PlotScores:** Visualizes the calculated scores across conditions
     using violin plots.
 
@@ -296,7 +297,7 @@ PlotScores(ResultsList = df_Scores,
            ConnectGroups=TRUE, 
            ncol = NULL, 
            nrow = NULL, 
-           widthTitle=20, 
+           widthTitle=24, 
            y_limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
@@ -329,7 +330,7 @@ PlotScores(ResultsList = df_Scores,
            ConnectGroups=TRUE, 
            ncol = NULL, 
            nrow = NULL, 
-           widthTitle=20, 
+           widthTitle=24, 
            y_limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
@@ -366,7 +367,7 @@ PlotScores(ResultsList = df_Scores,
            ConnectGroups=TRUE, 
            ncol = NULL, 
            nrow = NULL, 
-           widthTitle=20, 
+           widthTitle=24, 
            y_limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
@@ -377,3 +378,43 @@ PlotScores(ResultsList = df_Scores,
 ```
 
 <img src="man/figures/README-exampleScore_2-1.png" width="40%" />
+
+The following example uses the **“ranking”** method for score
+calculation.
+
+``` r
+SimpleSenescenceSignature_bidirectional <- data.frame(gene=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2", "LMNB1", "MKI67" ),
+                                                      enrichment=c(1,1,1,1,1,-1,-1))
+
+df_Scores <- CalculateScores(data = counts_example, 
+                             metadata = metadata_example, 
+                             method = "ranking", 
+                             gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional))
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red   
+  "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
+)
+
+cond_cohend <- list(A=c("Senescent"),  
+                    B=c("Proliferative"))
+
+PlotScores(ResultsList = df_Scores, 
+           ColorVariable = "SenescentType", 
+           GroupingVariable="Condition",  
+           method ="ranking", 
+           ColorValues = senescence_triggers_colors, 
+           ConnectGroups=TRUE, 
+           ncol = NULL, 
+           nrow = NULL, 
+           widthTitle=24, 
+           y_limits = NULL, 
+           legend_nrow = 1, 
+           pointSize=4,
+           cond_cohend=cond_cohend,
+           title="Marthandan et al. 2016",
+           labsize=7, 
+           titlesize = 10)  
+```
+
+<img src="man/figures/README-ranking_bidirect-1.png" width="40%" />

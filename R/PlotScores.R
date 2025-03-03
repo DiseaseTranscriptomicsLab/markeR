@@ -14,8 +14,8 @@
 #'   If \code{NULL} (default), the "Paired" brewer pallette is applied.
 #' @param GroupingVariable A character string indicating the column name in each data frame that will be used for grouping
 #'   on the x-axis. **(Required)**
-#' @param method A character string indicating the scoring method used when running \code{CalculateScores}. Options are \code{"ssGSEA"}
-#'   or \code{"logmedian"}. **This argument is mandatory.**
+#' @param method A character string indicating the scoring method used when running \code{CalculateScores}. Options are \code{"ssGSEA"},
+#'   \code{"logmedian"} or \code{"ranking"}. **This argument is mandatory.**
 #' @param ColorValues An optional named vector that maps the unique values of \code{ColorVariable} to specific colors.
 #'   If not provided, a default brewer palette ("Paired") will be used.
 #' @param ConnectGroups A logical value indicating whether to connect groups using lines across the x-axis.
@@ -62,7 +62,7 @@
 #' @importFrom grid gpar
 #' @importFrom rstatix cohens_d
 #' @export
-PlotScores <- function(ResultsList, ColorVariable = NULL, GroupingVariable, method = c("ssGSEA", "logmedian"),
+PlotScores <- function(ResultsList, ColorVariable = NULL, GroupingVariable, method = c("ssGSEA", "logmedian", "ranking"),
                        ColorValues = NULL, ConnectGroups = FALSE, ncol = NULL, nrow = NULL, title=NULL,
                        widthTitle = 10, titlesize=12,y_limits = NULL, legend_nrow = NULL, pointSize=2, xlab=NULL, labsize=10,cond_cohend=NULL) {
 
@@ -103,8 +103,9 @@ PlotScores <- function(ResultsList, ColorVariable = NULL, GroupingVariable, meth
 
     if (!is.null(cond_cohend)){
 
-      if (sum(unlist(cond_cohend) %in% unique(df[,GroupingVariable])) != length(unique(df[,GroupingVariable]))) stop("Error: Not all conditions of GroupingVariable  were specified for Cohen's d calculation")
-      df$cohen <- ifelse(df[,GroupingVariable] %in% cond_cohend[[1]], names(cond_cohend)[1],  names(cond_cohend)[2]  )
+      if (sum(unlist(cond_cohend) %in% unique(df[,GroupingVariable])) != length(unique(df[,GroupingVariable]))) warning("Warning: Not all conditions of GroupingVariable  were specified for Cohen's d calculation")
+
+       df$cohen <- ifelse(df[,GroupingVariable] %in% cond_cohend[[1]], names(cond_cohend)[1],  names(cond_cohend)[2]  )
 
       cohen_d_results <- rstatix::cohens_d(df, formula = score ~ cohen)
 
@@ -183,11 +184,13 @@ PlotScores <- function(ResultsList, ColorVariable = NULL, GroupingVariable, meth
     xlab <- GroupingVariable
   }
 
+  if (!is.null(title)) title <- wrap_title(title, width = widthTitle)
+
   combined_plot <- ggpubr::annotate_figure(combined_plot,
                                            left = grid::textGrob(ifelse(method == "ssGSEA", "ssGSEA Enrichment Score", "Normalized Signature Score"),
                                                                  rot = 90, vjust = 1, gp = grid::gpar(cex = 1.3, fontsize = labsize)),
                                            bottom = grid::textGrob(xlab, gp = grid::gpar(cex = 1.3, fontsize = labsize)),
-                                           top = grid::textGrob("Marthandan et al. 2016", gp = grid::gpar(cex = 1.3, fontsize = titlesize)))
+                                           top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize)))
 
   return(combined_plot)
 }

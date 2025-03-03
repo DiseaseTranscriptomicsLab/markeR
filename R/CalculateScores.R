@@ -16,6 +16,10 @@
 #'     Computes, for each sample, the score as the sum of the normalized (log2-median-centered)
 #'     expression values of the signature genes divided by the number of genes in the signature.
 #'   }
+#'   \item{\code{ranking}}{
+#'     Computes gene signature scores for each sample by ranking the expression of signature genes
+#'     in the dataset and normalizing the score based on the total number of genes.
+#'   }
 #' }
 #'
 #' @param data A data frame of normalised (non-transformed) counts where each row is a gene and each column is a sample. The row names should contain gene names
@@ -33,8 +37,8 @@
 #' - The **first column** should contain gene names.
 #' - The **second column** should indicate the expected direction of enrichment (1 for upregulated genes, -1 for downregulated genes).
 #'
-#' @param method A character string indicating the scoring method to use. Options are \code{"ssGSEA"}
-#'   or \code{"logmedian"}. Defaults to \code{"logmedian"}.
+#' @param method A character string indicating the scoring method to use. Options are \code{"ssGSEA"},
+#' \code{"logmedian"} or \code{"ranking"}. Defaults to \code{"logmedian"}.
 #'
 #' @return A list containing the calculated scores for each gene signature. Each element of the list
 #' corresponds to one signature (named accordingly) and is a data frame with the following attributes:
@@ -66,7 +70,7 @@
 #' }
 #'
 #' @export
-CalculateScores <- function(data, metadata, gene_sets, method = c("ssGSEA", "logmedian")) {
+CalculateScores <- function(data, metadata, gene_sets, method = c("ssGSEA", "logmedian","ranking")) {
 
   method <- match.arg(method)  # Validate method input
 
@@ -83,5 +87,7 @@ CalculateScores <- function(data, metadata, gene_sets, method = c("ssGSEA", "log
     return(CalculateScores_ssGSEA(data, metadata, gene_sets))
   } else if (method == "logmedian") {
     return(CalculateScores_logmedian(data, metadata, gene_sets))
+  } else if (method == "ranking"){
+    return(CalculateScores_Ranking(data, metadata, gene_sets))
   }
 }
