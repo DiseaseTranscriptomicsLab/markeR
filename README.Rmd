@@ -1,5 +1,8 @@
 ---
-output: github_document
+output: 
+  github_document:
+    toc: true
+    toc_depth: 2
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -21,6 +24,22 @@ knitr::opts_chunk$set(
 
 
 **markeR** provides a suite of methods for using gene sets (signatures) to quantify and evaluate the extent to which a given gene signature marks a specific phenotype. The package implements various scoring, enrichment and classification approaches, along with tools to compute performance metrics and visualize results, making it a valuable resource for transcriptomics research (bulk RNA-seq).
+
+## Table of Contents
+- [Installation](#installation)
+- [Main Functions and Future Modules](#main-functions-and-future-modules)
+- [Example](#example)
+  - [Visualise Individual Genes from Senescence Signature](#visualise-individual-genes-from-senescence-signature)
+    - [Expression Heatmap](#expression-heatmap)
+    - [Expression Violins](#expression-violins)
+    - [Correlation Heatmap](#correlation-heatmap)
+    - [ROC and AUC](#roc-and-auc)
+    - [Cohen's D](#cohens-d)
+    - [PCA with only genes of interest](#pca-with-only-genes-of-interest)
+  - [Calculate Senescence Scores](#calculate-senescence-scores)
+    - [logmedian method](#logmedian-method)
+    - [ssGSEA method](#ssgsea-method) 
+    - [Ranking method](#ranking-method) 
 
 ## Installation
 
@@ -103,6 +122,8 @@ counts_example[1:5,1:5]
 
 ### Visualise Individual Genes from Senescence Signature
 
+#### Expression Heatmap
+
 ```{r example_exprheatmap, fig.width=8, fig.height=3, out.width="70%", warning=FALSE, message=FALSE}
 
 annotation_colors <- list( 
@@ -125,6 +146,7 @@ ExpressionHeatmap(data=counts_example,
                   legend_position = "right",
                   scale_position="right")
 ```
+#### Expression Violins
 
 ```{r exampleviolins, fig.width=10, fig.height=3, out.width="100%", warning=FALSE, message=FALSE}
 
@@ -154,6 +176,7 @@ IndividualGenes_Violins(data = counts_example,
                         colorlab="") 
 ```
 
+#### Correlation Heatmap
 
 ```{r example_heatmap, fig.width=8, fig.height=4, out.width="70%", warning=FALSE, message=FALSE}
 
@@ -173,6 +196,7 @@ CorrelationHeatmap(data=counts_example,
                    titlesize=20)
 ```
 
+#### ROC and AUC 
 
 ```{r rocAUCexample, fig.width=12, fig.height=4, out.width="100%", warning=FALSE, message=FALSE}
 
@@ -197,6 +221,8 @@ ROCandAUCplot(counts_example,
               commomplot_params = list(widths=c(0.5,0.3)))
 ```
 
+#### Cohen's D
+
 ```{r cohendexample, fig.width=6, fig.height=4, out.width="60%", warning=FALSE, message=FALSE}
 CohenDHeatmap(counts_example, 
               metadata_example, 
@@ -209,6 +235,7 @@ CohenDHeatmap(counts_example,
                                     cluster_rows=T))
 ```
 
+#### PCA with only genes of interest
 
 
 ```{r pca, fig.width=7, fig.height=3, out.width="90%", warning=FALSE, message=FALSE}

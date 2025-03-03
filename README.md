@@ -1,4 +1,11 @@
 
+-   [markeR](#marker)
+    -   [Table of Contents](#table-of-contents)
+    -   [Installation](#installation)
+    -   [Main Functions and Future
+        Modules](#main-functions-and-future-modules)
+    -   [Example](#example)
+
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # markeR
@@ -15,6 +22,26 @@ marks a specific phenotype. The package implements various scoring,
 enrichment and classification approaches, along with tools to compute
 performance metrics and visualize results, making it a valuable resource
 for transcriptomics research (bulk RNA-seq).
+
+## Table of Contents
+
+-   [Installation](#installation)
+-   [Main Functions and Future
+    Modules](#main-functions-and-future-modules)
+-   [Example](#example)
+    -   [Visualise Individual Genes from Senescence
+        Signature](#visualise-individual-genes-from-senescence-signature)
+        -   [Expression Heatmap](#expression-heatmap)
+        -   [Expression Violins](#expression-violins)
+        -   [Correlation Heatmap](#correlation-heatmap)
+        -   [ROC and AUC](#roc-and-auc)
+        -   [Cohen’s D](#cohens-d)
+        -   [PCA with only genes of
+            interest](#pca-with-only-genes-of-interest)
+    -   [Calculate Senescence Scores](#calculate-senescence-scores)
+        -   [logmedian method](#logmedian-method)
+        -   [ssGSEA method](#ssgsea-method)
+        -   [Ranking method](#ranking-method)
 
 ## Installation
 
@@ -137,6 +164,8 @@ counts_example[1:5,1:5]
 
 ### Visualise Individual Genes from Senescence Signature
 
+#### Expression Heatmap
+
 ``` r
 annotation_colors <- list( 
   Condition = c(
@@ -160,6 +189,7 @@ ExpressionHeatmap(data=counts_example,
 ```
 
 <img src="man/figures/README-example_exprheatmap-1.png" width="70%" />
+\#\#\#\# Expression Violins
 
 ``` r
 senescence_triggers_colors <- c(
@@ -190,6 +220,8 @@ IndividualGenes_Violins(data = counts_example,
 
 <img src="man/figures/README-exampleviolins-1.png" width="100%" />
 
+#### Correlation Heatmap
+
 ``` r
 CorrelationHeatmap(data=counts_example, 
                    metadata = metadata_example, 
@@ -208,6 +240,8 @@ CorrelationHeatmap(data=counts_example,
 ```
 
 <img src="man/figures/README-example_heatmap-1.png" width="70%" />
+
+#### ROC and AUC
 
 ``` r
 senescence_triggers_colors <- c(
@@ -233,6 +267,8 @@ ROCandAUCplot(counts_example,
 
 <img src="man/figures/README-rocAUCexample-1.png" width="100%" />
 
+#### Cohen’s D
+
 ``` r
 CohenDHeatmap(counts_example, 
               metadata_example, 
@@ -246,6 +282,8 @@ CohenDHeatmap(counts_example,
 ```
 
 <img src="man/figures/README-cohendexample-1.png" width="60%" />
+
+#### PCA with only genes of interest
 
 ``` r
 annotation_colors <- c(  
