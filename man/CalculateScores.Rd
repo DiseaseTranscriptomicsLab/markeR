@@ -4,7 +4,12 @@
 \alias{CalculateScores}
 \title{Calculate Gene Signature Scores using Score-Based Approaches}
 \usage{
-CalculateScores(data, metadata, gene_sets, method = c("ssGSEA", "logmedian"))
+CalculateScores(
+  data,
+  metadata,
+  gene_sets,
+  method = c("ssGSEA", "logmedian", "ranking")
+)
 }
 \arguments{
 \item{data}{A data frame of normalised (non-transformed) counts where each row is a gene and each column is a sample. The row names should contain gene names
@@ -26,8 +31,8 @@ correspond to the labels for each signature, and each data frame should contain 
 \item The \strong{second column} should indicate the expected direction of enrichment (1 for upregulated genes, -1 for downregulated genes).
 }}
 
-\item{method}{A character string indicating the scoring method to use. Options are \code{"ssGSEA"}
-or \code{"logmedian"}. Defaults to \code{"logmedian"}.}
+\item{method}{A character string indicating the scoring method to use. Options are \code{"ssGSEA"},
+\code{"logmedian"} or \code{"ranking"}. Defaults to \code{"logmedian"}.}
 }
 \value{
 A list containing the calculated scores for each gene signature. Each element of the list
@@ -55,6 +60,10 @@ to compute an enrichment score, representing the absolute enrichment of each gen
 \item{\code{logmedian}}{
 Computes, for each sample, the score as the sum of the normalized (log2-median-centered)
 expression values of the signature genes divided by the number of genes in the signature.
+}
+\item{\code{ranking}}{
+Computes gene signature scores for each sample by ranking the expression of signature genes
+in the dataset and normalizing the score based on the total number of genes.
 }
 }
 }

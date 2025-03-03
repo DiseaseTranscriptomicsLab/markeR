@@ -188,7 +188,7 @@ IndividualGenes_Violins(data = counts_example,
                         colorlab="") 
 ```
 
-<img src="man/figures/README-exampleviolins-1.png" width="80%" />
+<img src="man/figures/README-exampleviolins-1.png" width="100%" />
 
 ``` r
 CorrelationHeatmap(data=counts_example, 
@@ -231,7 +231,7 @@ ROCandAUCplot(counts_example,
               commomplot_params = list(widths=c(0.5,0.3)))
 ```
 
-<img src="man/figures/README-rocAUCexample-1.png" width="90%" />
+<img src="man/figures/README-rocAUCexample-1.png" width="100%" />
 
 ``` r
 CohenDHeatmap(counts_example, 
@@ -268,9 +268,11 @@ plotPCA(data = counts_example,
         nrow=NULL)
 ```
 
-<img src="man/figures/README-pca-1.png" width="60%" />
+<img src="man/figures/README-pca-1.png" width="90%" />
 
 ### Calculate Senescence Scores
+
+#### logmedian method
 
 The following example uses the **“logmedian”** method for score
 calculation.
@@ -342,10 +344,13 @@ PlotScores(ResultsList = df_Scores,
 
 <img src="man/figures/README-exampleScore_bidirectional-1.png" width="40%" />
 
+#### ssGSEA method
+
 The following example uses the **“ssGSEA”** method for score
-calculation.
+calculation, both for unidirectional and bidirectional signatures.
 
 ``` r
+ 
 df_Scores <- CalculateScores(data = counts_example, 
                              metadata = metadata_example, 
                              method = "ssGSEA", 
@@ -377,15 +382,85 @@ PlotScores(ResultsList = df_Scores,
            titlesize = 10)  
 ```
 
-<img src="man/figures/README-exampleScore_2-1.png" width="40%" />
-
-The following example uses the **“ranking”** method for score
-calculation.
+<img src="man/figures/README-exampleScoresGSEA_uni-1.png" width="40%" />
 
 ``` r
-SimpleSenescenceSignature_bidirectional <- data.frame(gene=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2", "LMNB1", "MKI67" ),
-                                                      enrichment=c(1,1,1,1,1,-1,-1))
+ 
+df_Scores <- CalculateScores(data = counts_example, 
+                             metadata = metadata_example, 
+                             method = "ssGSEA", 
+                             gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional))
 
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red   
+  "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
+)
+
+cond_cohend <- list(A=c("Senescent"),  
+                    B=c("Proliferative"))
+
+PlotScores(ResultsList = df_Scores, 
+           ColorVariable = "SenescentType", 
+           GroupingVariable="Condition",  
+           method ="ssGSEA", 
+           ColorValues = senescence_triggers_colors, 
+           ConnectGroups=TRUE, 
+           ncol = NULL, 
+           nrow = NULL, 
+           widthTitle=24, 
+           y_limits = NULL, 
+           legend_nrow = 1, 
+           pointSize=4,
+           cond_cohend=cond_cohend,
+           title="Marthandan et al. 2016",
+           labsize=7, 
+           titlesize = 10)  
+```
+
+<img src="man/figures/README-examplessGSEA_bi-1.png" width="40%" />
+
+#### Ranking method
+
+The following example uses the **“ranking”** method for score
+calculation, both for unidirectional and bidirectional signatures.
+
+``` r
+ 
+df_Scores <- CalculateScores(data = counts_example, 
+                             metadata = metadata_example, 
+                             method = "ranking", 
+                             gene_sets = list(Senescence=SimpleSenescenceSignature))
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red   
+  "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
+)
+
+cond_cohend <- list(A=c("Senescent"),  
+                    B=c("Proliferative"))
+
+PlotScores(ResultsList = df_Scores, 
+           ColorVariable = "SenescentType", 
+           GroupingVariable="Condition",  
+           method ="ranking", 
+           ColorValues = senescence_triggers_colors, 
+           ConnectGroups=TRUE, 
+           ncol = NULL, 
+           nrow = NULL, 
+           widthTitle=24, 
+           y_limits = NULL, 
+           legend_nrow = 1, 
+           pointSize=4,
+           cond_cohend=cond_cohend,
+           title="Marthandan et al. 2016",
+           labsize=7, 
+           titlesize = 10)  
+```
+
+<img src="man/figures/README-ranking_unidirect-1.png" width="40%" />
+
+``` r
+ 
 df_Scores <- CalculateScores(data = counts_example, 
                              metadata = metadata_example, 
                              method = "ranking", 

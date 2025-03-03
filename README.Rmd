@@ -126,7 +126,7 @@ ExpressionHeatmap(data=counts_example,
                   scale_position="right")
 ```
 
-```{r exampleviolins, fig.width=10, fig.height=3, out.width="80%", warning=FALSE, message=FALSE}
+```{r exampleviolins, fig.width=10, fig.height=3, out.width="100%", warning=FALSE, message=FALSE}
 
 senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
@@ -174,7 +174,7 @@ CorrelationHeatmap(data=counts_example,
 ```
 
 
-```{r rocAUCexample, fig.width=12, fig.height=4, out.width="90%", warning=FALSE, message=FALSE}
+```{r rocAUCexample, fig.width=12, fig.height=4, out.width="100%", warning=FALSE, message=FALSE}
 
 senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
@@ -211,7 +211,7 @@ CohenDHeatmap(counts_example,
 
 
 
-```{r pca, fig.width=7, fig.height=3, out.width="60%", warning=FALSE, message=FALSE}
+```{r pca, fig.width=7, fig.height=3, out.width="90%", warning=FALSE, message=FALSE}
 
 annotation_colors <- c(  
     "Senescent"     = "#65AC7C",  # Example color: greenish
@@ -236,6 +236,8 @@ plotPCA(data = counts_example,
 
 
 ### Calculate Senescence Scores
+
+#### logmedian method
 
 The following example uses the **"logmedian"** method for score calculation.
 
@@ -302,11 +304,13 @@ PlotScores(ResultsList = df_Scores,
 
 ```
 
+#### ssGSEA method
 
-The following example uses the **"ssGSEA"** method for score calculation.
+The following example uses the **"ssGSEA"** method for score calculation, both for unidirectional and bidirectional signatures.
 
 
-```{r exampleScore_2, fig.width=3, fig.height=4, out.width="40%", warning=FALSE, message=FALSE}
+```{r exampleScoresGSEA_uni, fig.width=3, fig.height=4, out.width="40%", warning=FALSE, message=FALSE}
+ 
 df_Scores <- CalculateScores(data = counts_example, 
                              metadata = metadata_example, 
                              method = "ssGSEA", 
@@ -342,14 +346,87 @@ PlotScores(ResultsList = df_Scores,
 ```
 
 
+```{r examplessGSEA_bi, fig.width=3, fig.height=4, out.width="40%", warning=FALSE, message=FALSE}
+ 
+df_Scores <- CalculateScores(data = counts_example, 
+                             metadata = metadata_example, 
+                             method = "ssGSEA", 
+                             gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional))
 
-The following example uses the **"ranking"** method for score calculation.
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red   
+  "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
+)
+
+cond_cohend <- list(A=c("Senescent"),  
+                    B=c("Proliferative"))
+
+PlotScores(ResultsList = df_Scores, 
+           ColorVariable = "SenescentType", 
+           GroupingVariable="Condition",  
+           method ="ssGSEA", 
+           ColorValues = senescence_triggers_colors, 
+           ConnectGroups=TRUE, 
+           ncol = NULL, 
+           nrow = NULL, 
+           widthTitle=24, 
+           y_limits = NULL, 
+           legend_nrow = 1, 
+           pointSize=4,
+           cond_cohend=cond_cohend,
+           title="Marthandan et al. 2016",
+           labsize=7, 
+           titlesize = 10)  
+
+
+
+```
+
+#### Ranking method
+
+The following example uses the **"ranking"** method for score calculation, both for unidirectional and bidirectional signatures.
+
+
+
+```{r ranking_unidirect, fig.width=3, fig.height=4, out.width="40%", warning=FALSE, message=FALSE}
+ 
+df_Scores <- CalculateScores(data = counts_example, 
+                             metadata = metadata_example, 
+                             method = "ranking", 
+                             gene_sets = list(Senescence=SimpleSenescenceSignature))
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red   
+  "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
+)
+
+cond_cohend <- list(A=c("Senescent"),  
+                    B=c("Proliferative"))
+
+PlotScores(ResultsList = df_Scores, 
+           ColorVariable = "SenescentType", 
+           GroupingVariable="Condition",  
+           method ="ranking", 
+           ColorValues = senescence_triggers_colors, 
+           ConnectGroups=TRUE, 
+           ncol = NULL, 
+           nrow = NULL, 
+           widthTitle=24, 
+           y_limits = NULL, 
+           legend_nrow = 1, 
+           pointSize=4,
+           cond_cohend=cond_cohend,
+           title="Marthandan et al. 2016",
+           labsize=7, 
+           titlesize = 10)  
+
+
+
+```
 
 
 ```{r ranking_bidirect, fig.width=3, fig.height=4, out.width="40%", warning=FALSE, message=FALSE}
-SimpleSenescenceSignature_bidirectional <- data.frame(gene=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2", "LMNB1", "MKI67" ),
-                                                      enrichment=c(1,1,1,1,1,-1,-1))
-
+ 
 df_Scores <- CalculateScores(data = counts_example, 
                              metadata = metadata_example, 
                              method = "ranking", 

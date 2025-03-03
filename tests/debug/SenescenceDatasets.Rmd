@@ -95,7 +95,40 @@ PlotScores(ResultsList = df_logmedian, ColorVariable = "CellType", GroupingVaria
 
 ```
 
+```{r fig.width=12, fig.height=6}
+df_ranking <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge, method = "ranking", gene_sets = SenescenceSignatures)
 
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red  
+  "Radiation" = "#BDBDBD",  # Medium gray  
+  "DNA damage" = "#64B5F6",  # Brighter blue  
+  "Telomere shortening" = "#4FC3F7",  # Vivid sky blue  
+  "DNA demethylation" = "#BA68C8",  # Rich lavender  
+  "Oxidative stress" = "#FDD835",  # Strong yellow  
+  "Conditioned Medium" = "#F2994A",  # Warm orange  
+  "Oncogene" = "#81C784",  # Medium green  
+  "Lipid Accumulation" = "#E57373",  # Coral  
+  "Calcium influx" = "#26A69A",  # Deep teal  
+  "Plasma membrane dysruption" = "#D32F2F",  # Strong salmon  
+  "OSKM factors" = "#FFB74D",  # Bright peach  
+  "YAP KO" = "#9575CD"  # Deep pastel purple  
+)
+
+cellTypes_colors <- c(
+  "Fibroblast" = "#FF6961",   # Strong Pastel Red  
+  "Keratinocyte" = "#FFB347", # Strong Pastel Orange  
+  "Melanocyte" = "#FFD700",   # Strong Pastel Yellow  
+  "Endothelial" = "#77DD77",  # Strong Pastel Green  
+  "Neuronal" = "#779ECB",     # Strong Pastel Blue  
+  "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
+)
+
+cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the first that appears in the ggplot
+                    B=c("Proliferative","Quiescent"))
+
+PlotScores(ResultsList = df_ranking, ColorVariable = "CellType", GroupingVariable="Condition",  method ="ranking", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 6, nrow = 2, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend)
+
+```
 
 ```{r}
 wrap_title_aux <- function(title, width = 30) {
@@ -226,6 +259,83 @@ cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the f
 PlotScores(ResultsList = df_logmedian, ColorVariable = "CellType", GroupingVariable="Condition",  method ="logmedian", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 3, nrow = 3, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend)
 
 ```
+
+
+```{r fig.width=8, fig.height=10}
+ 
+df_ssgsea <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge, method = "ssGSEA", gene_sets = bidirectsigs)
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red  
+  "Radiation" = "#BDBDBD",  # Medium gray  
+  "DNA damage" = "#64B5F6",  # Brighter blue  
+  "Telomere shortening" = "#4FC3F7",  # Vivid sky blue  
+  "DNA demethylation" = "#BA68C8",  # Rich lavender  
+  "Oxidative stress" = "#FDD835",  # Strong yellow  
+  "Conditioned Medium" = "#F2994A",  # Warm orange  
+  "Oncogene" = "#81C784",  # Medium green  
+  "Lipid Accumulation" = "#E57373",  # Coral  
+  "Calcium influx" = "#26A69A",  # Deep teal  
+  "Plasma membrane dysruption" = "#D32F2F",  # Strong salmon  
+  "OSKM factors" = "#FFB74D",  # Bright peach  
+  "YAP KO" = "#9575CD"  # Deep pastel purple  
+)
+
+cellTypes_colors <- c(
+  "Fibroblast" = "#FF6961",   # Strong Pastel Red  
+  "Keratinocyte" = "#FFB347", # Strong Pastel Orange  
+  "Melanocyte" = "#FFD700",   # Strong Pastel Yellow  
+  "Endothelial" = "#77DD77",  # Strong Pastel Green  
+  "Neuronal" = "#779ECB",     # Strong Pastel Blue  
+  "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
+)
+
+cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the first that appears in the ggplot
+                    B=c("Proliferative","Quiescent"))
+
+PlotScores(ResultsList = df_ssgsea, ColorVariable = "CellType", GroupingVariable="Condition",  method ="ssGSEA", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 3, nrow = 3, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend)
+
+```
+
+
+
+
+```{r fig.width=8, fig.height=10}
+ 
+df_ranking <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge, method = "ranking", gene_sets = bidirectsigs)
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red  
+  "Radiation" = "#BDBDBD",  # Medium gray  
+  "DNA damage" = "#64B5F6",  # Brighter blue  
+  "Telomere shortening" = "#4FC3F7",  # Vivid sky blue  
+  "DNA demethylation" = "#BA68C8",  # Rich lavender  
+  "Oxidative stress" = "#FDD835",  # Strong yellow  
+  "Conditioned Medium" = "#F2994A",  # Warm orange  
+  "Oncogene" = "#81C784",  # Medium green  
+  "Lipid Accumulation" = "#E57373",  # Coral  
+  "Calcium influx" = "#26A69A",  # Deep teal  
+  "Plasma membrane dysruption" = "#D32F2F",  # Strong salmon  
+  "OSKM factors" = "#FFB74D",  # Bright peach  
+  "YAP KO" = "#9575CD"  # Deep pastel purple  
+)
+
+cellTypes_colors <- c(
+  "Fibroblast" = "#FF6961",   # Strong Pastel Red  
+  "Keratinocyte" = "#FFB347", # Strong Pastel Orange  
+  "Melanocyte" = "#FFD700",   # Strong Pastel Yellow  
+  "Endothelial" = "#77DD77",  # Strong Pastel Green  
+  "Neuronal" = "#779ECB",     # Strong Pastel Blue  
+  "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
+)
+
+cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the first that appears in the ggplot
+                    B=c("Proliferative","Quiescent"))
+
+PlotScores(ResultsList = df_ranking, ColorVariable = "CellType", GroupingVariable="Condition",  method ="ranking", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 3, nrow = 3, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend)
+
+```
+
 
 ## Ranking 
 

@@ -186,8 +186,17 @@ PlotScores <- function(ResultsList, ColorVariable = NULL, GroupingVariable, meth
 
   if (!is.null(title)) title <- wrap_title(title, width = widthTitle)
 
+  # create label for y axis
+  if (method == "ssGSEA"){
+    ylab <- "ssGSEA Enrichment Score"
+  } else if (method == "logmedian"){
+    ylab <- "Normalized Signature Score"
+  } else if (method == "ranking"){
+    ylab <- "Signature Genes' Ranking"
+  }
+
   combined_plot <- ggpubr::annotate_figure(combined_plot,
-                                           left = grid::textGrob(ifelse(method == "ssGSEA", "ssGSEA Enrichment Score", "Normalized Signature Score"),
+                                           left = grid::textGrob(ylab,
                                                                  rot = 90, vjust = 1, gp = grid::gpar(cex = 1.3, fontsize = labsize)),
                                            bottom = grid::textGrob(xlab, gp = grid::gpar(cex = 1.3, fontsize = labsize)),
                                            top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize)))
