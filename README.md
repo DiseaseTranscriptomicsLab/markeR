@@ -1,11 +1,4 @@
 
--   [markeR](#marker)
-    -   [Table of Contents](#table-of-contents)
-    -   [Installation](#installation)
-    -   [Main Functions and Future
-        Modules](#main-functions-and-future-modules)
-    -   [Example](#example)
-
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # markeR
