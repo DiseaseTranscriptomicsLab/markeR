@@ -143,7 +143,7 @@ CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
 #' rank_score <- getRanking(data, "Sample_1", geneset)
 #' print(rank_score)
 #'
-#' @internal
+#' @export
 getRanking <- function(data, sample, geneset) {
 
   expressiongene <- data[, sample]  # Isolate one sample and get the expression of all genes
