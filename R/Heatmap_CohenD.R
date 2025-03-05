@@ -139,7 +139,7 @@ Heatmap_CohenD <- function(data, metadata, gene_sets, variable, orientation=c("g
     }
 
 
-    Heatmap_Final <- grid.arrange(grobs = heatmaps,
+    Heatmap_Final <- gridExtra::grid.arrange(grobs = heatmaps,
                                   ncol = ncol,
                                   nrow = nrow)
 
