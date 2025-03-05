@@ -8,11 +8,11 @@ CalculateScores(
   data,
   metadata,
   gene_sets,
-  method = c("ssGSEA", "logmedian", "ranking")
+  method = c("ssGSEA", "logmedian", "ranking", "all")
 )
 }
 \arguments{
-\item{data}{A data frame of normalised (non-transformed) counts where each row is a gene and each column is a sample. The row names should contain gene names
+\item{data}{A data frame of normalized (non-transformed) counts where each row is a gene and each column is a sample. The row names should contain gene names,
 and the column names should contain sample identifiers. \strong{(Required)}}
 
 \item{metadata}{A data frame describing the attributes of each sample. Each row corresponds to a sample and each column to an attribute.
@@ -32,11 +32,12 @@ correspond to the labels for each signature, and each data frame should contain 
 }}
 
 \item{method}{A character string indicating the scoring method to use. Options are \code{"ssGSEA"},
-\code{"logmedian"} or \code{"ranking"}. Defaults to \code{"logmedian"}.}
+\code{"logmedian"}, \code{"ranking"}, or \code{"all"} (to compute scores using all methods). Defaults to \code{"logmedian"}.}
 }
 \value{
-A list containing the calculated scores for each gene signature. Each element of the list
-corresponds to one signature (named accordingly) and is a data frame with the following attributes:
+If a single method is chosen, a data frame containing the calculated scores for each gene signature, including metadata if provided.
+If \code{method = "all"}, a list is returned where each element corresponds to a scoring method and contains the respective data frame of scores.
+
 \describe{
 \item{sample}{The sample identifier (matching the column names of the input data).}
 \item{score}{The calculated gene signature score for the corresponding sample.}
@@ -50,7 +51,7 @@ This function calculates a gene signature score for each sample based on one or 
 \details{
 \describe{
 This function calculates a gene signature score for each sample based on one or more predefined gene sets
-(signatures). Two methods are available:
+(signatures). Four methods are available:
 
 \item{\code{ssGSEA}}{
 Uses the single-sample Gene Set Enrichment Analysis (ssGSEA) method to compute an enrichment score
@@ -64,6 +65,10 @@ expression values of the signature genes divided by the number of genes in the s
 \item{\code{ranking}}{
 Computes gene signature scores for each sample by ranking the expression of signature genes
 in the dataset and normalizing the score based on the total number of genes.
+}
+\item{\code{all}}{
+Computes gene signature scores using all three methods (\code{ssGSEA}, \code{logmedian}, and \code{ranking}).
+The function returns a list containing the results of each method.
 }
 }
 }
@@ -85,6 +90,12 @@ in the dataset and normalizing the score based on the total number of genes.
   # Using the logmedian method (default):
   scores_logmedian <- calculate_signature_score(data = gene_data,
                                                 gene_sets = gene_sets)
+
+  # Using all methods:
+  scores_all <- calculate_signature_score(data = gene_data,
+                                          metadata = sample_metadata,
+                                          gene_sets = gene_sets,
+                                          method = "all")
 }
 
 }
