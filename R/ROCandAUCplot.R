@@ -319,9 +319,6 @@ ROCandAUCplot <- function(data, metadata,
     heatmap_grob <- invisible(grid::grid.grabExpr(ComplexHeatmap::draw(heatmap_obj)))
 
     # Arrange them side-by-side
-    if (!requireNamespace("gridExtra", quietly = TRUE)) {
-      stop("Package 'gridExtra' is required for combining plots. Please install it.")
-    }
     combined <- gridExtra::grid.arrange(roc_grob, heatmap_grob, ncol = 2,
                                         widths = commomplot_params$widths,
                                         heights = commomplot_params$heights)
