@@ -23,10 +23,7 @@ PlotScores(
   pointSize = 2,
   xlab = NULL,
   labsize = 10,
-  cond_cohend = NULL,
-  cluster_columns = T,
-  cluster_rows = T,
-  orientation = c("grid", "horizontal", "vertical")
+  cond_cohend = NULL
 )
 }
 \arguments{
@@ -56,7 +53,8 @@ If \code{NULL} (default), the "Paired" brewer palette is applied. Only applicabl
 on the x-axis. \strong{(Required)} If \code{method == "all"}, this variable is used for generating comparisons.}
 
 \item{ColorValues}{An optional named vector mapping unique values of \code{ColorVariable} to specific colors.
-If not provided, the "Paired" brewer palette is used. Only applicable if \code{method != "all"}.}
+If not provided, the "Paired" brewer palette is used. If \code{method == "all"}, it should be a vector of length two, specifying
+the colors for the color bar (detault: c("#F9F4AE", "#B44141")).}
 
 \item{ConnectGroups}{Logical, indicating whether to connect groups using lines across the x-axis.
 If \code{TRUE}, a line connecting median values across groups is drawn, colored by \code{ColorVariable}.
@@ -92,12 +90,6 @@ Only applicable if \code{method != "all"}.}
 \item{cond_cohend}{Optional named list specifying two groups for which Cohen's d effect size should be calculated.
 The list should contain exactly two named elements (e.g., \code{list("GroupA" = c("Condition1"), "GroupB" = c("Condition2", "Condition3"))}).
 If not provided, Cohen's d is not computed. Currently works only for two groups. Only applicable if \code{method != "all"}.}
-
-\item{cluster_columns}{Logical; whether to cluster columns in the heatmap (only used if \code{method == "all"}). Default is \code{TRUE}.}
-
-\item{cluster_rows}{Logical; whether to cluster rows in the heatmap (only used if \code{method == "all"}). Default is \code{TRUE}.}
-
-\item{orientation}{A character string indicating heatmap orientation ("grid", "horizontal", or "vertical"). Only used if \code{method == "all"}.}
 }
 \value{
 \itemize{

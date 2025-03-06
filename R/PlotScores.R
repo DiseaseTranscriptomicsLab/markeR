@@ -29,7 +29,8 @@
 #' @param GroupingVariable A character string indicating the column name in `metadata` used for grouping
 #'   on the x-axis. **(Required)** If `method == "all"`, this variable is used for generating comparisons.
 #' @param ColorValues An optional named vector mapping unique values of `ColorVariable` to specific colors.
-#'   If not provided, the "Paired" brewer palette is used. Only applicable if `method != "all"`.
+#'   If not provided, the "Paired" brewer palette is used. If `method == "all"`, it should be a vector of length two, specifying
+#'   the colors for the color bar (detault: c("#F9F4AE", "#B44141")).
 #' @param ConnectGroups Logical, indicating whether to connect groups using lines across the x-axis.
 #'   If `TRUE`, a line connecting median values across groups is drawn, colored by `ColorVariable`.
 #'   Default is `FALSE`. Only applicable if `method != "all"`.
@@ -53,9 +54,6 @@
 #'   The list should contain exactly two named elements (e.g., `list("GroupA" = c("Condition1"), "GroupB" = c("Condition2", "Condition3"))`).
 #'   If not provided, Cohen's d is not computed. Currently works only for two groups. Only applicable if `method != "all"`.
 #' @param labsize Numeric; font size of the plot's axis labels (default = `14`). Only applicable if `method != "all"`.
-#' @param cluster_columns Logical; whether to cluster columns in the heatmap (only used if `method == "all"`). Default is `TRUE`.
-#' @param cluster_rows Logical; whether to cluster rows in the heatmap (only used if `method == "all"`). Default is `TRUE`.
-#' @param orientation A character string indicating heatmap orientation ("grid", "horizontal", or "vertical"). Only used if `method == "all"`.
 #'
 #' @return
 #' - If `method != "all"`: A combined ggplot object (using `ggpubr::ggarrange` and `ggpubr::annotate_figure`) displaying violin plots for each gene signature.
@@ -81,22 +79,24 @@ PlotScores <- function(data, metadata, gene_sets,
                        method = c("ssGSEA", "logmedian", "ranking"),
                        ColorVariable = NULL, GroupingVariable,
                        ColorValues = NULL, ConnectGroups = FALSE, ncol = NULL, nrow = NULL, title=NULL,
-                       widthTitle = 10, titlesize=12,limits = NULL, legend_nrow = NULL, pointSize=2, xlab=NULL, labsize=10,cond_cohend=NULL,
-                       cluster_columns=T, cluster_rows=T, orientation=c("grid","horizontal","vertical")) {
+                       widthTitle = 10, titlesize=12,limits = NULL, legend_nrow = NULL, pointSize=2, xlab=NULL, labsize=10,cond_cohend=NULL) {
 
   if (method == "all"){
 
     # if user wants "all" methods, a heatmap of cohen D's is returned, for all combination of variables in GroupingVariable
     Heatmap_Final <- Heatmap_CohenD(data = data,
-                   metadata = metadata,
-                   gene_sets = gene_sets,
-                   variable=GroupingVariable,
-                   orientation = orientation,
-                   limits = c(0,2),
-                   cluster_columns = cluster_columns,
-                   cluster_rows = cluster_rows,
-                   widthTitle = 20)
-    return(Heatmap_Final)
+                                    metadata = metadata,
+                                    gene_sets = gene_sets,
+                                    variable=GroupingVariable,
+                                    nrow = nrow,
+                                    ncol = ncol,
+                                    limits = limits,
+                                    widthTitle = widthTitle,
+                                    titlesize = titlesize,
+                                    ColorValues = ColorValues,
+                                    title=title)
+
+    return(Heatmap_Final$plt)
 
   } else {
 

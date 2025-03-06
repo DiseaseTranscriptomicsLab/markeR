@@ -562,7 +562,7 @@ Heatmap_CohenD <- function(data, metadata, gene_sets, variable, orientation=c("g
         heatmap_row <- heatmap_row[-1]  # Remove the used heatmap
       }
     }
-  
+    
     
   } else if (orientation == "grid"){
     
@@ -583,10 +583,10 @@ Heatmap_CohenD <- function(data, metadata, gene_sets, variable, orientation=c("g
                                   nrow = nrow)
     
   } 
-   
+  
   return(Heatmap_Final)
 }
- 
+
 ```
 
 
@@ -610,14 +610,8 @@ Heatmap_CohenD(data = corrcounts_merge, metadata = metadata_merge,gene_sets = bi
 
 
 ```
-
-
-
-
-
-
-
-
+ 
+ 
 
 # Individual Genes
 

@@ -274,7 +274,7 @@ CohenDHeatmap(counts_example,
                                     cluster_rows=T))
 ```
 
-<img src="man/figures/README-cohendexample-1.png" width="60%" />
+<img src="man/figures/README-cohendexample-1.png" width="100%" />
 
 #### PCA with only genes of interest
 
@@ -308,11 +308,44 @@ plotPCA(data = counts_example,
 The following example uses the **“logmedian”** method for score
 calculation.
 
+The user can chose to calculate the gene signature score for each sample
+based on one or more predefined gene sets (signatures). If a single
+method is chosen, a data frame containing the calculated scores for each
+gene signature, including metadata if provided. If method = “all” (see
+below for an example), a list is returned where each element corresponds
+to a scoring method and contains the respective data frame of scores.
+
 ``` r
-df_Scores <- CalculateScores(data = counts_example, 
-                             metadata = metadata_example, 
-                             method = "logmedian", 
+df_Scores <- CalculateScores(data = counts_example,
+                             metadata = metadata_example,
+                             method = "logmedian",
                              gene_sets = list(Senescence=SimpleSenescenceSignature))
+#> Considering unidirectional gene signature mode for signature Senescence
+
+head(df_Scores$Senescence)
+#>       sample      score      DatasetID   CellType     Condition
+#> 1 SRR1660534 -0.6894748 Marthandan2016 Fibroblast     Senescent
+#> 2 SRR1660535 -0.4483299 Marthandan2016 Fibroblast     Senescent
+#> 3 SRR1660536 -0.4596502 Marthandan2016 Fibroblast     Senescent
+#> 4 SRR1660537 -0.2198753 Marthandan2016 Fibroblast Proliferative
+#> 5 SRR1660538 -0.2672930 Marthandan2016 Fibroblast Proliferative
+#> 6 SRR1660539 -0.2623188 Marthandan2016 Fibroblast Proliferative
+#>         SenescentType                     Treatment
+#> 1 Telomere shortening PD72 (Replicative senescence)
+#> 2 Telomere shortening PD72 (Replicative senescence)
+#> 3 Telomere shortening PD72 (Replicative senescence)
+#> 4                none                         young
+#> 5                none                         young
+#> 6                none                         young
+```
+
+The user can also chose to directly plot the scores.
+
+``` r
+# df_Scores <- CalculateScores(data = counts_example, 
+#                              metadata = metadata_example, 
+#                              method = "logmedian", 
+#                              gene_sets = list(Senescence=SimpleSenescenceSignature))
 
 senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
@@ -322,7 +355,9 @@ senescence_triggers_colors <- c(
 cond_cohend <- list(A=c("Senescent"),  
                     B=c("Proliferative"))
 
-PlotScores(ResultsList = df_Scores, 
+PlotScores(data = counts_example, 
+           metadata = metadata_example, 
+           gene_sets = list(Senescence=SimpleSenescenceSignature),
            ColorVariable = "SenescentType", 
            GroupingVariable="Condition",  
            method ="logmedian", 
@@ -331,7 +366,7 @@ PlotScores(ResultsList = df_Scores,
            ncol = NULL, 
            nrow = NULL, 
            widthTitle=24, 
-           y_limits = NULL, 
+           limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
            cond_cohend=cond_cohend,
@@ -349,13 +384,15 @@ others to be downregulated in senescence, we can also consider a
 ``` r
 SimpleSenescenceSignature_bidirectional <- data.frame(gene=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2", "LMNB1", "MKI67" ),
                                                       enrichment=c(1,1,1,1,1,-1,-1))
+# 
+# df_Scores <- CalculateScores(data = counts_example, 
+#                              metadata = metadata_example, 
+#                              method = "logmedian", 
+#                              gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional))
 
-df_Scores <- CalculateScores(data = counts_example, 
-                             metadata = metadata_example, 
-                             method = "logmedian", 
-                             gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional))
-
-PlotScores(ResultsList = df_Scores, 
+PlotScores(data = counts_example, 
+           metadata = metadata_example, 
+           gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional),
            ColorVariable = "SenescentType", 
            GroupingVariable="Condition",  
            method ="logmedian", 
@@ -364,7 +401,7 @@ PlotScores(ResultsList = df_Scores,
            ncol = NULL, 
            nrow = NULL, 
            widthTitle=24, 
-           y_limits = NULL, 
+           limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
            cond_cohend=cond_cohend,
@@ -381,11 +418,11 @@ The following example uses the **“ssGSEA”** method for score
 calculation, both for unidirectional and bidirectional signatures.
 
 ``` r
- 
-df_Scores <- CalculateScores(data = counts_example, 
-                             metadata = metadata_example, 
-                             method = "ssGSEA", 
-                             gene_sets = list(Senescence=SimpleSenescenceSignature))
+#  
+# df_Scores <- CalculateScores(data = counts_example, 
+#                              metadata = metadata_example, 
+#                              method = "ssGSEA", 
+#                              gene_sets = list(Senescence=SimpleSenescenceSignature))
 
 senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
@@ -395,7 +432,9 @@ senescence_triggers_colors <- c(
 cond_cohend <- list(A=c("Senescent"),  
                     B=c("Proliferative"))
 
-PlotScores(ResultsList = df_Scores, 
+PlotScores(data = counts_example, 
+           metadata = metadata_example, 
+           gene_sets = list(Senescence=SimpleSenescenceSignature),
            ColorVariable = "SenescentType", 
            GroupingVariable="Condition",  
            method ="ssGSEA", 
@@ -404,7 +443,7 @@ PlotScores(ResultsList = df_Scores,
            ncol = NULL, 
            nrow = NULL, 
            widthTitle=24, 
-           y_limits = NULL, 
+           limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
            cond_cohend=cond_cohend,
@@ -417,10 +456,10 @@ PlotScores(ResultsList = df_Scores,
 
 ``` r
  
-df_Scores <- CalculateScores(data = counts_example, 
-                             metadata = metadata_example, 
-                             method = "ssGSEA", 
-                             gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional))
+# df_Scores <- CalculateScores(data = counts_example, 
+#                              metadata = metadata_example, 
+#                              method = "ssGSEA", 
+#                              gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional))
 
 senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
@@ -430,7 +469,9 @@ senescence_triggers_colors <- c(
 cond_cohend <- list(A=c("Senescent"),  
                     B=c("Proliferative"))
 
-PlotScores(ResultsList = df_Scores, 
+PlotScores(data = counts_example, 
+           metadata = metadata_example, 
+           gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional),
            ColorVariable = "SenescentType", 
            GroupingVariable="Condition",  
            method ="ssGSEA", 
@@ -439,7 +480,7 @@ PlotScores(ResultsList = df_Scores,
            ncol = NULL, 
            nrow = NULL, 
            widthTitle=24, 
-           y_limits = NULL, 
+           limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
            cond_cohend=cond_cohend,
@@ -457,10 +498,10 @@ calculation, both for unidirectional and bidirectional signatures.
 
 ``` r
  
-df_Scores <- CalculateScores(data = counts_example, 
-                             metadata = metadata_example, 
-                             method = "ranking", 
-                             gene_sets = list(Senescence=SimpleSenescenceSignature))
+# df_Scores <- CalculateScores(data = counts_example, 
+#                              metadata = metadata_example, 
+#                              method = "ranking", 
+#                              gene_sets = list(Senescence=SimpleSenescenceSignature))
 
 senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
@@ -470,7 +511,9 @@ senescence_triggers_colors <- c(
 cond_cohend <- list(A=c("Senescent"),  
                     B=c("Proliferative"))
 
-PlotScores(ResultsList = df_Scores, 
+PlotScores(data = counts_example, 
+           metadata = metadata_example, 
+           gene_sets = list(Senescence=SimpleSenescenceSignature),
            ColorVariable = "SenescentType", 
            GroupingVariable="Condition",  
            method ="ranking", 
@@ -479,7 +522,7 @@ PlotScores(ResultsList = df_Scores,
            ncol = NULL, 
            nrow = NULL, 
            widthTitle=24, 
-           y_limits = NULL, 
+           limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
            cond_cohend=cond_cohend,
@@ -492,10 +535,10 @@ PlotScores(ResultsList = df_Scores,
 
 ``` r
  
-df_Scores <- CalculateScores(data = counts_example, 
-                             metadata = metadata_example, 
-                             method = "ranking", 
-                             gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional))
+# df_Scores <- CalculateScores(data = counts_example, 
+#                              metadata = metadata_example, 
+#                              method = "ranking", 
+#                              gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional))
 
 senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
@@ -505,7 +548,9 @@ senescence_triggers_colors <- c(
 cond_cohend <- list(A=c("Senescent"),  
                     B=c("Proliferative"))
 
-PlotScores(ResultsList = df_Scores, 
+PlotScores(data = counts_example, 
+           metadata = metadata_example, 
+           gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional),
            ColorVariable = "SenescentType", 
            GroupingVariable="Condition",  
            method ="ranking", 
@@ -514,7 +559,7 @@ PlotScores(ResultsList = df_Scores,
            ncol = NULL, 
            nrow = NULL, 
            widthTitle=24, 
-           y_limits = NULL, 
+           limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
            cond_cohend=cond_cohend,
@@ -524,3 +569,30 @@ PlotScores(ResultsList = df_Scores,
 ```
 
 <img src="man/figures/README-ranking_bidirect-1.png" width="40%" />
+
+#### All methods
+
+To compare various metrics across different condition combinations,
+violin plots may not always be the best choice. In such cases, users can
+set to generate a summary heatmap. The function will return one heatmap
+per gene set, with rows corresponding to all possible combinations of
+values in the .
+
+``` r
+ 
+PlotScores(data = counts_example, 
+           metadata = metadata_example,  
+           gene_sets=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                          Senescence  = SimpleSenescenceSignature), 
+           GroupingVariable="Condition",  
+           method ="all",   
+           ncol = NULL, 
+           nrow = NULL, 
+           widthTitle=30, 
+           limits = NULL,   
+           title="Marthandan et al. 2016", 
+           titlesize = 12,
+           ColorValues = NULL)  
+```
+
+<img src="man/figures/README-heatmap_all-1.png" width="80%" />

@@ -1,172 +1,153 @@
-#' Generate Heatmaps for Cohen's d Effect Sizes
+#' Generate Heatmaps for Cohen\'s d Effect Sizes using ggplot2
 #'
-#' Creates heatmaps for Cohen's d effect sizes (and corresponding p-values, shown in cell text) for each gene signature,
-#' and combines them according to the specified orientation.
+#' This function computes Cohen\'s d effect sizes and corresponding p-values for multiple gene signatures and produces individual heatmaps. Each heatmap displays cell text showing the Cohen\'s d value along with its p-value. The heatmaps are then arranged in a grid layout.
 #'
 #' @param data A data frame of gene expression data with genes as rows and samples as columns.
-#'   The row names should contain gene names and the column names sample identifiers.
-#' @param metadata A data frame of sample metadata. The first column must contain sample identifiers matching \code{data}.
+#'   Row names should contain gene names and column names sample identifiers.
+#' @param metadata A data frame of sample metadata. The first column must contain sample
+#'   identifiers matching those in \code{data}.
 #' @param gene_sets A named list of gene sets. For unidirectional gene sets, each element is a vector of gene names;
-#'   for bidirectional gene sets, each element is a data frame with the first column as gene names and the second column as the expected direction (1 for upregulated, -1 for downregulated).
-#' @param variable A string specifying the grouping variable in \code{metadata} used for computing Cohen's d comparisons.
-#' @param orientation A string indicating the layout of the combined heatmaps. Options are \code{\"grid\"}, \code{\"horizontal\"}, or \code{\"vertical\"}.
-#'   Defaults to \code{\"grid\"}.
-#' @param limits An optional numeric vector specifying the color scale limits (e.g., \code{c(min, max)}). If not provided, the limits are computed from the data.
-#' @param cluster_columns Logical; whether to cluster columns in the heatmaps. Defaults to \code{TRUE}.
-#' @param cluster_rows Logical; whether to cluster rows in the heatmaps. Defaults to \code{TRUE}.
-#' @param widthTitle An integer specifying the width used in wrapping the gene set signature names for the heatmap subtitle.
-#'
-#' @return Depending on the orientation, a combined heatmap object is returned:
+#'   for bidirectional gene sets, each element is a data frame with the first column as gene names and the second column as the expected direction
+#'   (1 for upregulated, -1 for downregulated).
+#' @param variable A string specifying the grouping variable in \code{metadata} used for computing Cohen\'s d comparisons.
+#' @param nrow Optional. An integer specifying the number of rows in the heatmap grid. If \code{NULL}, the number of rows
+#'   is computed automatically.
+#' @param ncol Optional. An integer specifying the number of columns in the heatmap grid. If \code{NULL}, the number of columns
+#'   is computed automatically.
+#' @param limits Optional. A numeric vector of length 2 specifying the color scale limits (e.g., \code{c(min, max)}). If \code{NULL},
+#'   the limits are determined from the data.
+#' @param widthTitle An integer specifying the width used for wrapping gene set signature names in the heatmap titles. Default is 22.
+#' @param titlesize An integer specifying the text size for each of the heatmap titles. Default is 12.
+#' @param ColorValues A character vector specifying the colors for the gradient fill in the heatmaps. Default is \code{c("#F9F4AE", "#B44141")}.
+#' @param title Title for the grid of plots.
+#' @return A list with two elements:
 #' \describe{
-#'   \item{grid}{A grid-arranged grob (produced by \code{grid.arrange}) of heatmaps.}
-#'   \item{horizontal or vertical}{A combined Heatmap object (if not converted to a grob).}
+#'   \item{plt}{A combined heatmap arranged in a grid using \code{ggpubr::ggarrange}.}
+#'   \item{data}{A list containing the Cohen\'s d effect sizes and p-values for each gene signature, as computed by \code{CohenD_allConditions}.}
 #' }
 #'
 #' @details
-#' This function first computes Cohen's d effect sizes and p-values for all gene signatures using \code{CohenD_allConditions}.
-#' It then generates individual heatmaps (with cell text showing \"Cohen's d (p-value)\") for each signature.
-#' Finally, based on the specified \code{orientation}, the heatmaps are combined into a single plot using either
-#' \code{grid.arrange} (for a grid layout) or horizontal/vertical stacking operators.
+#' The function first calculates Cohen\'s d effect sizes and corresponding p-values for each gene signature using \code{CohenD_allConditions} (assumed to be defined elsewhere in the package). The resulting matrices are converted to a long format so that each cell in the heatmap can display the Cohen\'s d value and its associated p-value (formatted as \code{Cohen\'s d (p-value)}).
+#'
+#' The heatmaps are then adjusted to display axis text and ticks only for the left-most column and bottom row, and combined into a grid layout. If neither \code{nrow} nor \code{ncol} are specified, the layout is automatically determined to best approximate a square grid.
 #'
 #' @examples
 #' \dontrun{
-#'   # Assume gene_data, sample_metadata, and gene_sets are defined
-#'   Heatmap_CohenD(data = gene_data, metadata = sample_metadata,
-#'                  gene_sets = gene_sets, variable = \"Condition\", orientation = \"grid\")
+#'   # Assuming gene_data, sample_metadata, and gene_sets are defined:
+#'   result <- Heatmap_CohenD_ggplot(
+#'     data = gene_data,
+#'     metadata = sample_metadata,
+#'     gene_sets = gene_sets,
+#'     variable = "Condition",
+#'     nrow = 2,
+#'     ncol = 3,
+#'     limits = c(-1, 1),
+#'     widthTitle = 30,
+#'     titlesize = 14,
+#'     ColorValues = c("#F9F4AE", "#B44141")
+#'   )
+#'   print(result$plt)
 #' }
 #'
-#' @importFrom circlize colorRamp2
-#' @importFrom gridExtra grid.arrange
-#' @importFrom grid grid.text gpar
+#' @seealso \code{\link{CohenD_allConditions}}, \code{\link{wrap_title}}
+#'
+#' @importFrom ggplot2 ggplot geom_tile geom_text labs scale_fill_gradientn theme_minimal element_text element_blank element_line margin
+#' @importFrom ggpubr ggarrange
 #'
 #' @export
-Heatmap_CohenD <- function(data, metadata, gene_sets, variable, orientation=c("grid","horizontal","vertical"), limits=NULL, cluster_columns = TRUE, cluster_rows= TRUE, widthTitle=20) {
+Heatmap_CohenD <- function(data, metadata, gene_sets, variable, nrow = NULL, ncol = NULL, limits = NULL, widthTitle = 22, titlesize = 12, ColorValues = NULL,title=NULL) {
 
-  orientation <- match.arg(orientation)
+  cohenlist <- CohenD_allConditions(data = data, metadata = metadata, gene_sets = gene_sets, variable = variable)
 
-  cohenlist <- CohenD_allConditions(data=data, metadata=metadata, gene_sets=gene_sets, variable=variable)
-
-  # Create a list to store the heatmap objects
   heatmaps <- list()
-  # Generate a heatmap for each signature
-  i=1
-  for (signature in names(cohenlist)) {
 
-    # Ensure Cohen's d and p-value are matrices
+  if (is.null(ColorValues)) ColorValues <- c("#F9F4AE", "#B44141")
+
+  for (signature in names(cohenlist)) {
     cohen_d_mat <- t(as.matrix(cohenlist[[signature]]$CohenD))
     p_value_mat <- t(as.matrix(cohenlist[[signature]]$PValue))
 
-    # Format text labels
-    text_labels <- matrix(
-      paste0(
-        sprintf("%.2f", cohen_d_mat),  # Round Cohen's d to 2 decimals
-        " \n(",
-        format.pval(p_value_mat, digits = 1),  # Format p-value
-        ")"
-      ),
-      nrow = nrow(cohen_d_mat),
-      ncol = ncol(cohen_d_mat)
+    # Convert to long format manually
+    long_data <- data.frame(
+      Var1 = rep(rownames(cohen_d_mat), times = ncol(cohen_d_mat)),
+      Var2 = rep(colnames(cohen_d_mat), each = nrow(cohen_d_mat)),
+      CohenD = as.vector(cohen_d_mat),
+      PValue = as.vector(p_value_mat),
+      stringsAsFactors = FALSE
     )
 
-    # Use user-provided limits or default ones
-    if (is.null(limits)) limits <- c(min(cohen_d_mat), max(cohen_d_mat))
+    # Generate text labels
+    long_data$label <- paste0(sprintf("%.2f", long_data$CohenD), "\n(", format.pval(long_data$PValue, digits = 1), ")")
 
-    # Create heatmap
-    col_fun <- circlize::colorRamp2(limits, c("#F9F4AE" ,"#B44141"))
-    ht <- ComplexHeatmap::Heatmap(
-      cohen_d_mat,
-      name = "Cohen's d",
-      column_title = wrap_title(signature, widthTitle),
-      show_row_names = TRUE,
-      show_column_names = TRUE,
-      cluster_rows = cluster_rows,
-      cluster_columns = cluster_columns,
-      cell_fun = function(j, i, x, y, width, height, fill) {
-        grid.text(text_labels[i, j], x, y, gp = gpar(fontsize = 10, col = "black"))
-      },
-      col = col_fun
-    )
+    # Wrap the signature title using an internal helper function
+    signature_title <- wrap_title(signature, widthTitle)
 
-    if (orientation=="grid"){
+    # Create heatmap using ggplot2
+    p <- ggplot2::ggplot(long_data, ggplot2::aes(x = Var2, y = Var1, fill = CohenD)) +
+      ggplot2::geom_tile() +
+      ggplot2::geom_text(aes(label = label), color = "black", size = 3) +
+      ggplot2::scale_fill_gradientn(colors = ColorValues, limits = limits) +
+      ggplot2::labs(title = signature_title, x = NULL, y = NULL, fill = "Cohen\'s D") +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+                     plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize) )
 
-      # Add the heatmap to the list; but in grob so we can combine
-      heatmaps[[signature]] <- invisible(grid.grabExpr(ComplexHeatmap::draw(ht)))
-
-    }  else {
-      #heatmaps[[signature]] <- ht
-
-      if (i==1){
-
-        Heatmap_Final <- ht
-
-      } else {
-
-        if (orientation=="horizontal") Heatmap_Final <- Heatmap_Final + ht
-        if (orientation=="vertical") Heatmap_Final <- Heatmap_Final %v% ht
-
-      }
-      i = i + 1
-    }
-
+    heatmaps[[signature]] <- p
   }
 
-  # combine all heatmaps with a common color scale in only one row
-
-  # The user can choose to do it in only one row or only one column
-  # if (orientation=="horizontal"){
-  #
-  #   heatmap_row <- heatmaps   # Extract remaining heatmaps
-  #   Heatmap_Final <- heatmaps[[1]]  # Start with the first heatmap in the row
-  #   heatmap_row <- heatmap_row[-1]
-  #   while (length(heatmap_row) > 0) {
-  #     Heatmap_Final <- Heatmap_Final + heatmap_row[[1]]  # Combine horizontally
-  #     heatmap_row <- heatmap_row[-1]  # Remove the used heatmap
-  #   }
-  #
-  #
-  # } else if (orientation == "vertical"){
-  #
-  #   heatmap_row <- heatmaps   # Extract remaining heatmaps
-  #   Heatmap_Final <- heatmaps[[1]]  # Start with the first heatmap in the row
-  #   heatmap_row <- heatmap_row[-1]
-  #   while (length(heatmap_row) > 0) {
-  #     Heatmap_Final <- Heatmap_Final %v% heatmap_row[[1]]  # Combine horizontally
-  #     heatmap_row <- heatmap_row[-1]  # Remove the used heatmap
-  #   }
-
-
-  if (orientation == "grid"){
-    #  } else if (orientation == "grid"){
-
-    # Determine grid layout
-    num_signatures <- length(cohenlist)
-    if (is.null(ncol) && is.null(nrow)) {
-      ncol <- ceiling(sqrt(num_signatures))
-      nrow <- ceiling(num_signatures / ncol)
-    } else if (is.null(ncol)) {
-      ncol <- ceiling(num_signatures / nrow)
-    } else if (is.null(nrow)) {
-      nrow <- ceiling(num_signatures / ncol)
-    }
-
-
-    Heatmap_Final <- gridExtra::grid.arrange(grobs = heatmaps,
-                                             ncol = ncol,
-                                             nrow = nrow)
-
-  } else {
-    print(Heatmap_Final)
+  # Determine grid layout if not provided
+  num_signatures <- length(heatmaps)
+  if (is.null(nrow) & is.null(ncol)) {
+    ncol <- ceiling(sqrt(num_signatures))
+    nrow <- ceiling(num_signatures / ncol)
+  } else if (is.null(nrow)) {
+    nrow <- ceiling(num_signatures / ncol)
+  } else if (is.null(ncol)) {
+    ncol <- ceiling(num_signatures / nrow)
   }
 
-  return(Heatmap_Final)
+  # Adjust axis labels based on grid position
+  for (i in seq_along(heatmaps)) {
+    row_idx <- ceiling(i / ncol)  # Current row number
+    col_idx <- (i - 1) %% ncol + 1  # Current column number
+
+    p <- heatmaps[[i]] +
+      theme(
+        axis.text.y = if (col_idx == 1) ggplot2::element_text() else ggplot2::element_blank(),
+        axis.ticks.y = if (col_idx == 1) ggplot2::element_line() else ggplot2::element_blank(),
+        plot.margin = ggplot2::margin(4, 0, 0, 0)  # Adjust plot margins
+      )
+
+    heatmaps[[i]] <- p
+  }
+
+  # Compute dynamic column widths: first column is wider
+  widths <- c(1.5, rep(1, ncol - 1))
+
+  # Combine heatmaps into a single grid plot using ggpubr
+  plt <- ggpubr::ggarrange(
+    plotlist = heatmaps,
+    ncol = ncol,
+    nrow = nrow,
+    common.legend = TRUE,
+    legend = "right",
+    align = "h",
+    widths = widths
+  )
+
+  plt <- ggpubr::annotate_figure(plt, top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize+2)))
+
+
+  return(list(plt = plt, data = cohenlist))
 }
 
 
 
 
-#' Compute Cohen's d for All Gene Signatures Across Conditions
+
+#' Compute Cohen\'s d for All Gene Signatures Across Conditions
 #'
-#' Computes Cohen's d effect sizes and corresponding p-values for all gene signatures using scores calculated
+#' Computes Cohen\'s d effect sizes and corresponding p-values for all gene signatures using scores calculated
 #' by various methods. The function first computes gene signature scores using \code{CalculateScores} with the "all"
 #' option, flattens the results, and then computes pairwise comparisons for a specified grouping variable.
 #'
@@ -178,21 +159,21 @@ Heatmap_CohenD <- function(data, metadata, gene_sets, variable, orientation=c("g
 #'   column indicates the expected direction (1 for upregulated, -1 for downregulated).
 #' @param variable A string specifying the grouping variable in \code{metadata} used to compare scores between conditions.
 #'
-#' @return A named list where each element corresponds to a gene signature. Each signature element is a list with two components:\n
-#' \describe{\n
+#' @return A named list where each element corresponds to a gene signature. Each signature element is a list with two components:
+#' \describe{
 #'   \item{CohenD}{A data frame where rows are methods and columns are group contrasts (formatted as \"Group1:Group2\"),
-#'   containing the computed Cohen's d effect sizes.}\n
-#'   \item{PValue}{A data frame with the same structure as \code{CohenD} containing the corresponding p-values.}\n
+#'   containing the computed Cohen\'s d effect sizes.}
+#'   \item{PValue}{A data frame with the same structure as \code{CohenD} containing the corresponding p-values.}
 #' }
 #'
 #' @examples
-#' \dontrun{\n
-#'   # Assume gene_data is your gene expression data frame, sample_metadata is your metadata, and\n
-#'   # gene_sets is a named list of gene sets.\n
-#'   results <- CohenD_allConditions(data = gene_data, metadata = sample_metadata,\n
-#'                                    gene_sets = gene_sets, variable = \"Condition\")\n
-#'   # Access Cohen's d for a specific signature:\n
-#'   results$Signature_A$CohenD\n
+#' \dontrun{
+#'   # Assume gene_data is your gene expression data frame, sample_metadata is your metadata, and
+#'   # gene_sets is a named list of gene sets.
+#'   results <- CohenD_allConditions(data = gene_data, metadata = sample_metadata,
+#'                                    gene_sets = gene_sets, variable = \"Condition\")
+#'   # Access Cohen\'s d for a specific signature:
+#'   results$Signature_A$CohenD
 #' }
 #'
 #' @export
@@ -228,7 +209,7 @@ CohenD_allConditions <- function(data, metadata, gene_sets, variable) {
       # Subset data for this method
       df_method <- df_subset[df_subset$method == method, ]
 
-      # Compute Cohen's d and p-values
+      # Compute Cohen\'s d and p-values
       cohen_results <- compute_cohen_d(df_method, variable)
 
       # Convert to named vectors (column names = comparisons)
@@ -250,15 +231,15 @@ CohenD_allConditions <- function(data, metadata, gene_sets, variable) {
 
 
 
-#' Compute Cohen's d Effect Size
+#' Compute Cohen\'s d Effect Size
 #'
-#' Computes the absolute Cohen's d effect size between two numeric vectors. This function returns
+#' Computes the absolute Cohen\'s d effect size between two numeric vectors. This function returns
 #' the absolute value of the difference in means divided by the pooled standard deviation.
 #'
 #' @param x A numeric vector representing the values for group 1.
 #' @param y A numeric vector representing the values for group 2.
 #'
-#' @return A numeric value representing Cohen's d. Returns NA if either group has fewer than two observations
+#' @return A numeric value representing Cohen\'s d. Returns NA if either group has fewer than two observations
 #'   or if the pooled standard deviation is zero.
 #'
 #' @examples
@@ -283,9 +264,9 @@ cohen_d <- function(x, y) {
 }
 
 
-#' Compute Pairwise Cohen's d and P-Values
+#' Compute Pairwise Cohen\'s d and P-Values
 #'
-#' Computes Cohen's d effect sizes and corresponding p-values for all pairwise comparisons of a grouping variable
+#' Computes Cohen\'s d effect sizes and corresponding p-values for all pairwise comparisons of a grouping variable
 #' in a data frame.
 #'
 #' @param dfScore A data frame containing at least one numeric column and a grouping variable. Output from flatten_results.
@@ -296,7 +277,7 @@ cohen_d <- function(x, y) {
 #' \describe{
 #'   \item{Group1}{The first group in the pair.}
 #'   \item{Group2}{The second group in the pair.}
-#'   \item{CohenD}{The computed Cohen's d effect size for the comparison.}
+#'   \item{CohenD}{The computed Cohen\'s d effect size for the comparison.}
 #'   \item{PValue}{The p-value from a t-test comparing the two groups.}
 #' }
 #'
@@ -321,7 +302,7 @@ compute_cohen_d <- function(dfScore, variable, quantitative_var="score") {
   results <- data.frame(Group1 = character(), Group2 = character(),
                         CohenD = numeric(), PValue = numeric(), stringsAsFactors = FALSE)
 
-  # Compute Cohen's d and p-value for all unique pairs
+  # Compute Cohen\'s d and p-value for all unique pairs
   combs <- combn(unique_groups, 2, simplify = FALSE)
   for (pair in combs) {
     x <- dfScore[dfScore[[variable]] == pair[1], quantitative_var, drop = TRUE]
@@ -350,7 +331,7 @@ compute_cohen_d <- function(dfScore, variable, quantitative_var="score") {
 #'
 #' @examples
 #' # Suppose nested_list is structured as follows:
-#' nested_list <- list(\n  ssGSEA = list(Signature_A = data.frame(sample = c(\"S1\", \"S2\"), score = c(0.5, 0.7))),\n  logmedian = list(Signature_A = data.frame(sample = c(\"S1\", \"S2\"), score = c(0.3, 0.4)))\n)\n  flatten_results(nested_list)
+#' nested_list <- list(  ssGSEA = list(Signature_A = data.frame(sample = c(\"S1\", \"S2\"), score = c(0.5, 0.7))),  logmedian = list(Signature_A = data.frame(sample = c(\"S1\", \"S2\"), score = c(0.3, 0.4))))  flatten_results(nested_list)
 #'
 #' @keywords internal
 flatten_results <- function(nested_list) {

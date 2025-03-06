@@ -19,7 +19,7 @@ are added to the data frame.
 }
 \examples{
 # Suppose nested_list is structured as follows:
-nested_list <- list(\n  ssGSEA = list(Signature_A = data.frame(sample = c(\"S1\", \"S2\"), score = c(0.5, 0.7))),\n  logmedian = list(Signature_A = data.frame(sample = c(\"S1\", \"S2\"), score = c(0.3, 0.4)))\n)\n  flatten_results(nested_list)
+nested_list <- list(  ssGSEA = list(Signature_A = data.frame(sample = c(\"S1\", \"S2\"), score = c(0.5, 0.7))),  logmedian = list(Signature_A = data.frame(sample = c(\"S1\", \"S2\"), score = c(0.3, 0.4))))  flatten_results(nested_list)
 
 }
 \keyword{internal}
