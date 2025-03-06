@@ -40,7 +40,7 @@
 #' @importFrom grid grid.text gpar
 #'
 #' @export
-Heatmap_CohenD <- function(data, metadata, gene_sets, variable, orientation=c("grid","horizontal","vertical"), limits=NULL, cluster_columns = TRUE, cluster_rows= TRUE, subtitlewidth=20) {
+Heatmap_CohenD <- function(data, metadata, gene_sets, variable, orientation=c("grid","horizontal","vertical"), limits=NULL, cluster_columns = TRUE, cluster_rows= TRUE, widthTitle=20) {
 
   orientation <- match.arg(orientation)
 
@@ -81,7 +81,7 @@ Heatmap_CohenD <- function(data, metadata, gene_sets, variable, orientation=c("g
       cluster_rows = cluster_rows,
       cluster_columns = cluster_columns,
       cell_fun = function(j, i, x, y, width, height, fill) {
-        grid.text(text_labels[i, j], x, y, gp = gpar(fontsize = 10, col = "black"))
+        grid.text(t(text_labels)[i, j], x, y, gp = gpar(fontsize = 10, col = "black"))
       },
       col = col_fun
     )
@@ -96,8 +96,6 @@ Heatmap_CohenD <- function(data, metadata, gene_sets, variable, orientation=c("g
     }
 
   }
-
-
 
   # combine all heatmaps with a common color scale in only one row
 
