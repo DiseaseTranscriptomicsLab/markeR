@@ -35,6 +35,7 @@ for transcriptomics research (bulk RNA-seq).
         -   [logmedian method](#logmedian-method)
         -   [ssGSEA method](#ssgsea-method)
         -   [Ranking method](#ranking-method)
+        -   [All methods](#all-methods)
 
 ## Installation
 

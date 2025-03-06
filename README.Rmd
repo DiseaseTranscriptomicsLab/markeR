@@ -37,6 +37,7 @@ knitr::opts_chunk$set(
     - [logmedian method](#logmedian-method)
     - [ssGSEA method](#ssgsea-method) 
     - [Ranking method](#ranking-method) 
+    - [All methods](#all-methods) 
 
 ## Installation
 
