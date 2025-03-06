@@ -14,7 +14,7 @@
 #' @param limits An optional numeric vector specifying the color scale limits (e.g., \code{c(min, max)}). If not provided, the limits are computed from the data.
 #' @param cluster_columns Logical; whether to cluster columns in the heatmaps. Defaults to \code{TRUE}.
 #' @param cluster_rows Logical; whether to cluster rows in the heatmaps. Defaults to \code{TRUE}.
-#' @param subtitlewidth An integer specifying the width used in wrapping the gene set signature names for the heatmap subtitle.
+#' @param widthTitle An integer specifying the width used in wrapping the gene set signature names for the heatmap subtitle.
 #'
 #' @return Depending on the orientation, a combined heatmap object is returned:
 #' \describe{
@@ -49,11 +49,12 @@ Heatmap_CohenD <- function(data, metadata, gene_sets, variable, orientation=c("g
   # Create a list to store the heatmap objects
   heatmaps <- list()
   # Generate a heatmap for each signature
+  i=1
   for (signature in names(cohenlist)) {
 
     # Ensure Cohen's d and p-value are matrices
-    cohen_d_mat <- as.matrix(cohenlist[[signature]]$CohenD)
-    p_value_mat <- as.matrix(cohenlist[[signature]]$PValue)
+    cohen_d_mat <- t(as.matrix(cohenlist[[signature]]$CohenD))
+    p_value_mat <- t(as.matrix(cohenlist[[signature]]$PValue))
 
     # Format text labels
     text_labels <- matrix(
@@ -73,26 +74,38 @@ Heatmap_CohenD <- function(data, metadata, gene_sets, variable, orientation=c("g
     # Create heatmap
     col_fun <- circlize::colorRamp2(limits, c("#F9F4AE" ,"#B44141"))
     ht <- ComplexHeatmap::Heatmap(
-      t(cohen_d_mat),
+      cohen_d_mat,
       name = "Cohen's d",
-      column_title = wrap_title(signature, subtitlewidth),
+      column_title = wrap_title(signature, widthTitle),
       show_row_names = TRUE,
       show_column_names = TRUE,
       cluster_rows = cluster_rows,
       cluster_columns = cluster_columns,
       cell_fun = function(j, i, x, y, width, height, fill) {
-        grid.text(t(text_labels)[i, j], x, y, gp = gpar(fontsize = 10, col = "black"))
+        grid.text(text_labels[i, j], x, y, gp = gpar(fontsize = 10, col = "black"))
       },
       col = col_fun
     )
 
-
-
     if (orientation=="grid"){
+
       # Add the heatmap to the list; but in grob so we can combine
       heatmaps[[signature]] <- invisible(grid.grabExpr(ComplexHeatmap::draw(ht)))
+
     }  else {
-      heatmaps[[signature]] <- ht
+      #heatmaps[[signature]] <- ht
+
+      if (i==1){
+
+        Heatmap_Final <- ht
+
+      } else {
+
+        if (orientation=="horizontal") Heatmap_Final <- Heatmap_Final + ht
+        if (orientation=="vertical") Heatmap_Final <- Heatmap_Final %v% ht
+
+      }
+      i = i + 1
     }
 
   }
@@ -100,30 +113,30 @@ Heatmap_CohenD <- function(data, metadata, gene_sets, variable, orientation=c("g
   # combine all heatmaps with a common color scale in only one row
 
   # The user can choose to do it in only one row or only one column
-  if (orientation=="horizontal"){
+  # if (orientation=="horizontal"){
+  #
+  #   heatmap_row <- heatmaps   # Extract remaining heatmaps
+  #   Heatmap_Final <- heatmaps[[1]]  # Start with the first heatmap in the row
+  #   heatmap_row <- heatmap_row[-1]
+  #   while (length(heatmap_row) > 0) {
+  #     Heatmap_Final <- Heatmap_Final + heatmap_row[[1]]  # Combine horizontally
+  #     heatmap_row <- heatmap_row[-1]  # Remove the used heatmap
+  #   }
+  #
+  #
+  # } else if (orientation == "vertical"){
+  #
+  #   heatmap_row <- heatmaps   # Extract remaining heatmaps
+  #   Heatmap_Final <- heatmaps[[1]]  # Start with the first heatmap in the row
+  #   heatmap_row <- heatmap_row[-1]
+  #   while (length(heatmap_row) > 0) {
+  #     Heatmap_Final <- Heatmap_Final %v% heatmap_row[[1]]  # Combine horizontally
+  #     heatmap_row <- heatmap_row[-1]  # Remove the used heatmap
+  #   }
 
-    for (i in 1:length(heatmaps)) {
-      heatmap_row <- heatmaps   # Extract remaining heatmaps
-      Heatmap_Final <- heatmaps[[1]]  # Start with the first heatmap in the row
-      while (length(heatmap_row) > 0) {
-        Heatmap_Final <- Heatmap_Final + heatmap_row[[1]]  # Combine horizontally
-        heatmap_row <- heatmap_row[-1]  # Remove the used heatmap
-      }
-    }
 
-  } else if (orientation == "vertical"){
-
-    for (i in 1:length(heatmaps)) {
-      heatmap_row <- heatmaps   # Extract remaining heatmaps
-      Heatmap_Final <- heatmaps[[1]]  # Start with the first heatmap in the row
-      while (length(heatmap_row) > 0) {
-        Heatmap_Final <- Heatmap_Final %v% heatmap_row[[1]]  # Combine horizontally
-        heatmap_row <- heatmap_row[-1]  # Remove the used heatmap
-      }
-    }
-
-
-  } else if (orientation == "grid"){
+  if (orientation == "grid"){
+    #  } else if (orientation == "grid"){
 
     # Determine grid layout
     num_signatures <- length(cohenlist)
@@ -138,9 +151,11 @@ Heatmap_CohenD <- function(data, metadata, gene_sets, variable, orientation=c("g
 
 
     Heatmap_Final <- gridExtra::grid.arrange(grobs = heatmaps,
-                                  ncol = ncol,
-                                  nrow = nrow)
+                                             ncol = ncol,
+                                             nrow = nrow)
 
+  } else {
+    print(Heatmap_Final)
   }
 
   return(Heatmap_Final)
