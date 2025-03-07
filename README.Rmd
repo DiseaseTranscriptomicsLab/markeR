@@ -221,8 +221,8 @@ ROCandAUCplot(counts_example,
 
 #### Cohen's D
 
-```{r cohendexample, fig.width=6, fig.height=4, out.width="100%", warning=FALSE, message=FALSE}
-CohenDHeatmap(counts_example, 
+```{r cohendexample, fig.width=6, fig.height=4, out.width="70%", warning=FALSE, message=FALSE}
+CohenD_IndividualGenes(counts_example, 
               metadata_example, 
               genes=SimpleSenescenceSignature,
               condition_var = "Condition", 

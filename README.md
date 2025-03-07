@@ -264,7 +264,7 @@ ROCandAUCplot(counts_example,
 #### Cohen’s D
 
 ``` r
-CohenDHeatmap(counts_example, 
+CohenD_IndividualGenes(counts_example, 
               metadata_example, 
               genes=SimpleSenescenceSignature,
               condition_var = "Condition", 
@@ -275,7 +275,7 @@ CohenDHeatmap(counts_example,
                                     cluster_rows=T))
 ```
 
-<img src="man/figures/README-cohendexample-1.png" width="100%" />
+<img src="man/figures/README-cohendexample-1.png" width="70%" />
 
 #### PCA with only genes of interest
 

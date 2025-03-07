@@ -61,7 +61,7 @@
 #' @importFrom circlize colorRamp2
 #'
 #' @export
-CohenDHeatmap <- function(data, metadata,
+CohenD_IndividualGenes <- function(data, metadata,
                           genes = NULL,
                           condition_var,
                           class,
