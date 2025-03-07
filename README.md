@@ -68,8 +68,9 @@ score-based analysis:
 -   **CalculateScores:** Calculates gene signature scores for each
     sample using either the ssGSEA, log2 median-centered or ranking
     method.
--   **PlotScores:** Visualizes the calculated scores across conditions
-    using violin plots.
+-   **PlotScores:** Calculates and displays the calculated scores across
+    conditions using violin plots, density plots or heatmaps, depending
+    on the chosen parameters.
 
 It also includes some functions for visualising individual genes from a
 gene signature:
@@ -412,6 +413,29 @@ PlotScores(data = counts_example,
 ```
 
 <img src="man/figures/README-exampleScore_bidirectional-1.png" width="40%" />
+
+For users interested in viewing the overall distribution of scores,
+simply omit the `GroupingVariable` or `metadata` parameters. In this
+case, the function will automatically generate a grid of density plots,
+with each gene signature represented by its own plot.
+
+``` r
+PlotScores(data = counts_example, 
+           metadata = metadata_example, 
+           gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                          Senescence  = SimpleSenescenceSignature), 
+           method ="logmedian", 
+           ColorValues = NULL,  
+           ncol = NULL, 
+           nrow = NULL, 
+           widthTitle=24, 
+           limits = NULL,  
+           title="Marthandan et al. 2016",
+           labsize=8, 
+           titlesize = 10)  
+```
+
+<img src="man/figures/README-plotscores_density-1.png" width="80%" />
 
 #### ssGSEA method
 

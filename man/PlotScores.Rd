@@ -8,9 +8,9 @@ PlotScores(
   data,
   metadata,
   gene_sets,
-  method = c("ssGSEA", "logmedian", "ranking"),
+  method = c("ssGSEA", "logmedian", "ranking", "all"),
   ColorVariable = NULL,
-  GroupingVariable,
+  GroupingVariable = NULL,
   ColorValues = NULL,
   ConnectGroups = FALSE,
   ncol = NULL,
@@ -50,11 +50,13 @@ The first column should contain sample identifiers (i.e., the column names of \c
 If \code{NULL} (default), the "Paired" brewer palette is applied. Only applicable if \code{method != "all"}.}
 
 \item{GroupingVariable}{A character string indicating the column name in \code{metadata} used for grouping
-on the x-axis. \strong{(Required)} If \code{method == "all"}, this variable is used for generating comparisons.}
+on the x-axis. If \code{GroupingVariable==NULL}, the function will return a density plot for each gene set.
+If \code{method == "all"}, this variable is \strong{required}, and used for generating comparisons.}
 
-\item{ColorValues}{An optional named vector mapping unique values of \code{ColorVariable} to specific colors.
+\item{ColorValues}{An optional named vector mapping unique values of \code{GroupingVariable} to specific colors.
 If not provided, the "Paired" brewer palette is used. If \code{method == "all"}, it should be a vector of length two, specifying
-the colors for the color bar (detault: c("#F9F4AE", "#B44141")).}
+the colors for the color bar (detault: c("#F9F4AE", "#B44141")). If \code{ColorVariable} is NULL, then it defaults to the color
+"#ECBD78", and can be changed to define the color of the density curve.}
 
 \item{ConnectGroups}{Logical, indicating whether to connect groups using lines across the x-axis.
 If \code{TRUE}, a line connecting median values across groups is drawn, colored by \code{ColorVariable}.
@@ -73,8 +75,8 @@ Default is \code{10}.}
 
 \item{titlesize}{Numeric; font size of the main title of the grid of plots (default = \code{14}).}
 
-\item{limits}{Optional numeric vector of length 2 specifying the y-axis limits (if \code{method != "all"}) or the limits of the color scale (if \code{method == "all"}).
-If \code{NULL}, the limits adjusts automatically.}
+\item{limits}{Optional numeric vector of length 2 specifying the y-axis limits (if \code{method != "all"}), the limits of the color scale
+(if \code{method == "all"}), or the color of the density curve if \code{GroupingVariable==NULL}. If \code{NULL}, the limits adjusts automatically.}
 
 \item{legend_nrow}{Optional numeric value specifying the number of rows in the legend. If \code{NULL}, determined by ggplot2.
 Only applicable if \code{method != "all"}.}

@@ -76,7 +76,7 @@ devtools::install_github("DiseaseTranscriptomicsLab/markeR")
 The current release of **markeR** includes two primary functions for score-based analysis:
 
 - **CalculateScores:** Calculates gene signature scores for each sample using either the ssGSEA, log2 median-centered or ranking method.
-- **PlotScores:** Visualizes the calculated scores across conditions using violin plots.
+- **PlotScores:** Calculates and displays the calculated scores across conditions using violin plots, density plots or heatmaps, depending on the chosen parameters.
 
 It also includes some functions for visualising individual genes from a gene signature:
 
@@ -345,6 +345,30 @@ PlotScores(data = counts_example,
            titlesize = 10)  
 
 ```
+
+
+For users interested in viewing the overall distribution of scores, simply omit the `GroupingVariable` or `metadata` parameters. In this case, the function will automatically generate a grid of density plots, with each gene signature represented by its own plot.
+
+```{r plotscores_density, fig.width=6, fig.height=3, out.width="80%", warning=FALSE, message=FALSE}
+
+PlotScores(data = counts_example, 
+           metadata = metadata_example, 
+           gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                          Senescence  = SimpleSenescenceSignature), 
+           method ="logmedian", 
+           ColorValues = NULL,  
+           ncol = NULL, 
+           nrow = NULL, 
+           widthTitle=24, 
+           limits = NULL,  
+           title="Marthandan et al. 2016",
+           labsize=8, 
+           titlesize = 10)  
+ 
+
+```
+
+
 
 #### ssGSEA method
 

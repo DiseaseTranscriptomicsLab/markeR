@@ -27,10 +27,12 @@
 #' @param ColorVariable A character string indicating the column name used to color the points.
 #'   If `NULL` (default), the "Paired" brewer palette is applied. Only applicable if `method != "all"`.
 #' @param GroupingVariable A character string indicating the column name in `metadata` used for grouping
-#'   on the x-axis. **(Required)** If `method == "all"`, this variable is used for generating comparisons.
-#' @param ColorValues An optional named vector mapping unique values of `ColorVariable` to specific colors.
+#'   on the x-axis. If `GroupingVariable==NULL`, the function will return a density plot for each gene set.
+#'   If `method == "all"`, this variable is **required**, and used for generating comparisons.
+#' @param ColorValues An optional named vector mapping unique values of `GroupingVariable` to specific colors.
 #'   If not provided, the "Paired" brewer palette is used. If `method == "all"`, it should be a vector of length two, specifying
-#'   the colors for the color bar (detault: c("#F9F4AE", "#B44141")).
+#'   the colors for the color bar (detault: c("#F9F4AE", "#B44141")). If `ColorVariable` is NULL, then it defaults to the color
+#'   "#ECBD78", and can be changed to define the color of the density curve.
 #' @param ConnectGroups Logical, indicating whether to connect groups using lines across the x-axis.
 #'   If `TRUE`, a line connecting median values across groups is drawn, colored by `ColorVariable`.
 #'   Default is `FALSE`. Only applicable if `method != "all"`.
@@ -42,8 +44,8 @@
 #' @param widthTitle Optional integer specifying the maximum width of the title before inserting line breaks.
 #'   Titles break at `_`, `-`, or `:` where possible, or at the exact width if no such character is found.
 #'   Default is `10`.
-#' @param limits Optional numeric vector of length 2 specifying the y-axis limits (if `method != "all"`) or the limits of the color scale (if `method == "all"`).
-#' If `NULL`, the limits adjusts automatically.
+#' @param limits Optional numeric vector of length 2 specifying the y-axis limits (if `method != "all"`), the limits of the color scale
+#' (if `method == "all"`), or the color of the density curve if `GroupingVariable==NULL`. If `NULL`, the limits adjusts automatically.
 #' @param legend_nrow Optional numeric value specifying the number of rows in the legend. If `NULL`, determined by ggplot2.
 #'   Only applicable if `method != "all"`.
 #' @param pointSize Optional numeric value specifying the point size. Default is `2`.
@@ -76,12 +78,15 @@
 #'
 #' @export
 PlotScores <- function(data, metadata, gene_sets,
-                       method = c("ssGSEA", "logmedian", "ranking"),
-                       ColorVariable = NULL, GroupingVariable,
+                       method = c("ssGSEA", "logmedian", "ranking","all"),
+                       ColorVariable = NULL, GroupingVariable=NULL,
                        ColorValues = NULL, ConnectGroups = FALSE, ncol = NULL, nrow = NULL, title=NULL,
                        widthTitle = 10, titlesize=12,limits = NULL, legend_nrow = NULL, pointSize=2, xlab=NULL, labsize=10,cond_cohend=NULL) {
 
-  if (method == "all"){
+  method <- match.arg(method)
+
+
+  if (method == "all"){ # returns heatmap
 
     # if user wants "all" methods, a heatmap of cohen D's is returned, for all combination of variables in GroupingVariable
     Heatmap_Final <- Heatmap_CohenD(data = data,
@@ -104,6 +109,79 @@ PlotScores <- function(data, metadata, gene_sets,
                                    metadata=metadata,
                                    gene_sets=gene_sets,
                                    method = method)
+
+    # if grouping variable is NULL, then the function displays a density / distribution of scores
+    if (is.null(GroupingVariable) | is.null(metadata)){
+
+      plot_list <- list()
+
+      for (signature in names(ResultsList)) {
+
+        df <- ResultsList[[signature]]
+        # Wrap the signature name using the helper function
+        wrapped_title <- wrap_title(signature, width = widthTitle)
+
+        ColorValues <- if (is.null(ColorValues)) "#ECBD78" else ColorValues
+
+        p <-  ggplot2::ggplot(df, ggplot2::aes(x = score)) +
+          ggplot2::geom_density(fill =ColorValues, alpha = 0.5) +
+          ggplot2::labs(title = "Density Plot of Score", x = xlab, y = "Density")
+
+        # Customize the plot appearance.
+        p <- p + ggplot2::theme_classic() +
+          ggplot2::theme( plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize) ) +
+          ggplot2::labs(title = wrapped_title, color = "", x = "", y = "")
+
+        # If limits is specified, crop the plot without adjusting the data (violins).
+        if (!is.null(limits)) {
+          p <- p + ggplot2::coord_cartesian(xlim = limits)
+        }
+
+        plot_list[[signature]] <- p
+
+      }
+
+      n <- length(plot_list)
+
+      # Determine grid layout
+      if (is.null(ncol) && is.null(nrow)) {
+
+        ncol <- ceiling(sqrt(n))
+        nrow <- ceiling(n / ncol)
+
+      } else if (is.null(ncol)){
+
+        ncol <- ceiling(n / nrow)
+
+      } else if (is.null(nrow)){
+
+        nrow <- ceiling(n / ncol)
+
+      }
+
+      # create label for y axis
+      if (method == "ssGSEA"){
+        xlab <- "ssGSEA Enrichment Score"
+      } else if (method == "logmedian"){
+        xlab <- "Normalized Signature Score"
+      } else if (method == "ranking"){
+        xlab <- "Signature Genes' Ranking"
+      }
+
+      combined_plot <- ggpubr::ggarrange(plotlist = plot_list, ncol = ncol, nrow = nrow, common.legend = TRUE, align = "h")
+      combined_plot <- ggpubr::annotate_figure(combined_plot,
+                                               left = grid::textGrob("Density",
+                                                                     rot = 90, vjust = 1, gp = grid::gpar(cex = 1.3, fontsize = labsize)),
+                                               bottom = grid::textGrob(xlab, gp = grid::gpar(cex = 1.3, fontsize = labsize)),
+                                               top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize+2)))
+
+
+
+
+      return(combined_plot)
+    }
+
+    if (!(GroupingVariable %in% colnames(metadata))) stop(paste0(GroupingVariable, " not in metadata columns. Please check metadata."))
 
     # Initialize an empty list to store individual ggplot objects.
     plot_list <- list()
