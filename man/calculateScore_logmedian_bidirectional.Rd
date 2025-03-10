@@ -7,19 +7,23 @@
 calculateScore_logmedian_bidirectional(data, signature)
 }
 \arguments{
-\item{data}{A data frame of normalized counts (genes as rows, samples as columns).}
+\item{data}{A data frame of normalized counts (genes as rows, samples as
+columns).}
 
 \item{signature}{A data frame with:
 \itemize{
 \item The \strong{first column} containing gene names.
-\item The \strong{second column} specifying enrichment direction (\code{1} for upregulated, \code{-1} for downregulated).
+\item The \strong{second column} specifying enrichment direction (\code{1} for upregulated,
+\code{-1} for downregulated).
 }}
 }
 \value{
 A named vector with log-median-centered scores per sample.
 }
 \description{
-Computes gene signature scores considering both upregulated and downregulated genes separately,
-then calculates a differential score by subtracting downregulated from upregulated scores.
+Computes gene signature scores considering both upregulated and downregulated
+genes separately,
+then calculates a differential score by subtracting downregulated from
+upregulated scores.
 }
 \keyword{internal}

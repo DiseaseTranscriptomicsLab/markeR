@@ -1,12 +1,16 @@
 #' Calculate Gene Signature Scores using Log-Median Approach
 #'
-#' Computes log2-median-centered scores for each sample based on gene signature expression.
+#' Computes log2-median-centered scores for each sample based on gene
+#' signature expression.
 #'
-#' @param data A data frame of normalized counts where each row is a gene and each column is a sample.
-#' @param metadata A data frame containing sample metadata (optional). If provided, the resulting scores will be merged with metadata.
+#' @param data A data frame of normalized counts where each row is a gene
+#' and each column is a sample.
+#' @param metadata A data frame containing sample metadata (optional). If
+#' provided, the resulting scores will be merged with metadata.
 #' @param gene_sets A named list representing gene sets. **(Required)**
 #'
-#' - **Unidirectional gene sets:** Each element should be a vector of gene names representing a signature.
+#' - **Unidirectional gene sets:** Each element should be a vector of gene
+#' names representing a signature.
 #'   - The names of the list elements serve as labels for the signatures.
 #' - **Bidirectional gene sets:** Each element should be a data frame with:
 #'   - The **first column** containing gene names.
@@ -14,7 +18,9 @@
 #'     - `1` for upregulated genes.
 #'     - `-1` for downregulated genes.
 #'
-#' @return A list of data frames containing log-median scores for each signature. If `metadata` is provided, it is merged with the scores.
+#' @return A list of data frames containing log-median scores for each
+#'  signature.
+#' If `metadata` is provided, it is merged with the scores.
 #' @examples
 #' \dontrun{
 #' data <- matrix(rnorm(1000), nrow = 100, ncol = 10)
@@ -22,7 +28,8 @@
 #' rownames(data) <- paste0("Gene_", 1:100)
 #' gene_sets <- list(
 #'   Signature_A = sample(rownames(data), 10),
-#'   Signature_B = data.frame(Gene = sample(rownames(data), 10), Direction = sample(c(1, -1), 10, replace = TRUE))
+#'   Signature_B = data.frame(Gene = sample(rownames(data), 10), Direction =
+#'   sample(c(1, -1), 10, replace = TRUE))
 #' )
 #' scores <- CalculateScores_logmedian(data, gene_sets = gene_sets)
 #' }
@@ -61,13 +68,17 @@ CalculateScores_logmedian <- function(data, metadata = NULL, gene_sets) {
 
 #' Calculate Log-Median Scores for Bidirectional Gene Sets
 #'
-#' Computes gene signature scores considering both upregulated and downregulated genes separately,
-#' then calculates a differential score by subtracting downregulated from upregulated scores.
+#' Computes gene signature scores considering both upregulated and downregulated
+#' genes separately,
+#' then calculates a differential score by subtracting downregulated from
+#' upregulated scores.
 #'
-#' @param data A data frame of normalized counts (genes as rows, samples as columns).
+#' @param data A data frame of normalized counts (genes as rows, samples as
+#' columns).
 #' @param signature A data frame with:
 #'   - The **first column** containing gene names.
-#'   - The **second column** specifying enrichment direction (`1` for upregulated, `-1` for downregulated).
+#'   - The **second column** specifying enrichment direction (`1` for upregulated,
+#'   `-1` for downregulated).
 #'
 #' @return A named vector with log-median-centered scores per sample.
 #' @keywords internal
@@ -99,11 +110,14 @@ calculateScore_logmedian_bidirectional <- function(data, signature) {
 
 #' Calculate Log-Median Scores for Unidirectional Gene Sets
 #'
-#' Computes log-median-centered scores for gene signatures where all genes are expected to be enriched in
+#' Computes log-median-centered scores for gene signatures where all genes are
+#' expected to be enriched in
 #' the same direction, or when direction is not known.
 #'
-#' @param data A data frame of normalized counts (genes as rows, samples as columns).
-#' @param signature A vector of gene names or a data frame where the first column contains gene names.
+#' @param data A data frame of normalized counts (genes as rows, samples as
+#' columns).
+#' @param signature A vector of gene names or a data frame where the first
+#' column contains gene names.
 #'
 #' @return A named vector with log-median-centered scores per sample.
 #' @keywords internal
@@ -111,9 +125,10 @@ calculateScore_logmedian_unidirectional <- function(data, signature) {
   if (is.data.frame(signature)) signature <- as.vector(signature[, 1])
 
   data_subset <- na.omit(subset(log2(data + 1), row.names(data) %in% signature))
-
-  data_subset <- data_subset - apply(data_subset, 1, median)  # Center gene in its log2 median
-  dfScore <- colSums(data_subset) / nrow(data_subset)  # Normalize by signature size
+  # Center gene in its log2 median
+  data_subset <- data_subset - apply(data_subset, 1, median)
+  # Normalize by signature size
+  dfScore <- colSums(data_subset) / nrow(data_subset)
   dfScore <- data.frame(sample = names(dfScore), score = dfScore)
 
   return(dfScore)

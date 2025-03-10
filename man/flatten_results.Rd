@@ -17,9 +17,4 @@ Converts a nested list (where the first level is a method, the second level is a
 and the third level is a data frame) into a single data frame. Additional columns for method and signature
 are added to the data frame.
 }
-\examples{
-# Suppose nested_list is structured as follows:
-nested_list <- list(  ssGSEA = list(Signature_A = data.frame(sample = c(\"S1\", \"S2\"), score = c(0.5, 0.7))),  logmedian = list(Signature_A = data.frame(sample = c(\"S1\", \"S2\"), score = c(0.3, 0.4))))  flatten_results(nested_list)
-
-}
 \keyword{internal}

@@ -19,10 +19,4 @@ or if the pooled standard deviation is zero.
 Computes the absolute Cohen\'s d effect size between two numeric vectors. This function returns
 the absolute value of the difference in means divided by the pooled standard deviation.
 }
-\examples{
-x <- c(1, 2, 3, 4, 5)
-y <- c(6, 7, 8, 9, 10)
-cohen_d(x, y)
-
-}
 \keyword{internal}

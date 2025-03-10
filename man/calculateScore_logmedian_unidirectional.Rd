@@ -7,15 +7,18 @@
 calculateScore_logmedian_unidirectional(data, signature)
 }
 \arguments{
-\item{data}{A data frame of normalized counts (genes as rows, samples as columns).}
+\item{data}{A data frame of normalized counts (genes as rows, samples as
+columns).}
 
-\item{signature}{A vector of gene names or a data frame where the first column contains gene names.}
+\item{signature}{A vector of gene names or a data frame where the first
+column contains gene names.}
 }
 \value{
 A named vector with log-median-centered scores per sample.
 }
 \description{
-Computes log-median-centered scores for gene signatures where all genes are expected to be enriched in
+Computes log-median-centered scores for gene signatures where all genes are
+expected to be enriched in
 the same direction, or when direction is not known.
 }
 \keyword{internal}

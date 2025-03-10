@@ -242,11 +242,6 @@ CohenD_allConditions <- function(data, metadata, gene_sets, variable) {
 #' @return A numeric value representing Cohen\'s d. Returns NA if either group has fewer than two observations
 #'   or if the pooled standard deviation is zero.
 #'
-#' @examples
-#' x <- c(1, 2, 3, 4, 5)
-#' y <- c(6, 7, 8, 9, 10)
-#' cohen_d(x, y)
-#'
 #' @keywords internal
 cohen_d <- function(x, y) {
   n1 <- length(x)
@@ -280,10 +275,6 @@ cohen_d <- function(x, y) {
 #'   \item{CohenD}{The computed Cohen\'s d effect size for the comparison.}
 #'   \item{PValue}{The p-value from a t-test comparing the two groups.}
 #' }
-#'
-#' @examples
-#' df <- data.frame(Group = rep(c("A", "B"), each = 10), score = rnorm(20))
-#' compute_cohen_d(df, "Group")
 #'
 #' @keywords internal
 compute_cohen_d <- function(dfScore, variable, quantitative_var="score") {
@@ -329,9 +320,6 @@ compute_cohen_d <- function(dfScore, variable, quantitative_var="score") {
 #'
 #' @return A data frame combining all the nested data frames, with added columns \code{method} and \code{signature}.
 #'
-#' @examples
-#' # Suppose nested_list is structured as follows:
-#' nested_list <- list(  ssGSEA = list(Signature_A = data.frame(sample = c(\"S1\", \"S2\"), score = c(0.5, 0.7))),  logmedian = list(Signature_A = data.frame(sample = c(\"S1\", \"S2\"), score = c(0.3, 0.4))))  flatten_results(nested_list)
 #'
 #' @keywords internal
 flatten_results <- function(nested_list) {

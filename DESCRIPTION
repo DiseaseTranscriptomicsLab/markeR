@@ -16,9 +16,9 @@ RoxygenNote: 7.3.2
 Additional_repositories: https://bioconductor.org/packages/release/bioc
 Imports:
     BiocManager,
-    GSVA,
     circlize,
     ComplexHeatmap,
+    edgeR,
     ggh4x,
     ggplot2,
     ggpubr,

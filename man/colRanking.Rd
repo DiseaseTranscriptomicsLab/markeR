@@ -20,9 +20,3 @@ A numeric matrix of the same dimensions as \code{x} where each column contains t
 This function computes the rank of each element in every column of a numeric matrix independently.
 For each column, the smallest element receives a rank of 1, the second smallest a rank of 2, and so on.
 }
-\examples{
-# Create a sample matrix
-m <- matrix(c(4, 2, 3, 1, 6, 5), nrow = 2, byrow = TRUE)
-colRanks(m)
-
-}

@@ -26,9 +26,4 @@ A data frame with the following columns:
 Computes Cohen\'s d effect sizes and corresponding p-values for all pairwise comparisons of a grouping variable
 in a data frame.
 }
-\examples{
-df <- data.frame(Group = rep(c("A", "B"), each = 10), score = rnorm(20))
-compute_cohen_d(df, "Group")
-
-}
 \keyword{internal}

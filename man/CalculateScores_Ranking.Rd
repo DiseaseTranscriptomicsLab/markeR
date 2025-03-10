@@ -49,7 +49,7 @@ relative comparisons between samples when using the same gene set.
 \examples{
 # Example dataset with 5 genes (rows) and 3 samples (columns)
 set.seed(123)
-data <- matrix(runif(15, 1, 100), nrow = 5, ncol = 3)
+data <- as.data.frame(matrix(runif(15, 1, 100), nrow = 5, ncol = 3))
 rownames(data) <- paste0("Gene_", 1:5)
 colnames(data) <- paste0("Sample_", 1:3)
 

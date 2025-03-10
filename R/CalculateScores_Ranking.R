@@ -31,7 +31,7 @@
 #' @examples
 #' # Example dataset with 5 genes (rows) and 3 samples (columns)
 #' set.seed(123)
-#' data <- matrix(runif(15, 1, 100), nrow = 5, ncol = 3)
+#' data <- as.data.frame(matrix(runif(15, 1, 100), nrow = 5, ncol = 3))
 #' rownames(data) <- paste0("Gene_", 1:5)
 #' colnames(data) <- paste0("Sample_", 1:3)
 #'
@@ -132,7 +132,7 @@ CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
 #' @examples
 #' # Example dataset with 5 genes and 3 samples
 #' set.seed(123)
-#' data <- matrix(runif(15, 1, 100), nrow = 5, ncol = 3)
+#' data <- as.data.frame(matrix(runif(15, 1, 100), nrow = 5, ncol = 3))
 #' rownames(data) <- paste0("Gene_", 1:5)
 #' colnames(data) <- paste0("Sample_", 1:3)
 #'

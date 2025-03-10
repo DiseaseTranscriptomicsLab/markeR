@@ -15,7 +15,6 @@
 #' - The **second column** should indicate the expected direction of enrichment (1 for upregulated genes, -1 for downregulated genes).
 #'
 #'
-#' @importFrom GSVA gsva
 #' @importFrom reshape2 melt
 #' @importFrom reshape2 melt
 #'
@@ -67,7 +66,6 @@ CalculateScores_ssGSEA <- function(data, metadata = NULL, gene_sets) {
 #' @param data A data frame of normalized (non-transformed) counts where rows are genes and columns are samples.
 #' @param signature A vector of gene names representing a unidirectional gene signature.
 #'
-#' @importFrom GSVA gsva
 #' @importFrom reshape2 melt
 #'
 #' @return A data frame containing:
@@ -120,7 +118,6 @@ CalculateScores_ssGSEA_unidirectional <- function(data, signature) {
 #' - The **first column** containing gene names.
 #' - The **second column** (`Signal`) indicating the expected direction of enrichment (1 for upregulated genes, -1 for downregulated genes).
 #'
-#' @importFrom GSVA gsva
 #' @importFrom reshape2 melt
 #'
 #' @return A data frame containing:
