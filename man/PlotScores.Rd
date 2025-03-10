@@ -23,7 +23,8 @@ PlotScores(
   pointSize = 2,
   xlab = NULL,
   labsize = 10,
-  cond_cohend = NULL
+  cond_cohend = NULL,
+  pvalcalc = FALSE
 )
 }
 \arguments{
@@ -92,6 +93,8 @@ Only applicable if \code{method != "all"}.}
 \item{cond_cohend}{Optional named list specifying two groups for which Cohen's d effect size should be calculated.
 The list should contain exactly two named elements (e.g., \code{list("GroupA" = c("Condition1"), "GroupB" = c("Condition2", "Condition3"))}).
 If not provided, Cohen's d is not computed. Currently works only for two groups. Only applicable if \code{method != "all"}.}
+
+\item{pvalcalc}{Logical; Calculates p-value and presents it on plot (default = FALSE). Always calculates for the same comparison as \code{cond_cohend}.}
 }
 \value{
 \itemize{
