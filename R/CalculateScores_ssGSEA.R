@@ -16,7 +16,6 @@
 #'
 #'
 #' @importFrom reshape2 melt
-#' @importFrom reshape2 melt
 #'
 #' @return A list of data frames containing ssGSEA scores for each signature.
 #' @keywords internal

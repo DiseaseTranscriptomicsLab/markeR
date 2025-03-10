@@ -184,7 +184,8 @@ ExpressionHeatmap(data=counts_example,
 ```
 
 <img src="man/figures/README-example_exprheatmap-1.png" width="70%" />
-\#\#\#\# Expression Violins
+
+#### Expression Violins
 
 ``` r
 senescence_triggers_colors <- c(

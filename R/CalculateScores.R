@@ -9,7 +9,7 @@
 #'
 #'   \item{\code{ssGSEA}}{
 #'     Uses the single-sample Gene Set Enrichment Analysis (ssGSEA) method to compute an enrichment score
-#'     for each signature in each sample. This method uses the \code{gsva()} function from the \code{GSVA} package
+#'     for each signature in each sample. This method uses an adaptation from the the \code{gsva()} function from the \code{GSVA} package
 #'     to compute an enrichment score, representing the absolute enrichment of each gene set in each sample.
 #'   }
 #'   \item{\code{logmedian}}{

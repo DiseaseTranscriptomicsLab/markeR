@@ -144,6 +144,9 @@ ExpressionHeatmap(data=counts_example,
                   legend_position = "right",
                   scale_position="right")
 ```
+
+
+
 #### Expression Violins
 
 ```{r exampleviolins, fig.width=10, fig.height=3, out.width="100%", warning=FALSE, message=FALSE}
