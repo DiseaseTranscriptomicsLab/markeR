@@ -17,8 +17,8 @@ Additional_repositories: https://bioconductor.org/packages/release/bioc
 Imports:
     BiocManager,
     circlize,
-    ComplexHeatmap,
     edgeR,
+    ComplexHeatmap,
     ggh4x,
     ggplot2,
     ggpubr,
