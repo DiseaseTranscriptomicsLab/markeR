@@ -5,10 +5,12 @@
 \title{Plot Gene Signature Scores as Violin Plots}
 \usage{
 PlotScores(
-  ResultsList,
+  data,
+  metadata,
+  gene_sets,
+  method = c("ssGSEA", "logmedian", "ranking", "all"),
   ColorVariable = NULL,
-  GroupingVariable,
-  method = c("ssGSEA", "logmedian", "ranking"),
+  GroupingVariable = NULL,
   ColorValues = NULL,
   ConnectGroups = FALSE,
   ncol = NULL,
@@ -16,7 +18,7 @@ PlotScores(
   title = NULL,
   widthTitle = 10,
   titlesize = 12,
-  y_limits = NULL,
+  limits = NULL,
   legend_nrow = NULL,
   pointSize = 2,
   xlab = NULL,
@@ -25,76 +27,99 @@ PlotScores(
 )
 }
 \arguments{
-\item{ResultsList}{A named list where each element is a data frame containing the calculated scores for a gene signature.
-Each data frame must have a column named \code{sample} (matching the sample identifiers from the expression data)
-and a column named \code{score}. Additional columns (e.g., metadata such as \code{Condition}, \code{Genotype}, etc.)
-can be included, by running \code{CalculateScores} accordingly. \strong{(Required)}}
+\item{data}{A data frame of normalized (non-transformed) counts where each row is a gene and each column is a sample.
+Row names should contain gene names, and column names should contain sample identifiers. \strong{(Required)}}
+
+\item{metadata}{A data frame describing the attributes of each sample, where each row corresponds to a sample and each column to an attribute.
+The first column should contain sample identifiers (i.e., the column names of \code{data}). \strong{(Required if method = "all")}}
+
+\item{gene_sets}{Gene set input. \strong{(Required)}
+\itemize{
+\item \strong{Unidirectional gene sets}: Provide a named list where each element is a vector of gene names representing a gene signature.
+\item \strong{Bidirectional gene sets}: Provide a named list where each element is a data frame with two columns:
+\itemize{
+\item The \strong{first column} contains gene names.
+\item The \strong{second column} indicates the expected direction of enrichment (1 for upregulated genes, -1 for downregulated genes).
+}
+}}
+
+\item{method}{A character string indicating the scoring method to use. Options are \code{"ssGSEA"},
+\code{"logmedian"}, \code{"ranking"}, or \code{"all"} (to compute scores using all methods). Defaults to \code{"logmedian"}.}
 
 \item{ColorVariable}{A character string indicating the column name used to color the points.
-If \code{NULL} (default), the "Paired" brewer pallette is applied.}
+If \code{NULL} (default), the "Paired" brewer palette is applied. Only applicable if \code{method != "all"}.}
 
-\item{GroupingVariable}{A character string indicating the column name in each data frame that will be used for grouping
-on the x-axis. \strong{(Required)}}
+\item{GroupingVariable}{A character string indicating the column name in \code{metadata} used for grouping
+on the x-axis. If \code{GroupingVariable==NULL}, the function will return a density plot for each gene set.
+If \code{method == "all"}, this variable is \strong{required}, and used for generating comparisons.}
 
-\item{method}{A character string indicating the scoring method used when running \code{CalculateScores}. Options are \code{"ssGSEA"},
-\code{"logmedian"} or \code{"ranking"}. \strong{This argument is mandatory.}}
+\item{ColorValues}{An optional named vector mapping unique values of \code{GroupingVariable} to specific colors.
+If not provided, the "Paired" brewer palette is used. If \code{method == "all"}, it should be a vector of length two, specifying
+the colors for the color bar (detault: c("#F9F4AE", "#B44141")). If \code{ColorVariable} is NULL, then it defaults to the color
+"#ECBD78", and can be changed to define the color of the density curve.}
 
-\item{ColorValues}{An optional named vector that maps the unique values of \code{ColorVariable} to specific colors.
-If not provided, a default brewer palette ("Paired") will be used.}
+\item{ConnectGroups}{Logical, indicating whether to connect groups using lines across the x-axis.
+If \code{TRUE}, a line connecting median values across groups is drawn, colored by \code{ColorVariable}.
+Default is \code{FALSE}. Only applicable if \code{method != "all"}.}
 
-\item{ConnectGroups}{A logical value indicating whether to connect groups using lines across the x-axis.
-If \code{TRUE}, a line connecting the median values across groups will be drawn, colored by \code{ColorVariable}.
-Default is \code{FALSE}. \strong{(Optional)}}
+\item{ncol}{Optional numeric value specifying the number of columns in the grid layout for the combined plots.
+If \code{NULL}, a near-square grid is computed.}
 
-\item{ncol}{An optional numeric value specifying the number of columns in the grid layout for the combined plots.
-If not provided, the function will compute a near-square grid (e.g., for 20 signatures, a 4x5 or 5x4 grid).}
-
-\item{nrow}{An optional numeric value specifying the number of rows in the grid layout. If not provided,
-it is computed based on the number of signatures and \code{ncol}.}
+\item{nrow}{Optional numeric value specifying the number of rows in the grid layout. If \code{NULL}, it is computed based on \code{ncol}.}
 
 \item{title}{A string specifying the main title of the grid of plots.}
 
-\item{widthTitle}{An optional integer specifying the maximum width of the title before inserting line breaks.
-Titles will break at \verb{_}, \code{-}, or \code{:} where possible, or at the exact width if no such character is found.
-Default is 10.}
+\item{widthTitle}{Optional integer specifying the maximum width of the title before inserting line breaks.
+Titles break at \verb{_}, \code{-}, or \code{:} where possible, or at the exact width if no such character is found.
+Default is \code{10}.}
 
 \item{titlesize}{Numeric; font size of the main title of the grid of plots (default = \code{14}).}
 
-\item{y_limits}{An optional numeric vector of length 2 specifying the limits of the y-axis. If \code{NULL}, the y-axis will adjust automatically.
-\strong{(Optional)}}
+\item{limits}{Optional numeric vector of length 2 specifying the y-axis limits (if \code{method != "all"}), the limits of the color scale
+(if \code{method == "all"}), or the color of the density curve if \code{GroupingVariable==NULL}. If \code{NULL}, the limits adjusts automatically.}
 
-\item{legend_nrow}{An optional numeric value specifying the number of rows in the legend. If \code{NULL}, the default number of rows is determined by ggplot2.
-\strong{(Optional)}}
+\item{legend_nrow}{Optional numeric value specifying the number of rows in the legend. If \code{NULL}, determined by ggplot2.
+Only applicable if \code{method != "all"}.}
 
-\item{pointSize}{An optional numeric value specifying the size of the points. If \code{NULL}, the default number is 2.
-\strong{(Optional)}}
+\item{pointSize}{Optional numeric value specifying the point size. Default is \code{2}.
+Only applicable if \code{method != "all"}.}
 
-\item{xlab}{Optional parameter, specifying the name of the x label. Default is the name of the Grouping Variable
-\strong{(Optional)}}
+\item{xlab}{Optional character string specifying the x-axis label. Default is the name of \code{GroupingVariable}.
+Only applicable if \code{method != "all"}.}
 
-\item{labsize}{Numeric; font size of the plot's axis labels (default = \code{14}).}
+\item{labsize}{Numeric; font size of the plot's axis labels (default = \code{14}). Only applicable if \code{method != "all"}.}
 
-\item{cond_cohend}{An optional named list specifying the two groups for which Cohen's d effect size should be calculated.
+\item{cond_cohend}{Optional named list specifying two groups for which Cohen's d effect size should be calculated.
 The list should contain exactly two named elements (e.g., \code{list("GroupA" = c("Condition1"), "GroupB" = c("Condition2", "Condition3"))}).
-If not provided, Cohen's d is not computed. Currently only working for two groups. \strong{(Optional)}}
+If not provided, Cohen's d is not computed. Currently works only for two groups. Only applicable if \code{method != "all"}.}
 }
 \value{
-A combined ggplot object (created using \code{ggpubr::ggarrange} and \code{ggpubr::annotate_figure})
-that displays a grid of violin plots. Each plot corresponds to one gene signature.
+\itemize{
+\item If \code{method != "all"}: A combined ggplot object (using \code{ggpubr::ggarrange} and \code{ggpubr::annotate_figure}) displaying violin plots for each gene signature.
+\item If \code{method == "all"}: A heatmap summarizing Cohen's D for all metric combinations of the \code{GroupingVariable}.
+}
 }
 \description{
 This function generates violin plots (with overlaid jittered points, median summary crossbars,
-and optional group connection lines) for each gene signature provided in \code{ResultsList}.
-Each element in \code{ResultsList} should be a data frame with at least the following columns:
-\code{sample} (sample identifier) and \code{score} (the calculated gene signature score).
-Any additional metadata columns will be added to the plots if available.
+and optional group connection lines) for each sample based on one or more predefined gene sets
+(signatures). Four methods are available:
 }
 \details{
+\itemize{
+\item \strong{ssGSEA}: Uses the single-sample Gene Set Enrichment Analysis (ssGSEA) method to compute an enrichment score
+for each signature in each sample using the \code{gsva()} function from the \code{GSVA} package.
+\item \strong{logmedian}: Computes the score as the sum of the normalized (log2-median-centered) expression values of the
+signature genes divided by the number of genes in the signature.
+\item \strong{ranking}: Computes gene signature scores for each sample by ranking the expression of signature genes
+in the dataset and normalizing the score based on the total number of genes.
+\item \strong{all}: Computes gene signature scores using all three methods (\code{ssGSEA}, \code{logmedian}, and \code{ranking}).
+Returns a heatmap summarizing Cohen's D for all metric combinations of the variables of interest.
+}
+
 For each gene signature in \code{ResultsList}, the function creates a violin plot using \code{ggplot2}.
 The x-axis is determined by the grouping variable (e.g., \code{Condition}), while the y-axis shows the signature score.
 Jittered points are overlaid and optionally colored by \code{ColorVariable}. A median summary is added as a crossbar.
 If \code{ConnectGroups = TRUE}, median values across groups are connected with lines, colored by \code{ColorVariable}.
 
-The individual plots are arranged into a grid using \code{ggpubr::ggarrange}, with a near-square layout if
-\code{ncol} and \code{nrow} are not explicitly provided.
+If \code{method == "all"}, the function instead returns a heatmap displaying Cohen's D effect sizes for all variable combinations.
 }
