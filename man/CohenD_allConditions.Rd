@@ -2,7 +2,7 @@
 % Please edit documentation in R/Heatmap_CohenD.R
 \name{CohenD_allConditions}
 \alias{CohenD_allConditions}
-\title{Compute Cohen's d for All Gene Signatures Across Conditions}
+\title{Compute Cohen\'s d for All Gene Signatures Across Conditions}
 \usage{
 CohenD_allConditions(data, metadata, gene_sets, variable)
 }
@@ -19,26 +19,26 @@ column indicates the expected direction (1 for upregulated, -1 for downregulated
 \item{variable}{A string specifying the grouping variable in \code{metadata} used to compare scores between conditions.}
 }
 \value{
-A named list where each element corresponds to a gene signature. Each signature element is a list with two components:\n
-\describe{\n
+A named list where each element corresponds to a gene signature. Each signature element is a list with two components:
+\describe{
 \item{CohenD}{A data frame where rows are methods and columns are group contrasts (formatted as \"Group1:Group2\"),
-containing the computed Cohen's d effect sizes.}\n
-\item{PValue}{A data frame with the same structure as \code{CohenD} containing the corresponding p-values.}\n
+containing the computed Cohen\'s d effect sizes.}
+\item{PValue}{A data frame with the same structure as \code{CohenD} containing the corresponding p-values.}
 }
 }
 \description{
-Computes Cohen's d effect sizes and corresponding p-values for all gene signatures using scores calculated
+Computes Cohen\'s d effect sizes and corresponding p-values for all gene signatures using scores calculated
 by various methods. The function first computes gene signature scores using \code{CalculateScores} with the "all"
 option, flattens the results, and then computes pairwise comparisons for a specified grouping variable.
 }
 \examples{
-\dontrun{\n
-  # Assume gene_data is your gene expression data frame, sample_metadata is your metadata, and\n
-  # gene_sets is a named list of gene sets.\n
-  results <- CohenD_allConditions(data = gene_data, metadata = sample_metadata,\n
-                                   gene_sets = gene_sets, variable = \"Condition\")\n
-  # Access Cohen's d for a specific signature:\n
-  results$Signature_A$CohenD\n
+\dontrun{
+  # Assume gene_data is your gene expression data frame, sample_metadata is your metadata, and
+  # gene_sets is a named list of gene sets.
+  results <- CohenD_allConditions(data = gene_data, metadata = sample_metadata,
+                                   gene_sets = gene_sets, variable = \"Condition\")
+  # Access Cohen\'s d for a specific signature:
+  results$Signature_A$CohenD
 }
 
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/Heatmap_CohenD.R
 \name{compute_cohen_d}
 \alias{compute_cohen_d}
-\title{Compute Pairwise Cohen's d and P-Values}
+\title{Compute Pairwise Cohen\'s d and P-Values}
 \usage{
 compute_cohen_d(dfScore, variable, quantitative_var = "score")
 }
@@ -18,12 +18,12 @@ A data frame with the following columns:
 \describe{
 \item{Group1}{The first group in the pair.}
 \item{Group2}{The second group in the pair.}
-\item{CohenD}{The computed Cohen's d effect size for the comparison.}
+\item{CohenD}{The computed Cohen\'s d effect size for the comparison.}
 \item{PValue}{The p-value from a t-test comparing the two groups.}
 }
 }
 \description{
-Computes Cohen's d effect sizes and corresponding p-values for all pairwise comparisons of a grouping variable
+Computes Cohen\'s d effect sizes and corresponding p-values for all pairwise comparisons of a grouping variable
 in a data frame.
 }
 \examples{

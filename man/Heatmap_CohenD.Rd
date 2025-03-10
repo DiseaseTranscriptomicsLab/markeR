@@ -2,64 +2,86 @@
 % Please edit documentation in R/Heatmap_CohenD.R
 \name{Heatmap_CohenD}
 \alias{Heatmap_CohenD}
-\title{Generate Heatmaps for Cohen's d Effect Sizes}
+\title{Generate Heatmaps for Cohen\'s d Effect Sizes using ggplot2}
 \usage{
 Heatmap_CohenD(
   data,
   metadata,
   gene_sets,
   variable,
-  orientation = c("grid", "horizontal", "vertical"),
+  nrow = NULL,
+  ncol = NULL,
   limits = NULL,
-  cluster_columns = TRUE,
-  cluster_rows = TRUE,
-  subtitlewidth = 20
+  widthTitle = 22,
+  titlesize = 12,
+  ColorValues = NULL,
+  title = NULL
 )
 }
 \arguments{
 \item{data}{A data frame of gene expression data with genes as rows and samples as columns.
-The row names should contain gene names and the column names sample identifiers.}
+Row names should contain gene names and column names sample identifiers.}
 
-\item{metadata}{A data frame of sample metadata. The first column must contain sample identifiers matching \code{data}.}
+\item{metadata}{A data frame of sample metadata. The first column must contain sample
+identifiers matching those in \code{data}.}
 
 \item{gene_sets}{A named list of gene sets. For unidirectional gene sets, each element is a vector of gene names;
-for bidirectional gene sets, each element is a data frame with the first column as gene names and the second column as the expected direction (1 for upregulated, -1 for downregulated).}
+for bidirectional gene sets, each element is a data frame with the first column as gene names and the second column as the expected direction
+(1 for upregulated, -1 for downregulated).}
 
-\item{variable}{A string specifying the grouping variable in \code{metadata} used for computing Cohen's d comparisons.}
+\item{variable}{A string specifying the grouping variable in \code{metadata} used for computing Cohen\'s d comparisons.}
 
-\item{orientation}{A string indicating the layout of the combined heatmaps. Options are \code{\"grid\"}, \code{\"horizontal\"}, or \code{\"vertical\"}.
-Defaults to \code{\"grid\"}.}
+\item{nrow}{Optional. An integer specifying the number of rows in the heatmap grid. If \code{NULL}, the number of rows
+is computed automatically.}
 
-\item{limits}{An optional numeric vector specifying the color scale limits (e.g., \code{c(min, max)}). If not provided, the limits are computed from the data.}
+\item{ncol}{Optional. An integer specifying the number of columns in the heatmap grid. If \code{NULL}, the number of columns
+is computed automatically.}
 
-\item{cluster_columns}{Logical; whether to cluster columns in the heatmaps. Defaults to \code{TRUE}.}
+\item{limits}{Optional. A numeric vector of length 2 specifying the color scale limits (e.g., \code{c(min, max)}). If \code{NULL},
+the limits are determined from the data.}
 
-\item{cluster_rows}{Logical; whether to cluster rows in the heatmaps. Defaults to \code{TRUE}.}
+\item{widthTitle}{An integer specifying the width used for wrapping gene set signature names in the heatmap titles. Default is 22.}
 
-\item{subtitlewidth}{An integer specifying the width used in wrapping the gene set signature names for the heatmap subtitle.}
+\item{titlesize}{An integer specifying the text size for each of the heatmap titles. Default is 12.}
+
+\item{ColorValues}{A character vector specifying the colors for the gradient fill in the heatmaps. Default is \code{c("#F9F4AE", "#B44141")}.}
+
+\item{title}{Title for the grid of plots.}
 }
 \value{
-Depending on the orientation, a combined heatmap object is returned:
+A list with two elements:
 \describe{
-\item{grid}{A grid-arranged grob (produced by \code{grid.arrange}) of heatmaps.}
-\item{horizontal or vertical}{A combined Heatmap object (if not converted to a grob).}
+\item{plt}{A combined heatmap arranged in a grid using \code{ggpubr::ggarrange}.}
+\item{data}{A list containing the Cohen\'s d effect sizes and p-values for each gene signature, as computed by \code{CohenD_allConditions}.}
 }
 }
 \description{
-Creates heatmaps for Cohen's d effect sizes (and corresponding p-values, shown in cell text) for each gene signature,
-and combines them according to the specified orientation.
+This function computes Cohen\'s d effect sizes and corresponding p-values for multiple gene signatures and produces individual heatmaps. Each heatmap displays cell text showing the Cohen\'s d value along with its p-value. The heatmaps are then arranged in a grid layout.
 }
 \details{
-This function first computes Cohen's d effect sizes and p-values for all gene signatures using \code{CohenD_allConditions}.
-It then generates individual heatmaps (with cell text showing \"Cohen's d (p-value)\") for each signature.
-Finally, based on the specified \code{orientation}, the heatmaps are combined into a single plot using either
-\code{grid.arrange} (for a grid layout) or horizontal/vertical stacking operators.
+The function first calculates Cohen\'s d effect sizes and corresponding p-values for each gene signature using \code{CohenD_allConditions} (assumed to be defined elsewhere in the package). The resulting matrices are converted to a long format so that each cell in the heatmap can display the Cohen\'s d value and its associated p-value (formatted as \code{Cohen\'s d (p-value)}).
+
+The heatmaps are then adjusted to display axis text and ticks only for the left-most column and bottom row, and combined into a grid layout. If neither \code{nrow} nor \code{ncol} are specified, the layout is automatically determined to best approximate a square grid.
 }
 \examples{
 \dontrun{
-  # Assume gene_data, sample_metadata, and gene_sets are defined
-  Heatmap_CohenD(data = gene_data, metadata = sample_metadata,
-                 gene_sets = gene_sets, variable = \"Condition\", orientation = \"grid\")
+  # Assuming gene_data, sample_metadata, and gene_sets are defined:
+  result <- Heatmap_CohenD_ggplot(
+    data = gene_data,
+    metadata = sample_metadata,
+    gene_sets = gene_sets,
+    variable = "Condition",
+    nrow = 2,
+    ncol = 3,
+    limits = c(-1, 1),
+    widthTitle = 30,
+    titlesize = 14,
+    ColorValues = c("#F9F4AE", "#B44141")
+  )
+  print(result$plt)
 }
 
+}
+\seealso{
+\code{\link{CohenD_allConditions}}, \code{\link{wrap_title}}
 }
