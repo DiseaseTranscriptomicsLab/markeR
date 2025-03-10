@@ -130,52 +130,7 @@ cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the f
 PlotScores(ResultsList = df_ranking, ColorVariable = "CellType", GroupingVariable="Condition",  method ="ranking", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 6, nrow = 2, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend)
 
 ```
-
-```{r}
-wrap_title_aux <- function(title, width = 30) {
-  if (nchar(title) <= width) {
-    return(title)  # No need to wrap if it fits
-  }
-  
-  wrapped_title <- ""
-  while (nchar(title) > width) {
-    # Find positions of capital letters and symbols near the wrap point
-    capital_pos <- gregexpr("[A-Z]", title)[[1]]
-    symbol_pos <- gregexpr("(_|-|:)", title)[[1]]
-    
-    # Check for symbol breaks within the last few characters (width - 5 to width)
-    valid_symbol_breaks <- symbol_pos[symbol_pos >= (width - 5) & symbol_pos <= width]
-    
-    if (length(valid_symbol_breaks) > 0) {
-      # If a suitable symbol is found, break at the first valid symbol
-      break_at <- valid_symbol_breaks[1]
-    } else {
-      # If no suitable symbol, look for capital letters within the same range
-      valid_capital_breaks <- capital_pos[capital_pos >= (width - 5) & capital_pos <= width]
-      
-      if (length(valid_capital_breaks) > 0) {
-        # If a capital letter is found, break just before the capital letter
-        break_at <- valid_capital_breaks[1] - 1
-      } else {
-        # If no suitable symbol or capital letter, break at width
-        break_at <- width
-      }
-    }
-    
-    # Append the wrapped line
-    wrapped_title <- paste0(wrapped_title, substr(title, 1, break_at), "\n")
-    
-    # Update title with the remaining text after the break
-    title <- substr(title, break_at + 1, nchar(title))
-  }
-  
-  # Add the remaining part of the title
-  wrapped_title <- paste0(wrapped_title, title)
-  
-  return(wrapped_title)
-}
-```
-
+ 
 
 ```{r fig.width=12, fig.height=8}
 
@@ -372,6 +327,136 @@ PlotScores(data = corrcounts_merge,
 ```
  
  
+## ssGSEA alternative implementation
+
+```{r}
+
+  siglist <- SenescenceSignatures
+  mtx <- log2(corrcounts_merge)
+  mtx <- as.matrix(mtx)
+  
+df_aux_original <- GSVA::gsva(expr = mtx, gset.idx.list = siglist,
+                               method = "ssgsea", kcdf = "Gaussian", verbose = FALSE)
+
+df_aux_original <- as.data.frame(df_aux_original)
+
+df_aux_original$signature <- row.names(df_aux_original)
+
+df_aux_original <- melt(df_aux_original)
+colnames(df_aux_original) <- c("signature","sample","ssGSEA_original")
+df_aux_original
+```
+
+```{r}
+
+  siglist <- SenescenceSignatures
+  mtx <- log2(corrcounts_merge)
+  mtx <- as.matrix(mtx)
+  
+df_aux_alt <- ssGSEA_alternative(mtx, siglist, alpha = 0.25, scale = T, norm = F, single = T)
+df_aux_alt <- as.data.frame(df_aux_alt)
+df_aux_alt$signature <- row.names(df_aux_alt)
+
+df_aux_alt <- melt(df_aux_alt)
+colnames(df_aux_alt) <- c("signature","sample","ssGSEA_alternative")
+df_aux_alt
+```
+
+```{r}
+df_ssgsea_test <- merge(df_aux_alt,df_aux_original, by=c("sample","signature"))
+df_ssgsea_test
+
+
+ggplot(df_ssgsea_test, aes(x=ssGSEA_alternative, y=signature)) +
+  geom_point() 
+
+ggplot(df_ssgsea_test, aes(x=ssGSEA_original, y=signature)) +
+  geom_point() 
+
+ggplot(df_ssgsea_test, aes(x=ssGSEA_original, y=ssGSEA_alternative)) +
+  geom_point() 
+```
+
+```{r}
+#' Compute Independent Column-wise Ranks of Matrix Elements
+#'
+#' This function computes the rank of each element in every column of a numeric matrix independently. 
+#' For each column, the smallest element receives a rank of 1, the second smallest a rank of 2, and so on.
+#'
+#' @param x A numeric matrix.
+#' @param ties.method A character string specifying the method used for tie-breaking.
+#' Options include \code{"average"}, \code{"first"}, \code{"random"}, \code{"max"}, or \code{"min"}. 
+#' The default is \code{"average"}.
+#'
+#' @return A numeric matrix of the same dimensions as \code{x} where each column contains the ranks of the corresponding column's elements.
+#'
+#' @examples
+#' # Create a sample matrix
+#' m <- matrix(c(4, 2, 3, 1, 6, 5), nrow = 2, byrow = TRUE)
+#' colRanks(m)
+#'
+#' @export
+colRanking <- function(x, ties.method = "average") {
+  apply(x, 2, rank, ties.method = ties.method)
+}
+```
+
+
+
+```{r}
+#https://rpubs.com/pranali018/SSGSEA
+ssGSEA_alternative <-  function(X, gene_sets, alpha = 0.25, scale = T, norm = F, single = T) {
+    row_names = rownames(X)
+    num_genes = nrow(X)
+    gene_sets = lapply(gene_sets, function(genes) {which(row_names %in% genes)})
+
+    # Ranks for genes
+    R = colRanking(X, ties.method = 'average')
+
+    # Calculate enrichment score (es) for each sample (column)
+    es = apply(R, 2, function(R_col) {
+        gene_ranks = order(R_col, decreasing = TRUE)
+
+        # Calc es for each gene set
+        es_sample = sapply(gene_sets, function(gene_set_idx) {
+            # pos: match (within the gene set)
+            # neg: non-match (outside the gene set)
+            indicator_pos = gene_ranks %in% gene_set_idx
+            indicator_neg = !indicator_pos
+
+            rank_alpha  = (R_col[gene_ranks] * indicator_pos) ^ alpha
+
+            step_cdf_pos = cumsum(rank_alpha)    / sum(rank_alpha)
+            step_cdf_neg = cumsum(indicator_neg) / sum(indicator_neg)
+
+            step_cdf_diff = step_cdf_pos - step_cdf_neg
+
+            # Normalize by gene number
+            if (scale) step_cdf_diff = step_cdf_diff / num_genes
+
+            # Use ssGSEA or not
+            if (single) {
+                sum(step_cdf_diff)
+            } else {
+                step_cdf_diff[which.max(abs(step_cdf_diff))]
+            }
+        })
+        unlist(es_sample)
+    })
+
+    if (length(gene_sets) == 1) es = matrix(es, nrow = 1)
+
+    # Normalize by absolute diff between max and min
+    if (norm) es = es / diff(range(es))
+
+    # Prepare output
+    rownames(es) = names(gene_sets)
+    colnames(es) = colnames(X)
+    return(es)
+}
+```
+
+
 
 # Individual Genes
 
@@ -544,6 +629,41 @@ plotPCA(data=corrcounts_merge,
         legend_nrow=1, 
         ncol=3, 
         nrow=NULL)
+```
+
+
+
+
+# Enrichment-based
+
+## GSEA
+
+```{r}
+data=corrcounts_merge
+metadata=metadata_merge
+gene_sets=bidirectsigs # bidirectional
+variables="Condition"
+contrasts
+
+# lmexpression: for more experienced users that wish to define directly the expression; centering and scaling can be done manually in the metadata...!
+# contrasts: for all users
+# coefs: for the experienced users, that don't use contrasts, the variable(s) from the linear model to be extracted and that will be used as contrasts; only works if contrasts is NULL
+```
+
+```{r}
+calculateGSEA <- function(data, metadata, gene_sets, variables, lmexpression=NULL, contrasts=NULL, coefs=NULL){
+  
+  
+  # If bidirectional (t-statistic; difference between peaks)
+  
+  
+  # If unidirectional (t-statistic)
+  
+  
+  # if direction is not known (B statistic)
+  
+  
+}
 ```
 
 

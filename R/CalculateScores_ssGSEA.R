@@ -97,8 +97,9 @@ CalculateScores_ssGSEA_unidirectional <- function(data, signature) {
   mtx <- log2(data)
   mtx <- as.matrix(mtx)
 
-  ssgsea_results <- GSVA::gsva(expr = mtx, gset.idx.list = siglist,
-                               method = "ssgsea", kcdf = "Gaussian", verbose = FALSE)
+  # ssgsea_results <- GSVA::gsva(expr = mtx, gset.idx.list = siglist,
+  #                              method = "ssgsea", kcdf = "Gaussian", verbose = FALSE)
+  ssgsea_results <- ssGSEA_alternative(X = mtx, gene_sets = siglist)
 
   ssgsea_results <- as.data.frame(ssgsea_results)
   ssgsea_results <- reshape2::melt(ssgsea_results)
@@ -163,8 +164,9 @@ CalculateScores_ssGSEA_bidirectional <- function(data, signature) {
 
   #up_siglist <- list(up_gene_sets)
   #names(up_siglist) <- sig
-  up_results <- GSVA::gsva(expr = mtx, gset.idx.list = list(up_genes),
-                           method = "ssgsea", kcdf = "Gaussian", verbose = FALSE)
+  # up_results <- GSVA::gsva(expr = mtx, gset.idx.list = list(up_genes),
+  #                          method = "ssgsea", kcdf = "Gaussian", verbose = FALSE)
+  up_results <- ssGSEA_alternative(X = mtx, gene_sets = list(up_genes))
 
   up_results <- as.data.frame(up_results)
   up_results <- reshape2::melt(up_results)
@@ -173,8 +175,10 @@ CalculateScores_ssGSEA_bidirectional <- function(data, signature) {
 
   ################## ssGSEA for DOWN genes ##################
 
-  down_results <- GSVA::gsva(expr = mtx, gset.idx.list = list(down_genes),
-                             method = "ssgsea", kcdf = "Gaussian", verbose = FALSE)
+  # down_results <- GSVA::gsva(expr = mtx, gset.idx.list = list(down_genes),
+  #                            method = "ssgsea", kcdf = "Gaussian", verbose = FALSE)
+
+  down_results <- ssGSEA_alternative(X = mtx, gene_sets = list(down_genes))
 
   down_results <- as.data.frame(down_results)
   down_results <- reshape2::melt(down_results)
