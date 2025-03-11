@@ -622,3 +622,32 @@ PlotScores(data = counts_example,
 ```
 
 <img src="man/figures/README-heatmap_all-1.png" width="80%" />
+
+### False Discovery Rate (FDR) Calculations
+
+#### Simulation Based Methods
+
+The user can assess the significance of gene signature scores by
+comparing observed effect sizes against those originated by random
+signatures. For each original gene signature, the function calculates
+the observed Cohen’s d (and p‑value) using . It then generates a number
+of simulated signatures () by randomly sampling genes from a user
+provided gene list and computes their Cohen’s d values. The simulation
+results are visualised as violin plots that display the distribution of
+Cohen’s d values for each method, overlaid with the observed values of
+the original signatures, and a 95th percentile threshold. Significance
+is indicated by distinct point shapes based on the associated p‑value.
+
+``` r
+ 
+FDR_Simulation(data = counts_example,
+               metadata = metadata_example,
+               original_signatures = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                          Senescence  = SimpleSenescenceSignature),
+               gene_list = row.names(counts_example),
+               number_of_sims = 100,
+               title_for_plot = "Marthandan et al. 2016",
+               GroupingVariable = "Condition")
+```
+
+<img src="man/figures/README-FDRSim-1.png" width="80%" />
