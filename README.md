@@ -623,9 +623,7 @@ PlotScores(data = counts_example,
 
 <img src="man/figures/README-heatmap_all-1.png" width="80%" />
 
-### False Discovery Rate (FDR) Calculations
-
-#### Simulation Based Methods
+#### False Discovery Rate (FDR) Calculations
 
 The user can assess the significance of gene signature scores by
 comparing observed effect sizes against those originated by random
