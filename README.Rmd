@@ -562,9 +562,7 @@ FDR_Simulation(data = counts_example,
 The `calculateDE` function in the `markeR` package leverages the `limma` framework to compute differential gene expression statistics from raw count data. This function is highly flexible and supports several modes of operation depending on the user's experimental design. In the examples below, we illustrate three common scenarios:
 
 -   **Automatic Design Matrix with Contrasts:** In the first example, the design matrix is built automatically from the metadata using a specified variable (here, `"Condition"`). A contrast (in this case, "`Senescent - Proliferative"`) is then applied to extract the differential expression statistics between the two conditions. This is ideal when you have a simple design and want to quickly compute contrasts without manually creating the design matrix.
-
 -   **Custom Model Formula with Coefficient Extraction:** The second example demonstrates how to supply a custom model formula (e.g., `~Condition`) directly to the function. This allows you to have fine control over the design, and you can specify which coefficients you want to extract from the fitted model. This approach is particularly useful for more complex designs or when you wish to extract multiple statistics from a single model. You can leave the parameter `"Contrast"` as `NULL`, and the function will return all coefficients (i.e. not performing any contrasts).
-
 -   **Providing an Externally Constructed Design Matrix:** In the third example, you create the design matrix externally using`model.matrix()` (for instance, with no intercept using `~0 + Condition`). By supplying this design matrix directly to `calculateDE`, you have full control over its construction. A contrast is then applied to obtain the desired differential expression results. This method is recommended when you require complete customization of the design matrix or when you have pre-processed your design externally. You can leave the parameter `"Contrast"` as `NULL`, and the function will return all possible coefficients based on your design matrix alone.
 
 Below are the corresponding code snippets demonstrating each scenario, by answering the same question: **What are the genes differentially expressed between senescence and proliferative cells?**
@@ -584,7 +582,7 @@ DEGs$`Senescent - Proliferative`[1:5,]
 # because we are using one of the conditions as the baseline, the other one will give the difference between the two
 DEGs2 <- calculateDE(data = counts_example,
                      metadata = metadata_example,
-                     variables = "Condition",
+                     variables = NULL,
                      lmexpression = "~Condition",
                      contrasts = c("Senescent")) 
 DEGs2$`Senescent`[1:5,]
@@ -594,8 +592,8 @@ DEGs2$`Senescent`[1:5,]
 design <- model.matrix(~0 + Condition, data = metadata_example)
 colnames(design) <- c("Proliferative","Senescent")
 DEGs3 <- calculateDE(data = counts_example,
-                     metadata = metadata_example,
-                     variables = "Condition",
+                     metadata = NULL,
+                     variables = NULL,
                      modelmat = design,
                      contrasts = c("Senescent - Proliferative"))
 DEGs3$`Senescent - Proliferative`[1:5,]
@@ -607,13 +605,10 @@ After running your differential expression analysis (for example, using the `cal
 
 -   **Plot Differentially Expressed Genes:**  
     Display a volcano plot with your chosen statistics (e.g., log fold-change on the x-axis and –log₁₀ adjusted p-value on the y-axis).
-
 -   **Color Interesting Genes:**  
     Highlight genes that pass user-specified thresholds by adjusting `threshold_y` and/or `threshold_x`.
-
 -   **Annotate Top and Bottom N Genes:**  
     Optionally, label the top (and bottom) N genes based on the chosen statistic to quickly identify the most significant genes.
-
 -   **Highlight Gene Signatures:**  
     If you provide a list of gene signatures (via the `genes` argument), the function can highlight those genes on the plot.
 
@@ -647,7 +642,7 @@ plotVolcano(DEGs, genes = NULL, N = 5,
 ```
 
 ```{r volcanos_DEGs2, fig.width=4, fig.height=6, out.width="40%", warning=FALSE, message=FALSE}
-options(error=recover)
+ 
 # Plot Differentially Expressed Genes:
 plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
                           Senescence  = SimpleSenescenceSignature), 

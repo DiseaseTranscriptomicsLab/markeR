@@ -673,7 +673,6 @@ examples below, we illustrate three common scenarios:
     differential expression statistics between the two conditions. This
     is ideal when you have a simple design and want to quickly compute
     contrasts without manually creating the design matrix.
-
 -   **Custom Model Formula with Coefficient Extraction:** The second
     example demonstrates how to supply a custom model formula (e.g.,
     `~Condition`) directly to the function. This allows you to have fine
@@ -683,7 +682,6 @@ examples below, we illustrate three common scenarios:
     statistics from a single model. You can leave the parameter
     `"Contrast"` as `NULL`, and the function will return all
     coefficients (i.e. not performing any contrasts).
-
 -   **Providing an Externally Constructed Design Matrix:** In the third
     example, you create the design matrix externally
     using`model.matrix()` (for instance, with no intercept using
@@ -721,7 +719,7 @@ DEGs$`Senescent - Proliferative`[1:5,]
 # because we are using one of the conditions as the baseline, the other one will give the difference between the two
 DEGs2 <- calculateDE(data = counts_example,
                      metadata = metadata_example,
-                     variables = "Condition",
+                     variables = NULL,
                      lmexpression = "~Condition",
                      contrasts = c("Senescent")) 
 DEGs2$`Senescent`[1:5,]
@@ -737,8 +735,8 @@ DEGs2$`Senescent`[1:5,]
 design <- model.matrix(~0 + Condition, data = metadata_example)
 colnames(design) <- c("Proliferative","Senescent")
 DEGs3 <- calculateDE(data = counts_example,
-                     metadata = metadata_example,
-                     variables = "Condition",
+                     metadata = NULL,
+                     variables = NULL,
                      modelmat = design,
                      contrasts = c("Senescent - Proliferative"))
 DEGs3$`Senescent - Proliferative`[1:5,]
@@ -761,15 +759,12 @@ exploring your data by allowing you to:
     Display a volcano plot with your chosen statistics (e.g., log
     fold-change on the x-axis and –log₁₀ adjusted p-value on the
     y-axis).
-
 -   **Color Interesting Genes:**  
     Highlight genes that pass user-specified thresholds by adjusting
     `threshold_y` and/or `threshold_x`.
-
 -   **Annotate Top and Bottom N Genes:**  
     Optionally, label the top (and bottom) N genes based on the chosen
     statistic to quickly identify the most significant genes.
-
 -   **Highlight Gene Signatures:**  
     If you provide a list of gene signatures (via the `genes` argument),
     the function can highlight those genes on the plot.
@@ -816,7 +811,7 @@ plotVolcano(DEGs, genes = NULL, N = 5,
 <img src="man/figures/README-volcanos_DEGs-3.png" width="40%" />
 
 ``` r
-options(error=recover)
+ 
 # Plot Differentially Expressed Genes:
 plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
                           Senescence  = SimpleSenescenceSignature), 

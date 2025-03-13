@@ -58,8 +58,8 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, lmexpression = NULL
   # Validate inputs
   if (!is.matrix(data) && !is.data.frame(data)) stop("Error: 'data' must be a matrix or a data frame.")
   if (is.null(rownames(data))) stop("Error: 'data' must have row names corresponding to gene identifiers.")
-  if (!is.data.frame(metadata)) stop("Error: 'metadata' must be a data frame.")
-  if (ncol(data) != nrow(metadata)) stop("Error: Number of samples in 'data' does not match number of rows in 'metadata'.")
+  if (!is.null(metadata) && !is.data.frame(metadata)) stop("Error: 'metadata' must be a data frame.")
+  if (!is.null(metadata) && (ncol(data) != nrow(metadata))) stop("Error: Number of samples in 'data' does not match number of rows in 'metadata'.")
 
   # Construct design matrix
   design_matrix <- tryCatch({
