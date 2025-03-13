@@ -130,7 +130,7 @@ cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the f
 PlotScores(ResultsList = df_ranking, ColorVariable = "CellType", GroupingVariable="Condition",  method ="ranking", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 6, nrow = 2, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend)
 
 ```
- 
+
 
 ```{r fig.width=12, fig.height=8}
 
@@ -295,12 +295,12 @@ PlotScores(ResultsList = df_ranking, ColorVariable = "CellType", GroupingVariabl
 
 
 ## Heatmap for Cohen's D
- 
+
 
 
 
 ```{r fig.width=15, fig.height=12}
- 
+
 PlotScores(data = corrcounts_merge, 
            metadata = metadata_merge,  
            gene_sets=bidirectsigs, 
@@ -325,137 +325,6 @@ PlotScores(data = corrcounts_merge,
 
 
 ```
- 
- 
-## ssGSEA alternative implementation
-
-```{r}
-
-  siglist <- SenescenceSignatures
-  mtx <- log2(corrcounts_merge)
-  mtx <- as.matrix(mtx)
-  
-df_aux_original <- GSVA::gsva(expr = mtx, gset.idx.list = siglist,
-                               method = "ssgsea", kcdf = "Gaussian", verbose = FALSE)
-
-df_aux_original <- as.data.frame(df_aux_original)
-
-df_aux_original$signature <- row.names(df_aux_original)
-
-df_aux_original <- melt(df_aux_original)
-colnames(df_aux_original) <- c("signature","sample","ssGSEA_original")
-df_aux_original
-```
-
-```{r}
-
-  siglist <- SenescenceSignatures
-  mtx <- log2(corrcounts_merge)
-  mtx <- as.matrix(mtx)
-  
-df_aux_alt <- ssGSEA_alternative(mtx, siglist, alpha = 0.25, scale = T, norm = F, single = T)
-df_aux_alt <- as.data.frame(df_aux_alt)
-df_aux_alt$signature <- row.names(df_aux_alt)
-
-df_aux_alt <- melt(df_aux_alt)
-colnames(df_aux_alt) <- c("signature","sample","ssGSEA_alternative")
-df_aux_alt
-```
-
-```{r}
-df_ssgsea_test <- merge(df_aux_alt,df_aux_original, by=c("sample","signature"))
-df_ssgsea_test
-
-
-ggplot(df_ssgsea_test, aes(x=ssGSEA_alternative, y=signature)) +
-  geom_point() 
-
-ggplot(df_ssgsea_test, aes(x=ssGSEA_original, y=signature)) +
-  geom_point() 
-
-ggplot(df_ssgsea_test, aes(x=ssGSEA_original, y=ssGSEA_alternative)) +
-  geom_point() 
-```
-
-```{r}
-#' Compute Independent Column-wise Ranks of Matrix Elements
-#'
-#' This function computes the rank of each element in every column of a numeric matrix independently. 
-#' For each column, the smallest element receives a rank of 1, the second smallest a rank of 2, and so on.
-#'
-#' @param x A numeric matrix.
-#' @param ties.method A character string specifying the method used for tie-breaking.
-#' Options include \code{"average"}, \code{"first"}, \code{"random"}, \code{"max"}, or \code{"min"}. 
-#' The default is \code{"average"}.
-#'
-#' @return A numeric matrix of the same dimensions as \code{x} where each column contains the ranks of the corresponding column's elements.
-#'
-#' @examples
-#' # Create a sample matrix
-#' m <- matrix(c(4, 2, 3, 1, 6, 5), nrow = 2, byrow = TRUE)
-#' colRanks(m)
-#'
-#' @export
-colRanking <- function(x, ties.method = "average") {
-  apply(x, 2, rank, ties.method = ties.method)
-}
-```
-
-
-
-```{r}
-#https://rpubs.com/pranali018/SSGSEA
-ssGSEA_alternative <-  function(X, gene_sets, alpha = 0.25, scale = T, norm = F, single = T) {
-    row_names = rownames(X)
-    num_genes = nrow(X)
-    gene_sets = lapply(gene_sets, function(genes) {which(row_names %in% genes)})
-
-    # Ranks for genes
-    R = colRanking(X, ties.method = 'average')
-
-    # Calculate enrichment score (es) for each sample (column)
-    es = apply(R, 2, function(R_col) {
-        gene_ranks = order(R_col, decreasing = TRUE)
-
-        # Calc es for each gene set
-        es_sample = sapply(gene_sets, function(gene_set_idx) {
-            # pos: match (within the gene set)
-            # neg: non-match (outside the gene set)
-            indicator_pos = gene_ranks %in% gene_set_idx
-            indicator_neg = !indicator_pos
-
-            rank_alpha  = (R_col[gene_ranks] * indicator_pos) ^ alpha
-
-            step_cdf_pos = cumsum(rank_alpha)    / sum(rank_alpha)
-            step_cdf_neg = cumsum(indicator_neg) / sum(indicator_neg)
-
-            step_cdf_diff = step_cdf_pos - step_cdf_neg
-
-            # Normalize by gene number
-            if (scale) step_cdf_diff = step_cdf_diff / num_genes
-
-            # Use ssGSEA or not
-            if (single) {
-                sum(step_cdf_diff)
-            } else {
-                step_cdf_diff[which.max(abs(step_cdf_diff))]
-            }
-        })
-        unlist(es_sample)
-    })
-
-    if (length(gene_sets) == 1) es = matrix(es, nrow = 1)
-
-    # Normalize by absolute diff between max and min
-    if (norm) es = es / diff(range(es))
-
-    # Prepare output
-    rownames(es) = names(gene_sets)
-    colnames(es) = colnames(X)
-    return(es)
-}
-```
-
 
 
 # Individual Genes
@@ -632,26 +501,101 @@ plotPCA(data=corrcounts_merge,
 ```
 
 
-
-
 # Enrichment-based
 
 ## GSEA
 
-```{r}
-data=corrcounts_merge
-metadata=metadata_merge
-gene_sets=bidirectsigs # bidirectional
-variables="Condition"
-contrasts
 
-# lmexpression: for more experienced users that wish to define directly the expression; centering and scaling can be done manually in the metadata...!
-# contrasts: for all users
-# coefs: for the experienced users, that don't use contrasts, the variable(s) from the linear model to be extracted and that will be used as contrasts; only works if contrasts is NULL
+```{r}
+degenes <- calculateDE(data=corrcounts_merge, 
+                       metadata=metadata_merge, 
+                       variables="Condition", 
+                       lmexpression = NULL, 
+                       modelmat = NULL, 
+                       contrasts = c("Senescent - Proliferative",
+                                     "Senescent - Quiescent",
+                                     "Proliferative - Quiescent")) 
+
+degenes
 ```
+
+```{r fig.width=21, fig.height=14}
+options(error=recover)
+plotVolcano(DEResultsList=degenes, genes=bidirectsigs, N=NULL, x="logFC",y="-log10(adj.P.Val)", pointSize=2, color="pink", highlightcolor="darkblue", nointerestcolor="grey",threshold_y=NULL, threshold_x=NULL, xlab=NULL, ylab=NULL, ncol=NULL, nrow=NULL, title="test",labsize=10,widthlabs=25, invert=T)
+
+```
+ 
+
+```{r}
+#' Run Gene Set Enrichment Analysis (GSEA) using fgsea
+#'
+#' This function runs Gene Set Enrichment Analysis (GSEA) on a vector or list of gene-level statistics using the fgsea package.
+#' Gene-level statistics are sorted in decreasing order, and each gene set is processed to extract gene names.
+#'
+#' @param geneStats A numeric vector of gene-level statistics with names corresponding to gene identifiers, or a list of such vectors.
+#' @param gene_sets A named list of gene sets. Each element can be a vector of gene names (for unidirectional sets) or a data frame (for bidirectional sets)
+#'                  where the first column contains gene names.
+#' @param nperm Number of permutations to use in fgsea. Default is 1000.
+#'
+#' @return An fgsea results object if a single geneStats vector is provided, or a list of fgsea results if \code{geneStats} is a list.
+#'
+#' @details
+#' Each gene set is processed by extracting gene names (using the first column if a data frame is provided). For each geneStats vector,
+#' the values are sorted in decreasing order and passed to \code{fgsea::fgsea} along with the pathways.
+#'
+#' @examples
+#' \dontrun{
+#'   # Suppose de_res is a numeric vector of gene-level stats, and gene_sets is a list of gene sets.
+#'   fgsea_result <- runFGSEA(de_res, gene_sets, nperm = 1000)
+#'
+#'   # For multiple DE results provided as a list:
+#'   fgsea_results_list <- runFGSEA(list(result1 = de_res, result2 = de_res2), gene_sets)
+#' }
+#'
+#' @importFrom fgsea fgsea
+#' @export
+runFGSEA <- function(geneStats, gene_sets, nperm = 1000) {
+  pathways <- lapply(gene_sets, function(gs) {
+    if (is.data.frame(gs)) {
+      return(as.character(gs[[1]]))
+    } else if (is.vector(gs)) {
+      return(as.character(gs))
+    } else {
+      stop("Each element in gene_sets must be either a data frame or a vector of gene names.")
+    }
+  })
+  
+  if (is.null(names(pathways))) {
+    names(pathways) <- paste0("pathway", seq_along(pathways))
+  }
+  
+  run_fgsea_single <- function(stats) {
+    stats <- sort(stats, decreasing = TRUE)
+    fgsea::fgsea(pathways = pathways, stats = stats, nperm = nperm)
+  }
+  
+  if (is.list(geneStats)) {
+    res_list <- lapply(geneStats, run_fgsea_single)
+    return(res_list)
+  } else {
+    return(run_fgsea_single(geneStats))
+  }
+}
+
+```
+
+
+
+
+
+
+
+
 
 ```{r}
 calculateGSEA <- function(data, metadata, gene_sets, variables, lmexpression=NULL, contrasts=NULL, coefs=NULL){
+  
+  # define linear model
   
   
   # If bidirectional (t-statistic; difference between peaks)
@@ -665,5 +609,22 @@ calculateGSEA <- function(data, metadata, gene_sets, variables, lmexpression=NUL
   
 }
 ```
+
+
+```{r}
+#allow the user to choose what representation he wants.
+# DEG per contrast for each signature with highlighted signature genes: grid of plots, columns are signatures, rows are contrasts
+# volcano-like plot for NES vs padj
+# Iceberg plot for each contrast for each signature: grid of plots, columns are signatures, rows are contrasts
+
+plotGSEA <- function(data, metadata, gene_sets, variables, lmexpression=NULL, contrasts=NULL, coefs=NULL){ 
+  
+  
+  
+}
+```
+
+
+
 
 

@@ -7,6 +7,7 @@
 
 ![Development
 Status](https://img.shields.io/badge/status-development-yellowgreen)
+
 <!-- badges: end -->
 
 **markeR** provides a suite of methods for using gene sets (signatures)
@@ -29,13 +30,20 @@ for transcriptomics research (bulk RNA-seq).
         -   [Correlation Heatmap](#correlation-heatmap)
         -   [ROC and AUC](#roc-and-auc)
         -   [Cohen’s D](#cohens-d)
-        -   [PCA with only genes of
-            interest](#pca-with-only-genes-of-interest)
+        -   [PCA with Only Genes of
+            Interest](#pca-with-only-genes-of-interest)
     -   [Calculate Senescence Scores](#calculate-senescence-scores)
-        -   [logmedian method](#logmedian-method)
-        -   [ssGSEA method](#ssgsea-method)
-        -   [Ranking method](#ranking-method)
-        -   [All methods](#all-methods)
+        -   [logmedian Method](#logmedian-method)
+        -   [ssGSEA Method](#ssgsea-method)
+        -   [Ranking Method](#ranking-method)
+        -   [All Methods](#all-methods)
+    -   [False Discovery Rate (FDR)
+        Calculations](#false-discovery-rate-fdr-calculations)
+    -   [Enrichment-Based Methods](#enrichment-based-methods)
+        -   [Differentially Expressed
+            Genes](#differentially-expressed-genes)
+        -   [Volcano Plot Visualization of Differential Expression
+            Results](#volcano-plot-visualization-of-differential-expression-results)
 
 ## Installation
 
@@ -47,60 +55,57 @@ You can install the development version of markeR from
 devtools::install_github("DiseaseTranscriptomicsLab/markeR")
 ```
 
-<!-- ## Methods -->
-<!-- The package implements three main approaches for gene signature analysis: -->
-<!-- **1. Score-based Methods:**   -->
-<!-- These approaches compute a numerical score representing the expression of a gene signature per sample. -->
-<!-- - **Log2 Median-Centered Scoring:** Measures signature expression by centering expression values relative to their median. -->
-<!-- - **Single-Sample Gene Set Enrichment Analysis (ssGSEA):** Calculates an enrichment score for a given gene set in each sample. -->
-<!-- **2. Enrichment-based Methods:**   -->
-<!-- These methods evaluate whether a gene signature is significantly enriched in a ranked gene list. -->
-<!-- - **Gene Set Enrichment Analysis (GSEA):** A rank-based method for testing enrichment significance in predefined gene sets. -->
-<!-- **3. Classification-based Methods:**   -->
-<!-- These approaches classify samples into phenotypic groups based on gene signature expression. -->
-<!-- - **Random Forest Classification:** Uses decision trees to predict sample labels based on gene signature scores. -->
-
 ## Main Functions and Future Modules
 
-The current release of **markeR** includes two primary functions for
-score-based analysis:
+The current release of **`markeR`** includes two primary functions for
+**score-based analysis**:
 
--   **CalculateScores:** Calculates gene signature scores for each
+-   **`CalculateScores`:** Calculates gene signature scores for each
     sample using either the ssGSEA, log2 median-centered or ranking
     method.
--   **PlotScores:** Calculates and displays the calculated scores across
-    conditions using violin plots, density plots or heatmaps, depending
-    on the chosen parameters.
+-   **`PlotScores`:** Calculates and displays the calculated scores
+    across conditions using violin plots, density plots or heatmaps,
+    depending on the chosen parameters.
+
+Additionally, it includes a function for FDR calculation based on random
+sets of genes for each signature:
+
+-   **`FDR_Simulation`:** Computes false discovery rates using random
+    gene sets.
+
+Although still being developed, the package already includes two
+functions for **enrichment-based analysis**:
+
+-   **`calculateDE`:** Performs differential expression analysis.
+-   **`plotVolcano`:** Generates volcano plots to visualize
+    differentially expressed genes.
 
 It also includes some functions for visualising individual genes from a
 gene signature:
 
--   **IndividualGenes\_Violins:** creates violin plots of gene
+-   **`IndividualGenes_Violins`:** creates violin plots of gene
     expression data with jittered points and optional faceting, allowing
     for visualization of individual gene expression distributions across
     sample groups.
--   **CorrelationHeatmap:** computes and visualizes a correlation
+-   **`CorrelationHeatmap`:** computes and visualizes a correlation
     heatmap for a given set of genes. Optionally, the heatmap can be
     generated separately for different conditions based on metadata.
--   **ExpressionHeatmap:** generates an expression heatmap with
+-   **`ExpressionHeatmap`:** generates an expression heatmap with
     customizable sample annotations for a given set of genes.
--   **ROCandAUCplot:** computes ROC curves and AUC values for each gene
-    based on gene expression data and sample metadata. It can generate
-    ROC plots, an AUC heatmap, or both arranged side‐by‐side.
--   **CohenDHeatmap:** computes Cohen’s d for each gene based on gene
-    expression data and sample metadata. The resulting effect sizes are
-    then visualized as a heatmap.
--   **plotPCA:** performs PCA on a given dataset and visualizes the
+-   **`ROCandAUCplot`:** computes ROC curves and AUC values for each
+    gene based on gene expression data and sample metadata. It can
+    generate ROC plots, an AUC heatmap, or both arranged side‐by‐side.
+-   **`CohenDH_IndividualGenes`:** computes Cohen’s d for each gene
+    based on gene expression data and sample metadata. The resulting
+    effect sizes are then visualized as a heatmap.
+-   **`plotPCA`:** performs PCA on a given dataset and visualizes the
     results using ggplot2. It allows users to specify genes of interest
     (to understand if they are sufficient to explain the main variance
     in the data), customize scaling and centering, and color points
     based on a metadata variable.
 
-Future updates will expand the package with additional pairs of
-functions to:
+Future updates will expand the package with additional functions to:
 
--   Perform enrichment-based analysis (to calculate and visualize GSEA
-    statistics).
 -   Conduct classification-based analysis (to train classifiers, e.g.,
     using Random Forests, and to evaluate performance via ROC curves).
 -   Provide additional gene-level visualization modules to display
@@ -600,9 +605,9 @@ PlotScores(data = counts_example,
 
 To compare various metrics across different condition combinations,
 violin plots may not always be the best choice. In such cases, users can
-set to generate a summary heatmap. The function will return one heatmap
-per gene set, with rows corresponding to all possible combinations of
-values in the .
+set \\code{method = “all”} to generate a summary heatmap. The function
+will return one heatmap per gene set, with rows corresponding to all
+possible combinations of values in the \\code{GroupingVariable}.
 
 ``` r
  
@@ -650,3 +655,191 @@ FDR_Simulation(data = counts_example,
 ```
 
 <img src="man/figures/README-FDRSim-1.png" width="80%" />
+
+### Enrichment-Based Methods
+
+#### Differentially Expressed Genes
+
+The `calculateDE` function in the `markeR` package leverages the `limma`
+framework to compute differential gene expression statistics from raw
+count data. This function is highly flexible and supports several modes
+of operation depending on the user’s experimental design. In the
+examples below, we illustrate three common scenarios:
+
+-   **Automatic Design Matrix with Contrasts:** In the first example,
+    the design matrix is built automatically from the metadata using a
+    specified variable (here, `"Condition"`). A contrast (in this case,
+    "`Senescent - Proliferative"`) is then applied to extract the
+    differential expression statistics between the two conditions. This
+    is ideal when you have a simple design and want to quickly compute
+    contrasts without manually creating the design matrix.
+
+-   **Custom Model Formula with Coefficient Extraction:** The second
+    example demonstrates how to supply a custom model formula (e.g.,
+    `~Condition`) directly to the function. This allows you to have fine
+    control over the design, and you can specify which coefficients you
+    want to extract from the fitted model. This approach is particularly
+    useful for more complex designs or when you wish to extract multiple
+    statistics from a single model. You can leave the parameter
+    `"Contrast"` as `NULL`, and the function will return all
+    coefficients (i.e. not performing any contrasts).
+
+-   **Providing an Externally Constructed Design Matrix:** In the third
+    example, you create the design matrix externally
+    using`model.matrix()` (for instance, with no intercept using
+    `~0 + Condition`). By supplying this design matrix directly to
+    `calculateDE`, you have full control over its construction. A
+    contrast is then applied to obtain the desired differential
+    expression results. This method is recommended when you require
+    complete customization of the design matrix or when you have
+    pre-processed your design externally. You can leave the parameter
+    `"Contrast"` as `NULL`, and the function will return all possible
+    coefficients based on your design matrix alone.
+
+Below are the corresponding code snippets demonstrating each scenario,
+by answering the same question: **What are the genes differentially
+expressed between senescence and proliferative cells?**
+
+``` r
+# Example 1: Build design matrix from variables (Condition) and apply a contrast.
+# In this case, the design matrix is constructed automatically using the variable "Condition".
+DEGs <- calculateDE(data = counts_example,
+                    metadata = metadata_example,
+                    variables = "Condition",
+                    contrasts = c("Senescent - Proliferative"))
+DEGs$`Senescent - Proliferative`[1:5,]
+#>            logFC  AveExpr         t      P.Value    adj.P.Val        B
+#> CCND2   3.816674 4.406721 12.393130 2.747202e-15 2.435712e-12 24.70982
+#> MKI67  -3.581174 6.605339 -9.197510 2.007135e-11 4.992097e-10 15.96203
+#> PTCHD4  3.398914 3.556007 10.740867 2.318137e-13 3.002118e-11 20.35906
+#> KIF20A -3.365481 5.934893 -9.728709 4.176398e-12 1.844336e-10 17.51106
+#> CDC20  -3.304602 6.104079 -9.801724 3.375212e-12 1.657492e-10 17.72110
+
+# Example 2: Use a custom model formula.
+# Here, a model formula is provided (as a string that will be converted to a formula).
+# Specific coefficients are extracted.
+# because we are using one of the conditions as the baseline, the other one will give the difference between the two
+DEGs2 <- calculateDE(data = counts_example,
+                     metadata = metadata_example,
+                     variables = "Condition",
+                     lmexpression = "~Condition",
+                     contrasts = c("Senescent")) 
+DEGs2$`Senescent`[1:5,]
+#>            logFC  AveExpr         t      P.Value    adj.P.Val        B
+#> CCND2   3.816674 4.406721 12.393130 2.747202e-15 2.435712e-12 24.70982
+#> MKI67  -3.581174 6.605339 -9.197510 2.007135e-11 4.992097e-10 15.96203
+#> PTCHD4  3.398914 3.556007 10.740867 2.318137e-13 3.002118e-11 20.35906
+#> KIF20A -3.365481 5.934893 -9.728709 4.176398e-12 1.844336e-10 17.51106
+#> CDC20  -3.304602 6.104079 -9.801724 3.375212e-12 1.657492e-10 17.72110
+
+# Example 3: Supply a custom design matrix directly.
+# Here, the design matrix is created externally (using no intercept, for instance).
+design <- model.matrix(~0 + Condition, data = metadata_example)
+colnames(design) <- c("Proliferative","Senescent")
+DEGs3 <- calculateDE(data = counts_example,
+                     metadata = metadata_example,
+                     variables = "Condition",
+                     modelmat = design,
+                     contrasts = c("Senescent - Proliferative"))
+DEGs3$`Senescent - Proliferative`[1:5,]
+#>            logFC  AveExpr         t      P.Value    adj.P.Val        B
+#> CCND2   3.816674 4.406721 12.393130 2.747202e-15 2.435712e-12 24.70982
+#> MKI67  -3.581174 6.605339 -9.197510 2.007135e-11 4.992097e-10 15.96203
+#> PTCHD4  3.398914 3.556007 10.740867 2.318137e-13 3.002118e-11 20.35906
+#> KIF20A -3.365481 5.934893 -9.728709 4.176398e-12 1.844336e-10 17.51106
+#> CDC20  -3.304602 6.104079 -9.801724 3.375212e-12 1.657492e-10 17.72110
+```
+
+#### Volcano Plot Visualization of Differential Expression Results
+
+After running your differential expression analysis (for example, using
+the `calculateDE` function), you can visualize your results with the
+`plotVolcano` function. This function provides a flexible interface for
+exploring your data by allowing you to:
+
+-   **Plot Differentially Expressed Genes:**  
+    Display a volcano plot with your chosen statistics (e.g., log
+    fold-change on the x-axis and –log₁₀ adjusted p-value on the
+    y-axis).
+
+-   **Color Interesting Genes:**  
+    Highlight genes that pass user-specified thresholds by adjusting
+    `threshold_y` and/or `threshold_x`.
+
+-   **Annotate Top and Bottom N Genes:**  
+    Optionally, label the top (and bottom) N genes based on the chosen
+    statistic to quickly identify the most significant genes.
+
+-   **Highlight Gene Signatures:**  
+    If you provide a list of gene signatures (via the `genes` argument),
+    the function can highlight those genes on the plot.
+
+Below is an example usage that simply plots the differential expression
+results (with default settings). In this example, no thresholds or gene
+signatures are specified, so the function produces a basic volcano plot
+based on the `DEResultsList`.
+
+``` r
+# Plot Differentially Expressed Genes:
+plotVolcano(DEGs, genes = NULL, N = NULL,
+            x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
+            color = "#6489B4", highlightcolor = "#05254A", nointerestcolor = "#B7B7B7",
+            threshold_y = NULL, threshold_x = NULL,
+            xlab = NULL, ylab = NULL, ncol = NULL, nrow = NULL, title = "Marthandan et al. 2016",
+            labsize = 8, widthlabs = 25, invert = FALSE)
+```
+
+<img src="man/figures/README-volcanos_DEGs-1.png" width="40%" />
+
+``` r
+# Color Interesting Genes:
+plotVolcano(DEGs, genes = NULL, N = NULL,
+            x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
+            color = "#6489B4", highlightcolor = "#05254A", nointerestcolor = "#B7B7B7",
+            threshold_y = 0.0001, threshold_x = 1,
+            xlab = NULL, ylab = NULL, ncol = NULL, nrow = NULL, title = "Marthandan et al. 2016",
+            labsize = 8, widthlabs = 25, invert = FALSE)
+```
+
+<img src="man/figures/README-volcanos_DEGs-2.png" width="40%" />
+
+``` r
+# Annotate Top and Bottom N Genes:
+plotVolcano(DEGs, genes = NULL, N = 5,
+            x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
+            color = "pink", highlightcolor = "#05254A", nointerestcolor = "#B7B7B7",
+            threshold_y = NULL, threshold_x = NULL,
+            xlab = NULL, ylab = NULL, ncol = NULL, nrow = NULL, title = "Marthandan et al. 2016",
+            labsize = 8, widthlabs = 25, invert = FALSE)
+```
+
+<img src="man/figures/README-volcanos_DEGs-3.png" width="40%" />
+
+``` r
+options(error=recover)
+# Plot Differentially Expressed Genes:
+plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                          Senescence  = SimpleSenescenceSignature), 
+            N = NULL,
+            x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
+            color = "#6489B4", highlightcolor = "#05254A", nointerestcolor = "#B7B7B7",
+            threshold_y = NULL, threshold_x = NULL,
+            xlab = NULL, ylab = NULL, ncol = NULL, nrow = NULL, title = "Marthandan et al. 2016",
+            labsize = 9, widthlabs = 25, invert = FALSE) 
+```
+
+<img src="man/figures/README-volcanos_DEGs2-1.png" width="40%" />
+
+``` r
+# Change order: signatures in columns, contrast in rows
+plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                          Senescence  = SimpleSenescenceSignature), 
+            N = NULL,
+            x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
+            color = "#6489B4", highlightcolor = "#05254A", nointerestcolor = "#B7B7B7",
+            threshold_y = NULL, threshold_x = NULL,
+            xlab = NULL, ylab = NULL, ncol = NULL, nrow = NULL, title = "Marthandan et al. 2016",
+            labsize = 10, widthlabs = 24, invert = TRUE)
+```
+
+<img src="man/figures/README-volcanos_DEGs3-1.png" width="90%" />
