@@ -28,22 +28,22 @@ knitr::opts_chunk$set(
 -   [Installation](#installation)
 -   [Main Functions and Future Modules](#main-functions-and-future-modules)
 -   [Example](#example)
-    -   [Visualise Individual Genes from Senescence Signature](#visualise-individual-genes-from-senescence-signature)
-        -   [Expression Heatmap](#expression-heatmap)
-        -   [Expression Violins](#expression-violins)
-        -   [Correlation Heatmap](#correlation-heatmap)
-        -   [ROC and AUC](#roc-and-auc)
-        -   [Cohen's D](#cohens-d)
-        -   [PCA with Only Genes of Interest](#pca-with-only-genes-of-interest)
-    -   [Calculate Senescence Scores](#calculate-senescence-scores)
-        -   [logmedian Method](#logmedian-method)
-        -   [ssGSEA Method](#ssgsea-method)
-        -   [Ranking Method](#ranking-method)
-        -   [All Methods](#all-methods)
+-   [Visualise Individual Genes from Senescence Signature](#visualise-individual-genes-from-senescence-signature)
+    -   [Expression Heatmap](#expression-heatmap)
+    -   [Expression Violins](#expression-violins)
+    -   [Correlation Heatmap](#correlation-heatmap)
+    -   [ROC and AUC](#roc-and-auc)
+    -   [Cohen's D](#cohens-d)
+    -   [PCA with Only Genes of Interest](#pca-with-only-genes-of-interest)
+-   [Calculate Senescence Scores](#calculate-senescence-scores)
+    -   [logmedian Method](#logmedian-method)
+    -   [ssGSEA Method](#ssgsea-method)
+    -   [Ranking Method](#ranking-method)
+    -   [All Methods](#all-methods)
     -   [False Discovery Rate (FDR) Calculations](#false-discovery-rate-fdr-calculations)
-    -   [Enrichment-Based Methods](#enrichment-based-methods)
-        -   [Differentially Expressed Genes](#differentially-expressed-genes)
-        -   [Volcano Plot Visualization of Differential Expression Results](#volcano-plot-visualization-of-differential-expression-results)
+-   [Enrichment-Based Methods](#enrichment-based-methods)
+    -   [Differentially Expressed Genes](#differentially-expressed-genes)
+    -   [Gene Set Enrichment Analyses](#gene-set-enrichment-analyses)
 
 ## Installation
 
@@ -193,7 +193,7 @@ senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
   "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
 )
- 
+
 ROCandAUCplot(counts_example, 
               metadata_example, 
               condition_var = "Condition", 
@@ -214,14 +214,14 @@ ROCandAUCplot(counts_example,
 
 ```{r cohendexample, fig.width=6, fig.height=4, out.width="70%", warning=FALSE, message=FALSE}
 CohenD_IndividualGenes(counts_example, 
-              metadata_example, 
-              genes=SimpleSenescenceSignature,
-              condition_var = "Condition", 
-              class = "Senescent", 
-              group_var = NULL,  
-              heatmap_params = list(col = list( "#F9F4AE" ,"#B44141"),
-                                    limits = NULL,
-                                    cluster_rows=T))
+                       metadata_example, 
+                       genes=SimpleSenescenceSignature,
+                       condition_var = "Condition", 
+                       class = "Senescent", 
+                       group_var = NULL,  
+                       heatmap_params = list(col = list( "#F9F4AE" ,"#B44141"),
+                                             limits = NULL,
+                                             cluster_rows=T))
 ```
 
 #### PCA with only genes of interest
@@ -229,11 +229,11 @@ CohenD_IndividualGenes(counts_example,
 ```{r pca, fig.width=7, fig.height=3, out.width="90%", warning=FALSE, message=FALSE}
 
 annotation_colors <- c(  
-    "Senescent"     = "#65AC7C",  # Example color: greenish
-    "Proliferative" = "#5F90D4"  # Example color: blueish 
+  "Senescent"     = "#65AC7C",  # Example color: greenish
+  "Proliferative" = "#5F90D4"  # Example color: blueish 
 )
 
- 
+
 plotPCA(data = counts_example, 
         metadata = metadata_example, 
         genes=SimpleSenescenceSignature, 
@@ -341,7 +341,7 @@ For users interested in viewing the overall distribution of scores, simply omit 
 PlotScores(data = counts_example, 
            metadata = metadata_example, 
            gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
-                          Senescence  = SimpleSenescenceSignature), 
+                            Senescence  = SimpleSenescenceSignature), 
            method ="logmedian", 
            ColorValues = NULL,  
            ncol = NULL, 
@@ -351,7 +351,7 @@ PlotScores(data = counts_example,
            title="Marthandan et al. 2016",
            labsize=8, 
            titlesize = 10)  
- 
+
 
 ```
 
@@ -398,7 +398,7 @@ PlotScores(data = counts_example,
 ```
 
 ```{r examplessGSEA_bi, fig.width=3, fig.height=4, out.width="40%", warning=FALSE, message=FALSE}
- 
+
 # df_Scores <- CalculateScores(data = counts_example, 
 #                              metadata = metadata_example, 
 #                              method = "ssGSEA", 
@@ -440,7 +440,7 @@ PlotScores(data = counts_example,
 The following example uses the **"ranking"** method for score calculation, both for unidirectional and bidirectional signatures.
 
 ```{r ranking_unidirect, fig.width=3, fig.height=4, out.width="40%", warning=FALSE, message=FALSE}
- 
+
 # df_Scores <- CalculateScores(data = counts_example, 
 #                              metadata = metadata_example, 
 #                              method = "ranking", 
@@ -478,7 +478,7 @@ PlotScores(data = counts_example,
 ```
 
 ```{r ranking_bidirect, fig.width=3, fig.height=4, out.width="40%", warning=FALSE, message=FALSE}
- 
+
 # df_Scores <- CalculateScores(data = counts_example, 
 #                              metadata = metadata_example, 
 #                              method = "ranking", 
@@ -520,7 +520,7 @@ PlotScores(data = counts_example,
 To compare various metrics across different condition combinations, violin plots may not always be the best choice. In such cases, users can set \\code{method = "all"} to generate a summary heatmap. The function will return one heatmap per gene set, with rows corresponding to all possible combinations of values in the \\code{GroupingVariable}.
 
 ```{r heatmap_all, fig.width=6, fig.height=3, out.width="80%", warning=FALSE, message=FALSE}
- 
+
 PlotScores(data = counts_example, 
            metadata = metadata_example,  
            gene_sets=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
@@ -534,7 +534,7 @@ PlotScores(data = counts_example,
            title="Marthandan et al. 2016", 
            titlesize = 12,
            ColorValues = NULL)  
- 
+
 
 ```
 
@@ -543,11 +543,11 @@ PlotScores(data = counts_example,
 The user can assess the significance of gene signature scores by comparing observed effect sizes against those originated by random signatures. For each original gene signature, the function calculates the observed Cohen's d (and p‑value) using (`GroupingVariable`). It then generates a number of simulated signatures (`number_of_sims`) by randomly sampling genes from a user provided gene list (`gene_list`) and computes their Cohen's d values. The simulation results are visualised as violin plots that display the distribution of Cohen's d values for each method, overlaid with the observed values of the original signatures, and a 95th percentile threshold. Significance is indicated by distinct point shapes based on the associated p‑value.
 
 ```{r FDRSim, fig.width=12, fig.height=6, out.width="80%", warning=FALSE, message=FALSE}
- 
+
 FDR_Simulation(data = counts_example,
                metadata = metadata_example,
                original_signatures = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
-                          Senescence  = SimpleSenescenceSignature),
+                                          Senescence  = SimpleSenescenceSignature),
                gene_list = row.names(counts_example),
                number_of_sims = 100,
                title_for_plot = "Marthandan et al. 2016",
@@ -599,8 +599,6 @@ DEGs3 <- calculateDE(data = counts_example,
 DEGs3$`Senescent - Proliferative`[1:5,]
 ```
 
-#### Volcano Plot Visualization of Differential Expression Results
-
 After running your differential expression analysis (for example, using the `calculateDE` function), you can visualize your results with the `plotVolcano` function. This function provides a flexible interface for exploring your data by allowing you to:
 
 -   **Plot Differentially Expressed Genes:**  
@@ -642,10 +640,10 @@ plotVolcano(DEGs, genes = NULL, N = 5,
 ```
 
 ```{r volcanos_DEGs2, fig.width=4, fig.height=6, out.width="40%", warning=FALSE, message=FALSE}
- 
+
 # Plot Differentially Expressed Genes:
 plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
-                          Senescence  = SimpleSenescenceSignature), 
+                               Senescence  = SimpleSenescenceSignature), 
             N = NULL,
             x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
             color = "#6489B4", highlightcolor = "#05254A", nointerestcolor = "#B7B7B7",
@@ -658,11 +656,51 @@ plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignat
 
 # Change order: signatures in columns, contrast in rows
 plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
-                          Senescence  = SimpleSenescenceSignature), 
+                               Senescence  = SimpleSenescenceSignature), 
             N = NULL,
             x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
             color = "#6489B4", highlightcolor = "#05254A", nointerestcolor = "#B7B7B7",
             threshold_y = NULL, threshold_x = NULL,
             xlab = NULL, ylab = NULL, ncol = NULL, nrow = NULL, title = "Marthandan et al. 2016",
             labsize = 10, widthlabs = 24, invert = TRUE)
+```
+
+#### Gene Set Enrichment Analyses
+
+To perform GSEA, use the `runGSEA()` function. This function takes a named list of differential expression results (one per contrast) and a set of gene signatures to compute enrichment scores.
+
+-   `DEGList`: A list of differentially expressed genes (DEGs) for each contrast.
+
+-   `gene_sets`: A list of gene sets, where each entry can be:
+
+    -   A vector of genes (unidirectional analysis).
+    -   A data frame where the first column is the gene name and the second column indicates the expected direction (+1 or -1, bidirectional analysis).
+
+-   `stat`: The ranking statistic. If NULL, the ranking statistic is automatically selected unless manually specified:
+
+    -   `"B"` for gene sets with **no known direction** (vectors).
+    -   `"t"` for **unidirectional** or **bidirectional** gene sets (data frames).
+    -   If provided, this argument overrides the automatic selection.
+
+```{r GSEA, warning=FALSE, message=FALSE}
+GSEAresults <- runGSEA(DEGList = DEGs, 
+                       gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                                        Senescence  = SimpleSenescenceSignature),
+                       stat = NULL)
+
+GSEAresults
+```
+
+After running GSEA, you can visualize enrichment plots using `plotGSEAenrichment()`. This function generates enrichment plots for each gene signature and contrast, displaying also the **Normalized Enrichment Scores (NES)** and **adjusted p-value** for each enrichment result.
+
+-   `grid = TRUE`: Arranges the plots in a grid for better visualization.
+-   `titlesize`: Adjusts title font size.
+-   `nrow`/`ncol`: Specifies the grid layout for arranging plots.
+
+```{r GSEA_plotenrichment, fig.width=7, fig.height=3, out.width="90%", warning=FALSE, message=FALSE}
+plotGSEAenrichment(GSEA_results=GSEAresults, 
+                   DEGList=DEGs, 
+                   gene_sets=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                                  Senescence  = SimpleSenescenceSignature), 
+                   widthTitle=40, grid = T, titlesize = 10, nrow=1, ncol=2) 
 ```

@@ -519,96 +519,26 @@ degenes <- calculateDE(data=corrcounts_merge,
 degenes
 ```
 
-```{r fig.width=21, fig.height=14}
+```{r fig.width=21, fig.height=6}
 options(error=recover)
-plotVolcano(DEResultsList=degenes, genes=bidirectsigs, N=NULL, x="logFC",y="-log10(adj.P.Val)", pointSize=2, color="pink", highlightcolor="darkblue", nointerestcolor="grey",threshold_y=NULL, threshold_x=NULL, xlab=NULL, ylab=NULL, ncol=NULL, nrow=NULL, title="test",labsize=10,widthlabs=25, invert=T)
+plotVolcano(DEResultsList=degenes, genes=bidirectsigs, N=NULL, x="logFC",y="-log10(adj.P.Val)", pointSize=2, color="pink", highlightcolor="darkblue", nointerestcolor="grey",threshold_y=NULL, threshold_x=NULL, xlab=NULL, ylab=NULL, ncol=NULL, nrow=NULL, title=NULL,labsize=7,widthlabs=25, invert=T)
 
 ```
  
 
+
 ```{r}
-#' Run Gene Set Enrichment Analysis (GSEA) using fgsea
-#'
-#' This function runs Gene Set Enrichment Analysis (GSEA) on a vector or list of gene-level statistics using the fgsea package.
-#' Gene-level statistics are sorted in decreasing order, and each gene set is processed to extract gene names.
-#'
-#' @param geneStats A numeric vector of gene-level statistics with names corresponding to gene identifiers, or a list of such vectors.
-#' @param gene_sets A named list of gene sets. Each element can be a vector of gene names (for unidirectional sets) or a data frame (for bidirectional sets)
-#'                  where the first column contains gene names.
-#' @param nperm Number of permutations to use in fgsea. Default is 1000.
-#'
-#' @return An fgsea results object if a single geneStats vector is provided, or a list of fgsea results if \code{geneStats} is a list.
-#'
-#' @details
-#' Each gene set is processed by extracting gene names (using the first column if a data frame is provided). For each geneStats vector,
-#' the values are sorted in decreasing order and passed to \code{fgsea::fgsea} along with the pathways.
-#'
-#' @examples
-#' \dontrun{
-#'   # Suppose de_res is a numeric vector of gene-level stats, and gene_sets is a list of gene sets.
-#'   fgsea_result <- runFGSEA(de_res, gene_sets, nperm = 1000)
-#'
-#'   # For multiple DE results provided as a list:
-#'   fgsea_results_list <- runFGSEA(list(result1 = de_res, result2 = de_res2), gene_sets)
-#' }
-#'
-#' @importFrom fgsea fgsea
-#' @export
-runFGSEA <- function(geneStats, gene_sets, nperm = 1000) {
-  pathways <- lapply(gene_sets, function(gs) {
-    if (is.data.frame(gs)) {
-      return(as.character(gs[[1]]))
-    } else if (is.vector(gs)) {
-      return(as.character(gs))
-    } else {
-      stop("Each element in gene_sets must be either a data frame or a vector of gene names.")
-    }
-  })
-  
-  if (is.null(names(pathways))) {
-    names(pathways) <- paste0("pathway", seq_along(pathways))
-  }
-  
-  run_fgsea_single <- function(stats) {
-    stats <- sort(stats, decreasing = TRUE)
-    fgsea::fgsea(pathways = pathways, stats = stats, nperm = nperm)
-  }
-  
-  if (is.list(geneStats)) {
-    res_list <- lapply(geneStats, run_fgsea_single)
-    return(res_list)
-  } else {
-    return(run_fgsea_single(geneStats))
-  }
-}
+GSEAresults <- runGSEA(degenes, bidirectsigs, stat = NULL)
+GSEAresults
+```
+
+
+```{r fig.width=25, fig.height=10}
+plotGSEAenrichment(GSEA_results=GSEAresults, DEGList=degenes, gene_sets=bidirectsigs, widthTitle=32,grid = T, titlesize = 10, nrow=3, ncol=9) 
 
 ```
 
 
-
-
-
-
-
-
-
-```{r}
-calculateGSEA <- function(data, metadata, gene_sets, variables, lmexpression=NULL, contrasts=NULL, coefs=NULL){
-  
-  # define linear model
-  
-  
-  # If bidirectional (t-statistic; difference between peaks)
-  
-  
-  # If unidirectional (t-statistic)
-  
-  
-  # if direction is not known (B statistic)
-  
-  
-}
-```
 
 
 ```{r}
