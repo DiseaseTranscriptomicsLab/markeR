@@ -838,17 +838,13 @@ set of gene signatures to compute enrichment scores.
 
 -   `DEGList`: A list of differentially expressed genes (DEGs) for each
     contrast.
-
 -   `gene_sets`: A list of gene sets, where each entry can be:
-
     -   A vector of genes (unidirectional analysis).
     -   A data frame where the first column is the gene name and the
         second column indicates the expected direction (+1 or -1,
         bidirectional analysis).
-
 -   `stat`: The ranking statistic. If NULL, the ranking statistic is
     automatically selected unless manually specified:
-
     -   `"B"` for gene sets with **no known direction** (vectors).
     -   `"t"` for **unidirectional** or **bidirectional** gene sets
         (data frames).
@@ -892,3 +888,48 @@ plotGSEAenrichment(GSEA_results=GSEAresults,
 ```
 
 <img src="man/figures/README-GSEA_plotenrichment-1.png" width="90%" />
+
+The `plotNESlollipop()` function creates lollipop plots for visualizing
+Gene Set Enrichment Analysis (GSEA) results. Each plot displays pathways
+on the y-axis and Normalized Enrichment Scores (NES) on the x-axis, with
+color representing the adjusted p-value (padj; Note: if the padj exceeds
+the maximum of `padj_limit`, it will be assigned to the `high_color`).
+The function supports multiple contrasts and includes options for
+customizing the color gradient, significance threshold, and plot layout.
+It can also arrange individual plots into a grid layout for comparative
+visualization.
+
+``` r
+plotNESlollipop(GSEA_results=GSEAresults, 
+                padj_limit = c(0, 0.1), 
+                low_color = "blue", 
+                mid_color = "white", 
+                high_color = "red", 
+                sig_threshold = 0.05, 
+                grid = FALSE, 
+                nrow = NULL, ncol = NULL, 
+                widthlabels=13, 
+                title=NULL, titlesize=12) 
+#> $`Senescent - Proliferative`
+```
+
+<img src="man/figures/README-GSEA_lollypop-1.png" width="60%" />
+
+The `plotCombinedGSEA()` function generates a scatter plot to visualize
+the results of Gene Set Enrichment Analysis (GSEA) across multiple
+contrasts. Each point represents a pathway, with:
+
+-   X-axis: Normalized Enrichment Score (NES)
+-   Y-axis: -log10 adjusted p-value (significance)
+-   Color: Pathways
+-   Shape: Different contrasts
+-   Dashed line: Significance threshold
+
+This function helps compare enrichment results when the number of
+contrasts and the number of pathways is high.
+
+``` r
+plotCombinedGSEA(GSEAresults, sig_threshold = 0.05, PointSize=9, widthlegend = 26 )
+```
+
+<img src="man/figures/README-GSEA_volcano-1.png" width="60%" />
