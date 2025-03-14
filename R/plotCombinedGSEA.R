@@ -22,8 +22,10 @@
 #' \dontrun{
 #' # Example GSEA results (mock data)
 #' GSEA_results <- list(
-#'   "Contrast1" = data.frame(NES = rnorm(10), padj = runif(10), pathway = paste("Pathway", 1:10)),
-#'   "Contrast2" = data.frame(NES = rnorm(10), padj = runif(10), pathway = paste("Pathway", 11:20))
+#'   "Contrast1" = data.frame(NES = rnorm(10), padj = runif(10),
+#'   pathway = paste("Pathway", 1:10)),
+#'   "Contrast2" = data.frame(NES = rnorm(10), padj = runif(10),
+#'   pathway = paste("Pathway", 1:10))
 #' )
 #'
 #' # Generate the plot
@@ -51,7 +53,7 @@ plotCombinedGSEA <- function(GSEA_results, sig_threshold = 0.05, PointSize = 4, 
   # Create a color palette for pathways
   # RColorBrewer has palettes for discrete color scales
 
-  pathway_colors <- RColorBrewer::brewer.pal(length(unique(combined_data$pathway)), "Set3")
+  pathway_colors <- colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))(length(unique(combined_data$pathway)))
 
   combined_data$pathway <- sapply(combined_data$pathway, function(x) wrap_title(x, widthlegend))
 

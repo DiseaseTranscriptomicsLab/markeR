@@ -49,10 +49,16 @@ This function generates enrichment plots for gene sets using the \code{fgsea::pl
 It supports both individual plots (returned as a list) and a grid layout using \code{ggpubr::ggarrange()}.
 }
 \examples{
-# Example usage:
-plots <- plotGSEAenrichment(GSEA_results, DEGList, gene_sets)
+# Example GSEA results (mock data, missing columns if running by runGSEA)
+GSEA_results <- list(
+  "Contrast1" = data.frame(NES = rnorm(10), padj = runif(10),
+  pathway = paste("Pathway", 1:10)),
+  "Contrast2" = data.frame(NES = rnorm(10), padj = runif(10),
+  pathway = paste("Pathway", 11:20))
+)
 
-# Display plots in a grid
-plotGSEAenrichment(GSEA_results, DEGList, gene_sets, grid = TRUE)
+# Generate the plot
+plot <- plotCombinedGSEA(GSEA_results, sig_threshold = 0.05, PointSize = 4)
+print(plot)
 
 }

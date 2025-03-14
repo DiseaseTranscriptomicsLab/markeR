@@ -29,8 +29,6 @@ runGSEA(DEGList, gene_sets, stat = NULL)
 \item \code{"t"} for \strong{unidirectional} or \strong{bidirectional} gene sets (data frames).
 \item If provided, this argument overrides the automatic selection.
 }}
-
-\item{nperm}{Integer. The number of permutations used by \code{fgsea} for estimating p-values (default: \code{1000}).}
 }
 \value{
 A named list where each element corresponds to a contrast. Each contrast contains a \strong{single data frame} with GSEA results for all gene sets.

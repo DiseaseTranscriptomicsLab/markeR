@@ -58,7 +58,8 @@
 #' plot_list <- plotNESlollipop(GSEA_results)
 #'
 #' # Generate combined grid of plots with custom title
-#' combined_plot <- plotNESlollipop(GSEA_results, grid = TRUE, title = "GSEA Results Overview", titlesize = 14)
+#' combined_plot <- plotNESlollipop(GSEA_results, grid = TRUE,
+#' title = "GSEA Results Overview", titlesize = 14)
 #'
 #' @import ggplot2
 #' @importFrom ggpubr annotate_figure ggarrange

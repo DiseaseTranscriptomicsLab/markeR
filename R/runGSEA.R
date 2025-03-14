@@ -18,8 +18,6 @@
 #'   - `"t"` for **unidirectional** or **bidirectional** gene sets (data frames).
 #'   - If provided, this argument overrides the automatic selection.
 #'
-#' @param nperm Integer. The number of permutations used by `fgsea` for estimating p-values (default: `1000`).
-#'
 #' @return A named list where each element corresponds to a contrast. Each contrast contains a **single data frame** with GSEA results for all gene sets.
 #'   The result includes the standard `fgsea` output plus two additional columns:
 #'   - `pathway`: The name of the gene set.

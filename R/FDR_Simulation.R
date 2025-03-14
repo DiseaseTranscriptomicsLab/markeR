@@ -5,7 +5,7 @@
 #' (ssGSEA, logmedian, ranking) are used to compute the metrics, and the results are visualized as violin plots
 #' with overlaid observed values.
 #'
-#' @param counts A data frame or matrix of gene expression counts.
+#' @param data A data frame or matrix of gene expression counts.
 #' @param metadata A data frame containing sample metadata.
 #' @param original_signatures A named list of gene signatures. Each element can be either a vector of gene names
 #' (implying unidirectionality) or a data frame with columns `"Gene"` and `"Signal"`.

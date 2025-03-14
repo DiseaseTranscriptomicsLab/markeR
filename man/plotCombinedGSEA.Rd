@@ -41,8 +41,10 @@ across different contrasts. Each point represents a pathway, where:
 \dontrun{
 # Example GSEA results (mock data)
 GSEA_results <- list(
-  "Contrast1" = data.frame(NES = rnorm(10), padj = runif(10), pathway = paste("Pathway", 1:10)),
-  "Contrast2" = data.frame(NES = rnorm(10), padj = runif(10), pathway = paste("Pathway", 11:20))
+  "Contrast1" = data.frame(NES = rnorm(10), padj = runif(10),
+  pathway = paste("Pathway", 1:10)),
+  "Contrast2" = data.frame(NES = rnorm(10), padj = runif(10),
+  pathway = paste("Pathway", 1:10))
 )
 
 # Generate the plot

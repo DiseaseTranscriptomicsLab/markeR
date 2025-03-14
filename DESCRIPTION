@@ -35,7 +35,9 @@ Imports:
     stats,
     testthat,
     utils,
-    fgsea
+    fgsea,
+    limma,
+    ggrepel
 Suggests: 
     devtools,
     markdown,
