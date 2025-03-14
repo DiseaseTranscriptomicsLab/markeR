@@ -69,6 +69,10 @@ Although still being developed, the package already includes two functions for *
 
 -   **`calculateDE`:** Performs differential expression analysis.
 -   **`plotVolcano`:** Generates volcano plots to visualize differentially expressed genes.
+-   **`runGSEA`:** Performs GSEA using `fgsea` for each contrast in a list of differential expression results.  
+-   **`plotGSEAenrichment`:** Generates enrichment plots for gene sets using the `fgsea::plotEnrichment()` function
+-   **`plotNESlollipop`:**  Generates a lollipop plot to visualize Gene Set Enrichment Analysis (GSEA) results. 
+-   **`plotCombinedGSEA`:** Creates a scatter plot visualizing multiple GSEA (Gene Set Enrichment Analysis) results across different contrasts.
 
 It also includes some functions for visualising individual genes from a gene signature:
 
