@@ -13,6 +13,8 @@ plotVolcano(
   pointSize = 2,
   color = "#6489B4",
   highlightcolor = "#05254A",
+  highlightcolor_upreg = "#038C65",
+  highlightcolor_downreg = "#8C0303",
   nointerestcolor = "#B7B7B7",
   threshold_y = NULL,
   threshold_x = NULL,
@@ -45,7 +47,11 @@ threshold values for \code{threshold_y} should be provided in non-log scale (e.g
 
 \item{color}{Character. The color used to highlight interesting genes based on thresholds (default is \code{"#6489B4"}).}
 
-\item{highlightcolor}{Character. The color used to highlight genes belonging to the specified gene signatures (default is \code{"#05254A"}).}
+\item{highlightcolor}{Character. The color used to highlight genes belonging to the specified gene signatures (default is \code{"#05254A"}), if direction is not known or not specified.}
+
+\item{highlightcolor_upreg}{Character. The color used to highlight upregulated genes belonging to the specified gene signatures (default is \code{"#038C65"}).}
+
+\item{highlightcolor_downreg}{Character. The color used to highlight downregulated genes belonging to the specified gene signatures (default is \code{"#8C0303"}).}
 
 \item{nointerestcolor}{Character. The color for non-interesting genes (default is \code{"#B7B7B7"}).}
 

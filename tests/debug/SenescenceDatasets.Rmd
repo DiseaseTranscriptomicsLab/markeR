@@ -521,7 +521,7 @@ degenes
 
 ```{r fig.width=21, fig.height=6}
 options(error=recover)
-plotVolcano(DEResultsList=degenes, genes=bidirectsigs, N=NULL, x="logFC",y="-log10(adj.P.Val)", pointSize=2, color="pink", highlightcolor="darkblue", nointerestcolor="grey",threshold_y=NULL, threshold_x=NULL, xlab=NULL, ylab=NULL, ncol=NULL, nrow=NULL, title=NULL,labsize=7,widthlabs=25, invert=T)
+plotVolcano(DEResultsList=degenes, genes=bidirectsigs, N=NULL, x="logFC",y="-log10(adj.P.Val)", pointSize=2, color="pink", highlightcolor="darkblue", highlightcolor_upreg = "#038C65", highlightcolor_downreg = "#8C0303", nointerestcolor="grey",threshold_y=NULL, threshold_x=NULL, xlab=NULL, ylab=NULL, ncol=NULL, nrow=NULL, title=NULL,labsize=7,widthlabs=25, invert=T)
 
 ```
  

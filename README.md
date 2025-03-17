@@ -766,9 +766,11 @@ exploring your data by allowing you to:
 -   **Annotate Top and Bottom N Genes:**  
     Optionally, label the top (and bottom) N genes based on the chosen
     statistic to quickly identify the most significant genes.
--   **Highlight Gene Signatures:**  
-    If you provide a list of gene signatures (via the `genes` argument),
-    the function can highlight those genes on the plot.
+-   **Highlight Gene Signatures:** If the user provide a list of gene
+    signatures using the `genes` argument, the function can highlight
+    these genes in the plot. The user can also specify distinct colors
+    for upregulated and downregulated if their direction is known, or a
+    color for genes that don’t have a defined direction.
 
 Below is an example usage that simply plots the differential expression
 results (with default settings). In this example, no thresholds or gene
@@ -817,7 +819,7 @@ plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignat
                                Senescence  = SimpleSenescenceSignature), 
             N = NULL,
             x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
-            color = "#6489B4", highlightcolor = "#05254A", nointerestcolor = "#B7B7B7",
+            color = "#6489B4", highlightcolor = "#05254A", highlightcolor_upreg = "#038C65", highlightcolor_downreg = "#8C0303", nointerestcolor = "#B7B7B7",
             threshold_y = NULL, threshold_x = NULL,
             xlab = NULL, ylab = NULL, ncol = NULL, nrow = NULL, title = "Marthandan et al. 2016",
             labsize = 9, widthlabs = 25, invert = FALSE) 
@@ -831,7 +833,7 @@ plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignat
                                Senescence  = SimpleSenescenceSignature), 
             N = NULL,
             x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
-            color = "#6489B4", highlightcolor = "#05254A", nointerestcolor = "#B7B7B7",
+            color = "#6489B4", highlightcolor = "#05254A", highlightcolor_upreg = "#038C65", highlightcolor_downreg = "#8C0303",nointerestcolor = "#B7B7B7",
             threshold_y = NULL, threshold_x = NULL,
             xlab = NULL, ylab = NULL, ncol = NULL, nrow = NULL, title = "Marthandan et al. 2016",
             labsize = 10, widthlabs = 24, invert = TRUE)

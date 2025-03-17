@@ -20,7 +20,9 @@
 #'   threshold values for \code{threshold_y} should be provided in non-log scale (e.g., 0.05).
 #' @param pointSize Numeric. The size of points in the volcano plots (default is 2).
 #' @param color Character. The color used to highlight interesting genes based on thresholds (default is \code{"#6489B4"}).
-#' @param highlightcolor Character. The color used to highlight genes belonging to the specified gene signatures (default is \code{"#05254A"}).
+#' @param highlightcolor Character. The color used to highlight genes belonging to the specified gene signatures (default is \code{"#05254A"}), if direction is not known or not specified.
+#' @param highlightcolor_upreg Character. The color used to highlight upregulated genes belonging to the specified gene signatures (default is \code{"#038C65"}).
+#' @param highlightcolor_downreg  Character. The color used to highlight downregulated genes belonging to the specified gene signatures (default is \code{"#8C0303"}).
 #' @param nointerestcolor Character. The color for non-interesting genes (default is \code{"#B7B7B7"}).
 #' @param threshold_y Numeric. A threshold value for the y-axis statistic. If \code{y} is \code{"-log10(adj.P.Val)"},
 #'   the value should be provided as a non-log value (e.g., 0.05) and will be transformed internally.
@@ -90,12 +92,26 @@
 #'
 plotVolcano <- function(DEResultsList, genes = NULL, N = NULL,
                         x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
-                        color = "#6489B4", highlightcolor = "#05254A", nointerestcolor = "#B7B7B7",
+                        color = "#6489B4", highlightcolor = "#05254A", highlightcolor_upreg = "#038C65", highlightcolor_downreg = "#8C0303",nointerestcolor = "#B7B7B7",
                         threshold_y = NULL, threshold_x = NULL,
                         xlab = NULL, ylab = NULL, ncol = NULL, nrow = NULL, title = NULL,
                         labsize = 10, widthlabs = 20, invert = FALSE) {
 
   ## Helper: extract genes from list elements (if data.frame, extract first column)
+  extract_direction <- function(lst) {
+    lapply(lst, function(x) {
+      if (is.data.frame(x)) {
+        return(x[[2]])
+      } else if (is.vector(x)) {
+        vec <- rep("test", length(x))
+        return(vec)
+      } else {
+        warning("Unexpected list element type: ", class(x))
+        return(NULL)
+      }
+    })
+  }
+
   extract_genes <- function(lst) {
     lapply(lst, function(x) {
       if (is.data.frame(x)) {
@@ -112,9 +128,12 @@ plotVolcano <- function(DEResultsList, genes = NULL, N = NULL,
   ## Process genes argument
   if (is.null(genes)) {
     genes <- list(ALL = row.names(DEResultsList[[1]]))
+    direction <- NULL
   } else if (!is.list(genes)) {
     genes <- list(genes = genes)
+    direction <- NULL
   } else if (is.list(genes)) {
+    direction <- extract_direction(genes)
     genes <- extract_genes(genes)
   }
 
@@ -123,6 +142,8 @@ plotVolcano <- function(DEResultsList, genes = NULL, N = NULL,
   ## Loop over each signature (names in 'genes')
   for (sig in names(genes)) {
     genessig <- genes[[sig]]
+    if (!is.null(direction)) directionsig <- direction[[sig]]
+
     plotList_contrasts <- list()
 
     ## Loop over each contrast (names in DEResultsList)
@@ -137,7 +158,6 @@ plotVolcano <- function(DEResultsList, genes = NULL, N = NULL,
         ggplot2::theme_bw() +
         ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5),
                        plot.subtitle = ggplot2::element_text(hjust = 0.5),
-                       legend.position = "top",
                        axis.text.y = ggplot2::element_text(angle = 90, hjust = 0.5)) +
         ggplot2::labs(x = xlab, y = ylab, title=contrast)
 
@@ -145,8 +165,30 @@ plotVolcano <- function(DEResultsList, genes = NULL, N = NULL,
 
       ## Highlight genes if signature is not "ALL"
       if (sig != "ALL") {
+      if (is.null(direction)){
         p <- p + ggplot2::geom_point(data = fit[row.names(fit) %in% genessig, ],
                                      color = highlightcolor, size = pointSize)
+      } else {
+
+        upreg_genes <- genessig[directionsig==1]
+        downreg_genes <- genessig[directionsig==-1]
+        other_genes <- genessig[!directionsig %in% c(1,-1)]
+        #  fit_subset <- fit[row.names(fit) %in% genessig,]
+        #  fit_subset$genes <- row.names(fit_subset)
+        #  fit_subset$Direction <- ifelse(fit_subset$genes %in% upreg_genes, "Upregulated", ifelse(fit_subset$genes %in% downreg_genes, "Downregulated", "No Information"))
+        #
+        # p <- p + ggplot2::geom_point(data = fit_subset, aes(color = Direction), size = pointSize) +
+        #   ggplot2::scale_color_manual(values=c("Downregulated" = highlightcolor_downreg,
+        #                                 "Upregulated" = highlightcolor_upreg,
+        #                                 "No Information" = highlightcolor)) +
+        #   ggplot2::theme(legend.position=NULL)
+
+        if (length(upreg_genes)>0)  p <- p + ggplot2::geom_point(data = fit[row.names(fit) %in% upreg_genes, ], color = highlightcolor_upreg, size = pointSize, alpha=0.8)
+        if (length(downreg_genes)>0)  p <- p + ggplot2::geom_point(data = fit[row.names(fit) %in% downreg_genes, ], color = highlightcolor_downreg, size = pointSize, alpha=0.8)
+        if (length(other_genes)>0)  p <- p + ggplot2::geom_point(data = fit[row.names(fit) %in% other_genes, ], color = highlightcolor, size = pointSize, alpha=0.8)
+
+      }
+
       }
 
       ## Annotate top N genes if requested
@@ -216,8 +258,7 @@ plotVolcano <- function(DEResultsList, genes = NULL, N = NULL,
         nrow <- ceiling(n / ncol)
       }
       plotList_signatures[[1]] <- ggpubr::ggarrange(plotlist = plotList_contrasts,
-                                                    ncol = ncol, nrow = nrow,
-                                                    common.legend = TRUE, align = "h")
+                                                    ncol = ncol, nrow = nrow, align = "h")
     } else {
 
       ## Remove the individual plot title now (we'll add common contrast labels later)
@@ -228,8 +269,7 @@ plotVolcano <- function(DEResultsList, genes = NULL, N = NULL,
       if (invert) {
         ## Signatures in columns: arrange contrast plots vertically
         arranged <- ggpubr::ggarrange(plotlist = plotList_contrasts,
-                                      ncol = 1, nrow = length(plotList_contrasts),
-                                      common.legend = TRUE, align = "v")
+                                      ncol = 1, nrow = length(plotList_contrasts),  align = "v")
         ## Annotate signature on top with wrapped title
         arranged <- ggpubr::annotate_figure(arranged,
                                             top = grid::textGrob(wrap_title(sig, width = widthlabs),
@@ -237,8 +277,7 @@ plotVolcano <- function(DEResultsList, genes = NULL, N = NULL,
       } else {
         ## Signatures in rows: arrange contrast plots horizontally
         arranged <- ggpubr::ggarrange(plotlist = plotList_contrasts,
-                                      ncol = length(plotList_contrasts), nrow = 1,
-                                      common.legend = TRUE, align = "h")
+                                      ncol = length(plotList_contrasts), nrow = 1,  align = "h")
         ## Annotate signature on left with wrapped title and rotated text
         arranged <- ggpubr::annotate_figure(arranged,
                                             left = grid::textGrob(wrap_title(sig, width = widthlabs),
@@ -261,8 +300,7 @@ plotVolcano <- function(DEResultsList, genes = NULL, N = NULL,
     if (invert) {
       ## Signatures as columns
       combined_plot <- ggpubr::ggarrange(plotlist = plotList_signatures,
-                                         ncol = length(plotList_signatures), nrow = 1,
-                                         common.legend = TRUE, align = "v")
+                                         ncol = length(plotList_signatures), nrow = 1,  align = "v")
       ## Add a left annotation for contrast names using wrap_title()
       contrast_names <- names(DEResultsList)
       contrast_grobs <- lapply(contrast_names, function(cn) {
@@ -273,8 +311,7 @@ plotVolcano <- function(DEResultsList, genes = NULL, N = NULL,
     } else {
       ## Signatures as rows
       combined_plot <- ggpubr::ggarrange(plotlist = plotList_signatures,
-                                         ncol = 1, nrow = length(plotList_signatures),
-                                         common.legend = TRUE, align = "h")
+                                         ncol = 1, nrow = length(plotList_signatures), align = "h")
       ## Add a top annotation for contrast names using wrap_title()
       contrast_names <- names(DEResultsList)
       contrast_grobs <- lapply(contrast_names, function(cn) {
