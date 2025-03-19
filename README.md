@@ -713,7 +713,7 @@ and sequencing, and one defining the person that processed it.
 set.seed("123456")
 
 days <- sample(c(1:20),39, replace = T)
-person <- sample(c("John","Ana"),39, replace = T)
+person <- sample(c("John","Ana","Francisca"),39, replace = T)
 
 df_Scores_logmedian_Sen$person <- person
 df_Scores_logmedian_Sen$days <- days
@@ -950,8 +950,8 @@ GSEAresults
 #> $`Senescent - Proliferative`
 #>                     pathway       pval       padj   log2err        ES      NES
 #>                      <char>      <num>      <num>     <num>     <num>    <num>
-#> 1: Senescence_Bidirectional 0.01453348 0.01453348 0.3807304 0.7068136 1.667798
-#> 2:               Senescence 0.13684211 0.13684211 0.1446305 0.5844505 1.355523
+#> 1: Senescence_Bidirectional 0.01582105 0.01582105 0.3524879 0.7068136 1.642473
+#> 2:               Senescence 0.14797508 0.14797508 0.1412251 0.5844505 1.333081
 #>     size                         leadingEdge stat_used
 #>    <int>                              <list>    <char>
 #> 1:     7 LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t

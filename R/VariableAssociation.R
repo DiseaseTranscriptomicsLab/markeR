@@ -351,7 +351,7 @@ VariableAssociation <- function(df, cols, target_var, targetvar_lab="Score",
   }
 
   # Arrange the individual plots in a grid.
-  plt <- ggarrange(plotlist = plot_list,
+  plt <- ggpubr::ggarrange(plotlist = plot_list,
                    ncol = ncol,
                    nrow = nrow)
 

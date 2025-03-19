@@ -592,7 +592,7 @@ For illustration purposes, let's imagine we also had two more variables: one def
 set.seed("123456")
 
 days <- sample(c(1:20),39, replace = T)
-person <- sample(c("John","Ana"),39, replace = T)
+person <- sample(c("John","Ana","Francisca"),39, replace = T)
 
 df_Scores_logmedian_Sen$person <- person
 df_Scores_logmedian_Sen$days <- days
@@ -602,7 +602,7 @@ df_Scores_logmedian_BidirectSen$days <- days
 
 ```
 
-```{r variableassoc2, fig.width=10, fig.height=3, out.width="100%", warning=FALSE, message=FALSE}
+```{r variableassoc2, fig.width=12, fig.height=4, out.width="100%", warning=FALSE, message=FALSE}
 VariableAssociation(df=df_Scores_logmedian_Sen, c("Condition","person","days"), target_var="score", targetvar_lab ="Normalized Signature Score",
                             discrete_colors = NULL, continuous_color = "#8C6D03",
                             color_palette = "Set2",
