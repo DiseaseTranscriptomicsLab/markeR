@@ -41,6 +41,7 @@ knitr::opts_chunk$set(
     -   [Ranking Method](#ranking-method)
     -   [All Methods](#all-methods)
     -   [False Discovery Rate (FDR) Calculations](#false-discovery-rate-fdr-calculations)
+    -   [Score association with Chosen Variables](#score-association-with-chosen-variables)
 -   [Enrichment-Based Methods](#enrichment-based-methods)
     -   [Differentially Expressed Genes](#differentially-expressed-genes)
     -   [Gene Set Enrichment Analyses](#gene-set-enrichment-analyses)
@@ -71,7 +72,7 @@ Although still being developed, the package already includes two functions for *
 -   **`plotVolcano`:** Generates volcano plots to visualize differentially expressed genes.
 -   **`runGSEA`:** Performs GSEA using `fgsea` for each contrast in a list of differential expression results.  
 -   **`plotGSEAenrichment`:** Generates enrichment plots for gene sets using the `fgsea::plotEnrichment()` function
--   **`plotNESlollipop`:**  Generates a lollipop plot to visualize Gene Set Enrichment Analysis (GSEA) results. 
+-   **`plotNESlollipop`:** Generates a lollipop plot to visualize Gene Set Enrichment Analysis (GSEA) results.
 -   **`plotCombinedGSEA`:** Creates a scatter plot visualizing multiple GSEA (Gene Set Enrichment Analysis) results across different contrasts.
 
 It also includes some functions for visualising individual genes from a gene signature:
@@ -559,6 +560,68 @@ FDR_Simulation(data = counts_example,
 
 ```
 
+#### Score association with Chosen Variables
+
+When analyzing data, it is often **unclear whether a given variable is meaningfully associated with a target score**. To assist in this exploratory process, the package provides **statistical tests and visualizations to assess relationships between variables of different types**.
+
+-   Numeric variables are tested using correlation methods (Pearson, Spearman, or Kendall).
+-   Binary categorical variables (two unique values) are analyzed using a t-test or Wilcoxon rank-sum test.
+-   Multi-level categorical variables (more than two unique values) are examined using ANOVA or Kruskal-Wallis, followed by Tukey's post-hoc test when applicable.
+
+The results are returned as a structured list of statistical metrics and p-values, along with plots for an intuitive interpretation of associations. These plots include scatter plots for numeric variables and density plots for categorical variables, with statistical annotations. If categorical variables have more than 10 unique values, a warning is issued to ensure meaningful interpretation.
+
+This approach allows users to quickly **identify potential relationships between scores and predictor variables**, guiding further analysis.
+
+This approach requires that the user is analysing a specific method for score calculation and gene signature. For illustration purposes, we will go with the `logmedian` method and compare the two signatures for Senescence. 
+
+```{r variableassoc1}
+df_Scores_logmedian <- CalculateScores(data = counts_example,
+                             metadata = metadata_example,
+                             method = "logmedian",
+                             gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                          Senescence  = SimpleSenescenceSignature))
+ 
+df_Scores_logmedian_Sen <- df_Scores_logmedian$Senescence
+df_Scores_logmedian_BidirectSen <- df_Scores_logmedian$Senescence_Bidirectional
+
+```
+
+For illustration purposes, let's imagine we also had two more variables: one defining the number of days that passed between sample preparation and sequencing, and one defining the person that processed it.
+
+```{r variableassoc1_aux}
+set.seed("123456")
+
+days <- sample(c(1:20),39, replace = T)
+person <- sample(c("John","Ana"),39, replace = T)
+
+df_Scores_logmedian_Sen$person <- person
+df_Scores_logmedian_Sen$days <- days
+
+df_Scores_logmedian_BidirectSen$person <- person
+df_Scores_logmedian_BidirectSen$days <- days
+
+```
+
+```{r variableassoc2, fig.width=10, fig.height=3, out.width="100%", warning=FALSE, message=FALSE}
+VariableAssociation(df=df_Scores_logmedian_Sen, c("Condition","person","days"), target_var="score", xlab="Score",
+                            discrete_colors = NULL, continuous_color = "#8C6D03",
+                            color_palette = "Set2",
+                            sizeannot=3.5, ncol=NULL, nrow=1,
+                            numeric = "pearson",
+                            categorical_bin = "t.test",
+                            categorical_multi = "anova",
+                            legend.position=c("top","bottom","right","left"), title="Senescence Signature", titlesize = 12 )
+
+VariableAssociation(df=df_Scores_logmedian_BidirectSen, c("Condition","person","days"), target_var="score", xlab="Score",
+                            discrete_colors = NULL, continuous_color = "#8C6D03",
+                            color_palette = "Set2",
+                            sizeannot=3.5, ncol=NULL, nrow=1,
+                            numeric = "pearson",
+                            categorical_bin = "t.test",
+                            categorical_multi = "anova",
+                            legend.position=c("top","bottom","right","left"), title="Bidirectional Senescence Signature", titlesize = 12 )
+```
+
 ### Enrichment-Based Methods
 
 #### Differentially Expressed Genes
@@ -642,19 +705,6 @@ plotVolcano(DEGs, genes = NULL, N = 5,
 
 ```
 
-```{r volcanos_DEGs2, fig.width=4, fig.height=6, out.width="40%", warning=FALSE, message=FALSE}
-
-# Plot Differentially Expressed Genes:
-plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
-                               Senescence  = SimpleSenescenceSignature), 
-            N = NULL,
-            x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
-            color = "#6489B4", highlightcolor = "#05254A", highlightcolor_upreg = "#038C65", highlightcolor_downreg = "#8C0303", nointerestcolor = "#B7B7B7",
-            threshold_y = NULL, threshold_x = NULL,
-            xlab = NULL, ylab = NULL, ncol = NULL, nrow = NULL, title = "Marthandan et al. 2016",
-            labsize = 9, widthlabs = 25, invert = FALSE) 
-```
-
 ```{r volcanos_DEGs3, fig.width=8, fig.height=3, out.width="90%", warning=FALSE, message=FALSE}
 
 # Change order: signatures in columns, contrast in rows
@@ -673,10 +723,14 @@ plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignat
 To perform GSEA, use the `runGSEA()` function. This function takes a named list of differential expression results (one per contrast) and a set of gene signatures to compute enrichment scores.
 
 -   `DEGList`: A list of differentially expressed genes (DEGs) for each contrast.
+
 -   `gene_sets`: A list of gene sets, where each entry can be:
+
     -   A vector of genes (unidirectional analysis).
     -   A data frame where the first column is the gene name and the second column indicates the expected direction (+1 or -1, bidirectional analysis).
+
 -   `stat`: The ranking statistic. If NULL, the ranking statistic is automatically selected unless manually specified:
+
     -   `"B"` for gene sets with **no known direction** (vectors).
     -   `"t"` for **unidirectional** or **bidirectional** gene sets (data frames).
     -   If provided, this argument overrides the automatic selection.
@@ -719,7 +773,6 @@ plotNESlollipop(GSEA_results=GSEAresults,
                 title=NULL, titlesize=12) 
 ```
 
-
 The `plotCombinedGSEA()` function generates a scatter plot to visualize the results of Gene Set Enrichment Analysis (GSEA) across multiple contrasts. Each point represents a pathway, with:
 
 -   X-axis: Normalized Enrichment Score (NES)
@@ -728,9 +781,8 @@ The `plotCombinedGSEA()` function generates a scatter plot to visualize the resu
 -   Shape: Different contrasts
 -   Dashed line: Significance threshold
 
-This function helps compare enrichment results when the number of contrasts and the number of pathways is high.  
+This function helps compare enrichment results when the number of contrasts and the number of pathways is high.
 
 ```{r GSEA_volcano, fig.width=6, fig.height=4, out.width="60%", warning=FALSE, message=FALSE}
 plotCombinedGSEA(GSEAresults, sig_threshold = 0.05, PointSize=9, widthlegend = 26 )
 ```
-

@@ -39,6 +39,8 @@ for transcriptomics research (bulk RNA-seq).
     -   [All Methods](#all-methods)
     -   [False Discovery Rate (FDR)
         Calculations](#false-discovery-rate-fdr-calculations)
+    -   [Score association with Chosen
+        Variables](#score-association-with-chosen-variables)
 -   [Enrichment-Based Methods](#enrichment-based-methods)
     -   [Differentially Expressed
         Genes](#differentially-expressed-genes)
@@ -659,6 +661,93 @@ FDR_Simulation(data = counts_example,
 
 <img src="man/figures/README-FDRSim-1.png" width="80%" />
 
+#### Score association with Chosen Variables
+
+When analyzing data, it is often **unclear whether a given variable is
+meaningfully associated with a target score**. To assist in this
+exploratory process, the package provides **statistical tests and
+visualizations to assess relationships between variables of different
+types**.
+
+-   Numeric variables are tested using correlation methods (Pearson,
+    Spearman, or Kendall).
+-   Binary categorical variables (two unique values) are analyzed using
+    a t-test or Wilcoxon rank-sum test.
+-   Multi-level categorical variables (more than two unique values) are
+    examined using ANOVA or Kruskal-Wallis, followed by Tukey’s post-hoc
+    test when applicable.
+
+The results are returned as a structured list of statistical metrics and
+p-values, along with plots for an intuitive interpretation of
+associations. These plots include scatter plots for numeric variables
+and density plots for categorical variables, with statistical
+annotations. If categorical variables have more than 10 unique values, a
+warning is issued to ensure meaningful interpretation.
+
+This approach allows users to quickly **identify potential relationships
+between scores and predictor variables**, guiding further analysis.
+
+This approach requires that the user is analysing a specific method for
+score calculation and gene signature. For illustration purposes, we will
+go with the `logmedian` method and compare the two signatures for
+Senescence.
+
+``` r
+df_Scores_logmedian <- CalculateScores(data = counts_example,
+                             metadata = metadata_example,
+                             method = "logmedian",
+                             gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                          Senescence  = SimpleSenescenceSignature))
+#> Considering bidirectional gene signature mode for signature Senescence_Bidirectional
+#> Considering unidirectional gene signature mode for signature Senescence
+ 
+df_Scores_logmedian_Sen <- df_Scores_logmedian$Senescence
+df_Scores_logmedian_BidirectSen <- df_Scores_logmedian$Senescence_Bidirectional
+```
+
+For illustration purposes, let’s imagine we also had two more variables:
+one defining the number of days that passed between sample preparation
+and sequencing, and one defining the person that processed it.
+
+``` r
+set.seed("123456")
+
+days <- sample(c(1:20),39, replace = T)
+person <- sample(c("John","Ana"),39, replace = T)
+
+df_Scores_logmedian_Sen$person <- person
+df_Scores_logmedian_Sen$days <- days
+
+df_Scores_logmedian_BidirectSen$person <- person
+df_Scores_logmedian_BidirectSen$days <- days
+```
+
+``` r
+VariableAssociation(df=df_Scores_logmedian_Sen, c("Condition","person","days"), target_var="score", xlab="Score",
+                            discrete_colors = NULL, continuous_color = "#8C6D03",
+                            color_palette = "Set2",
+                            sizeannot=3.5, ncol=NULL, nrow=1,
+                            numeric = "pearson",
+                            categorical_bin = "t.test",
+                            categorical_multi = "anova",
+                            legend.position=c("top","bottom","right","left"), title="Senescence Signature", titlesize = 12 )
+```
+
+<img src="man/figures/README-variableassoc2-1.png" width="100%" />
+
+``` r
+VariableAssociation(df=df_Scores_logmedian_BidirectSen, c("Condition","person","days"), target_var="score", xlab="Score",
+                            discrete_colors = NULL, continuous_color = "#8C6D03",
+                            color_palette = "Set2",
+                            sizeannot=3.5, ncol=NULL, nrow=1,
+                            numeric = "pearson",
+                            categorical_bin = "t.test",
+                            categorical_multi = "anova",
+                            legend.position=c("top","bottom","right","left"), title="Bidirectional Senescence Signature", titlesize = 12 )
+```
+
+<img src="man/figures/README-variableassoc2-2.png" width="100%" />
+
 ### Enrichment-Based Methods
 
 #### Differentially Expressed Genes
@@ -814,20 +903,6 @@ plotVolcano(DEGs, genes = NULL, N = 5,
 <img src="man/figures/README-volcanos_DEGs-3.png" width="40%" />
 
 ``` r
-# Plot Differentially Expressed Genes:
-plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
-                               Senescence  = SimpleSenescenceSignature), 
-            N = NULL,
-            x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
-            color = "#6489B4", highlightcolor = "#05254A", highlightcolor_upreg = "#038C65", highlightcolor_downreg = "#8C0303", nointerestcolor = "#B7B7B7",
-            threshold_y = NULL, threshold_x = NULL,
-            xlab = NULL, ylab = NULL, ncol = NULL, nrow = NULL, title = "Marthandan et al. 2016",
-            labsize = 9, widthlabs = 25, invert = FALSE) 
-```
-
-<img src="man/figures/README-volcanos_DEGs2-1.png" width="40%" />
-
-``` r
 # Change order: signatures in columns, contrast in rows
 plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
                                Senescence  = SimpleSenescenceSignature), 
@@ -849,13 +924,17 @@ set of gene signatures to compute enrichment scores.
 
 -   `DEGList`: A list of differentially expressed genes (DEGs) for each
     contrast.
+
 -   `gene_sets`: A list of gene sets, where each entry can be:
+
     -   A vector of genes (unidirectional analysis).
     -   A data frame where the first column is the gene name and the
         second column indicates the expected direction (+1 or -1,
         bidirectional analysis).
+
 -   `stat`: The ranking statistic. If NULL, the ranking statistic is
     automatically selected unless manually specified:
+
     -   `"B"` for gene sets with **no known direction** (vectors).
     -   `"t"` for **unidirectional** or **bidirectional** gene sets
         (data frames).
@@ -871,8 +950,8 @@ GSEAresults
 #> $`Senescent - Proliferative`
 #>                     pathway       pval       padj   log2err        ES      NES
 #>                      <char>      <num>      <num>     <num>     <num>    <num>
-#> 1: Senescence_Bidirectional 0.01649862 0.01649862 0.3524879 0.7068136 1.663101
-#> 2:               Senescence 0.14774495 0.14774495 0.1412251 0.5844505 1.339806
+#> 1: Senescence_Bidirectional 0.01453348 0.01453348 0.3807304 0.7068136 1.667798
+#> 2:               Senescence 0.13684211 0.13684211 0.1446305 0.5844505 1.355523
 #>     size                         leadingEdge stat_used
 #>    <int>                              <list>    <char>
 #> 1:     7 LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t

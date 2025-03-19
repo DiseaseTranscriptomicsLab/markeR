@@ -327,6 +327,45 @@ PlotScores(data = corrcounts_merge,
 ```
 
 
+## Correlation plots
+
+If the user is investigating if a certain variable can be described from the score, and not already knowing that variable. More exploratory...
+
+- Define what each variable is: Numeric (includes integer if unique > 5), Categorical Bin (integer/string if unique == 2, logical), Categorical Multi (integer if unique < 5, string if unique > 2)
+- Define functions to calculate metrics based on different data types: 
+   - Categorical Bin: t-test/wilcoxon
+   - Categorical Multi: ANOVA / Kruskal-Wallis + Tukey's test 
+   - Numeric : Pearson / Spearman / Kendall's Tau
+- Return a list:
+   - One entry per variable
+       - Method used
+       - Data frame
+           - Two columns: metric and p-value
+           - One line per subvariable (if Numeric and Categorical Bin, only one line; for Categorical Multi, one per combination of variables); named rows
+- Plot results
+    - If Numeric, scatter plot; metric on the top left corner
+    - If Categorical, density plot, colored by the unique values of the variable; metrics (if one, or combinations of variables) in top left corner
+    - Arrange in grid
+
+```{r}
+metadata_corr <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge, method = "ssGSEA", gene_sets = SenescenceSignatures)
+metadata_corr <- metadata_corr$`[UP]_HernandezSegura`
+```
+
+```{r fig.width=14, fig.height=3}
+
+metadata_corr$random_cat <-  sample(c("A","B","C"), nrow(metadata_corr), replace = T)
+metadata_corr$random_numeric <- sample(0:100, nrow(metadata_corr), replace = TRUE)
+metadata_corr$Is_Senescent <- ifelse(metadata_corr$Condition == "Senescent", "Senescent", "Non Senescent")
+
+plot_stat_tests(metadata_corr, target_var="score", cols = c("Condition","Is_Senescent","random_cat","random_numeric"),
+                 discrete_colors = list(Is_Senescent=c("Senescent"="pink",
+                                                 "Non Senescent"="orange")), 
+                continuous_color = "#8C6D03", 
+                            color_palette = "Set2", nrow=1, sizeannot=3, legend.position="top")
+```
+
+
 # Individual Genes
 
 ### Violin Expression Plots
@@ -549,7 +588,7 @@ plotNESlollipop(GSEA_results=GSEAresults, sig_threshold = 0.05,
 plotCombinedGSEA(GSEAresults, sig_threshold = 0.05, PointSize=9, widthlegend = 26 )
 ```
  
-
+  
  
  
 
