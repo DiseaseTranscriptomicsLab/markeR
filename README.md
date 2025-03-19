@@ -612,9 +612,9 @@ PlotScores(data = counts_example,
 
 To compare various metrics across different condition combinations,
 violin plots may not always be the best choice. In such cases, users can
-set \\code{method = “all”} to generate a summary heatmap. The function
-will return one heatmap per gene set, with rows corresponding to all
-possible combinations of values in the \\code{GroupingVariable}.
+set`method = "all"` to generate a summary heatmap. The function will
+return one heatmap per gene set, with rows corresponding to all possible
+combinations of values in the `GroupingVariable`.
 
 ``` r
 PlotScores(data = counts_example, 
@@ -723,7 +723,7 @@ df_Scores_logmedian_BidirectSen$days <- days
 ```
 
 ``` r
-VariableAssociation(df=df_Scores_logmedian_Sen, c("Condition","person","days"), target_var="score", xlab="Score",
+VariableAssociation(df=df_Scores_logmedian_Sen, c("Condition","person","days"), target_var="score", targetvar_lab ="Normalized Signature Score",
                             discrete_colors = NULL, continuous_color = "#8C6D03",
                             color_palette = "Set2",
                             sizeannot=3.5, ncol=NULL, nrow=1,
@@ -736,7 +736,7 @@ VariableAssociation(df=df_Scores_logmedian_Sen, c("Condition","person","days"), 
 <img src="man/figures/README-variableassoc2-1.png" width="100%" />
 
 ``` r
-VariableAssociation(df=df_Scores_logmedian_BidirectSen, c("Condition","person","days"), target_var="score", xlab="Score",
+VariableAssociation(df=df_Scores_logmedian_BidirectSen, c("Condition","person","days"), target_var="score", targetvar_lab="Normalized Signature Score",
                             discrete_colors = NULL, continuous_color = "#8C6D03",
                             color_palette = "Set2",
                             sizeannot=3.5, ncol=NULL, nrow=1,

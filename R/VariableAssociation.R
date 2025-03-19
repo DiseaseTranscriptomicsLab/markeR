@@ -217,7 +217,7 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
 #' @param df A data frame containing the target variable and predictors.
 #' @param cols A character vector of predictor variables to include in the plots.
 #' @param target_var The dependent variable to be plotted.
-#' @param xlab A string specifying the x-axis label. Default is `"Score"`.
+#' @param targetvar_lab A string specifying the label for the target variable. Default is `"Score"`.
 #' @param discrete_colors Optional. A named list specifying custom colors for categorical variables.
 #'   Each element should be a named vector where names correspond to factor levels.
 #' @param continuous_color The color for numeric variables in scatter plots. Default is `"#8C6D03"`.
@@ -261,7 +261,7 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
 #' @importFrom RColorBrewer brewer.pal
 #'
 #' @export
-VariableAssociation <- function(df, cols, target_var, xlab="Score",
+VariableAssociation <- function(df, cols, target_var, targetvar_lab="Score",
                                 discrete_colors = NULL, continuous_color = "#8C6D03",
                                 color_palette = "Set2",
                                 sizeannot=3, ncol=NULL, nrow=NULL,
@@ -300,7 +300,7 @@ VariableAssociation <- function(df, cols, target_var, xlab="Score",
         ggplot2::coord_cartesian(clip = "off") +  # Allow text outside the plot area
         ggplot2::theme_classic() +
         ggplot2::ggtitle(var) +
-        ggplot2::labs(x=xlab) +
+        ggplot2::labs(y=targetvar_lab) +
         ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"))
 
     } else if (variable_types[var] %in% c("Categorical Bin", "Categorical Multi")) {
@@ -330,7 +330,7 @@ VariableAssociation <- function(df, cols, target_var, xlab="Score",
         ggplot2::coord_cartesian(clip = "off") +
         ggplot2::theme_classic() +
         ggplot2::ggtitle(var) +
-        ggplot2::labs(x = xlab, y = "Density", fill="") +
+        ggplot2::labs(x = targetvar_lab, y = "Density", fill="") +
         ggplot2::theme(legend.position = legend.position,
                        plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"))
     }

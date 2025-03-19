@@ -8,7 +8,7 @@ VariableAssociation(
   df,
   cols,
   target_var,
-  xlab = "Score",
+  targetvar_lab = "Score",
   discrete_colors = NULL,
   continuous_color = "#8C6D03",
   color_palette = "Set2",
@@ -30,7 +30,7 @@ VariableAssociation(
 
 \item{target_var}{The dependent variable to be plotted.}
 
-\item{xlab}{A string specifying the x-axis label. Default is \code{"Score"}.}
+\item{targetvar_lab}{A string specifying the label for the target variable. Default is \code{"Score"}.}
 
 \item{discrete_colors}{Optional. A named list specifying custom colors for categorical variables.
 Each element should be a named vector where names correspond to factor levels.}
