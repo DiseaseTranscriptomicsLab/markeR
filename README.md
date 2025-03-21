@@ -1151,7 +1151,7 @@ GSEA_VariableAssociation(data=counts_example,
 #> $plot
 ```
 
-<img src="man/figures/README-GSEA_varassoc_2-1.png" width="460%" />
+<img src="man/figures/README-GSEA_varassoc_2-1.png" width="60%" />
 
     #> 
     #> $data
@@ -1219,7 +1219,7 @@ GSEA_VariableAssociation(data=counts_example,
                              sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
     #> $plot
 
-<img src="man/figures/README-GSEA_varassoc_2-2.png" width="460%" />
+<img src="man/figures/README-GSEA_varassoc_2-2.png" width="60%" />
 
     #> 
     #> $data

@@ -818,7 +818,7 @@ GSEA_VariableAssociation(data=counts_example,
                          padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
 ```
-```{r GSEA_varassoc_2, fig.width=6, fig.height=6, out.width="460%", warning=FALSE, message=FALSE}
+```{r GSEA_varassoc_2, fig.width=6, fig.height=6, out.width="60%", warning=FALSE, message=FALSE}
 GSEA_VariableAssociation(data=counts_example, 
                          metadata=metadata_example_illustration, 
                          cols=c("Condition","person","days"), 
