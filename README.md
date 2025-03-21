@@ -45,6 +45,8 @@ for transcriptomics research (bulk RNA-seq).
     -   [Differentially Expressed
         Genes](#differentially-expressed-genes)
     -   [Gene Set Enrichment Analyses](#gene-set-enrichment-analyses)
+    -   [GSEA Association with Chosen
+        Variables](#gsea-association-with-chosen-variables)
 
 ## Installation
 
@@ -692,9 +694,23 @@ score calculation and gene signature. For illustration purposes, we will
 go with the `logmedian` method and compare the two signatures for
 Senescence.
 
+For illustration purposes, let’s imagine we also had two more variables:
+one defining the number of days that passed between sample preparation
+and sequencing, and one defining the person that processed it.
+
+``` r
+set.seed("123456")
+
+metadata_example_illustration <- metadata_example
+
+metadata_example_illustration$person <- sample(c("John","Ana","Francisca"),39, replace = T)
+metadata_example_illustration$days <- sample(c(1:20),39, replace = T)
+ 
+```
+
 ``` r
 df_Scores_logmedian <- CalculateScores(data = counts_example,
-                             metadata = metadata_example,
+                             metadata = metadata_example_illustration,
                              method = "logmedian",
                              gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
                           Senescence  = SimpleSenescenceSignature))
@@ -703,23 +719,6 @@ df_Scores_logmedian <- CalculateScores(data = counts_example,
  
 df_Scores_logmedian_Sen <- df_Scores_logmedian$Senescence
 df_Scores_logmedian_BidirectSen <- df_Scores_logmedian$Senescence_Bidirectional
-```
-
-For illustration purposes, let’s imagine we also had two more variables:
-one defining the number of days that passed between sample preparation
-and sequencing, and one defining the person that processed it.
-
-``` r
-set.seed("123456")
-
-days <- sample(c(1:20),39, replace = T)
-person <- sample(c("John","Ana","Francisca"),39, replace = T)
-
-df_Scores_logmedian_Sen$person <- person
-df_Scores_logmedian_Sen$days <- days
-
-df_Scores_logmedian_BidirectSen$person <- person
-df_Scores_logmedian_BidirectSen$days <- days
 ```
 
 ``` r
@@ -798,12 +797,7 @@ DEGs <- calculateDE(data = counts_example,
                     variables = "Condition",
                     contrasts = c("Senescent - Proliferative"))
 DEGs$`Senescent - Proliferative`[1:5,]
-#>            logFC  AveExpr         t      P.Value    adj.P.Val        B
-#> CCND2   3.816674 4.406721 12.393130 2.747202e-15 2.435712e-12 24.70982
-#> MKI67  -3.581174 6.605339 -9.197510 2.007135e-11 4.992097e-10 15.96203
-#> PTCHD4  3.398914 3.556007 10.740867 2.318137e-13 3.002118e-11 20.35906
-#> KIF20A -3.365481 5.934893 -9.728709 4.176398e-12 1.844336e-10 17.51106
-#> CDC20  -3.304602 6.104079 -9.801724 3.375212e-12 1.657492e-10 17.72110
+#> NULL
 
 # Example 2: Use a custom model formula.
 # Here, a model formula is provided (as a string that will be converted to a formula).
@@ -832,12 +826,7 @@ DEGs3 <- calculateDE(data = counts_example,
                      modelmat = design,
                      contrasts = c("Senescent - Proliferative"))
 DEGs3$`Senescent - Proliferative`[1:5,]
-#>            logFC  AveExpr         t      P.Value    adj.P.Val        B
-#> CCND2   3.816674 4.406721 12.393130 2.747202e-15 2.435712e-12 24.70982
-#> MKI67  -3.581174 6.605339 -9.197510 2.007135e-11 4.992097e-10 15.96203
-#> PTCHD4  3.398914 3.556007 10.740867 2.318137e-13 3.002118e-11 20.35906
-#> KIF20A -3.365481 5.934893 -9.728709 4.176398e-12 1.844336e-10 17.51106
-#> CDC20  -3.304602 6.104079 -9.801724 3.375212e-12 1.657492e-10 17.72110
+#> NULL
 ```
 
 After running your differential expression analysis (for example, using
@@ -947,11 +936,11 @@ GSEAresults <- runGSEA(DEGList = DEGs,
                        stat = NULL)
 
 GSEAresults
-#> $`Senescent - Proliferative`
-#>                     pathway       pval       padj   log2err        ES      NES
-#>                      <char>      <num>      <num>     <num>     <num>    <num>
-#> 1: Senescence_Bidirectional 0.01582105 0.01582105 0.3524879 0.7068136 1.642473
-#> 2:               Senescence 0.14797508 0.14797508 0.1412251 0.5844505 1.333081
+#> $`Senescent-Proliferative`
+#>                     pathway      pval      padj   log2err        ES      NES
+#>                      <char>     <num>     <num>     <num>     <num>    <num>
+#> 1: Senescence_Bidirectional 0.0155075 0.0155075 0.3807304 0.7068136 1.639562
+#> 2:               Senescence 0.1623794 0.1623794 0.1364904 0.5844505 1.326234
 #>     size                         leadingEdge stat_used
 #>    <int>                              <list>    <char>
 #> 1:     7 LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
@@ -1000,7 +989,7 @@ plotNESlollipop(GSEA_results=GSEAresults,
                 nrow = NULL, ncol = NULL, 
                 widthlabels=13, 
                 title=NULL, titlesize=12) 
-#> $`Senescent - Proliferative`
+#> $`Senescent-Proliferative`
 ```
 
 <img src="man/figures/README-GSEA_lollypop-1.png" width="60%" />
@@ -1023,3 +1012,268 @@ plotCombinedGSEA(GSEAresults, sig_threshold = 0.05, PointSize=9, widthlegend = 2
 ```
 
 <img src="man/figures/README-GSEA_volcano-1.png" width="60%" />
+
+#### GSEA Association with Chosen Variables
+
+Following the same rational presented in [Score association with Chosen
+Variables](#score-association-with-chosen-variables), when analyzing
+data, it is often unclear whether a given variable is meaningfully
+associated with a target score. For the GSEA module, this can be
+particularly relevant when assessing whether gene expression patterns
+align with specific biological pathways or signatures.
+
+The `GSEA_VariableAssociation` function automates this process by
+performing differential expression (DE) analysis across all possible
+contrasts for categorical variables or using linear modeling for
+continuous variables. It then applies Gene Set Enrichment Analysis
+(GSEA) to evaluate the enrichment of predefined gene sets, returning
+both numerical results and an intuitive lollipop plot for visualization.
+This approach helps users quickly identify significant associations
+between metadata variables and gene expression patterns.
+
+The `mode` parameter controls how contrasts are generated for
+categorical variables, allowing users to adjust the complexity of the
+analysis:
+
+-   **“simple”**: Performs the minimal number of contrasts, typically
+    comparing each category to a baseline (e.g., for a factor with
+    levels A, B, C and D, it may generate A - B, A - C, A - D, B - C,
+    B - D, C - D).
+-   **“medium”**: Expands on the simple mode by including additional
+    pairwise comparisons between groups (e.g., A - (B + C + D)/3, B -
+    (A + C + D)/3, etc).
+-   **“extensive”**: Conducts all possible comparisons, including
+    complex interactions if applicable, providing the most comprehensive
+    analysis. (e.g., (A + B)/2 - (C + D)/2).
+
+Choosing the appropriate mode allows users to balance statistical power
+and interpretability depending on the study design.
+
+``` r
+options(error=recover)
+GSEA_VariableAssociation(data=counts_example, 
+                         metadata=metadata_example_illustration, 
+                         cols=c("Condition","person","days"), 
+                         mode="simple", 
+                         gene_set=list(Senescence  = SimpleSenescenceSignature), 
+                         padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+#> $plot
+```
+
+<img src="man/figures/README-GSEA_varassoc_1-1.png" width="60%" />
+
+    #> 
+    #> $data
+    #>        pathway       pval      padj    log2err         ES        NES  size
+    #>         <char>      <num>     <num>      <num>      <num>      <num> <int>
+    #>  1: Senescence 0.16237942 0.3247588 0.13649044  0.5844505  1.3262345     7
+    #>  2: Senescence 0.16237942 0.3247588 0.13649044  0.5844505  1.3262345     7
+    #>  3: Senescence 0.80392157 0.8566108 0.05973180  0.2197875  0.7317977     7
+    #>  4: Senescence 0.80392157 0.8566108 0.05973180  0.2197875  0.7317977     7
+    #>  5: Senescence 0.11674009 0.3247588 0.19381330  0.4198163  1.4013459     7
+    #>  6: Senescence 0.11674009 0.3247588 0.19381330  0.4198163  1.4013459     7
+    #>  7: Senescence 0.85661080 0.8566108 0.04949049 -0.2113031 -0.6824340     7
+    #>  8: Senescence 0.85661080 0.8566108 0.04949049 -0.2113031 -0.6824340     7
+    #>  9: Senescence 0.05299853 0.3247588 0.32177592 -0.4779552 -1.5321240     7
+    #> 10: Senescence 0.53442029 0.8566108 0.07061962 -0.2849369 -0.9153476     7
+    #>                                 leadingEdge stat_used                  Contrast
+    #>                                      <list>    <char>                    <char>
+    #>  1:                             LMNB1,MKI67         B Senescent - Proliferative
+    #>  2:                             LMNB1,MKI67         B Proliferative - Senescent
+    #>  3:                        GLB1,TP53,CDKN1A         B                Ana - John
+    #>  4:                        GLB1,TP53,CDKN1A         B                John - Ana
+    #>  5:          LMNB1,CDKN1A,GLB1,CDKN2A,MKI67         B           Ana - Francisca
+    #>  6:          LMNB1,CDKN1A,GLB1,CDKN2A,MKI67         B           Francisca - Ana
+    #>  7: CCL2,CDKN1A,MKI67,GLB1,LMNB1,CDKN2A,...         B          John - Francisca
+    #>  8: CCL2,CDKN1A,MKI67,GLB1,LMNB1,CDKN2A,...         B          Francisca - John
+    #>  9:     LMNB1,MKI67,CCL2,CDKN2A,TP53,CDKN1A         B            intercept_days
+    #> 10:     LMNB1,MKI67,CDKN2A,TP53,CCL2,CDKN1A         B                      days
+
+    GSEA_VariableAssociation(data=counts_example, 
+                             metadata=metadata_example_illustration, 
+                             cols=c("Condition","person","days"), 
+                             mode="simple", 
+                             gene_set=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional), 
+                             padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                             sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+    #> $plot
+
+<img src="man/figures/README-GSEA_varassoc_1-2.png" width="60%" />
+
+    #> 
+    #> $data
+    #>                      pathway        pval       padj    log2err         ES
+    #>                       <char>       <num>      <num>      <num>      <num>
+    #>  1: Senescence_Bidirectional 0.015507496 0.03876874 0.38073040  0.7068136
+    #>  2: Senescence_Bidirectional 0.014544104 0.03876874 0.38073040 -0.7068136
+    #>  3: Senescence_Bidirectional 0.089494163 0.14915694 0.20895503  0.6399995
+    #>  4: Senescence_Bidirectional 0.078610603 0.14915694 0.21654284 -0.6399995
+    #>  5: Senescence_Bidirectional 0.005117198 0.02558599 0.40701792  0.7274186
+    #>  6: Senescence_Bidirectional 0.004802147 0.02558599 0.40701792 -0.7274186
+    #>  7: Senescence_Bidirectional 0.949290061 0.95576923 0.04870109  0.2471009
+    #>  8: Senescence_Bidirectional 0.955769231 0.95576923 0.04595381 -0.2471009
+    #>  9: Senescence_Bidirectional 0.202614379 0.28944911 0.25720647 -0.4165066
+    #> 10: Senescence_Bidirectional 0.331950207 0.41493776 0.10473282  0.4899121
+    #>            NES  size                         leadingEdge stat_used
+    #>          <num> <int>                              <list>    <char>
+    #>  1:  1.6395619     7 LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
+    #>  2: -1.6380275     7 LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
+    #>  3:  1.4464723     7                    GLB1,TP53,CDKN1A         t
+    #>  4: -1.4482163     7                    GLB1,TP53,CDKN1A         t
+    #>  5:  1.7549017     7      LMNB1,CDKN1A,GLB1,CDKN2A,MKI67         t
+    #>  6: -1.7535589     7      LMNB1,CDKN1A,GLB1,CDKN2A,MKI67         t
+    #>  7:  0.5721764     7                  CDKN2A,LMNB1,MKI67         t
+    #>  8: -0.5695200     7                  CDKN2A,LMNB1,MKI67         t
+    #>  9: -1.2441115     7 MKI67,LMNB1,CCL2,CDKN2A,TP53,CDKN1A         t
+    #> 10:  1.1164465     7 GLB1,CDKN1A,CCL2,CDKN2A,MKI67,LMNB1         t
+    #>                      Contrast
+    #>                        <char>
+    #>  1: Senescent - Proliferative
+    #>  2: Proliferative - Senescent
+    #>  3:                Ana - John
+    #>  4:                John - Ana
+    #>  5:           Ana - Francisca
+    #>  6:           Francisca - Ana
+    #>  7:          John - Francisca
+    #>  8:          Francisca - John
+    #>  9:            intercept_days
+    #> 10:                      days
+
+``` r
+GSEA_VariableAssociation(data=counts_example, 
+                         metadata=metadata_example_illustration, 
+                         cols=c("Condition","person","days"), 
+                         mode="extensive", 
+                         gene_set=list(Senescence  = SimpleSenescenceSignature), 
+                         padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+#> $plot
+```
+
+<img src="man/figures/README-GSEA_varassoc_2-1.png" width="460%" />
+
+    #> 
+    #> $data
+    #>        pathway       pval     padj    log2err         ES        NES  size
+    #>         <char>      <num>    <num>      <num>      <num>      <num> <int>
+    #>  1: Senescence 0.16237942 0.371153 0.13649044  0.5844505  1.3262345     7
+    #>  2: Senescence 0.16237942 0.371153 0.13649044  0.5844505  1.3262345     7
+    #>  3: Senescence 0.80392157 0.875817 0.05973180  0.2197875  0.7317977     7
+    #>  4: Senescence 0.80392157 0.875817 0.05973180  0.2197875  0.7317977     7
+    #>  5: Senescence 0.11674009 0.371153 0.19381330  0.4198163  1.4013459     7
+    #>  6: Senescence 0.11674009 0.371153 0.19381330  0.4198163  1.4013459     7
+    #>  7: Senescence 0.85661080 0.875817 0.04949049 -0.2113031 -0.6824340     7
+    #>  8: Senescence 0.85661080 0.875817 0.04949049 -0.2113031 -0.6824340     7
+    #>  9: Senescence 0.13111111 0.371153 0.18302394  0.4091501  1.3694309     7
+    #> 10: Senescence 0.13111111 0.371153 0.18302394  0.4091501  1.3694309     7
+    #> 11: Senescence 0.72324723 0.875817 0.05688642 -0.2423185 -0.7817258     7
+    #> 12: Senescence 0.72324723 0.875817 0.05688642 -0.2423185 -0.7817258     7
+    #> 13: Senescence 0.87581699 0.875817 0.05571042  0.1962844  0.6541223     7
+    #> 14: Senescence 0.87581699 0.875817 0.05571042  0.1962844  0.6541223     7
+    #> 15: Senescence 0.05299853 0.371153 0.32177592 -0.4779552 -1.5321240     7
+    #> 16: Senescence 0.53442029 0.875817 0.07061962 -0.2849369 -0.9153476     7
+    #>                                 leadingEdge stat_used
+    #>                                      <list>    <char>
+    #>  1:                             LMNB1,MKI67         B
+    #>  2:                             LMNB1,MKI67         B
+    #>  3:                        GLB1,TP53,CDKN1A         B
+    #>  4:                        GLB1,TP53,CDKN1A         B
+    #>  5:          LMNB1,CDKN1A,GLB1,CDKN2A,MKI67         B
+    #>  6:          LMNB1,CDKN1A,GLB1,CDKN2A,MKI67         B
+    #>  7: CCL2,CDKN1A,MKI67,GLB1,LMNB1,CDKN2A,...         B
+    #>  8: CCL2,CDKN1A,MKI67,GLB1,LMNB1,CDKN2A,...         B
+    #>  9:   GLB1,CDKN1A,LMNB1,MKI67,TP53,CCL2,...         B
+    #> 10:   GLB1,CDKN1A,LMNB1,MKI67,TP53,CCL2,...         B
+    #> 11:                        MKI67,LMNB1,CCL2         B
+    #> 12:                        MKI67,LMNB1,CCL2         B
+    #> 13: CDKN2A,LMNB1,MKI67,TP53,CDKN1A,CCL2,...         B
+    #> 14: CDKN2A,LMNB1,MKI67,TP53,CDKN1A,CCL2,...         B
+    #> 15:     LMNB1,MKI67,CCL2,CDKN2A,TP53,CDKN1A         B
+    #> 16:     LMNB1,MKI67,CDKN2A,TP53,CCL2,CDKN1A         B
+    #>                           Contrast
+    #>                             <char>
+    #>  1:      Senescent - Proliferative
+    #>  2:      Proliferative - Senescent
+    #>  3:                     Ana - John
+    #>  4:                     John - Ana
+    #>  5:                Ana - Francisca
+    #>  6:                Francisca - Ana
+    #>  7:               John - Francisca
+    #>  8:               Francisca - John
+    #>  9:  Ana - ( John + Francisca )/ 2
+    #> 10: (  John + Francisca )/ 2 - Ana
+    #> 11:  John - ( Ana + Francisca )/ 2
+    #> 12: (  Ana + Francisca )/ 2 - John
+    #> 13:  Francisca - ( Ana + John )/ 2
+    #> 14: (  Ana + John )/ 2 - Francisca
+    #> 15:                 intercept_days
+    #> 16:                           days
+
+    GSEA_VariableAssociation(data=counts_example, 
+                             metadata=metadata_example_illustration, 
+                             cols=c("Condition","person","days"), 
+                             mode="extensive", 
+                             gene_set=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional), 
+                             padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                             sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+    #> $plot
+
+<img src="man/figures/README-GSEA_varassoc_2-2.png" width="460%" />
+
+    #> 
+    #> $data
+    #>                      pathway        pval       padj    log2err         ES
+    #>                       <char>       <num>      <num>      <num>      <num>
+    #>  1: Senescence_Bidirectional 0.015507496 0.04691344 0.38073040  0.7068136
+    #>  2: Senescence_Bidirectional 0.014544104 0.04691344 0.38073040 -0.7068136
+    #>  3: Senescence_Bidirectional 0.089494163 0.17898833 0.20895503  0.6399995
+    #>  4: Senescence_Bidirectional 0.078610603 0.17898833 0.21654284 -0.6399995
+    #>  5: Senescence_Bidirectional 0.005117198 0.04093759 0.40701792  0.7274186
+    #>  6: Senescence_Bidirectional 0.004802147 0.04093759 0.40701792 -0.7274186
+    #>  7: Senescence_Bidirectional 0.949290061 0.95576923 0.04870109  0.2471009
+    #>  8: Senescence_Bidirectional 0.955769231 0.95576923 0.04595381 -0.2471009
+    #>  9: Senescence_Bidirectional 0.017592540 0.04691344 0.35248786  0.6955465
+    #> 10: Senescence_Bidirectional 0.016913416 0.04691344 0.35248786 -0.6955465
+    #> 11: Senescence_Bidirectional 0.229755179 0.33418935 0.12267919 -0.5527943
+    #> 12: Senescence_Bidirectional 0.222222222 0.33418935 0.12878871  0.5527943
+    #> 13: Senescence_Bidirectional 0.285178236 0.36184615 0.10797236 -0.4842608
+    #> 14: Senescence_Bidirectional 0.294000000 0.36184615 0.11012226  0.4842608
+    #> 15: Senescence_Bidirectional 0.202614379 0.33418935 0.25720647 -0.4165066
+    #> 16: Senescence_Bidirectional 0.331950207 0.37937167 0.10473282  0.4899121
+    #>            NES  size                           leadingEdge stat_used
+    #>          <num> <int>                                <list>    <char>
+    #>  1:  1.6395619     7   LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
+    #>  2: -1.6380275     7   LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
+    #>  3:  1.4464723     7                      GLB1,TP53,CDKN1A         t
+    #>  4: -1.4482163     7                      GLB1,TP53,CDKN1A         t
+    #>  5:  1.7549017     7        LMNB1,CDKN1A,GLB1,CDKN2A,MKI67         t
+    #>  6: -1.7535589     7        LMNB1,CDKN1A,GLB1,CDKN2A,MKI67         t
+    #>  7:  0.5721764     7                    CDKN2A,LMNB1,MKI67         t
+    #>  8: -0.5695200     7                    CDKN2A,LMNB1,MKI67         t
+    #>  9:  1.6449965     7 GLB1,CDKN1A,LMNB1,MKI67,TP53,CCL2,...         t
+    #> 10: -1.6292577     7 GLB1,CDKN1A,LMNB1,MKI67,TP53,CCL2,...         t
+    #> 11: -1.2257420     7                      TP53,GLB1,CDKN1A         t
+    #> 12:  1.2310532     7                      TP53,GLB1,CDKN1A         t
+    #> 13: -1.1617113     7        CDKN2A,LMNB1,MKI67,CDKN1A,CCL2         t
+    #> 14:  1.1612204     7        CDKN2A,LMNB1,MKI67,CDKN1A,CCL2         t
+    #> 15: -1.2441115     7   MKI67,LMNB1,CCL2,CDKN2A,TP53,CDKN1A         t
+    #> 16:  1.1164465     7   GLB1,CDKN1A,CCL2,CDKN2A,MKI67,LMNB1         t
+    #>                           Contrast
+    #>                             <char>
+    #>  1:      Senescent - Proliferative
+    #>  2:      Proliferative - Senescent
+    #>  3:                     Ana - John
+    #>  4:                     John - Ana
+    #>  5:                Ana - Francisca
+    #>  6:                Francisca - Ana
+    #>  7:               John - Francisca
+    #>  8:               Francisca - John
+    #>  9:  Ana - ( John + Francisca )/ 2
+    #> 10: (  John + Francisca )/ 2 - Ana
+    #> 11:  John - ( Ana + Francisca )/ 2
+    #> 12: (  Ana + Francisca )/ 2 - John
+    #> 13:  Francisca - ( Ana + John )/ 2
+    #> 14: (  Ana + John )/ 2 - Francisca
+    #> 15:                 intercept_days
+    #> 16:                           days

@@ -12,6 +12,16 @@ SenescenceSignatures <- readRDS("~/VersionControl/senescence_benchmarking/Common
 ```
 
 ```{r}
+set.seed("123456")
+metadata_merge_corr <- metadata_merge
+metadata_merge_corr$random_cat <-  sample(c("A","B","C"), nrow(metadata_merge_corr), replace = T)
+metadata_merge_corr$random_numeric <- sample(0:100, nrow(metadata_merge_corr), replace = TRUE)
+metadata_merge_corr$Is_Senescent <- ifelse(metadata_merge_corr$Condition == "Senescent", "Senescent", "Non Senescent")
+
+```
+ 
+
+```{r}
 library(markeR)
 library(ggplot2)
 library(ggpubr)
@@ -348,16 +358,12 @@ If the user is investigating if a certain variable can be described from the sco
     - Arrange in grid
 
 ```{r}
-metadata_corr <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge, method = "ssGSEA", gene_sets = SenescenceSignatures)
-metadata_corr <- metadata_corr$`[UP]_HernandezSegura`
+metadata_corr <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge_corr, method = "ssGSEA", gene_sets = list(HernandezSegura_UP= SenescenceSignatures$`[UP]_HernandezSegura`))
+metadata_corr <- metadata_corr$HernandezSegura_UP
 ```
 
 ```{r fig.width=14, fig.height=3}
-
-metadata_corr$random_cat <-  sample(c("A","B","C"), nrow(metadata_corr), replace = T)
-metadata_corr$random_numeric <- sample(0:100, nrow(metadata_corr), replace = TRUE)
-metadata_corr$Is_Senescent <- ifelse(metadata_corr$Condition == "Senescent", "Senescent", "Non Senescent")
-
+options(error=recover)
 plot_stat_tests(metadata_corr, target_var="score", cols = c("Condition","Is_Senescent","random_cat","random_numeric"),
                  discrete_colors = list(Is_Senescent=c("Senescent"="pink",
                                                  "Non Senescent"="orange")), 
@@ -546,6 +552,7 @@ plotPCA(data=corrcounts_merge,
 
 
 ```{r}
+options(error=recover)
 degenes <- calculateDE(data=corrcounts_merge, 
                        metadata=metadata_merge, 
                        variables="Condition", 
@@ -591,4 +598,103 @@ plotCombinedGSEA(GSEAresults, sig_threshold = 0.05, PointSize=9, widthlegend = 2
   
  
  
+## Association with Phenotype
 
+
+If the user is investigating if a certain variable can be described from the GSEA results, and not already knowing that variable. More exploratory...
+ 
+- For each variable, define all possible contrasts (e.g. if A,B,C, then consider A-B, A-C, B-C,A-(B+C)/2, etc...)
+- Use calculateDE without baseline and all possible contrasts
+- perform GSEA and collect all results in only one table
+- Plot all results in lollipop plots, y axis with all contrasts
+
+- One function to calculate all results; one to do the lollypop plot
+
+```{r}
+# Example usage
+levels <- c("A", "B" ,"C","D")
+generate_all_contrasts(levels, mode="extensive")
+```
+
+   
+ 
+
+
+```{r fig.width=5, fig.height=10}
+ options(error=recover)
+df_test <- GSEA_VariableAssociation(data=corrcounts_merge, 
+                         metadata=metadata_merge_corr, 
+                         cols=c("Condition","Is_Senescent","random_cat","random_numeric"), 
+                         mode="extensive", 
+                         gene_set=list(HernandezSegura=bidirectsigs$HernandezSegura), 
+                         padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+
+df_test$plot
+
+```
+ 
+ 
+ 
+```{r}
+metadata_corr_1 <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge, method = "ssGSEA", gene_sets = list(HernandezSegura=bidirectsigs$HernandezSegura) )
+metadata_corr <- metadata_corr_1$`HernandezSegura`
+metadata_corr <- merge(metadata_corr,metadata_merge_corr[,c("sampleID","random_cat","random_numeric","Is_Senescent")], by.x="sample", by.y="sampleID",all.x = T)
+metadata_corr
+```
+
+```{r fig.width=4, fig.height=10}
+ 
+plot_stat_tests(metadata_corr, target_var="score", cols = c("Condition","Is_Senescent","random_cat","random_numeric"),
+                 discrete_colors = list(Is_Senescent=c("Senescent"="pink",
+                                                 "Non Senescent"="orange")), 
+                continuous_color = "#8C6D03", 
+                            color_palette = "Set2", nrow=4, sizeannot=3, legend.position="top")
+```
+
+
+ 
+
+```{r}
+degenes_test <- calculateDE(data=corrcounts_merge, 
+                       metadata=metadata_merge_corr, 
+                       variables="random_cat", 
+                       lmexpression = NULL, 
+                       modelmat = NULL, 
+                       contrasts = generate_all_contrasts(c(unique(metadata_corr$random_cat)), mode = "extensive")) 
+
+ 
+GSEAresults_test <- runGSEA(degenes_test, list(HernandezSegura_UP=SenescenceSignatures$`[UP]_HernandezSegura`), stat = NULL)
+GSEAresults_test
+ 
+options(error=recover)
+plotGSEAenrichment(GSEA_results=GSEAresults_test, DEGList=degenes_test, gene_sets=list(HernandezSegura_UP=SenescenceSignatures$`[UP]_HernandezSegura`), widthTitle=32,grid = F) 
+ 
+```
+
+
+  
+```{r fig.width=5, fig.height=5}
+ options(error=recover)
+df_test <- GSEA_VariableAssociation(data=corrcounts_merge, 
+                         metadata=metadata_merge_corr, 
+                         cols=c("Condition" ), 
+                         mode="medium", 
+                         gene_set=list(HernandezSegura_UP=SenescenceSignatures$`[UP]_HernandezSegura` ), 
+                         padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+
+df_test$plot
+
+df_test <- GSEA_VariableAssociation(data=corrcounts_merge, 
+                         metadata=metadata_merge_corr, 
+                         cols=c("Condition" ), 
+                         mode="medium", 
+                         gene_set=list( HernandezSegura_UP_Bidirect=subset(bidirectsigs$HernandezSegura, enrichment==1)), 
+                         padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+
+df_test$plot
+
+
+```
