@@ -25,6 +25,7 @@
 #' @param widthlabels An integer controlling the maximum width of contrast labels before text wrapping. Default: `18`.
 #' @param labsize An integer controlling the axis text size in the plot. Default: `10`.
 #' @param titlesize An integer specifying the plot title size. Default: `14`.
+#' @param pointSize Numeric. The size of points in the volcano plots (default is 2).
 #'
 #' @return A list with two elements:
 #'   - `data`: A data frame containing the GSEA results, including normalized enrichment scores (NES), adjusted p-values, and contrasts.
@@ -42,7 +43,7 @@
 #' print(results$plot)
 #'
 #' @export
-GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("simple","medium","extensive"), gene_set, padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", sig_threshold = 0.05, widthlabels=18, labsize=10, titlesize=14) {
+GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("simple","medium","extensive"), gene_set, padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", sig_threshold = 0.05, widthlabels=18, labsize=10, titlesize=14, pointSize=5) {
   mode <- match.arg(mode)
   metadata <- metadata[, cols %in% colnames(metadata), drop = FALSE]
 
@@ -104,17 +105,47 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
   combined_results$Contrast <- sapply(combined_results$Contrast, function(x) wrap_title(x, widthlabels))
   combined_results$Contrast <- factor(combined_results$Contrast, levels = combined_results$Contrast[order(combined_results$NES)])
 
+#
+#   plot <- ggplot2::ggplot(combined_results, ggplot2::aes(x = NES, y = Contrast,fill = padj)) +
+#     ggplot2::geom_segment(ggplot2::aes(yend = Contrast, xend = 0), size = .5) +
+#     ggplot2::geom_point( shape = 21, stroke = 1.2, color="black", size=4) +
+#     ggplot2::scale_fill_gradient2(low = low_color, mid = mid_color, high = high_color, midpoint = sig_threshold, limits = padj_limit, na.value=high_color) +
+#     ggplot2::labs(title = unique(combined_results$pathway), x = "Normalized Enrichment Score (NES)", y = "Contrast", color = "Adj. p-value", fill = "Adj. p-value") +
+#     ggplot2::theme_minimal() +
+#     ggplot2::theme(
+#       plot.title = ggplot2::element_text(hjust = 0.5, face = "bold", size=titlesize),
+#       legend.position = "right",
+#       axis.text =  ggplot2::element_text(size=labsize)
+#     )
 
-  plot <- ggplot2::ggplot(combined_results, ggplot2::aes(x = NES, y = Contrast,fill = padj)) +
-    ggplot2::geom_segment(ggplot2::aes(yend = Contrast, xend = 0), size = .5) +
-    ggplot2::geom_point( shape = 21, stroke = 1.2, color="black", size=4) +
-    ggplot2::scale_fill_gradient2(low = low_color, mid = mid_color, high = high_color, midpoint = sig_threshold, limits = padj_limit, na.value=high_color) +
-    ggplot2::labs(title = unique(combined_results$pathway), x = "Normalized Enrichment Score (NES)", y = "Contrast", color = "Adj. p-value", fill = "Adj. p-value") +
+  plot <- ggplot2::ggplot(combined_results, ggplot2::aes(x = NES, y = Contrast, fill = padj)) +
+    ggplot2::geom_segment(ggplot2::aes(
+      yend = Contrast,
+      xend = 0,
+      linetype = ifelse(stat_used == "B" & NES < 0, "dashed", "solid"),
+      color = ifelse(stat_used == "B" & NES < 0, "grey", "black")
+    ), size = .5) +
+    ggplot2::geom_point(ggplot2::aes(
+      stroke = 1.2,
+      color = ifelse(stat_used == "B" & NES < 0, "grey", "black")
+    ), shape = 21, size = pointSize) +
+    ggplot2::scale_fill_gradient2(low = low_color, mid = mid_color, high = high_color, midpoint = sig_threshold, limits = padj_limit, na.value = high_color) +
+    ggplot2::scale_linetype_identity() +
+    ggplot2::scale_color_identity() +
+    ggplot2::labs(
+      title = unique(combined_results$pathway),
+      subtitle = ifelse(any(combined_results$stat_used == "B"), "Altered Contrasts", "Enriched/Depleted Contrasts"),
+      x = "Normalized Enrichment Score (NES)",
+      y = "Contrast",
+      color = "Adj. p-value",
+      fill = "Adj. p-value"
+    ) +
     ggplot2::theme_minimal() +
     ggplot2::theme(
-      plot.title = ggplot2::element_text(hjust = 0.5, face = "bold", size=titlesize),
+      plot.title = ggplot2::element_text(hjust = 0.5, face = "bold", size = titlesize),
+      plot.subtitle = ggplot2::element_text(hjust = 0.5, face = "italic", size = titlesize - 2),
       legend.position = "right",
-      axis.text =  ggplot2::element_text(size=labsize)
+      axis.text = ggplot2::element_text(size = labsize)
     )
 
 
@@ -123,9 +154,7 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
               data=combined_results_toreturn))  # Return list if not in grid mode
 
 }
-
-
-#' Generate All Possible Contrasts Between Groups
+#' Generate All Possible Unique Contrasts Between Groups
 #'
 #' This function creates statistical contrasts between levels of a categorical variable.
 #' Users can choose the level of complexity:
@@ -137,14 +166,14 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
 #' @param mode A string specifying the level of detail for contrasts.
 #' Options are `"simple"` (pairwise only), `"medium"` (pairwise + vs. mean of others), or `"extensive"` (all possible balanced groupwise contrasts). Default is `"extensive"`.
 #'
-#' @return A character vector of contrast expressions (without names).
+#' @return A character vector of unique contrast expressions.
 #' @examples
 #' levels <- c("A", "B", "C", "D")
 #' generate_all_contrasts(levels, mode = "simple")    # Pairwise only
 #' generate_all_contrasts(levels, mode = "medium")    # Pairwise + mean comparisons
 #' generate_all_contrasts(levels, mode = "extensive") # All balanced contrasts
 #' @export
-generate_all_contrasts <- function(levels, mode = "extensive") {
+generate_all_contrasts <- function(levels, mode = "simple") {
   levels <- unique(levels)  # Ensure unique levels
   n <- length(levels)       # Total number of levels
 
@@ -154,47 +183,51 @@ generate_all_contrasts <- function(levels, mode = "extensive") {
 
   contrasts <- c()  # Store contrasts
 
-  # 1. Pairwise comparisons (included in all modes, both A - B and B - A)
-  pairwise_contrasts <- combn(levels, 2, function(x) c(paste(x[1], "-", x[2]), paste(x[2], "-", x[1])), simplify = TRUE)
+  # Helper function to enforce a consistent order
+  normalize_contrast <- function(left, right) {
+    left_sorted <- sort(left)
+    right_sorted <- sort(right)
 
-  if (mode == "simple") {
-    return(unname(as.vector(pairwise_contrasts)))
+    left_expr <- if (length(left_sorted) > 1) paste0("(", paste(left_sorted, collapse = " + "), ")/", length(left_sorted)) else left_sorted
+    right_expr <- if (length(right_sorted) > 1) paste0("(", paste(right_sorted, collapse = " + "), ")/", length(right_sorted)) else right_sorted
+
+    if (paste(left_sorted, collapse = " ") < paste(right_sorted, collapse = " ")) {
+      return(paste(left_expr, "-", right_expr))
+    } else {
+      return(paste(right_expr, "-", left_expr))
+    }
   }
 
-  # 2. Comparisons against the mean of other groups (included in medium & extensive)
+  # 1. Pairwise comparisons (A - B, but not B - A)
+  pairwise_contrasts <- combn(levels, 2, function(x) normalize_contrast(x[1], x[2]), simplify = TRUE)
+
+  if (mode == "simple") {
+    return(unname(unique(pairwise_contrasts)))
+  }
+
+  # 2. Comparisons against the mean of other groups (medium & extensive)
   mean_contrasts <- unlist(lapply(levels, function(x) {
     others <- setdiff(levels, x)
-    if (length(others) > 1) {
-      return(c(
-        paste(x, "- (", paste(others, collapse = " + "), ")/", length(others)),
-        paste("( ", paste(others, collapse = " + "), ")/", length(others), "-", x)
-      ))
-    } else {
-      return(c(paste(x, "-", others), paste(others, "-", x)))  # Simple case: keep both orders
-    }
+    normalize_contrast(x, others)
   }))
 
   if (mode == "medium") {
-    return(unname(c(as.vector(pairwise_contrasts), mean_contrasts)))
+    return(unname(unique(c(pairwise_contrasts, mean_contrasts))))
   }
 
-  # 3. Groupwise comparisons (only included in extensive mode)
+  # 3. Groupwise comparisons (extensive mode)
   group_contrasts <- c()
   for (i in 1:(n-1)) {
     left_groups <- combn(levels, i, simplify = FALSE)  # Subsets for the first group
     for (left in left_groups) {
       right <- setdiff(levels, left)  # Remaining elements for the second group
       if (length(right) > 1 && length(left) > 1) {
-        left_weighted <- paste0("(", paste(left, collapse = " + "), ")/", length(left))
-        right_weighted <- paste0("(", paste(right, collapse = " + "), ")/", length(right))
-        contrast1 <- paste(left_weighted, "-", right_weighted)
-        contrast2 <- paste(right_weighted, "-", left_weighted)
-        group_contrasts <- c(group_contrasts, contrast1, contrast2)  # Keep both orders
+        group_contrasts <- c(group_contrasts, normalize_contrast(left, right))
       }
     }
   }
 
-  # Combine all contrasts and return as an unnamed vector
-  contrasts <- unique(c(as.vector(pairwise_contrasts), mean_contrasts, group_contrasts))  # Remove duplicates
+  # Combine all contrasts and return unique values
+  contrasts <- unique(c(pairwise_contrasts, mean_contrasts, group_contrasts))
   return(unname(contrasts))
 }

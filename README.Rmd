@@ -45,8 +45,8 @@ knitr::opts_chunk$set(
 -   [Enrichment-Based Methods](#enrichment-based-methods)
     -   [Differentially Expressed Genes](#differentially-expressed-genes)
     -   [Gene Set Enrichment Analyses](#gene-set-enrichment-analyses)
-    -   [GSEA Association with Chosen Variables](#gsea-association-with-chosen-variables) 
-     
+    -   [GSEA Association with Chosen Variables](#gsea-association-with-chosen-variables)
+
 ## Installation
 
 You can install the development version of markeR from [GitHub](https://github.com/) with:
@@ -598,7 +598,6 @@ df_Scores_logmedian_Sen <- df_Scores_logmedian$Senescence
 df_Scores_logmedian_BidirectSen <- df_Scores_logmedian$Senescence_Bidirectional
 
 ```
- 
 
 ```{r variableassoc2, fig.width=12, fig.height=4, out.width="100%", warning=FALSE, message=FALSE}
 VariableAssociation(df=df_Scores_logmedian_Sen, c("Condition","person","days"), target_var="score", targetvar_lab ="Normalized Signature Score",
@@ -794,11 +793,24 @@ The `GSEA_VariableAssociation` function automates this process by performing dif
 The `mode` parameter controls how contrasts are generated for categorical variables, allowing users to adjust the complexity of the analysis:
 
 -   **"simple"**: Performs the minimal number of contrasts, typically comparing each category to a baseline (e.g., for a factor with levels A, B, C and D, it may generate A - B, A - C, A - D, B - C, B - D, C - D).
--   **"medium"**: Expands on the simple mode by including additional pairwise comparisons between groups (e.g., A - (B + C + D)/3,  B - (A + C + D)/3, etc).
--   **"extensive"**: Conducts all possible comparisons, including complex interactions if applicable, providing the most comprehensive analysis. (e.g.,  (A + B)/2 - (C + D)/2).
+-   **"medium"**: Expands on the simple mode by including additional pairwise comparisons between groups (e.g., A - (B + C + D)/3, B - (A + C + D)/3, etc).
+-   **"extensive"**: Conducts all possible comparisons, including complex interactions if applicable, providing the most comprehensive analysis. (e.g., (A + B)/2 - (C + D)/2).
 
 Choosing the appropriate mode allows users to balance statistical power and interpretability depending on the study design.
 
+Depending on the statistic used, the interpretation of the plots changes: when using the B statistic (by default, when the direction is not specified), the interpretation of the plot differs from the T statistic. This is because the B statistic focuses on whether genes are altered or not altered, without considering whether they are enriched or depleted.
+
+1.  **B Statistic vs. T Statistic:**
+    -   The B statistic does not specify the direction (enriched or depleted) of the gene set. It only indicates whether genes are altered or not altered.
+    -   The t statistic orders genes based on their enrichment or depletion.
+2.  **Negative NES:**
+    -   t Statistic: A negative NES with the T statistic indicates that the gene set is depleted (i.e., the genes are under-expressed).
+    -   B Statistic: A negative NES using the B statistic (with significant results) means that the genes are not altered, implying no significant change in their expression.
+3.  **Dashed Lines:**
+    -   The dashed lines in the plot represent B statistic results with negative NES, meaning gene sets putatively not altered.
+4.  **Subtitle Differences:**
+    -   When using the B statistic, the subtitle of the plot will read "Altered Contrasts" to reflect this focus on whether genes are altered.
+    -   For the t statistic, the subtitle will read "Enriched/Depleted Contrasts", indicating that the plot focuses on the enrichment or depletion status of genes.
 
 ```{r GSEA_varassoc_1, fig.width=6, fig.height=4, out.width="60%", warning=FALSE, message=FALSE}
 options(error=recover)
@@ -808,7 +820,7 @@ GSEA_VariableAssociation(data=counts_example,
                          mode="simple", 
                          gene_set=list(Senescence  = SimpleSenescenceSignature), 
                          padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
-                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
 
 GSEA_VariableAssociation(data=counts_example, 
                          metadata=metadata_example_illustration, 
@@ -816,8 +828,9 @@ GSEA_VariableAssociation(data=counts_example,
                          mode="simple", 
                          gene_set=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional), 
                          padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
-                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
 ```
+
 ```{r GSEA_varassoc_2, fig.width=6, fig.height=6, out.width="60%", warning=FALSE, message=FALSE}
 GSEA_VariableAssociation(data=counts_example, 
                          metadata=metadata_example_illustration, 
@@ -825,7 +838,7 @@ GSEA_VariableAssociation(data=counts_example,
                          mode="extensive", 
                          gene_set=list(Senescence  = SimpleSenescenceSignature), 
                          padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
-                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
 
 GSEA_VariableAssociation(data=counts_example, 
                          metadata=metadata_example_illustration, 
@@ -833,5 +846,5 @@ GSEA_VariableAssociation(data=counts_example,
                          mode="extensive", 
                          gene_set=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional), 
                          padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
-                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
 ```

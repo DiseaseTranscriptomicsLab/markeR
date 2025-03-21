@@ -690,7 +690,7 @@ df_test <- GSEA_VariableAssociation(data=corrcounts_merge,
                          metadata=metadata_merge_corr, 
                          cols=c("Condition" ), 
                          mode="medium", 
-                         gene_set=list( HernandezSegura_UP_Bidirect=subset(bidirectsigs$HernandezSegura, enrichment==1)), 
+                         gene_set=list( HernandezSegura_Bidirect=subset(bidirectsigs$HernandezSegura, enrichment==1)), 
                          padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
 
