@@ -171,8 +171,11 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
       method_used <- "Multi-Category Comparison"
     }
 
+
     # scientific notation
     test_df$metric <- formatC(test_df$metric, format = "e", digits = 2)
+    # correct for multiple testing per variable
+    test_df$p_value <- p.adjust(test_df$p_value, method = "BH")
     test_df$p_value <- formatC(test_df$p_value, format = "e", digits = 3)
 
 
