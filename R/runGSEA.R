@@ -80,6 +80,7 @@ runGSEA <- function(DEGList, gene_sets, stat = NULL) {
         # Sort after modifying ranks
         ranks_sorted <- sort(ranks_adjusted, decreasing = TRUE)
 
+        set.seed("20032025")
         fgseaRes <- fgsea::fgsea(pathways = list(temp = matched_genes),
                                  stats = ranks_sorted)
 
@@ -89,7 +90,7 @@ runGSEA <- function(DEGList, gene_sets, stat = NULL) {
 
         # Sort ranks before running fgsea
         ranks_sorted <- sort(ranks, decreasing = TRUE)
-
+        set.seed("20032025")
         fgseaRes <- fgsea::fgsea(pathways = list(temp = gs_genes),
                                  stats = ranks_sorted)
 
