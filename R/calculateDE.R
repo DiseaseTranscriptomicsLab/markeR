@@ -55,7 +55,7 @@
 #' @export
 calculateDE <- function(data, metadata=NULL, variables=NULL, lmexpression = NULL, modelmat = NULL, contrasts = NULL) {
 
-  # extract variables from equations
+
   remove_prefix <- function(colnames_vector, prefixes) {
     for (prefix in prefixes) {
       new_colnames <- gsub(paste0("^", prefix), "", colnames_vector)
@@ -64,6 +64,13 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, lmexpression = NULL
       colnames_vector <- ifelse(new_colnames != "", new_colnames, colnames_vector)
     }
     return(colnames_vector)
+  }
+
+  # extract variables from equations
+  extract_variables <- function(equation) {
+    variables <- unique(unlist(strsplit(gsub("[~+*/()]", " ", equation), "\\s+")))
+    variables <- setdiff(variables, "")  # Remove empty strings
+    return(variables)
   }
 
 
@@ -100,6 +107,7 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, lmexpression = NULL
       #colnames(design_matrix) <- gsub("^Condition","",colnames(design_matrix))
 
       colnames(design_matrix) <-  remove_prefix(colnames(design_matrix), vars)
+      colnames(design_matrix) <- gsub(" ", "", colnames(design_matrix))
       #colnames(design_matrix) <- sub("^[^.]*\\.", "", colnames(design_matrix))
       design_matrix
     } else {
@@ -108,6 +116,7 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, lmexpression = NULL
       #colnames(design_matrix) <- gsub("^Condition","",colnames(design_matrix))
       #colnames(design_matrix) <- sub("^[^.]*\\.", "", colnames(design_matrix)) # remove the variable name
       colnames(design_matrix) <-   remove_prefix(colnames(design_matrix), variables)
+      colnames(design_matrix) <- gsub(" ", "", colnames(design_matrix)) # remove spaces
       design_matrix
     }
   }, error = function(e) {
@@ -133,11 +142,14 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, lmexpression = NULL
   # Process contrasts
   if (!is.null(contrasts)) {
 
+    contrasts <- gsub(" ", "", contrasts) # remove white spaces
+
     contrast_matrix <- limma::makeContrasts(contrasts = contrasts, levels = design_matrix)
     fit <- limma::contrasts.fit(fit, contrast_matrix)
     fit <- limma::eBayes(fit)
 
     for (cont in contrasts) {
+
       if (!(cont %in% colnames(contrast_matrix))) {
         warning("Warning: Contrast '", cont, "' not found in contrast matrix. Skipping.")
         next
