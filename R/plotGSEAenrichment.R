@@ -42,16 +42,23 @@ plotGSEAenrichment <- function(GSEA_results, DEGList, gene_sets, widthTitle = 24
 
   for (contrast in names(GSEA_results)) {
     deg_df <- DEGList[[contrast]]
-    ranks <- setNames(deg_df$t, rownames(deg_df))  # Default to t-stat
+
 
     for (signature in unique(GSEA_results[[contrast]]$pathway)) {
       if (!(signature %in% names(gene_sets))) next  # Skip missing sets
 
       gs <- gene_sets[[signature]]
 
+
+
       # Retrieve NES and adjusted p-value for this contrast-signature pair
       gsea_res <- GSEA_results[[contrast]]
       gsea_row <- gsea_res[gsea_res$pathway == signature, ]
+
+      # order ranks by stat used
+      ranks <- setNames(deg_df[,gsea_row$stat_used, drop=T], rownames(deg_df))
+      ranks <- sort(ranks, decreasing = TRUE)
+
       nes_value <- round(gsea_row$NES, 2)
       padj_value <- signif(gsea_row$padj, 3)
       subtitle_text <- paste0("NES: ", nes_value, " | adj. p-value: ", padj_value)
