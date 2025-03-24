@@ -582,7 +582,6 @@ GSEAresults
 
 ```{r fig.width=25, fig.height=10}
 plotGSEAenrichment(GSEA_results=GSEAresults, DEGList=degenes, gene_sets=bidirectsigs, widthTitle=32,grid = T, titlesize = 10, nrow=3, ncol=9) 
-
 ```
 
 ```{r fig.width=18, fig.height=4}

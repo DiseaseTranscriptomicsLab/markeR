@@ -55,13 +55,20 @@ plotGSEAenrichment <- function(GSEA_results, DEGList, gene_sets, widthTitle = 24
       gsea_res <- GSEA_results[[contrast]]
       gsea_row <- gsea_res[gsea_res$pathway == signature, ]
 
+      stat_used <- gsea_row$stat_used
+
       # order ranks by stat used
-      ranks <- setNames(deg_df[,gsea_row$stat_used, drop=T], rownames(deg_df))
+      ranks <- setNames(deg_df[,stat_used, drop=T], rownames(deg_df))
       ranks <- sort(ranks, decreasing = TRUE)
 
       nes_value <- round(gsea_row$NES, 2)
       padj_value <- signif(gsea_row$padj, 3)
-      subtitle_text <- paste0("NES: ", nes_value, " | adj. p-value: ", padj_value)
+      if(stat_used=="B"){
+        subtitle_text <- paste0("Altered Pathways\nNES: ", nes_value, " | adj. p-value: ", padj_value)
+      } else {
+        subtitle_text <- paste0("Enriched/Depleted Pathways\nNES: ", nes_value, " | adj. p-value: ", padj_value)
+      }
+
 
       # Handle bidirectional gene sets
       if (is.data.frame(gs)) {
