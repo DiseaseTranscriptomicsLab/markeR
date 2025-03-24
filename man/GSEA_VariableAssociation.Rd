@@ -11,7 +11,6 @@ GSEA_VariableAssociation(
   stat = NULL,
   mode = c("simple", "medium", "extensive"),
   gene_set,
-  padj_limit = c(0, 0.1),
   nonsignif_color = "grey",
   signif_color = "red",
   saturation_value = NULL,

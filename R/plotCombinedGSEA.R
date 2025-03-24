@@ -62,18 +62,22 @@ plotCombinedGSEA <- function(GSEA_results, sig_threshold = 0.05, PointSize = 4, 
     ggplot2::geom_point(colour="black", size = PointSize) +
     ggplot2::geom_point(ggplot2::aes(colour = factor(pathway)) , size = PointSize-2.5) +
     ggplot2::geom_hline(yintercept = -log10(sig_threshold), linetype = "dashed", color = "black", size = .5)  +
+    ggplot2::geom_vline(xintercept = 0, linetype = "dashed", color = "black", size = .5)  +
     ggplot2::scale_color_manual(values = pathway_colors) +  # Color pathways distinctly (fill)
     ggplot2::scale_shape_manual(values = c(15:(15 -1 + length((unique(combined_data$contrast)))))) +  # Different shapes for significant and non-significant points
     ggplot2::labs(x = "Normalized Enrichment Score (NES)",
          y = "-log10(Adj. p-value)",
          color = "Pathway",
          shape = "Contrast") +
-    ggplot2::theme_minimal() +
+    ggplot2::theme_bw() +
     ggplot2::theme(
       legend.position = "right",
       plot.title = ggplot2::element_text(hjust = 0.5, face = "bold")
     ) +
-    ggplot2::ggtitle("Combined GSEA Results by Contrast")    # Title for the plot
+    ggplot2::ggtitle("Combined GSEA Results by Contrast") +   # Title for the plot
+    ggplot2::facet_grid(.~stat_used,
+                        labeller = ggplot2::labeller(stat_used = c("t" = "Enriched/Depleted", "B" = "Altered")),   scales = "free", switch = "y" ) +
+    theme(strip.background =element_rect(fill="white"))
 
   return(plot)
 }

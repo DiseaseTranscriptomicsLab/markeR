@@ -43,7 +43,7 @@
 #' print(results$plot)
 #'
 #' @export
-GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("simple","medium","extensive"), gene_set, padj_limit = c(0, 0.1), nonsignif_color = "grey", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, widthlabels=18, labsize=10, titlesize=14, pointSize=5) {
+GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("simple","medium","extensive"), gene_set,nonsignif_color = "grey", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, widthlabels=18, labsize=10, titlesize=14, pointSize=5) {
   mode <- match.arg(mode)
   metadata <- metadata[, cols %in% colnames(metadata), drop = FALSE]
 

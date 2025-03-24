@@ -1079,7 +1079,7 @@ plots into a grid layout for comparative visualization.
 ``` r
 plotNESlollipop(GSEA_results=GSEAresults, 
                 saturation_value=NULL, 
-                nonsignif_color = "white", 
+                nonsignif_color = "#F4F4F4", 
                 signif_color = "red",
                 sig_threshold = 0.05, 
                 grid = FALSE, 
@@ -1102,13 +1102,14 @@ contrasts. Each point represents a pathway, with:
 -   Dashed line: Significance threshold
 
 This function helps compare enrichment results when the number of
-contrasts and the number of pathways is high.
+contrasts and the number of pathways is high. For this example, might
+not be too representative.
 
 ``` r
-plotCombinedGSEA(GSEAresults, sig_threshold = 0.05, PointSize=9, widthlegend = 26 )
+plotCombinedGSEA(GSEAresults, sig_threshold = 0.05, PointSize=6, widthlegend = 26 )
 ```
 
-<img src="man/figures/README-GSEA_volcano-1.png" width="60%" />
+<img src="man/figures/README-GSEA_volcano-1.png" width="100%" />
 
 #### GSEA Association with Chosen Variables
 

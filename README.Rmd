@@ -816,7 +816,7 @@ The `plotNESlollipop()` function creates lollipop plots for visualizing Gene Set
 ```{r GSEA_lollypop, fig.width=5, fig.height=4, out.width="60%", warning=FALSE, message=FALSE}
 plotNESlollipop(GSEA_results=GSEAresults, 
                 saturation_value=NULL, 
-                nonsignif_color = "white", 
+                nonsignif_color = "#F4F4F4", 
                 signif_color = "red",
                 sig_threshold = 0.05, 
                 grid = FALSE, 
@@ -833,10 +833,10 @@ The `plotCombinedGSEA()` function generates a scatter plot to visualize the resu
 -   Shape: Different contrasts
 -   Dashed line: Significance threshold
 
-This function helps compare enrichment results when the number of contrasts and the number of pathways is high.
+This function helps compare enrichment results when the number of contrasts and the number of pathways is high. For this example, might not be too representative.
 
-```{r GSEA_volcano, fig.width=6, fig.height=4, out.width="60%", warning=FALSE, message=FALSE}
-plotCombinedGSEA(GSEAresults, sig_threshold = 0.05, PointSize=9, widthlegend = 26 )
+```{r GSEA_volcano, fig.width=8, fig.height=3, out.width="100%", warning=FALSE, message=FALSE}
+plotCombinedGSEA(GSEAresults, sig_threshold = 0.05, PointSize=6, widthlegend = 26 )
 ```
 
 #### GSEA Association with Chosen Variables
