@@ -44,6 +44,7 @@ knitr::opts_chunk$set(
     -   [Score association with Chosen Variables](#score-association-with-chosen-variables)
 -   [Enrichment-Based Methods](#enrichment-based-methods)
     -   [Differentially Expressed Genes](#differentially-expressed-genes)
+        -   [Note on Continuous Variables](#note-on-continuous-variables)
     -   [Gene Set Enrichment Analyses](#gene-set-enrichment-analyses)
     -   [GSEA Association with Chosen Variables](#gsea-association-with-chosen-variables)
 
@@ -92,7 +93,7 @@ Future updates will expand the package with additional functions to:
 
 ## Example
 
-This example demonstrates the calculation of a log2-median-centered score using mock RNA-seq expression data. The dataset is derived from the Marthandan et al. (2016) study (GSE63577) and includes fibroblast samples under replicative senescent and proliferative conditions. (see `?counts_example` and `?metadata_example` for more details).This example showcases how to compute gene expression scores by applying the log2-median-centered transformation.
+This example demonstrates the calculation of a log2-median-centered score using mock RNA-seq expression data. The dataset already pre-processed (filtered, normalised using `edgeR`) and is derived from the Marthandan et al. (2016) study (GSE63577) and includes fibroblast samples under replicative senescent and proliferative conditions. (see `?counts_example` and `?metadata_example` for more details).This example showcases how to compute gene expression scores by applying the log2-median-centered transformation.
 
 We are using as an example a very simple senescence gene signature, composed of the genes usually associated with senescence.
 
@@ -717,6 +718,48 @@ plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignat
 
 
 
+#####  Note on Continuous Variables
+
+If the user wants to analyze continuous variables (e.g., time points or dosage), they should use the `lmexpression` argument, instead of the `variables` argument. By using the `variables`argument:
+
+-   It creates a **no-intercept model**, where each coefficient represents the mean expression at each unique time point.
+-   This structure is intended for categorical variables and requires contrasts, making it unsuitable for continuous variables.
+
+```{r example_continuousDEG_1}
+# First example, using the variables argument.
+# NOT suitable for continuous variables
+DEGs_continuous <- calculateDE(data = counts_example,
+                               metadata = metadata_example_illustration,
+                               variables = "days")
+DEGs_continuous$days[1:3,]
+```
+
+By using the `lmexpression`, the user can treat continuous variables as such, and get meaningful gene expression changes with their variables of interest. By using the `lmexpression`argument: 
+-   It includes automatically an `intercept`, representing the baseline expression (i.e., the expected expression when days = 0).
+-   The `days` coefficient reflects how much expression changes per unit increase in days.
+
+```{r example_continuousDEG_2}
+DEGs_continuous2 <- calculateDE(data = counts_example,
+                                metadata = metadata_example_illustration,
+                                lmexpression = "~days")
+DEGs_continuous2$`(Intercept)`[1:3,]
+DEGs_continuous2$days[1:3,]
+```
+
+This usage of the `lmexpression`parameter also allows the user to combine categorical variables with numeric variables:
+
+-   `Intercept`: Baseline expression when days = 0 and Condition = Control.
+-   `days`: Change in expression per unit increase in days.
+-   `Senescent: Difference in expression between Senescent and Control conditions.
+
+```{r example_continuousDEG_3}
+DEGs_continuous3 <- calculateDE(data = counts_example,
+                                metadata = metadata_example_illustration,
+                                lmexpression = "~days + Condition")
+DEGs_continuous3$`(Intercept)`[1:3,]
+DEGs_continuous3$days[1:3,]
+DEGs_continuous3$Senescent[1:3,]
+```
 
 #### Gene Set Enrichment Analyses
 

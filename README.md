@@ -44,6 +44,8 @@ for transcriptomics research (bulk RNA-seq).
 -   [Enrichment-Based Methods](#enrichment-based-methods)
     -   [Differentially Expressed
         Genes](#differentially-expressed-genes)
+        -   [Note on Continuous
+            Variables](#note-on-continuous-variables)
     -   [Gene Set Enrichment Analyses](#gene-set-enrichment-analyses)
     -   [GSEA Association with Chosen
         Variables](#gsea-association-with-chosen-variables)
@@ -126,7 +128,8 @@ Future updates will expand the package with additional functions to:
 ## Example
 
 This example demonstrates the calculation of a log2-median-centered
-score using mock RNA-seq expression data. The dataset is derived from
+score using mock RNA-seq expression data. The dataset already
+pre-processed (filtered, normalised using `edgeR`) and is derived from
 the Marthandan et al. (2016) study (GSE63577) and includes fibroblast
 samples under replicative senescent and proliferative conditions. (see
 `?counts_example` and `?metadata_example` for more details).This example
@@ -904,6 +907,83 @@ plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignat
 ```
 
 <img src="man/figures/README-volcanos_DEGs3-1.png" width="90%" />
+
+##### Note on Continuous Variables
+
+If the user wants to analyze continuous variables (e.g., time points or
+dosage), they should use the `lmexpression` argument, instead of the
+`variables` argument. By using the `variables`argument:
+
+-   It creates a **no-intercept model**, where each coefficient
+    represents the mean expression at each unique time point.
+-   This structure is intended for categorical variables and requires
+    contrasts, making it unsuitable for continuous variables.
+
+``` r
+# First example, using the variables argument.
+# NOT suitable for continuous variables
+DEGs_continuous <- calculateDE(data = counts_example,
+                               metadata = metadata_example_illustration,
+                               variables = "days")
+DEGs_continuous$days[1:3,]
+#>            logFC  AveExpr        t      P.Value    adj.P.Val        B
+#> FN1    1.0251594 13.21879 12.06817 1.182743e-15 1.802499e-14 25.49668
+#> EEF1A1 0.9953702 12.85091 12.02784 1.326991e-15 1.802499e-14 25.38357
+#> GAPDH  0.9711606 12.53188 12.03413 1.303370e-15 1.802499e-14 25.40122
+```
+
+By using the `lmexpression`, the user can treat continuous variables as
+such, and get meaningful gene expression changes with their variables of
+interest. By using the `lmexpression`argument: - It includes
+automatically an `intercept`, representing the baseline expression
+(i.e., the expected expression when days = 0). - The `days` coefficient
+reflects how much expression changes per unit increase in days.
+
+``` r
+DEGs_continuous2 <- calculateDE(data = counts_example,
+                                metadata = metadata_example_illustration,
+                                lmexpression = "~days")
+DEGs_continuous2$`(Intercept)`[1:3,]
+#>           logFC  AveExpr         t      P.Value    adj.P.Val         B
+#> FN1    13.19342 13.21879  76.83545 9.957323e-45 3.444421e-44  92.16135
+#> EEF1A1 12.88033 12.85091 169.44074 2.735660e-58 1.885454e-56 120.69416
+#> GAPDH  12.53905 12.53188 103.11616 9.157787e-50 6.880877e-49 103.27738
+DEGs_continuous2$days[1:3,]
+#>                logFC  AveExpr         t   P.Value adj.P.Val         B
+#> RNA45SN2 -0.07628608 7.712585 -1.626674 0.1117361 0.9997685 -6.018805
+#> RNA18SN2  0.06743439 9.577467  1.554171 0.1280974 0.9997685 -6.129426
+#> RNA18SN3  0.06743439 9.577467  1.554171 0.1280974 0.9997685 -6.129426
+```
+
+This usage of the `lmexpression`parameter also allows the user to
+combine categorical variables with numeric variables:
+
+-   `Intercept`: Baseline expression when days = 0 and Condition =
+    Control.
+-   `days`: Change in expression per unit increase in days.
+-   \`Senescent: Difference in expression between Senescent and Control
+    conditions.
+
+``` r
+DEGs_continuous3 <- calculateDE(data = counts_example,
+                                metadata = metadata_example_illustration,
+                                lmexpression = "~days + Condition")
+DEGs_continuous3$`(Intercept)`[1:3,]
+#>           logFC  AveExpr         t      P.Value    adj.P.Val         B
+#> FN1    13.23994 13.21879  74.04645 1.265799e-43 3.210740e-43  89.73456
+#> EEF1A1 12.94192 12.85091 179.29631 1.402180e-58 9.033979e-57 121.69861
+#> GAPDH  12.71139 12.53188 147.86006 2.586838e-55 5.583501e-54 115.21324
+DEGs_continuous3$days[1:3,]
+#>                logFC  AveExpr         t    P.Value adj.P.Val         B
+#> RNA45SN2 -0.08056063 7.712585 -1.689209 0.09914647 0.9853746 -6.052523
+#> RNA18SN2  0.06598991 9.577467  1.490666 0.14407989 0.9853746 -6.355482
+#> RNA18SN3  0.06598991 9.577467  1.490666 0.14407989 0.9853746 -6.355482
+DEGs_continuous3$Senescent[1:3,]
+#>            logFC  AveExpr         t      P.Value    adj.P.Val        B
+#> CCND2   3.863054 4.406721 12.344742 4.643461e-15 4.865503e-12 24.20437
+#> MKI67  -3.655159 6.605339 -9.296026 1.907736e-11 5.010329e-10 16.02834
+#> PTCHD4  3.453362 3.556007 10.774059 2.907380e-13 3.864144e-11 20.14942
+```
 
 #### Gene Set Enrichment Analyses
 
