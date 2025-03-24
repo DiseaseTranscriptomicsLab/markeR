@@ -2,9 +2,9 @@
 % Please edit documentation in R/GSEA_VariableAssociation.R
 \name{generate_all_contrasts}
 \alias{generate_all_contrasts}
-\title{Generate All Possible Contrasts Between Groups}
+\title{Generate All Possible Unique Contrasts Between Groups}
 \usage{
-generate_all_contrasts(levels, mode = "extensive")
+generate_all_contrasts(levels, mode = "simple")
 }
 \arguments{
 \item{levels}{A character vector of unique group levels.}
@@ -13,7 +13,7 @@ generate_all_contrasts(levels, mode = "extensive")
 Options are \code{"simple"} (pairwise only), \code{"medium"} (pairwise + vs. mean of others), or \code{"extensive"} (all possible balanced groupwise contrasts). Default is \code{"extensive"}.}
 }
 \value{
-A character vector of contrast expressions (without names).
+A character vector of unique contrast expressions.
 }
 \description{
 This function creates statistical contrasts between levels of a categorical variable.

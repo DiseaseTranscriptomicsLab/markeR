@@ -17,15 +17,15 @@
 #'   - If using **bidirectional** gene sets, provide a list where each element is a data frame:
 #'    - The **first column** should contain gene names.
 #'    - The **second column** should indicate the expected direction of enrichment (`1` for upregulated, `-1` for downregulated).
-#' @param padj_limit A numeric vector of length 2 specifying the color scale limits for adjusted p-values in the plot. Default: `c(0, 0.1)`.
-#' @param low_color The color representing low adjusted p-values in the plot. Default: `"blue"`.
-#' @param mid_color The color representing the chosen value for `sig_threshold`. Default: `"white"`.
-#' @param high_color The color representing high adjusted p-values in the plot. Default: `"red"`.
+#' @param signif_color A string specifying the color for the low end of the adjusted p-value gradient until the value chosen for significance (\code{sig_threshold}). Default is `"blue"`.
+#' @param nonsignif_color A string specifying the color for the middle of the adjusted p-value gradient. Default is `"white"`. Lower limit correspond to the value of \code{sig_threshold}.
 #' @param sig_threshold A numeric value specifying the threshold for significance visualization in the plot. Default: `0.05`.
+#' @param saturation_value A numeric value specifying the lower limit of the adjusted p-value gradient, below which the color will correspond to \code{signif_color}. Default is the results' minimum, unless that
+#' value is above the sig_threshold; in that case, it is 0.001.
 #' @param widthlabels An integer controlling the maximum width of contrast labels before text wrapping. Default: `18`.
 #' @param labsize An integer controlling the axis text size in the plot. Default: `10`.
 #' @param titlesize An integer specifying the plot title size. Default: `14`.
-#' @param pointSize Numeric. The size of points in the volcano plots (default is 2).
+#' @param pointSize Numeric. The size of points in the lollipop plot (default is 5).
 #'
 #' @return A list with two elements:
 #'   - `data`: A data frame containing the GSEA results, including normalized enrichment scores (NES), adjusted p-values, and contrasts.
@@ -43,7 +43,7 @@
 #' print(results$plot)
 #'
 #' @export
-GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("simple","medium","extensive"), gene_set, padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", sig_threshold = 0.05, widthlabels=18, labsize=10, titlesize=14, pointSize=5) {
+GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("simple","medium","extensive"), gene_set, padj_limit = c(0, 0.1), nonsignif_color = "grey", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, widthlabels=18, labsize=10, titlesize=14, pointSize=5) {
   mode <- match.arg(mode)
   metadata <- metadata[, cols %in% colnames(metadata), drop = FALSE]
 
@@ -118,7 +118,20 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
 #       axis.text =  ggplot2::element_text(size=labsize)
 #     )
 
-  plot <- ggplot2::ggplot(combined_results, ggplot2::aes(x = NES, y = Contrast, fill = padj)) +
+
+  if(is.null(saturation_value)){
+    if (min(combined_results$padj)>sig_threshold){
+      limit_pval <- 0.001
+    } else{
+      limit_pval <- min(combined_results$padj)
+    }
+
+  } else {
+    limit_pval <- saturation_value
+  }
+
+
+  plot <- ggplot2::ggplot(combined_results, ggplot2::aes(x = NES, y = Contrast, fill = -log10(padj))) +
     ggplot2::geom_segment(ggplot2::aes(
       yend = Contrast,
       xend = 0,
@@ -129,16 +142,22 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
       stroke = 1.2,
       color = ifelse(stat_used == "B" & NES < 0, "grey", "black")
     ), shape = 21, size = pointSize) +
-    ggplot2::scale_fill_gradient2(low = low_color, mid = mid_color, high = high_color, midpoint = sig_threshold, limits = padj_limit, na.value = high_color) +
-    ggplot2::scale_linetype_identity() +
+    #ggplot2::scale_fill_gradient2(low = signif_color, mid = nonsignif_color, high = nonsignif_color, midpoint = sig_threshold, limits = padj_limit, na.value = high_color) +
+    ggplot2::scale_fill_gradient2(low = nonsignif_color,
+                                  mid = nonsignif_color,
+                                  high = signif_color,
+                                  midpoint = -log10(sig_threshold),
+                                  limits=c(0,-log10(limit_pval)),
+                                  na.value = signif_color)+
+  ggplot2::scale_linetype_identity() +
     ggplot2::scale_color_identity() +
     ggplot2::labs(
       title = unique(combined_results$pathway),
       subtitle = ifelse(any(combined_results$stat_used == "B"), "Altered Contrasts", "Enriched/Depleted Contrasts"),
       x = "Normalized Enrichment Score (NES)",
       y = "Contrast",
-      color = "Adj. p-value",
-      fill = "Adj. p-value"
+      color = "-log10(Adj. p-value)",
+      fill = "-log10(Adj. p-value)"
     ) +
     ggplot2::theme_minimal() +
     ggplot2::theme(

@@ -12,13 +12,12 @@
 #'   \item{NES}{A numeric vector of Normalized Enrichment Scores for the pathways.}
 #'   \item{padj}{A numeric vector of adjusted p-values for the pathways.}
 #' }
-#' @param padj_limit A numeric vector of length 2 that defines the limits for the adjusted p-value (`padj`) color scale.
-#' The first value is the minimum limit, and the second value is the maximum limit. Default is `c(0, 0.1)`.
-#' If a pathway’s `padj` exceeds the maximum value in this range, it will be assigned the `high_color`.
-#' @param low_color A string specifying the color for the low end of the adjusted p-value gradient. Default is `"blue"`.
-#' @param mid_color A string specifying the color for the middle of the adjusted p-value gradient. Default is `"white"`. Will correspond to the value of \code{sig_threshold}.
-#' @param high_color A string specifying the color for the high end of the adjusted p-value gradient. Default is `"red"`.
+#' @param signif_color A string specifying the color for the low end of the adjusted p-value gradient until the value chosen for significance (\code{sig_threshold}). Default is `"red"`.
+#' @param nonsignif_color A string specifying the color for the middle of the adjusted p-value gradient. Default is `"white"`. Lower limit correspond to the value of \code{sig_threshold}.
 #' @param sig_threshold A numeric value that sets the midpoint for the color scale. Typically used for the significance threshold. Default is `0.05`.
+#' @param saturation_value A numeric value specifying the lower limit of the adjusted p-value gradient, below which the color will correspond to \code{signif_color}. Default is the results' minimum, unless that
+#' value is above the sig_threshold; in that case, it is 0.001.
+#' @param pointSize Numeric. The size of points in the lollipop plot (default is 5).
 #' @param grid A logical value indicating whether to arrange individual plots into a grid layout. If `TRUE`, the function combines all plots into a grid. Default is `FALSE`.
 #' @param nrow A numeric value specifying the number of rows to arrange the plots into if `grid = TRUE`. If `NULL`, the function calculates this automatically. Default is `NULL`.
 #' @param ncol A numeric value specifying the number of columns to arrange the plots into if `grid = TRUE`. If `NULL`, the function calculates this automatically. Default is `NULL`.
@@ -65,7 +64,9 @@
 #' @importFrom ggpubr annotate_figure ggarrange
 #' @import grid
 #' @export
-plotNESlollipop <- function(GSEA_results, padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", sig_threshold = 0.05, grid = FALSE, nrow = NULL, ncol = NULL, widthlabels=18, title=NULL, titlesize=12) {
+plotNESlollipop <- function(GSEA_results,
+                            signif_color = "red", nonsignif_color = "white", sig_threshold = 0.05, saturation_value=NULL, pointSize=5,
+                            grid = FALSE, nrow = NULL, ncol = NULL, widthlabels=18, title=NULL, titlesize=12) {
 
 
   plot_list <- list()
@@ -73,24 +74,87 @@ plotNESlollipop <- function(GSEA_results, padj_limit = c(0, 0.1), low_color = "b
   for (contrast in names(GSEA_results)) {
     res <- GSEA_results[[contrast]]
 
+    if(is.null(saturation_value)){
+      if (min(res$padj)>sig_threshold){
+        limit_pval <- 0.001
+      } else{
+        limit_pval <- min(res$padj)
+      }
+
+    } else {
+      limit_pval <- saturation_value
+    }
 
     # Ensure contrast ordering
     res$pathway <- sapply(res$pathway, function(x) wrap_title(x, widthlabels))
     res$pathway <- factor(res$pathway, levels = res$pathway[order(res$NES)])
 
 
-    plot <- ggplot2::ggplot(res, ggplot2::aes(x = NES, y = pathway,fill = padj)) +
-      ggplot2::geom_segment(ggplot2::aes(yend = pathway, xend = 0), size = .5) +
-      ggplot2::geom_point( shape = 21, stroke = 1.2, color="black", size=4) +
-      ggplot2::scale_fill_gradient2(low = low_color, mid = mid_color, high = high_color, midpoint = sig_threshold, limits = padj_limit, na.value=high_color) +
-      ggplot2::labs(title = contrast, x = "Normalized Enrichment Score (NES)", y = "Gene Set", color = "Adj. p-value", fill = "Adj. p-value") +
-      ggplot2::theme_minimal() +
+    # plot <- ggplot2::ggplot(res, ggplot2::aes(x = NES, y = pathway,fill = padj)) +
+    #   ggplot2::geom_segment(ggplot2::aes(yend = pathway, xend = 0), size = .5) +
+    #   ggplot2::geom_point( shape = 21, stroke = 1.2, color="black", size=4) +
+    #   ggplot2::scale_fill_gradient2(low = low_color, mid = mid_color, high = high_color, midpoint = sig_threshold, limits = padj_limit, na.value=high_color) +
+    #   ggplot2::labs(title = contrast, x = "Normalized Enrichment Score (NES)", y = "Gene Set", color = "Adj. p-value", fill = "Adj. p-value") +
+    #   ggplot2::theme_minimal() +
+    #   ggplot2::theme(
+    #     plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"),
+    #     legend.position = "right"
+    #   )
+
+
+    plot <- ggplot2::ggplot(res, ggplot2::aes(x = NES, y = pathway, fill = -log10(padj))) +
+
+      # Add a condition for dashed lines and points for B statistic and negative NES
+      ggplot2::geom_segment(ggplot2::aes(yend = pathway,
+                                         xend = 0,
+                                         linetype = ifelse(stat_used == "B" & NES < 0, "dashed", "solid")),
+                            size = .5,
+                            color = ifelse(res$stat_used == "B" & res$NES < 0, "darkgrey", "black")) + # Fixed color to grey/black
+      ggplot2::geom_point(
+        shape = 21,
+        stroke = 1.2,
+        size = 4,
+        ggplot2::aes(color = ifelse(stat_used == "B" & NES < 0, "darkgrey", "black")) # Points color for B and negative NES
+      ) +
+
+      ggplot2::scale_fill_gradient2(low = nonsignif_color,
+                                      mid = nonsignif_color,
+                                      high = signif_color,
+                                      midpoint = -log10(sig_threshold),
+                                      limits=c(0,-log10(limit_pval)),
+                                      na.value = signif_color) +
+
+      # # Use scale to apply color gradient for fill
+      # ggplot2::scale_fill_gradient2(low = signif_color,
+      #                               mid = nonsignif_color,
+      #                               high = nonsignif_color,
+      #                               midpoint = sig_threshold,
+      #                               limits = padj_limit,
+      #                               na.value = nonsignif_color) +
+
+      # Plot title and axis labels
+      ggplot2::labs(title = contrast,
+                    x = "Normalized Enrichment Score (NES)",
+                    y = "Gene Set",
+                    fill = "-log10(Adj. p-value)") +
+
+      # Facet vertically based on the statistic used (T or B)
+      ggplot2::facet_grid(stat_used ~.,
+                          labeller = ggplot2::labeller(stat_used = c("t" = "Enriched/Depleted", "B" = "Altered")),   scales = "free", switch = "y", space='free') + # Faceting on the y-axis
+
+      # Minimal theme and legend position
+      ggplot2::theme_bw() +
       ggplot2::theme(
         plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"),
         legend.position = "right"
-      )
+      ) +
+      ggplot2::scale_linetype_identity() + # to remove aes for linetype and color
+      ggplot2::scale_color_identity()+
+      theme(strip.background =element_rect(fill="white")) # change background facet wrap labels
+
 
     plot_list[[contrast]] <- plot
+
   }
 
   # Arrange plots in grid if requested

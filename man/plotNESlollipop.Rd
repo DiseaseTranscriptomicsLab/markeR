@@ -6,11 +6,11 @@
 \usage{
 plotNESlollipop(
   GSEA_results,
-  padj_limit = c(0, 0.1),
-  low_color = "blue",
-  mid_color = "white",
-  high_color = "red",
+  signif_color = "red",
+  nonsignif_color = "white",
   sig_threshold = 0.05,
+  saturation_value = NULL,
+  pointSize = 5,
   grid = FALSE,
   nrow = NULL,
   ncol = NULL,
@@ -28,17 +28,16 @@ Each data frame must include the following columns:
 \item{padj}{A numeric vector of adjusted p-values for the pathways.}
 }}
 
-\item{padj_limit}{A numeric vector of length 2 that defines the limits for the adjusted p-value (\code{padj}) color scale.
-The first value is the minimum limit, and the second value is the maximum limit. Default is \code{c(0, 0.1)}.
-If a pathway’s \code{padj} exceeds the maximum value in this range, it will be assigned the \code{high_color}.}
+\item{signif_color}{A string specifying the color for the low end of the adjusted p-value gradient until the value chosen for significance (\code{sig_threshold}). Default is \code{"red"}.}
 
-\item{low_color}{A string specifying the color for the low end of the adjusted p-value gradient. Default is \code{"blue"}.}
-
-\item{mid_color}{A string specifying the color for the middle of the adjusted p-value gradient. Default is \code{"white"}. Will correspond to the value of \code{sig_threshold}.}
-
-\item{high_color}{A string specifying the color for the high end of the adjusted p-value gradient. Default is \code{"red"}.}
+\item{nonsignif_color}{A string specifying the color for the middle of the adjusted p-value gradient. Default is \code{"white"}. Lower limit correspond to the value of \code{sig_threshold}.}
 
 \item{sig_threshold}{A numeric value that sets the midpoint for the color scale. Typically used for the significance threshold. Default is \code{0.05}.}
+
+\item{saturation_value}{A numeric value specifying the lower limit of the adjusted p-value gradient, below which the color will correspond to \code{signif_color}. Default is the results' minimum, unless that
+value is above the sig_threshold; in that case, it is 0.001.}
+
+\item{pointSize}{Numeric. The size of points in the lollipop plot (default is 5).}
 
 \item{grid}{A logical value indicating whether to arrange individual plots into a grid layout. If \code{TRUE}, the function combines all plots into a grid. Default is \code{FALSE}.}
 

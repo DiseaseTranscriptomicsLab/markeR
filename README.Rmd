@@ -715,6 +715,9 @@ plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignat
             labsize = 10, widthlabs = 24, invert = TRUE)
 ```
 
+
+
+
 #### Gene Set Enrichment Analyses
 
 To perform GSEA, use the `runGSEA()` function. This function takes a named list of differential expression results (one per contrast) and a set of gene signatures to compute enrichment scores.
@@ -755,14 +758,13 @@ plotGSEAenrichment(GSEA_results=GSEAresults,
                    widthTitle=40, grid = T, titlesize = 10, nrow=1, ncol=2) 
 ```
 
-The `plotNESlollipop()` function creates lollipop plots for visualizing Gene Set Enrichment Analysis (GSEA) results. Each plot displays pathways on the y-axis and Normalized Enrichment Scores (NES) on the x-axis, with color representing the adjusted p-value (padj; Note: if the padj exceeds the maximum of `padj_limit`, it will be assigned to the `high_color`). The function supports multiple contrasts and includes options for customizing the color gradient, significance threshold, and plot layout. It can also arrange individual plots into a grid layout for comparative visualization.
+The `plotNESlollipop()` function creates lollipop plots for visualizing Gene Set Enrichment Analysis (GSEA) results. Each plot displays pathways on the y-axis and Normalized Enrichment Scores (NES) on the x-axis, with color representing the adjusted p-value. The function supports multiple contrasts and includes options for customizing the color gradient, significance threshold, and plot layout. It can also arrange individual plots into a grid layout for comparative visualization.
 
-```{r GSEA_lollypop, fig.width=5, fig.height=3, out.width="60%", warning=FALSE, message=FALSE}
+```{r GSEA_lollypop, fig.width=5, fig.height=4, out.width="60%", warning=FALSE, message=FALSE}
 plotNESlollipop(GSEA_results=GSEAresults, 
-                padj_limit = c(0, 0.1), 
-                low_color = "blue", 
-                mid_color = "white", 
-                high_color = "red", 
+                saturation_value=NULL, 
+                nonsignif_color = "white", 
+                signif_color = "red",
                 sig_threshold = 0.05, 
                 grid = FALSE, 
                 nrow = NULL, ncol = NULL, 
@@ -819,7 +821,7 @@ GSEA_VariableAssociation(data=counts_example,
                          cols=c("Condition","person","days"), 
                          mode="simple", 
                          gene_set=list(Senescence  = SimpleSenescenceSignature), 
-                         padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                         saturation_value=NULL, nonsignif_color = "white", signif_color = "red",
                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
 
 GSEA_VariableAssociation(data=counts_example, 
@@ -827,7 +829,7 @@ GSEA_VariableAssociation(data=counts_example,
                          cols=c("Condition","person","days"), 
                          mode="simple", 
                          gene_set=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional), 
-                         padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                         saturation_value=NULL, nonsignif_color = "white", signif_color = "red",
                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
 ```
 
@@ -837,7 +839,7 @@ GSEA_VariableAssociation(data=counts_example,
                          cols=c("Condition","person","days"), 
                          mode="extensive", 
                          gene_set=list(Senescence  = SimpleSenescenceSignature), 
-                         padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                       saturation_value=NULL, nonsignif_color = "white", signif_color = "red",
                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
 
 GSEA_VariableAssociation(data=counts_example, 
@@ -845,6 +847,6 @@ GSEA_VariableAssociation(data=counts_example,
                          cols=c("Condition","person","days"), 
                          mode="extensive", 
                          gene_set=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional), 
-                         padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                         saturation_value=NULL, nonsignif_color = "white", signif_color = "red",
                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
 ```

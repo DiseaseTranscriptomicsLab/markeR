@@ -937,10 +937,10 @@ GSEAresults <- runGSEA(DEGList = DEGs,
 
 GSEAresults
 #> $`Senescent-Proliferative`
-#>                     pathway      pval      padj   log2err        ES      NES
-#>                      <char>     <num>     <num>     <num>     <num>    <num>
-#> 1: Senescence_Bidirectional 0.0155075 0.0155075 0.3807304 0.7068136 1.639562
-#> 2:               Senescence 0.1623794 0.1623794 0.1364904 0.5844505 1.326234
+#>                     pathway       pval       padj    log2err        ES      NES
+#>                      <char>      <num>      <num>      <num>     <num>    <num>
+#> 1: Senescence_Bidirectional 0.01838843 0.01838843 0.15267586 0.7068136 1.653726
+#> 2:               Senescence 0.14596611 0.14596611 0.04482895 0.5844505 1.338962
 #>     size                         leadingEdge stat_used
 #>    <int>                              <list>    <char>
 #> 1:     7 LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
@@ -971,19 +971,16 @@ plotGSEAenrichment(GSEA_results=GSEAresults,
 The `plotNESlollipop()` function creates lollipop plots for visualizing
 Gene Set Enrichment Analysis (GSEA) results. Each plot displays pathways
 on the y-axis and Normalized Enrichment Scores (NES) on the x-axis, with
-color representing the adjusted p-value (padj; Note: if the padj exceeds
-the maximum of `padj_limit`, it will be assigned to the `high_color`).
-The function supports multiple contrasts and includes options for
-customizing the color gradient, significance threshold, and plot layout.
-It can also arrange individual plots into a grid layout for comparative
-visualization.
+color representing the adjusted p-value. The function supports multiple
+contrasts and includes options for customizing the color gradient,
+significance threshold, and plot layout. It can also arrange individual
+plots into a grid layout for comparative visualization.
 
 ``` r
 plotNESlollipop(GSEA_results=GSEAresults, 
-                padj_limit = c(0, 0.1), 
-                low_color = "blue", 
-                mid_color = "white", 
-                high_color = "red", 
+                saturation_value=NULL, 
+                nonsignif_color = "white", 
+                signif_color = "red",
                 sig_threshold = 0.05, 
                 grid = FALSE, 
                 nrow = NULL, ncol = NULL, 
@@ -1086,7 +1083,7 @@ GSEA_VariableAssociation(data=counts_example,
                          cols=c("Condition","person","days"), 
                          mode="simple", 
                          gene_set=list(Senescence  = SimpleSenescenceSignature), 
-                         padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                         saturation_value=NULL, nonsignif_color = "white", signif_color = "red",
                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
 #> $plot
 ```
@@ -1097,12 +1094,12 @@ GSEA_VariableAssociation(data=counts_example,
     #> $data
     #>       pathway       pval      padj    log2err         ES        NES  size
     #>        <char>      <num>     <num>      <num>      <num>      <num> <int>
-    #> 1: Senescence 0.16237942 0.3247588 0.13649044  0.5844505  1.3262345     7
-    #> 2: Senescence 0.80392157 0.8566108 0.05973180  0.2197875  0.7317977     7
-    #> 3: Senescence 0.11674009 0.3247588 0.19381330  0.4198163  1.4013459     7
-    #> 4: Senescence 0.85661080 0.8566108 0.04949049 -0.2113031 -0.6824340     7
-    #> 5: Senescence 0.05299853 0.3179912 0.32177592 -0.4779552 -1.5321240     7
-    #> 6: Senescence 0.53442029 0.8016304 0.07061962 -0.2849369 -0.9153476     7
+    #> 1: Senescence 0.14596611 0.2919322 0.04482895  0.5844505  1.3389622     7
+    #> 2: Senescence 0.81534874 0.8596054 0.01825162  0.2197875  0.7218660     7
+    #> 3: Senescence 0.12206168 0.2919322 0.05892753  0.4198163  1.3797736     7
+    #> 4: Senescence 0.85960544 0.8596054 0.01599026 -0.2113031 -0.6810595     7
+    #> 5: Senescence 0.06299541 0.2919322 0.11671125 -0.4779552 -1.5523084     7
+    #> 6: Senescence 0.54673591 0.8201039 0.02231638 -0.2849369 -0.9161661     7
     #>                                leadingEdge stat_used                  Contrast
     #>                                     <list>    <char>                    <char>
     #> 1:                             LMNB1,MKI67         B Proliferative - Senescent
@@ -1117,7 +1114,7 @@ GSEA_VariableAssociation(data=counts_example,
                              cols=c("Condition","person","days"), 
                              mode="simple", 
                              gene_set=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional), 
-                             padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                             saturation_value=NULL, nonsignif_color = "white", signif_color = "red",
                              sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
     #> $plot
 
@@ -1127,20 +1124,20 @@ GSEA_VariableAssociation(data=counts_example,
     #> $data
     #>                     pathway        pval       padj    log2err         ES
     #>                      <char>       <num>      <num>      <num>      <num>
-    #> 1: Senescence_Bidirectional 0.014544104 0.04363231 0.38073040 -0.7068136
-    #> 2: Senescence_Bidirectional 0.089494163 0.17898833 0.20895503  0.6399995
-    #> 3: Senescence_Bidirectional 0.005117198 0.03070319 0.40701792  0.7274186
-    #> 4: Senescence_Bidirectional 0.955769231 0.95576923 0.04595381 -0.2471009
-    #> 5: Senescence_Bidirectional 0.202614379 0.30392157 0.25720647 -0.4165066
-    #> 6: Senescence_Bidirectional 0.331950207 0.39834025 0.10473282  0.4899121
-    #>          NES  size                         leadingEdge stat_used
-    #>        <num> <int>                              <list>    <char>
-    #> 1: -1.638028     7 LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
-    #> 2:  1.446472     7                    GLB1,TP53,CDKN1A         t
-    #> 3:  1.754902     7      LMNB1,CDKN1A,GLB1,CDKN2A,MKI67         t
-    #> 4: -0.569520     7                  CDKN2A,LMNB1,MKI67         t
-    #> 5: -1.244112     7 MKI67,LMNB1,CCL2,CDKN2A,TP53,CDKN1A         t
-    #> 6:  1.116446     7 GLB1,CDKN1A,CCL2,CDKN2A,MKI67,LMNB1         t
+    #> 1: Senescence_Bidirectional 0.023760331 0.07128099 0.13405093 -0.7068136
+    #> 2: Senescence_Bidirectional 0.077863457 0.15572691 0.06946518  0.6399995
+    #> 3: Senescence_Bidirectional 0.006124402 0.03674641 0.25663502  0.7274186
+    #> 4: Senescence_Bidirectional 0.949172812 0.94917281 0.01513268 -0.2471009
+    #> 5: Senescence_Bidirectional 0.173793103 0.26068966 0.08982029 -0.4165066
+    #> 6: Senescence_Bidirectional 0.321938468 0.38632616 0.03305031  0.4899121
+    #>           NES  size                         leadingEdge stat_used
+    #>         <num> <int>                              <list>    <char>
+    #> 1: -1.6491022     7 LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
+    #> 2:  1.4615936     7                    GLB1,TP53,CDKN1A         t
+    #> 3:  1.7675900     7      LMNB1,CDKN1A,GLB1,CDKN2A,MKI67         t
+    #> 4: -0.5727763     7                  CDKN2A,LMNB1,MKI67         t
+    #> 5: -1.2553035     7 MKI67,LMNB1,CCL2,CDKN2A,TP53,CDKN1A         t
+    #> 6:  1.1260283     7 GLB1,CDKN1A,CCL2,CDKN2A,MKI67,LMNB1         t
     #>                     Contrast
     #>                       <char>
     #> 1: Proliferative - Senescent
@@ -1156,7 +1153,7 @@ GSEA_VariableAssociation(data=counts_example,
                          cols=c("Condition","person","days"), 
                          mode="extensive", 
                          gene_set=list(Senescence  = SimpleSenescenceSignature), 
-                         padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                       saturation_value=NULL, nonsignif_color = "white", signif_color = "red",
                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
 #> $plot
 ```
@@ -1167,15 +1164,15 @@ GSEA_VariableAssociation(data=counts_example,
     #> $data
     #>       pathway       pval      padj    log2err         ES        NES  size
     #>        <char>      <num>     <num>      <num>      <num>      <num> <int>
-    #> 1: Senescence 0.16237942 0.3653537 0.13649044  0.5844505  1.3262345     7
-    #> 2: Senescence 0.80392157 0.8758170 0.05973180  0.2197875  0.7317977     7
-    #> 3: Senescence 0.11674009 0.3653537 0.19381330  0.4198163  1.4013459     7
-    #> 4: Senescence 0.85661080 0.8758170 0.04949049 -0.2113031 -0.6824340     7
-    #> 5: Senescence 0.13111111 0.3653537 0.18302394  0.4091501  1.3694309     7
-    #> 6: Senescence 0.72324723 0.8758170 0.05688642 -0.2423185 -0.7817258     7
-    #> 7: Senescence 0.87581699 0.8758170 0.05571042  0.1962844  0.6541223     7
-    #> 8: Senescence 0.05299853 0.3653537 0.32177592 -0.4779552 -1.5321240     7
-    #> 9: Senescence 0.53442029 0.8758170 0.07061962 -0.2849369 -0.9153476     7
+    #> 1: Senescence 0.14596611 0.3284238 0.04482895  0.5844505  1.3389622     7
+    #> 2: Senescence 0.81534874 0.9002970 0.01825162  0.2197875  0.7218660     7
+    #> 3: Senescence 0.12206168 0.3284238 0.05892753  0.4198163  1.3797736     7
+    #> 4: Senescence 0.85960544 0.9002970 0.01599026 -0.2113031 -0.6810595     7
+    #> 5: Senescence 0.13754081 0.3284238 0.05556785  0.4091501  1.3460917     7
+    #> 6: Senescence 0.72727273 0.9002970 0.01830571 -0.2423185 -0.7803526     7
+    #> 7: Senescence 0.90029699 0.9002970 0.01680350  0.1962844  0.6451577     7
+    #> 8: Senescence 0.06299541 0.3284238 0.11671125 -0.4779552 -1.5523084     7
+    #> 9: Senescence 0.54673591 0.9002970 0.02231638 -0.2849369 -0.9161661     7
     #>                                leadingEdge stat_used                   Contrast
     #>                                     <list>    <char>                     <char>
     #> 1:                             LMNB1,MKI67         B  Proliferative - Senescent
@@ -1193,7 +1190,7 @@ GSEA_VariableAssociation(data=counts_example,
                              cols=c("Condition","person","days"), 
                              mode="extensive", 
                              gene_set=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional), 
-                             padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                             saturation_value=NULL, nonsignif_color = "white", signif_color = "red",
                              sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
     #> $plot
 
@@ -1203,26 +1200,26 @@ GSEA_VariableAssociation(data=counts_example,
     #> $data
     #>                     pathway        pval       padj    log2err         ES
     #>                      <char>       <num>      <num>      <num>      <num>
-    #> 1: Senescence_Bidirectional 0.014544104 0.05277762 0.38073040 -0.7068136
-    #> 2: Senescence_Bidirectional 0.089494163 0.20136187 0.20895503  0.6399995
-    #> 3: Senescence_Bidirectional 0.005117198 0.04605478 0.40701792  0.7274186
-    #> 4: Senescence_Bidirectional 0.955769231 0.95576923 0.04595381 -0.2471009
-    #> 5: Senescence_Bidirectional 0.017592540 0.05277762 0.35248786  0.6955465
-    #> 6: Senescence_Bidirectional 0.222222222 0.33333333 0.12878871  0.5527943
-    #> 7: Senescence_Bidirectional 0.294000000 0.37344398 0.11012226  0.4842608
-    #> 8: Senescence_Bidirectional 0.202614379 0.33333333 0.25720647 -0.4165066
-    #> 9: Senescence_Bidirectional 0.331950207 0.37344398 0.10473282  0.4899121
-    #>          NES  size                           leadingEdge stat_used
-    #>        <num> <int>                                <list>    <char>
-    #> 1: -1.638028     7   LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
-    #> 2:  1.446472     7                      GLB1,TP53,CDKN1A         t
-    #> 3:  1.754902     7        LMNB1,CDKN1A,GLB1,CDKN2A,MKI67         t
-    #> 4: -0.569520     7                    CDKN2A,LMNB1,MKI67         t
-    #> 5:  1.644997     7 GLB1,CDKN1A,LMNB1,MKI67,TP53,CCL2,...         t
-    #> 6:  1.231053     7                      TP53,GLB1,CDKN1A         t
-    #> 7:  1.161220     7        CDKN2A,LMNB1,MKI67,CDKN1A,CCL2         t
-    #> 8: -1.244112     7   MKI67,LMNB1,CCL2,CDKN2A,TP53,CDKN1A         t
-    #> 9:  1.116446     7   GLB1,CDKN1A,CCL2,CDKN2A,MKI67,LMNB1         t
+    #> 1: Senescence_Bidirectional 0.023760331 0.07128099 0.13405093 -0.7068136
+    #> 2: Senescence_Bidirectional 0.077863457 0.17519278 0.06946518  0.6399995
+    #> 3: Senescence_Bidirectional 0.006124402 0.05511962 0.25663502  0.7274186
+    #> 4: Senescence_Bidirectional 0.949172812 0.94917281 0.01513268 -0.2471009
+    #> 5: Senescence_Bidirectional 0.018775817 0.07128099 0.14390962  0.6955465
+    #> 6: Senescence_Bidirectional 0.218617227 0.32792584 0.04038999  0.5527943
+    #> 7: Senescence_Bidirectional 0.280341218 0.36043871 0.03509657  0.4842608
+    #> 8: Senescence_Bidirectional 0.173793103 0.31282759 0.08982029 -0.4165066
+    #> 9: Senescence_Bidirectional 0.321938468 0.36218078 0.03305031  0.4899121
+    #>           NES  size                           leadingEdge stat_used
+    #>         <num> <int>                                <list>    <char>
+    #> 1: -1.6491022     7   LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
+    #> 2:  1.4615936     7                      GLB1,TP53,CDKN1A         t
+    #> 3:  1.7675900     7        LMNB1,CDKN1A,GLB1,CDKN2A,MKI67         t
+    #> 4: -0.5727763     7                    CDKN2A,LMNB1,MKI67         t
+    #> 5:  1.6475408     7 GLB1,CDKN1A,LMNB1,MKI67,TP53,CCL2,...         t
+    #> 6:  1.2409060     7                      TP53,GLB1,CDKN1A         t
+    #> 7:  1.1683551     7        CDKN2A,LMNB1,MKI67,CDKN1A,CCL2         t
+    #> 8: -1.2553035     7   MKI67,LMNB1,CCL2,CDKN2A,TP53,CDKN1A         t
+    #> 9:  1.1260283     7   GLB1,CDKN1A,CCL2,CDKN2A,MKI67,LMNB1         t
     #>                      Contrast
     #>                        <char>
     #> 1:  Proliferative - Senescent

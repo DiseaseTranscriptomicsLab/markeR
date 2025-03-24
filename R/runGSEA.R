@@ -64,35 +64,49 @@ runGSEA <- function(DEGList, gene_sets, stat = NULL) {
       # Create the ranking vector for GSEA
       ranks <- setNames(deg_df[[current_stat]], rownames(deg_df))
 
-      if (is.data.frame(gs)) {
-        # Bidirectional gene set: modify rankings based on expected direction
-        gs_genes <- as.character(gs[[1]])
-        directions <- as.numeric(gs[[2]])
+      if (current_stat=="t") {
 
-        # Ensure that all genes in gs_genes are present in ranks
-        matched_genes <- gs_genes[gs_genes %in% names(ranks)]
-        matched_directions <- directions[gs_genes %in% names(ranks)]
+        if(is.vector(gs)){
 
-        # Multiply ranks by direction
-        ranks_adjusted <- ranks
-        ranks_adjusted[matched_genes] <- ranks_adjusted[matched_genes] * matched_directions
+          ranks <- sort(ranks, decreasing = TRUE)
+          gs_genes <- as.character(gs)
 
-        # Sort after modifying ranks
-        ranks_sorted <- sort(ranks_adjusted, decreasing = TRUE)
+        } else if(is.data.frame(gs)){
+
+          # Bidirectional gene set: modify rankings based on expected direction
+          gs_genes <- as.character(gs[[1]])
+          directions <- as.numeric(gs[[2]])
+
+          # Ensure that all genes in gs_genes are present in ranks
+          matched_genes <- gs_genes[gs_genes %in% names(ranks)]
+          matched_directions <- directions[gs_genes %in% names(ranks)]
+
+          # Multiply ranks by direction
+          ranks_adjusted <- ranks
+          ranks_adjusted[matched_genes] <- ranks_adjusted[matched_genes] * matched_directions
+
+          # Sort after modifying ranks
+          ranks <- sort(ranks_adjusted, decreasing = TRUE)
+        }
+
 
         set.seed("20032025")
-        fgseaRes <- fgsea::fgsea(pathways = list(temp = matched_genes),
-                                 stats = ranks_sorted)
+        fgseaRes <- fgsea::fgsea(pathways = list(temp = gs_genes),
+                                 stats = ranks,nPermSimple = 10000)
 
-      } else if (is.vector(gs)) {
-        # Unidirectional gene set: use the ranking vector directly
-        gs_genes <- as.character(gs)
+      } else if (current_stat=="B") {
+
+        if(is.vector(gs)){
+          gs_genes <- as.character(gs)
+        } else if(is.data.frame(gs)){
+          gs_genes <- as.character(gs[[1]])
+        }
 
         # Sort ranks before running fgsea
         ranks_sorted <- sort(ranks, decreasing = TRUE)
         set.seed("20032025")
         fgseaRes <- fgsea::fgsea(pathways = list(temp = gs_genes),
-                                 stats = ranks_sorted)
+                                 stats = ranks_sorted,nPermSimple = 10000)
 
       } else {
         warning("Gene set '", set_name, "' is not in a recognized format. Skipping.")

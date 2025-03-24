@@ -574,7 +574,8 @@ plotVolcano(DEResultsList=degenes, genes=bidirectsigs, N=NULL, x="logFC",y="-log
 
 
 ```{r}
-GSEAresults <- runGSEA(degenes, bidirectsigs, stat = NULL)
+options(error=recover)
+GSEAresults <- runGSEA(degenes, bidirectsigs, stat = "B")
 GSEAresults
 ```
 
@@ -584,10 +585,10 @@ plotGSEAenrichment(GSEA_results=GSEAresults, DEGList=degenes, gene_sets=bidirect
 
 ```
 
-```{r fig.width=16, fig.height=4}
-plotNESlollipop(GSEA_results=GSEAresults, sig_threshold = 0.05,
-                         low_color = "blue", mid_color = "white", high_color = "red",
-                         grid = T, nrow = 1, ncol = NULL,   padj_limit=c(0,0.1), widthlabels=28, title=NULL)
+```{r fig.width=18, fig.height=4}
+options(error=recover)
+plotNESlollipop(GSEA_results=GSEAresults, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
+                         grid = T, nrow = 1, ncol = NULL, widthlabels=28, title=NULL)
  
 ```
  
@@ -627,7 +628,7 @@ df_test <- GSEA_VariableAssociation(data=corrcounts_merge,
                          cols=c("Condition","Is_Senescent","random_cat","random_numeric"), 
                          mode="extensive", 
                          gene_set=list(HernandezSegura=bidirectsigs$HernandezSegura), 
-                         padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                         padj_limit = c(0, 0.1), saturation_value=0.000000001, nonsignif_color = "white", signif_color = "red",
                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
 
 df_test$plot
@@ -681,7 +682,7 @@ df_test <- GSEA_VariableAssociation(data=corrcounts_merge,
                          cols=c("Condition" ), 
                          mode="medium", 
                          gene_set=list(HernandezSegura_UP=SenescenceSignatures$`[UP]_HernandezSegura` ), 
-                         padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                        saturation_value=0.000000001, nonsignif_color = "white", signif_color = "red",
                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
 
 df_test$plot
@@ -691,7 +692,7 @@ df_test <- GSEA_VariableAssociation(data=corrcounts_merge,
                          cols=c("Condition" ), 
                          mode="medium", 
                          gene_set=list( HernandezSegura_Bidirect=subset(bidirectsigs$HernandezSegura, enrichment==1)), 
-                         padj_limit = c(0, 0.1), low_color = "blue", mid_color = "white", high_color = "red", 
+                         saturation_value=0.000000001, nonsignif_color = "white", signif_color = "red",
                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
 
 df_test$plot

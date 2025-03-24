@@ -8,17 +8,18 @@ GSEA_VariableAssociation(
   data,
   metadata,
   cols,
-  stat = c("t", "B"),
+  stat = NULL,
   mode = c("simple", "medium", "extensive"),
   gene_set,
   padj_limit = c(0, 0.1),
-  low_color = "blue",
-  mid_color = "white",
-  high_color = "red",
+  nonsignif_color = "grey",
+  signif_color = "red",
+  saturation_value = NULL,
   sig_threshold = 0.05,
   widthlabels = 18,
   labsize = 10,
-  titlesize = 14
+  titlesize = 14,
+  pointSize = 5
 )
 }
 \arguments{
@@ -45,13 +46,12 @@ GSEA_VariableAssociation(
 \item The \strong{second column} should indicate the expected direction of enrichment (\code{1} for upregulated, \code{-1} for downregulated).
 }}
 
-\item{padj_limit}{A numeric vector of length 2 specifying the color scale limits for adjusted p-values in the plot. Default: \code{c(0, 0.1)}.}
+\item{nonsignif_color}{A string specifying the color for the middle of the adjusted p-value gradient. Default is \code{"white"}. Lower limit correspond to the value of \code{sig_threshold}.}
 
-\item{low_color}{The color representing low adjusted p-values in the plot. Default: \code{"blue"}.}
+\item{signif_color}{A string specifying the color for the low end of the adjusted p-value gradient until the value chosen for significance (\code{sig_threshold}). Default is \code{"blue"}.}
 
-\item{mid_color}{The color representing the chosen value for \code{sig_threshold}. Default: \code{"white"}.}
-
-\item{high_color}{The color representing high adjusted p-values in the plot. Default: \code{"red"}.}
+\item{saturation_value}{A numeric value specifying the lower limit of the adjusted p-value gradient, below which the color will correspond to \code{signif_color}. Default is the results' minimum, unless that
+value is above the sig_threshold; in that case, it is 0.001.}
 
 \item{sig_threshold}{A numeric value specifying the threshold for significance visualization in the plot. Default: \code{0.05}.}
 
@@ -60,6 +60,8 @@ GSEA_VariableAssociation(
 \item{labsize}{An integer controlling the axis text size in the plot. Default: \code{10}.}
 
 \item{titlesize}{An integer specifying the plot title size. Default: \code{14}.}
+
+\item{pointSize}{Numeric. The size of points in the lollipop plot (default is 5).}
 }
 \value{
 A list with two elements:
