@@ -1027,6 +1027,26 @@ GSEAresults
 #> 2:     7                         LMNB1,MKI67         B
 ```
 
+Depending on the statistic used, the interpretation of the plots
+changes: when using the B statistic (by default, when the direction is
+not specified), the interpretation of the plot differs from the T
+statistic. This is because the B statistic focuses on whether genes are
+altered or not altered, without considering whether they are enriched or
+depleted.
+
+1.  **B Statistic vs. T Statistic:**
+    -   The B statistic does not specify the direction (enriched or
+        depleted) of the gene set. It only indicates whether genes are
+        altered or not altered.
+    -   The t statistic orders genes based on their enrichment or
+        depletion.
+2.  **Indication on the graphs:**
+    -   When using the B statistic, the plot will include “Altered
+        Pathways” to reflect this focus on whether genes are altered.
+    -   For the t statistic, the plot will include “Enriched/Depleted
+        Pathways”, indicating that the plot focuses on the enrichment or
+        depletion status of genes.
+
 After running GSEA, you can visualize enrichment plots using
 `plotGSEAenrichment()`. This function generates enrichment plots for
 each gene signature and contrast, displaying also the **Normalized
@@ -1126,29 +1146,18 @@ analysis:
 Choosing the appropriate mode allows users to balance statistical power
 and interpretability depending on the study design.
 
-Depending on the statistic used, the interpretation of the plots
-changes: when using the B statistic (by default, when the direction is
-not specified), the interpretation of the plot differs from the T
-statistic. This is because the B statistic focuses on whether genes are
-altered or not altered, without considering whether they are enriched or
-depleted.
+Depending on the statistic used (B- or t-statistic):
 
-1.  **B Statistic vs. T Statistic:**
-    -   The B statistic does not specify the direction (enriched or
-        depleted) of the gene set. It only indicates whether genes are
-        altered or not altered.
-    -   The t statistic orders genes based on their enrichment or
-        depletion.
-2.  **Negative NES:**
+1.  **Negative NES:**
     -   t Statistic: A negative NES with the T statistic indicates that
         the gene set is depleted (i.e., the genes are under-expressed).
     -   B Statistic: A negative NES using the B statistic (with
         significant results) means that the genes are not altered,
         implying no significant change in their expression.
-3.  **Dashed Lines:**
+2.  **Dashed Lines:**
     -   The dashed lines in the plot represent B statistic results with
         negative NES, meaning gene sets putatively not altered.
-4.  **Subtitle Differences:**
+3.  **Subtitle Differences:**
     -   When using the B statistic, the subtitle of the plot will read
         “Altered Contrasts” to reflect this focus on whether genes are
         altered.
