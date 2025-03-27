@@ -22,6 +22,8 @@ FDR_Simulation(
 )
 }
 \arguments{
+\item{data}{A data frame or matrix of gene expression counts.}
+
 \item{metadata}{A data frame containing sample metadata.}
 
 \item{original_signatures}{A named list of gene signatures. Each element can be either a vector of gene names
@@ -48,8 +50,6 @@ FDR_Simulation(
 \item{xlab}{Character. Label for the x-axis (default: NULL).}
 
 \item{labsize}{Numeric. Font size for axis labels (default: 10).}
-
-\item{counts}{A data frame or matrix of gene expression counts.}
 }
 \value{
 This function prints a combined \code{ggplot} object containing the simulation plots for all gene signatures.

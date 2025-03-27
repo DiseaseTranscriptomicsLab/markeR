@@ -20,7 +20,7 @@ wrap_title <- function(title, width = 30) {
   while (nchar(title) > width) {
     # Find positions of capital letters and symbols near the wrap point
     capital_pos <- gregexpr("[A-Z]", title)[[1]]
-    symbol_pos <- gregexpr("(_|-|:)", title)[[1]]
+    symbol_pos <- gregexpr("(_|-|:|\\+|\\\\|/|\\*|\\.|,|;|\\?|!)", title)[[1]]
 
     # Check for symbol breaks within the last few characters (width - 5 to width)
     valid_symbol_breaks <- symbol_pos[symbol_pos >= (width - 5) & symbol_pos <= width]

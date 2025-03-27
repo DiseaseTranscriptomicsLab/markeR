@@ -12,6 +12,16 @@ SenescenceSignatures <- readRDS("~/VersionControl/senescence_benchmarking/Common
 ```
 
 ```{r}
+set.seed("123456")
+metadata_merge_corr <- metadata_merge
+metadata_merge_corr$random_cat <-  sample(c("A","B","C"), nrow(metadata_merge_corr), replace = T)
+metadata_merge_corr$random_numeric <- sample(0:100, nrow(metadata_merge_corr), replace = TRUE)
+metadata_merge_corr$Is_Senescent <- ifelse(metadata_merge_corr$Condition == "Senescent", "Senescent", "Non Senescent")
+
+```
+ 
+
+```{r}
 library(markeR)
 library(ggplot2)
 library(ggpubr)
@@ -130,7 +140,7 @@ cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the f
 PlotScores(ResultsList = df_ranking, ColorVariable = "CellType", GroupingVariable="Condition",  method ="ranking", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 6, nrow = 2, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend)
 
 ```
- 
+
 
 ```{r fig.width=12, fig.height=8}
 
@@ -295,12 +305,12 @@ PlotScores(ResultsList = df_ranking, ColorVariable = "CellType", GroupingVariabl
 
 
 ## Heatmap for Cohen's D
- 
+
 
 
 
 ```{r fig.width=15, fig.height=12}
- 
+
 PlotScores(data = corrcounts_merge, 
            metadata = metadata_merge,  
            gene_sets=bidirectsigs, 
@@ -325,137 +335,41 @@ PlotScores(data = corrcounts_merge,
 
 
 ```
- 
- 
-## ssGSEA alternative implementation
+
+
+## Correlation plots
+
+If the user is investigating if a certain variable can be described from the score, and not already knowing that variable. More exploratory...
+
+- Define what each variable is: Numeric (includes integer if unique > 5), Categorical Bin (integer/string if unique == 2, logical), Categorical Multi (integer if unique < 5, string if unique > 2)
+- Define functions to calculate metrics based on different data types: 
+   - Categorical Bin: t-test/wilcoxon
+   - Categorical Multi: ANOVA / Kruskal-Wallis + Tukey's test 
+   - Numeric : Pearson / Spearman / Kendall's Tau
+- Return a list:
+   - One entry per variable
+       - Method used
+       - Data frame
+           - Two columns: metric and p-value
+           - One line per subvariable (if Numeric and Categorical Bin, only one line; for Categorical Multi, one per combination of variables); named rows
+- Plot results
+    - If Numeric, scatter plot; metric on the top left corner
+    - If Categorical, density plot, colored by the unique values of the variable; metrics (if one, or combinations of variables) in top left corner
+    - Arrange in grid
 
 ```{r}
-
-  siglist <- SenescenceSignatures
-  mtx <- log2(corrcounts_merge)
-  mtx <- as.matrix(mtx)
-  
-df_aux_original <- GSVA::gsva(expr = mtx, gset.idx.list = siglist,
-                               method = "ssgsea", kcdf = "Gaussian", verbose = FALSE)
-
-df_aux_original <- as.data.frame(df_aux_original)
-
-df_aux_original$signature <- row.names(df_aux_original)
-
-df_aux_original <- melt(df_aux_original)
-colnames(df_aux_original) <- c("signature","sample","ssGSEA_original")
-df_aux_original
+metadata_corr <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge_corr, method = "ssGSEA", gene_sets = list(HernandezSegura_UP= SenescenceSignatures$`[UP]_HernandezSegura`))
+metadata_corr <- metadata_corr$HernandezSegura_UP
 ```
 
-```{r}
-
-  siglist <- SenescenceSignatures
-  mtx <- log2(corrcounts_merge)
-  mtx <- as.matrix(mtx)
-  
-df_aux_alt <- ssGSEA_alternative(mtx, siglist, alpha = 0.25, scale = T, norm = F, single = T)
-df_aux_alt <- as.data.frame(df_aux_alt)
-df_aux_alt$signature <- row.names(df_aux_alt)
-
-df_aux_alt <- melt(df_aux_alt)
-colnames(df_aux_alt) <- c("signature","sample","ssGSEA_alternative")
-df_aux_alt
+```{r fig.width=14, fig.height=3}
+options(error=recover)
+plot_stat_tests(metadata_corr, target_var="score", cols = c("Condition","Is_Senescent","random_cat","random_numeric"),
+                 discrete_colors = list(Is_Senescent=c("Senescent"="pink",
+                                                 "Non Senescent"="orange")), 
+                continuous_color = "#8C6D03", 
+                            color_palette = "Set2", nrow=1, sizeannot=3, legend.position="top")
 ```
-
-```{r}
-df_ssgsea_test <- merge(df_aux_alt,df_aux_original, by=c("sample","signature"))
-df_ssgsea_test
-
-
-ggplot(df_ssgsea_test, aes(x=ssGSEA_alternative, y=signature)) +
-  geom_point() 
-
-ggplot(df_ssgsea_test, aes(x=ssGSEA_original, y=signature)) +
-  geom_point() 
-
-ggplot(df_ssgsea_test, aes(x=ssGSEA_original, y=ssGSEA_alternative)) +
-  geom_point() 
-```
-
-```{r}
-#' Compute Independent Column-wise Ranks of Matrix Elements
-#'
-#' This function computes the rank of each element in every column of a numeric matrix independently. 
-#' For each column, the smallest element receives a rank of 1, the second smallest a rank of 2, and so on.
-#'
-#' @param x A numeric matrix.
-#' @param ties.method A character string specifying the method used for tie-breaking.
-#' Options include \code{"average"}, \code{"first"}, \code{"random"}, \code{"max"}, or \code{"min"}. 
-#' The default is \code{"average"}.
-#'
-#' @return A numeric matrix of the same dimensions as \code{x} where each column contains the ranks of the corresponding column's elements.
-#'
-#' @examples
-#' # Create a sample matrix
-#' m <- matrix(c(4, 2, 3, 1, 6, 5), nrow = 2, byrow = TRUE)
-#' colRanks(m)
-#'
-#' @export
-colRanking <- function(x, ties.method = "average") {
-  apply(x, 2, rank, ties.method = ties.method)
-}
-```
-
-
-
-```{r}
-#https://rpubs.com/pranali018/SSGSEA
-ssGSEA_alternative <-  function(X, gene_sets, alpha = 0.25, scale = T, norm = F, single = T) {
-    row_names = rownames(X)
-    num_genes = nrow(X)
-    gene_sets = lapply(gene_sets, function(genes) {which(row_names %in% genes)})
-
-    # Ranks for genes
-    R = colRanking(X, ties.method = 'average')
-
-    # Calculate enrichment score (es) for each sample (column)
-    es = apply(R, 2, function(R_col) {
-        gene_ranks = order(R_col, decreasing = TRUE)
-
-        # Calc es for each gene set
-        es_sample = sapply(gene_sets, function(gene_set_idx) {
-            # pos: match (within the gene set)
-            # neg: non-match (outside the gene set)
-            indicator_pos = gene_ranks %in% gene_set_idx
-            indicator_neg = !indicator_pos
-
-            rank_alpha  = (R_col[gene_ranks] * indicator_pos) ^ alpha
-
-            step_cdf_pos = cumsum(rank_alpha)    / sum(rank_alpha)
-            step_cdf_neg = cumsum(indicator_neg) / sum(indicator_neg)
-
-            step_cdf_diff = step_cdf_pos - step_cdf_neg
-
-            # Normalize by gene number
-            if (scale) step_cdf_diff = step_cdf_diff / num_genes
-
-            # Use ssGSEA or not
-            if (single) {
-                sum(step_cdf_diff)
-            } else {
-                step_cdf_diff[which.max(abs(step_cdf_diff))]
-            }
-        })
-        unlist(es_sample)
-    })
-
-    if (length(gene_sets) == 1) es = matrix(es, nrow = 1)
-
-    # Normalize by absolute diff between max and min
-    if (norm) es = es / diff(range(es))
-
-    # Prepare output
-    rownames(es) = names(gene_sets)
-    colnames(es) = colnames(X)
-    return(es)
-}
-```
-
 
 
 # Individual Genes
@@ -632,38 +546,155 @@ plotPCA(data=corrcounts_merge,
 ```
 
 
-
-
 # Enrichment-based
 
 ## GSEA
 
-```{r}
-data=corrcounts_merge
-metadata=metadata_merge
-gene_sets=bidirectsigs # bidirectional
-variables="Condition"
-contrasts
-
-# lmexpression: for more experienced users that wish to define directly the expression; centering and scaling can be done manually in the metadata...!
-# contrasts: for all users
-# coefs: for the experienced users, that don't use contrasts, the variable(s) from the linear model to be extracted and that will be used as contrasts; only works if contrasts is NULL
-```
 
 ```{r}
-calculateGSEA <- function(data, metadata, gene_sets, variables, lmexpression=NULL, contrasts=NULL, coefs=NULL){
-  
-  
-  # If bidirectional (t-statistic; difference between peaks)
-  
-  
-  # If unidirectional (t-statistic)
-  
-  
-  # if direction is not known (B statistic)
-  
-  
-}
+options(error=recover)
+degenes <- calculateDE(data=corrcounts_merge, 
+                       metadata=metadata_merge, 
+                       variables="Condition", 
+                       lmexpression = NULL, 
+                       modelmat = NULL, 
+                       contrasts = c("Senescent - Proliferative",
+                                     "Senescent - Quiescent",
+                                     "Proliferative - Quiescent")) 
+
+degenes
+```
+
+```{r fig.width=21, fig.height=6}
+options(error=recover)
+plotVolcano(DEResultsList=degenes, genes=bidirectsigs, N=NULL, x="logFC",y="-log10(adj.P.Val)", pointSize=2, color="pink", highlightcolor="darkblue", highlightcolor_upreg = "#038C65", highlightcolor_downreg = "#8C0303", nointerestcolor="grey",threshold_y=NULL, threshold_x=NULL, xlab=NULL, ylab=NULL, ncol=NULL, nrow=NULL, title=NULL,labsize=7,widthlabs=25, invert=T)
+
+```
+ 
+
+
+```{r}
+options(error=recover)
+GSEAresults <- runGSEA(degenes, bidirectsigs, stat = NULL)
+GSEAresults
 ```
 
 
+```{r fig.width=25, fig.height=10}
+plotGSEAenrichment(GSEA_results=GSEAresults, DEGList=degenes, gene_sets=bidirectsigs, widthTitle=32,grid = T, titlesize = 10, nrow=3, ncol=9) 
+```
+
+```{r fig.width=18, fig.height=4}
+options(error=recover)
+plotNESlollipop(GSEA_results=GSEAresults, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
+                         grid = T, nrow = 1, ncol = NULL, widthlabels=28, title=NULL)
+ 
+```
+ 
+```{r fig.width=10, fig.height=4.5}
+plotCombinedGSEA(GSEAresults, sig_threshold = 0.05, PointSize=9, widthlegend = 26 )
+```
+ 
+  
+ 
+ 
+## Association with Phenotype
+
+
+If the user is investigating if a certain variable can be described from the GSEA results, and not already knowing that variable. More exploratory...
+ 
+- For each variable, define all possible contrasts (e.g. if A,B,C, then consider A-B, A-C, B-C,A-(B+C)/2, etc...)
+- Use calculateDE without baseline and all possible contrasts
+- perform GSEA and collect all results in only one table
+- Plot all results in lollipop plots, y axis with all contrasts
+
+- One function to calculate all results; one to do the lollypop plot
+
+```{r}
+# Example usage
+levels <- c("A", "B" ,"C","D")
+generate_all_contrasts(levels, mode="extensive")
+```
+
+   
+ 
+
+
+```{r fig.width=5, fig.height=10}
+ options(error=recover)
+df_test <- GSEA_VariableAssociation(data=corrcounts_merge, 
+                         metadata=metadata_merge_corr, 
+                         cols=c("Condition","Is_Senescent","random_cat","random_numeric"), 
+                         mode="extensive", 
+                         gene_set=list(HernandezSegura=bidirectsigs$HernandezSegura), 
+                         padj_limit = c(0, 0.1), saturation_value=0.000000001, nonsignif_color = "white", signif_color = "red",
+                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+
+df_test$plot
+
+```
+ 
+ 
+ 
+```{r}
+metadata_corr_1 <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge, method = "ssGSEA", gene_sets = list(HernandezSegura=bidirectsigs$HernandezSegura) )
+metadata_corr <- metadata_corr_1$`HernandezSegura`
+metadata_corr <- merge(metadata_corr,metadata_merge_corr[,c("sampleID","random_cat","random_numeric","Is_Senescent")], by.x="sample", by.y="sampleID",all.x = T)
+metadata_corr
+```
+
+```{r fig.width=4, fig.height=10}
+ 
+plot_stat_tests(metadata_corr, target_var="score", cols = c("Condition","Is_Senescent","random_cat","random_numeric"),
+                 discrete_colors = list(Is_Senescent=c("Senescent"="pink",
+                                                 "Non Senescent"="orange")), 
+                continuous_color = "#8C6D03", 
+                            color_palette = "Set2", nrow=4, sizeannot=3, legend.position="top")
+```
+
+
+ 
+
+```{r}
+degenes_test <- calculateDE(data=corrcounts_merge, 
+                       metadata=metadata_merge_corr, 
+                       variables="random_cat", 
+                       lmexpression = NULL, 
+                       modelmat = NULL, 
+                       contrasts = generate_all_contrasts(c(unique(metadata_corr$random_cat)), mode = "extensive")) 
+
+ 
+GSEAresults_test <- runGSEA(degenes_test, list(HernandezSegura_UP=SenescenceSignatures$`[UP]_HernandezSegura`), stat = NULL)
+GSEAresults_test
+ 
+options(error=recover)
+plotGSEAenrichment(GSEA_results=GSEAresults_test, DEGList=degenes_test, gene_sets=list(HernandezSegura_UP=SenescenceSignatures$`[UP]_HernandezSegura`), widthTitle=32,grid = F) 
+ 
+```
+
+
+  
+```{r fig.width=5, fig.height=5}
+ options(error=recover)
+df_test <- GSEA_VariableAssociation(data=corrcounts_merge, 
+                         metadata=metadata_merge_corr, 
+                         cols=c("Condition" ), 
+                         mode="medium", 
+                         gene_set=list(HernandezSegura_UP=SenescenceSignatures$`[UP]_HernandezSegura` ), 
+                        saturation_value=0.000000001, nonsignif_color = "white", signif_color = "red",
+                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+
+df_test$plot
+
+df_test <- GSEA_VariableAssociation(data=corrcounts_merge, 
+                         metadata=metadata_merge_corr, 
+                         cols=c("Condition" ), 
+                         mode="medium", 
+                         gene_set=list( HernandezSegura_Bidirect=subset(bidirectsigs$HernandezSegura, enrichment==1)), 
+                         saturation_value=0.000000001, nonsignif_color = "white", signif_color = "red",
+                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+
+df_test$plot
+
+
+```
