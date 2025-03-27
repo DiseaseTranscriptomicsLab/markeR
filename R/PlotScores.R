@@ -183,7 +183,8 @@ PlotScores <- function(data, metadata, gene_sets,
       df <- ResultsList[[signature]]
 
       # Using factors so we can retrieve the first condition for Cohen's d if none is specified.
-      df[, GroupingVariable] <- factor(df[, GroupingVariable], levels = unique(df[, GroupingVariable]))
+      df[, GroupingVariable] <- factor(df[, GroupingVariable],
+                                       levels = sort(unique(as.character(df[, GroupingVariable]))))
 
       # Wrap the signature name using the helper function.
       wrapped_title <- wrap_title(signature, width = widthTitle)
