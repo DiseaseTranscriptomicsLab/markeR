@@ -364,11 +364,11 @@ metadata_corr <- metadata_corr$HernandezSegura_UP
 
 ```{r fig.width=14, fig.height=3}
 options(error=recover)
-plot_stat_tests(metadata_corr, target_var="score", cols = c("Condition","Is_Senescent","random_cat","random_numeric"),
+VariableAssociation(df=metadata_corr, target_var="score", cols = c("Condition","Is_Senescent","random_cat","random_numeric"),
                  discrete_colors = list(Is_Senescent=c("Senescent"="pink",
                                                  "Non Senescent"="orange")), 
                 continuous_color = "#8C6D03", 
-                            color_palette = "Set2", nrow=1, sizeannot=3, legend.position="top")
+                            color_palette = "Set2", nrow=1, sizeannot=3, legend.position="right")
 ```
 
 
@@ -610,24 +610,15 @@ If the user is investigating if a certain variable can be described from the GSE
 
 - One function to calculate all results; one to do the lollypop plot
 
-```{r}
-# Example usage
-levels <- c("A", "B" ,"C","D")
-generate_all_contrasts(levels, mode="extensive")
-```
-
-   
- 
 
 
-```{r fig.width=5, fig.height=10}
+```{r fig.width=6, fig.height=6}
  options(error=recover)
 df_test <- GSEA_VariableAssociation(data=corrcounts_merge, 
                          metadata=metadata_merge_corr, 
                          cols=c("Condition","Is_Senescent","random_cat","random_numeric"), 
                          mode="extensive", 
-                         gene_set=list(HernandezSegura=bidirectsigs$HernandezSegura), 
-                         padj_limit = c(0, 0.1), saturation_value=0.000000001, nonsignif_color = "white", signif_color = "red",
+                         gene_set=list(HernandezSegura=bidirectsigs$HernandezSegura),  saturation_value=0.000000001, nonsignif_color = "white", signif_color = "red",
                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
 
 df_test$plot
@@ -637,44 +628,31 @@ df_test$plot
  
  
 ```{r}
-metadata_corr_1 <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge, method = "ssGSEA", gene_sets = list(HernandezSegura=bidirectsigs$HernandezSegura) )
+metadata_corr_1 <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge_corr, method = "ssGSEA", gene_sets = list(HernandezSegura=bidirectsigs$HernandezSegura) )
 metadata_corr <- metadata_corr_1$`HernandezSegura`
-metadata_corr <- merge(metadata_corr,metadata_merge_corr[,c("sampleID","random_cat","random_numeric","Is_Senescent")], by.x="sample", by.y="sampleID",all.x = T)
 metadata_corr
 ```
 
-```{r fig.width=4, fig.height=10}
- 
-plot_stat_tests(metadata_corr, target_var="score", cols = c("Condition","Is_Senescent","random_cat","random_numeric"),
-                 discrete_colors = list(Is_Senescent=c("Senescent"="pink",
-                                                 "Non Senescent"="orange")), 
-                continuous_color = "#8C6D03", 
-                            color_palette = "Set2", nrow=4, sizeannot=3, legend.position="top")
+```{r fig.width=6, fig.height=10}
+VariableAssociation(df=metadata_corr, cols=c("Condition","Is_Senescent","random_cat","random_numeric"), 
+                    target_var="score", targetvar_lab="Score",
+                    discrete_colors = list(Is_Senescent=c("Senescent"="pink",
+                                                          "Non Senescent"="orange")), 
+                    continuous_color = "#8C6D03",
+                    color_palette = "Set2",
+                    sizeannot=3, ncol=1, nrow=4,
+                    numeric = "pearson",
+                    categorical_bin = "t.test",
+                    categorical_multi = "anova", title=NULL, titlesize=14,
+                    nonsignif_color = "grey", signif_color = "red", 
+                    saturation_value=NULL,sig_threshold = 0.05, widthlabels=14, pointSize=5, heights=c(0.3,0.2,0.3,0.2)) 
 ```
 
 
- 
-
-```{r}
-degenes_test <- calculateDE(data=corrcounts_merge, 
-                       metadata=metadata_merge_corr, 
-                       variables="random_cat", 
-                       lmexpression = NULL, 
-                       modelmat = NULL, 
-                       contrasts = generate_all_contrasts(c(unique(metadata_corr$random_cat)), mode = "extensive")) 
-
- 
-GSEAresults_test <- runGSEA(degenes_test, list(HernandezSegura_UP=SenescenceSignatures$`[UP]_HernandezSegura`), stat = NULL)
-GSEAresults_test
- 
-options(error=recover)
-plotGSEAenrichment(GSEA_results=GSEAresults_test, DEGList=degenes_test, gene_sets=list(HernandezSegura_UP=SenescenceSignatures$`[UP]_HernandezSegura`), widthTitle=32,grid = F) 
- 
-```
 
 
   
-```{r fig.width=5, fig.height=5}
+```{r fig.width=6, fig.height=5}
  options(error=recover)
 df_test <- GSEA_VariableAssociation(data=corrcounts_merge, 
                          metadata=metadata_merge_corr, 
@@ -690,7 +668,7 @@ df_test <- GSEA_VariableAssociation(data=corrcounts_merge,
                          metadata=metadata_merge_corr, 
                          cols=c("Condition" ), 
                          mode="medium", 
-                         gene_set=list( HernandezSegura_Bidirect=subset(bidirectsigs$HernandezSegura, enrichment==1)), 
+                         gene_set=list( HernandezSegura_Bidirect_UP=subset(bidirectsigs$HernandezSegura, enrichment==1)), 
                          saturation_value=0.000000001, nonsignif_color = "white", signif_color = "red",
                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
 

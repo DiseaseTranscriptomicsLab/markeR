@@ -47,7 +47,7 @@ GSEA_VariableAssociation(
 
 \item{nonsignif_color}{A string specifying the color for the middle of the adjusted p-value gradient. Default is \code{"white"}. Lower limit correspond to the value of \code{sig_threshold}.}
 
-\item{signif_color}{A string specifying the color for the low end of the adjusted p-value gradient until the value chosen for significance (\code{sig_threshold}). Default is \code{"blue"}.}
+\item{signif_color}{A string specifying the color for the low end of the adjusted p-value gradient until the value chosen for significance (\code{sig_threshold}). Default is \code{"red"}.}
 
 \item{saturation_value}{A numeric value specifying the lower limit of the adjusted p-value gradient, below which the color will correspond to \code{signif_color}. Default is the results' minimum, unless that
 value is above the sig_threshold; in that case, it is 0.001.}

@@ -17,7 +17,7 @@
 #'   - If using **bidirectional** gene sets, provide a list where each element is a data frame:
 #'    - The **first column** should contain gene names.
 #'    - The **second column** should indicate the expected direction of enrichment (`1` for upregulated, `-1` for downregulated).
-#' @param signif_color A string specifying the color for the low end of the adjusted p-value gradient until the value chosen for significance (\code{sig_threshold}). Default is `"blue"`.
+#' @param signif_color A string specifying the color for the low end of the adjusted p-value gradient until the value chosen for significance (\code{sig_threshold}). Default is `"red"`.
 #' @param nonsignif_color A string specifying the color for the middle of the adjusted p-value gradient. Default is `"white"`. Lower limit correspond to the value of \code{sig_threshold}.
 #' @param sig_threshold A numeric value specifying the threshold for significance visualization in the plot. Default: `0.05`.
 #' @param saturation_value A numeric value specifying the lower limit of the adjusted p-value gradient, below which the color will correspond to \code{signif_color}. Default is the results' minimum, unless that

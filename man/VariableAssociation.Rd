@@ -18,9 +18,16 @@ VariableAssociation(
   numeric = "pearson",
   categorical_bin = "t.test",
   categorical_multi = "anova",
-  legend.position = c("top", "bottom", "right", "left"),
   title = NULL,
-  titlesize = 14
+  titlesize = 14,
+  nonsignif_color = "grey",
+  signif_color = "red",
+  saturation_value = NULL,
+  sig_threshold = 0.05,
+  widthlabels = 18,
+  pointSize = 5,
+  widths = 1,
+  heights = 1
 )
 }
 \arguments{
@@ -54,11 +61,26 @@ Options: \code{"t.test"} (default) or \code{"wilcoxon"}.}
 \item{categorical_multi}{The statistical test for multi-level categorical variables.
 Options: \code{"anova"} (default) or \code{"kruskal-wallis"}.}
 
-\item{legend.position}{The position of the legend: \code{"top"}, \code{"bottom"}, \code{"right"}, or \code{"left"}. Default is \code{"top"}.}
-
 \item{title}{A string specifying the main title of the grid of plots.}
 
 \item{titlesize}{Numeric; font size of the main title of the grid of plots (default = \code{14}).}
+
+\item{nonsignif_color}{A string specifying the color for the middle of the adjusted p-value gradient. Default is \code{"white"}. Lower limit correspond to the value of \code{sig_threshold}.}
+
+\item{signif_color}{A string specifying the color for the low end of the adjusted p-value gradient until the value chosen for significance (\code{sig_threshold}). Default is \code{"blue"}.}
+
+\item{saturation_value}{A numeric value specifying the lower limit of the adjusted p-value gradient, below which the color will correspond to \code{signif_color}. Default is the results' minimum, unless that
+value is above the sig_threshold; in that case, it is 0.001.}
+
+\item{sig_threshold}{A numeric value specifying the threshold for significance visualization in the plot. Default: \code{0.05}.}
+
+\item{widthlabels}{An integer controlling the maximum width of contrast labels before text wrapping. Default: \code{18}.}
+
+\item{pointSize}{Numeric. The size of points in the lollipop plot (default is 5).}
+
+\item{widths}{Numerical vector of relative columns widths. Should be the same length as the number of variables provided. Default is that each plot has the same width.}
+
+\item{heights}{Numerical vector of relative columns heights  Should be the same length as the number of variables provided. Default is that each plot has the same height}
 }
 \value{
 A named list with two elements:

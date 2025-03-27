@@ -234,9 +234,17 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
 #'   Options: `"t.test"` (default) or `"wilcoxon"`.
 #' @param categorical_multi The statistical test for multi-level categorical variables.
 #'   Options: `"anova"` (default) or `"kruskal-wallis"`.
-#' @param legend.position The position of the legend: `"top"`, `"bottom"`, `"right"`, or `"left"`. Default is `"top"`.
 #' @param title A string specifying the main title of the grid of plots.
 #' @param titlesize Numeric; font size of the main title of the grid of plots (default = `14`).
+#' @param signif_color A string specifying the color for the low end of the adjusted p-value gradient until the value chosen for significance (\code{sig_threshold}). Default is `"blue"`.
+#' @param nonsignif_color A string specifying the color for the middle of the adjusted p-value gradient. Default is `"white"`. Lower limit correspond to the value of \code{sig_threshold}.
+#' @param sig_threshold A numeric value specifying the threshold for significance visualization in the plot. Default: `0.05`.
+#' @param saturation_value A numeric value specifying the lower limit of the adjusted p-value gradient, below which the color will correspond to \code{signif_color}. Default is the results' minimum, unless that
+#' value is above the sig_threshold; in that case, it is 0.001.
+#' @param widthlabels An integer controlling the maximum width of contrast labels before text wrapping. Default: `18`.
+#' @param pointSize Numeric. The size of points in the lollipop plot (default is 5).
+#' @param widths Numerical vector of relative columns widths. Should be the same length as the number of variables provided. Default is that each plot has the same width.
+#' @param heights Numerical vector of relative columns heights  Should be the same length as the number of variables provided. Default is that each plot has the same height
 #'
 #' @return A named list with two elements:
 #' \itemize{
@@ -259,7 +267,7 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
 #' )
 #' plot_stat_tests(df, cols = c("age", "gender"), target_var = "score")
 #'
-#' @import ggplot2
+#' @import ggplot2 patchwork
 #' @importFrom ggpubr ggarrange annotate_figure
 #' @importFrom RColorBrewer brewer.pal
 #'
@@ -270,9 +278,10 @@ VariableAssociation <- function(df, cols, target_var, targetvar_lab="Score",
                                 sizeannot=3, ncol=NULL, nrow=NULL,
                                 numeric = "pearson",
                                 categorical_bin = "t.test",
-                                categorical_multi = "anova",
-                                legend.position=c("top","bottom","right","left"), title=NULL, titlesize=14) {
-  legend.position <- match.arg(legend.position)
+                                categorical_multi = "anova", title=NULL, titlesize=14,
+                                nonsignif_color = "grey", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, widthlabels=18, pointSize=5,
+                                widths=1,heights=1) {
+
   results <- compute_stat_tests(df, target_var, cols = cols,
                                 numeric =numeric,
                                 categorical_bin = categorical_bin,
@@ -284,6 +293,10 @@ VariableAssociation <- function(df, cols, target_var, targetvar_lab="Score",
   for (var in names(results)) {
     p <- NULL
     test_results <- results[[var]]
+    test_results$metric <- as.numeric(test_results$metric)
+    test_results$p_value <- as.numeric(test_results$p_value)
+    test_results$contrast <- row.names(test_results)
+    test_results$contrast <- sapply(test_results$contrast, function(x) wrap_title(x, widthlabels))
 
     # Adding p-value in parenthesis next to the metric
     if (variable_types[var] == "Numeric") {
@@ -306,7 +319,8 @@ VariableAssociation <- function(df, cols, target_var, targetvar_lab="Score",
         ggplot2::labs(y=targetvar_lab) +
         ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"))
 
-    } else if (variable_types[var] %in% c("Categorical Bin", "Categorical Multi")) {
+    } else if (variable_types[var] %in% c("Categorical Bin")) {
+
       # Combine multiple test results into one multiline label if needed
       metric_labels <- paste(row.names(test_results), ": ", test_results$metric,
                              " (p = ", test_results$p_value, ")", collapse = "\n")
@@ -334,13 +348,88 @@ VariableAssociation <- function(df, cols, target_var, targetvar_lab="Score",
         ggplot2::theme_classic() +
         ggplot2::ggtitle(var) +
         ggplot2::labs(x = targetvar_lab, y = "Density", fill="") +
-        ggplot2::theme(legend.position = legend.position,
+        ggplot2::theme(legend.position = "right",
                        plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"))
+
+    } else if (variable_types[var] %in% c("Categorical Multi")){
+
+      # Check if user provided a custom named list for discrete colors
+      if (!is.null(discrete_colors) && var %in% names(discrete_colors)) {
+        # Use user-specified colors for the specific variable
+        colors <- discrete_colors[[var]]
+      } else {
+        num_levels <- length(unique(df[[var]]))
+        colors <- colorRampPalette(RColorBrewer::brewer.pal(8, color_palette))(num_levels)
+
+      }
+
+      density <- ggplot2::ggplot(df, ggplot2::aes_string(y = target_var, fill = var)) +
+        ggplot2::geom_density(alpha = 0.6) +
+        ggplot2::scale_fill_manual(values = colors) +
+        #ggplot2::coord_cartesian(clip = "off") +
+        ggplot2::theme_classic() +
+        ggplot2::labs(y = targetvar_lab, x = "", fill = "") +
+        ggplot2::theme(
+          legend.position = "right",
+          axis.title.x = ggplot2::element_blank(),
+          axis.text.x = ggplot2::element_blank(),
+          axis.ticks.x = ggplot2::element_blank(),
+          axis.line.x = ggplot2::element_blank()
+        )
+
+
+
+      if(is.null(saturation_value)){
+        if (min(test_results$p_value)>sig_threshold){
+          limit_pval <- 0.001
+        } else{
+          limit_pval <- min(test_results$p_value)
+        }
+
+      } else {
+        limit_pval <- saturation_value
+      }
+
+
+     lolli <-  ggplot2::ggplot(test_results, ggplot2::aes(x = metric, y = contrast, fill = -log10(p_value))) +
+        ggplot2::geom_segment(ggplot2::aes(
+          yend = contrast,
+          xend = 0
+        ), size = .5) +
+        ggplot2::geom_point(ggplot2::aes(
+          stroke = 1.2
+        ), shape = 21, size = pointSize) +
+        ggplot2::scale_linetype_identity() +
+        ggplot2::scale_color_identity() +
+        ggplot2::theme_minimal() +
+        ggplot2::theme(
+          plot.title = ggplot2::element_text(hjust = 0.5, face = "bold" ),
+          legend.position = "right"
+        ) +
+        ggplot2::scale_fill_gradient2(low = nonsignif_color,
+                                      mid = nonsignif_color,
+                                      high = signif_color,
+                                      midpoint = -log10(sig_threshold),
+                                      limits=c(0,-log10(limit_pval)),
+                                      na.value = signif_color)+
+       ggplot2::ggtitle(var) +
+       ylab("Contrasts") + xlab("Metrics")
+
+
+     lolli_adj <- lolli + theme(plot.margin = unit(c(0, 0, 0, 0), "cm"))
+     density_adj <- density + theme(plot.margin = unit(c(0,0,0,0), "cm"))
+
+     p <- (lolli_adj | density_adj) +
+       patchwork::plot_layout(guides = "collect", widths = c(0.8, 0.2)) &
+       ggplot2::theme(legend.position = "right")
+
     }
 
     if (!is.null(p)) {
       plot_list[[var]] <- p
     }
+
+
   }
 
   n <- length(plot_list)
@@ -356,7 +445,9 @@ VariableAssociation <- function(df, cols, target_var, targetvar_lab="Score",
   # Arrange the individual plots in a grid.
   plt <- ggpubr::ggarrange(plotlist = plot_list,
                    ncol = ncol,
-                   nrow = nrow)
+                   nrow = nrow,
+                   widths=widths,
+                   heights=heights)
 
   if (!is.null(title)) plt <- ggpubr::annotate_figure(plt, top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize)))
 
