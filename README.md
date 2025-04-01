@@ -94,6 +94,19 @@ functions for **enrichment-based analysis**:
     GSEA (Gene Set Enrichment Analysis) results across different
     contrasts.
 
+When analyzing data, it is often **unclear whether a given variable is
+meaningfully associated with a target score**. To assist in this
+exploratory process, the package also provides **statistical tests and
+visualizations to assess relationships between variables of different
+types**:
+
+-   **`VariableAssociation_Scores`**: Assesses the relationship between
+    metadata variables and computed scores using effect size estimation,
+    statistical tests, and visualizations.
+-   **`VariableAssociation_GSEA`**: Evaluates how metadata variables
+    influence gene set enrichment results, identifying significant
+    associations with enrichment scores.
+
 It also includes some functions for visualising individual genes from a
 gene signature:
 
@@ -674,28 +687,45 @@ exploratory process, the package provides **statistical tests and
 visualizations to assess relationships between variables of different
 types**.
 
--   Numeric variables are tested using correlation methods (Pearson,
-    Spearman, or Kendall).
--   Binary categorical variables (two unique values) are analyzed using
-    a t-test or Wilcoxon rank-sum test.
--   Multi-level categorical variables (more than two unique values) are
-    examined using ANOVA or Kruskal-Wallis, followed by Tukey’s post-hoc
-    test when applicable.
+-   **Overall effects:** Linear models estimate effect sizes (Cohen’s f)
+    for numeric and categorical variables.
+-   **Pairwise contrasts:** Categorical variables are compared across
+    all possible contrasts using Cohen’s d with adjusted p-values. If
+    categorical variables have more than 10 unique values, a warning is
+    issued to ensure meaningful interpretation.
+-   **Visual insights:** Lollipop plots highlight effect sizes, contrast
+    plots compare groups, and distribution plots reveal score patterns.
 
-The results are returned as a structured list of statistical metrics and
-p-values, along with plots for an intuitive interpretation of
-associations. These plots include scatter plots for numeric variables
-and density plots for categorical variables, with statistical
-annotations. If categorical variables have more than 10 unique values, a
-warning is issued to ensure meaningful interpretation.
+The function returns a structured list containing:
+
+-   Overall: Effect sizes and p-values for each variable.
+-   Contrasts: Pairwise comparisons for categorical variables.
+-   plot: A combined visualization summarizing all results.
+-   plot\_contrasts, plot\_overall, plot\_distributions: Individual
+    plots for further exploration.
 
 This approach allows users to quickly **identify potential relationships
 between scores and predictor variables**, guiding further analysis.
 
+The `mode` parameter controls how contrasts are generated for
+categorical variables, allowing users to adjust the complexity of the
+analysis:
+
+-   **“simple”**: Performs the minimal number of contrasts, typically
+    comparing each category to a baseline (e.g., for a factor with
+    levels A, B, C and D, it may generate A - B, A - C, A - D, B - C,
+    B - D, C - D).
+-   **“medium”**: Expands on the simple mode by including additional
+    pairwise comparisons between groups (e.g., A - (B + C + D), B - (A +
+    C + D), etc).
+-   **“extensive”**: Conducts all possible comparisons, including
+    complex interactions if applicable, providing the most comprehensive
+    analysis. (e.g., (A + B) - (C + D)).
+
 This approach requires that the user is analysing a specific method for
 score calculation and gene signature. For illustration purposes, we will
 go with the `logmedian` method and compare the two signatures for
-Senescence.
+Senescence, using the `mode=extensive`.
 
 For illustration purposes, let’s imagine we also had two more variables:
 one defining the number of days that passed between sample preparation
@@ -712,43 +742,82 @@ metadata_example_illustration$days <- sample(c(1:20),39, replace = T)
 ```
 
 ``` r
-df_Scores_logmedian <- CalculateScores(data = counts_example,
-                             metadata = metadata_example_illustration,
-                             method = "logmedian",
-                             gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
-                          Senescence  = SimpleSenescenceSignature))
-#> Considering bidirectional gene signature mode for signature Senescence_Bidirectional
-#> Considering unidirectional gene signature mode for signature Senescence
- 
-df_Scores_logmedian_Sen <- df_Scores_logmedian$Senescence
-df_Scores_logmedian_BidirectSen <- df_Scores_logmedian$Senescence_Bidirectional
+results_scoreassoc_bidirect <- Score_VariableAssociation(data = counts_example, 
+                          metadata = metadata_example_illustration, 
+                          cols = c("Condition","person","days"), 
+                          method="logmedian", 
+                          gene_set = list(Senescence = SimpleSenescenceSignature ),
+                          mode="extensive",
+                          nonsignif_color = "white", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05,
+                          widthlabels=30, labsize=10, title=NULL, titlesize=14, pointSize=5, discrete_colors=NULL,
+                          continuous_color = "#8C6D03", color_palette = "Set2")
+```
+
+<img src="man/figures/README-variableassoc_score_bidirectsen-1.png" width="100%" />
+
+``` r
+results_scoreassoc_bidirect$Overall
+#>    Variable    Cohen_f      P_Value
+#> 1 Condition 1.06180763 1.506777e-07
+#> 2    person 0.12648382 7.514973e-01
+#> 3      days 0.01324252 9.362331e-01
+results_scoreassoc_bidirect$Contrasts
+#>    Variable                      Contrast          Group1           Group2
+#> 1 Condition (Senescent) - (Proliferative)       Senescent    Proliferative
+#> 2    person                (Ana) - (John)             Ana             John
+#> 3    person           (Ana) - (Francisca)             Ana        Francisca
+#> 4    person          (John) - (Francisca)            John        Francisca
+#> 5    person    (Ana) - (Francisca + John)             Ana Francisca + John
+#> 6    person    (Ana + Francisca) - (John) Ana + Francisca             John
+#> 7    person    (Ana + John) - (Francisca)      Ana + John        Francisca
+#>       CohenD       PValue         padj
+#> 1 2.07459395 1.506777e-07 1.054744e-06
+#> 2 0.04500138 9.210884e-01 9.210884e-01
+#> 3 0.23159722 5.182369e-01 8.332768e-01
+#> 4 0.26842164 5.641611e-01 8.332768e-01
+#> 5 0.14831958 6.487018e-01 8.332768e-01
+#> 6 0.15396594 7.142373e-01 8.332768e-01
+#> 7 0.25123032 4.501287e-01 8.332768e-01
 ```
 
 ``` r
-VariableAssociation(df=df_Scores_logmedian_Sen, c("Condition","person","days"), target_var="score", targetvar_lab ="Normalized Signature Score",
-                            discrete_colors = NULL, continuous_color = "#8C6D03",
-                            color_palette = "Set2",
-                            sizeannot=3.5, ncol=NULL, nrow=1,
-                            numeric = "pearson",
-                            categorical_bin = "t.test",
-                            categorical_multi = "anova",
-                            legend.position=c("top","bottom","right","left"), title="Senescence Signature", titlesize = 12 )
+results_scoreassoc_bidirect <- Score_VariableAssociation(data = counts_example, 
+                          metadata = metadata_example_illustration, 
+                          cols = c("Condition","person","days"), 
+                          method="logmedian", 
+                          gene_set = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional),
+                          mode="extensive",
+                          nonsignif_color = "white", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05,
+                          widthlabels=30, labsize=10, title=NULL, titlesize=14, pointSize=5, discrete_colors=NULL,
+                          continuous_color = "#8C6D03", color_palette = "Set2")
 ```
 
-<img src="man/figures/README-variableassoc2-1.png" width="100%" />
+<img src="man/figures/README-variableassoc_score_sen-1.png" width="100%" />
 
 ``` r
-VariableAssociation(df=df_Scores_logmedian_BidirectSen, c("Condition","person","days"), target_var="score", targetvar_lab="Normalized Signature Score",
-                            discrete_colors = NULL, continuous_color = "#8C6D03",
-                            color_palette = "Set2",
-                            sizeannot=3.5, ncol=NULL, nrow=1,
-                            numeric = "pearson",
-                            categorical_bin = "t.test",
-                            categorical_multi = "anova",
-                            legend.position=c("top","bottom","right","left"), title="Bidirectional Senescence Signature", titlesize = 12 )
+results_scoreassoc_bidirect$Overall
+#>    Variable    Cohen_f      P_Value
+#> 1 Condition 1.52736028 3.278479e-11
+#> 2    person 0.17329879 5.870614e-01
+#> 3      days 0.04759144 7.738244e-01
+results_scoreassoc_bidirect$Contrasts
+#>    Variable                      Contrast          Group1           Group2
+#> 1 Condition (Senescent) - (Proliferative)       Senescent    Proliferative
+#> 2    person                (Ana) - (John)             Ana             John
+#> 3    person           (Ana) - (Francisca)             Ana        Francisca
+#> 4    person          (John) - (Francisca)            John        Francisca
+#> 5    person    (Ana) - (Francisca + John)             Ana Francisca + John
+#> 6    person    (Ana + Francisca) - (John) Ana + Francisca             John
+#> 7    person    (Ana + John) - (Francisca)      Ana + John        Francisca
+#>       CohenD       PValue         padj
+#> 1 2.98420572 3.278479e-11 2.294935e-10
+#> 2 0.19639043 6.661502e-01 8.626076e-01
+#> 3 0.39561859 2.729488e-01 6.132382e-01
+#> 4 0.15441156 7.393780e-01 8.626076e-01
+#> 5 0.31910742 3.294782e-01 6.132382e-01
+#> 6 0.03157417 9.400893e-01 9.400893e-01
+#> 7 0.31127790 3.504218e-01 6.132382e-01
 ```
-
-<img src="man/figures/README-variableassoc2-2.png" width="100%" />
 
 ### Enrichment-Based Methods
 

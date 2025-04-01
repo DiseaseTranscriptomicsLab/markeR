@@ -37,7 +37,9 @@ Imports:
     utils,
     fgsea,
     limma,
-    ggrepel
+    ggrepel,
+    effectsize,
+    patchwork
 Suggests: 
     devtools,
     markdown,

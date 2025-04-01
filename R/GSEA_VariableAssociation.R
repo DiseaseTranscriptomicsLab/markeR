@@ -98,8 +98,6 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
 
   combined_results_toreturn <- combined_results
 
-  plot_list <- list()
-
 
   # Ensure contrast ordering
   combined_results$Contrast <- sapply(combined_results$Contrast, function(x) wrap_title(x, widthlabels))

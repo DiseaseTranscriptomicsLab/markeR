@@ -77,6 +77,12 @@ Although still being developed, the package already includes two functions for *
 -   **`plotNESlollipop`:** Generates a lollipop plot to visualize Gene Set Enrichment Analysis (GSEA) results.
 -   **`plotCombinedGSEA`:** Creates a scatter plot visualizing multiple GSEA (Gene Set Enrichment Analysis) results across different contrasts.
 
+When analyzing data, it is often **unclear whether a given variable is meaningfully associated with a target score**. To assist in this exploratory process, the package also provides **statistical tests and visualizations to assess relationships between variables of different types**:
+
+-   **`VariableAssociation_Scores`**: Assesses the relationship between metadata variables and computed scores using effect size estimation, statistical tests, and visualizations.
+-   **`VariableAssociation_GSEA`**: Evaluates how metadata variables influence gene set enrichment results, identifying significant associations with enrichment scores.
+
+
 It also includes some functions for visualising individual genes from a gene signature:
 
 -   **`IndividualGenes_Violins`:** creates violin plots of gene expression data with jittered points and optional faceting, allowing for visualization of individual gene expression distributions across sample groups.
@@ -566,17 +572,30 @@ FDR_Simulation(data = counts_example,
 
 When analyzing data, it is often **unclear whether a given variable is meaningfully associated with a target score**. To assist in this exploratory process, the package provides **statistical tests and visualizations to assess relationships between variables of different types**.
 
--   Numeric variables are tested using correlation methods (Pearson, Spearman, or Kendall).
--   Binary categorical variables (two unique values) are analyzed using a t-test or Wilcoxon rank-sum test.
--   Multi-level categorical variables (more than two unique values) are examined using ANOVA or Kruskal-Wallis, followed by Tukey's post-hoc test when applicable.
+-   **Overall effects:** Linear models estimate effect sizes (Cohen’s f) for numeric and categorical variables.
+-   **Pairwise contrasts:** Categorical variables are compared across all possible contrasts using Cohen’s d with adjusted p-values. If categorical variables have more than 10 unique values, a warning is issued to ensure meaningful interpretation.
+-   **Visual insights:** Lollipop plots highlight effect sizes, contrast plots compare groups, and distribution plots reveal score patterns.
 
-The results are returned as a structured list of statistical metrics and p-values, along with plots for an intuitive interpretation of associations. These plots include scatter plots for numeric variables and density plots for categorical variables, with statistical annotations. If categorical variables have more than 10 unique values, a warning is issued to ensure meaningful interpretation.
+The function returns a structured list containing:
+
+-   Overall: Effect sizes and p-values for each variable.
+-   Contrasts: Pairwise comparisons for categorical variables.
+-   plot: A combined visualization summarizing all results.
+-   plot_contrasts, plot_overall, plot_distributions: Individual plots for further exploration.
 
 This approach allows users to quickly **identify potential relationships between scores and predictor variables**, guiding further analysis.
 
-This approach requires that the user is analysing a specific method for score calculation and gene signature. For illustration purposes, we will go with the `logmedian` method and compare the two signatures for Senescence.
+The `mode` parameter controls how contrasts are generated for categorical variables, allowing users to adjust the complexity of the analysis:
+
+-   **"simple"**: Performs the minimal number of contrasts, typically comparing each category to a baseline (e.g., for a factor with levels A, B, C and D, it may generate A - B, A - C, A - D, B - C, B - D, C - D).
+-   **"medium"**: Expands on the simple mode by including additional pairwise comparisons between groups (e.g., A - (B + C + D), B - (A + C + D), etc).
+-   **"extensive"**: Conducts all possible comparisons, including complex interactions if applicable, providing the most comprehensive analysis. (e.g., (A + B) - (C + D)).
+
+
+This approach requires that the user is analysing a specific method for score calculation and gene signature. For illustration purposes, we will go with the `logmedian` method and compare the two signatures for Senescence, using the `mode=extensive`.
 
 For illustration purposes, let's imagine we also had two more variables: one defining the number of days that passed between sample preparation and sequencing, and one defining the person that processed it.
+ 
 
 ```{r variableassoc1_aux}
 set.seed("123456")
@@ -587,39 +606,37 @@ metadata_example_illustration$person <- sample(c("John","Ana","Francisca"),39, r
 metadata_example_illustration$days <- sample(c(1:20),39, replace = T)
  
 ```
-
-```{r variableassoc1}
-df_Scores_logmedian <- CalculateScores(data = counts_example,
-                             metadata = metadata_example_illustration,
-                             method = "logmedian",
-                             gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
-                          Senescence  = SimpleSenescenceSignature))
  
-df_Scores_logmedian_Sen <- df_Scores_logmedian$Senescence
-df_Scores_logmedian_BidirectSen <- df_Scores_logmedian$Senescence_Bidirectional
+```{r variableassoc_score_bidirectsen, fig.width=10, fig.height=7, out.width="100%", warning=FALSE, message=FALSE}
+results_scoreassoc_bidirect <- Score_VariableAssociation(data = counts_example, 
+                          metadata = metadata_example_illustration, 
+                          cols = c("Condition","person","days"), 
+                          method="logmedian", 
+                          gene_set = list(Senescence = SimpleSenescenceSignature ),
+                          mode="extensive",
+                          nonsignif_color = "white", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05,
+                          widthlabels=30, labsize=10, title=NULL, titlesize=14, pointSize=5, discrete_colors=NULL,
+                          continuous_color = "#8C6D03", color_palette = "Set2")
 
+results_scoreassoc_bidirect$Overall
+results_scoreassoc_bidirect$Contrasts
 ```
 
-```{r variableassoc2, fig.width=12, fig.height=4, out.width="100%", warning=FALSE, message=FALSE}
-VariableAssociation(df=df_Scores_logmedian_Sen, c("Condition","person","days"), target_var="score", targetvar_lab ="Normalized Signature Score",
-                            discrete_colors = NULL, continuous_color = "#8C6D03",
-                            color_palette = "Set2",
-                            sizeannot=3.5, ncol=NULL, nrow=1,
-                            numeric = "pearson",
-                            categorical_bin = "t.test",
-                            categorical_multi = "anova",
-                            legend.position=c("top","bottom","right","left"), title="Senescence Signature", titlesize = 12 )
+```{r variableassoc_score_sen, fig.width=10, fig.height=7, out.width="100%", warning=FALSE, message=FALSE}
+results_scoreassoc_bidirect <- Score_VariableAssociation(data = counts_example, 
+                          metadata = metadata_example_illustration, 
+                          cols = c("Condition","person","days"), 
+                          method="logmedian", 
+                          gene_set = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional),
+                          mode="extensive",
+                          nonsignif_color = "white", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05,
+                          widthlabels=30, labsize=10, title=NULL, titlesize=14, pointSize=5, discrete_colors=NULL,
+                          continuous_color = "#8C6D03", color_palette = "Set2")
 
-VariableAssociation(df=df_Scores_logmedian_BidirectSen, c("Condition","person","days"), target_var="score", targetvar_lab="Normalized Signature Score",
-                            discrete_colors = NULL, continuous_color = "#8C6D03",
-                            color_palette = "Set2",
-                            sizeannot=3.5, ncol=NULL, nrow=1,
-                            numeric = "pearson",
-                            categorical_bin = "t.test",
-                            categorical_multi = "anova",
-                            legend.position=c("top","bottom","right","left"), title="Bidirectional Senescence Signature", titlesize = 12 )
+results_scoreassoc_bidirect$Overall
+results_scoreassoc_bidirect$Contrasts
 ```
-
+ 
 ### Enrichment-Based Methods
 
 #### Differentially Expressed Genes

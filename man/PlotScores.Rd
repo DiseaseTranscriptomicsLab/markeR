@@ -110,7 +110,7 @@ and optional group connection lines) for each sample based on one or more predef
 \details{
 \itemize{
 \item \strong{ssGSEA}: Uses the single-sample Gene Set Enrichment Analysis (ssGSEA) method to compute an enrichment score
-for each signature in each sample using the \code{gsva()} function from the \code{GSVA} package.
+for each signature in each sample using an adapation of the \code{gsva()} function from the \code{GSVA} package.
 \item \strong{logmedian}: Computes the score as the sum of the normalized (log2-median-centered) expression values of the
 signature genes divided by the number of genes in the signature.
 \item \strong{ranking}: Computes gene signature scores for each sample by ranking the expression of signature genes
