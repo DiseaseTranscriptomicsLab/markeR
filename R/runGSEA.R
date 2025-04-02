@@ -19,6 +19,7 @@
 #'   - If provided, this argument overrides the automatic selection.
 #'
 #' @return A named list where each element corresponds to a contrast. Each contrast contains a **single data frame** with GSEA results for all gene sets.
+#' P-values are corrected for multiple testing based on all contrasts.
 #'   The result includes the standard `fgsea` output plus two additional columns:
 #'   - `pathway`: The name of the gene set.
 #'   - `stat_used`: The statistic used for ranking genes in that analysis (`"t"` or `"B"`).
@@ -123,6 +124,22 @@ runGSEA <- function(DEGList, gene_sets, stat = NULL) {
     # Combine all gene sets into a single data frame for this contrast
     results_by_contrast[[contrast]] <- do.call(rbind, contrast_results)
   }
+
+  ### Correcting for multiple testing ###
+
+  # Step 1: Combine all data frames into one
+  combined_df <- do.call(rbind, Map(cbind, results_by_contrast, df_name = names(results_by_contrast)))
+
+  # Step 2: Adjust p-values across all data
+  combined_df$padj <- p.adjust(combined_df$pval, method = "BH")
+
+  # Step 3: Split back into the original list structure
+  list_of_dfs <- split(combined_df, combined_df$df_name)
+
+  # Step 4: Remove the helper column
+  list_of_dfs <- lapply(list_of_dfs, function(df) df[, !names(df) %in% "df_name"])
+  results_by_contrast <- list_of_dfs[names(results_by_contrast)]
+
 
   return(results_by_contrast)
 }

@@ -1078,6 +1078,14 @@ set of gene signatures to compute enrichment scores.
         (data frames).
     -   If provided, this argument overrides the automatic selection.
 
+It is important to note that the column corresponding to the **adjusted
+p-value** (`padj`) reflects p-values corrected for multiple testing by
+the Benjamini & Hochberg (BH) method, considering **all contrasts** in
+the list of differentially expressed genes (`DEGs`in the example below).
+This means that the same contrast will have a different adjusted p-value
+if running with a different set of contrasts, given that the results
+represent different research questions.
+
 ``` r
 GSEAresults <- runGSEA(DEGList = DEGs, 
                        gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,

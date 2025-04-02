@@ -32,6 +32,7 @@ runGSEA(DEGList, gene_sets, stat = NULL)
 }
 \value{
 A named list where each element corresponds to a contrast. Each contrast contains a \strong{single data frame} with GSEA results for all gene sets.
+P-values are corrected for multiple testing based on all contrasts.
 The result includes the standard \code{fgsea} output plus two additional columns:
 \itemize{
 \item \code{pathway}: The name of the gene set.
