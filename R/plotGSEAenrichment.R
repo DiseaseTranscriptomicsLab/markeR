@@ -40,12 +40,20 @@
 plotGSEAenrichment <- function(GSEA_results, DEGList, gene_sets, widthTitle = 24, grid = FALSE, nrow=NULL, ncol=NULL, titlesize=12) {
   plot_list <- list()
 
+  if (length(unique(GSEA_results[[1]]$pathway))==1 & length(names(GSEA_results))==1) {
+    adjustpval <- FALSE
+  } else {
+    adjustpval <- TRUE
+  }
+
   for (contrast in names(GSEA_results)) {
     deg_df <- DEGList[[contrast]]
 
 
     for (signature in unique(GSEA_results[[contrast]]$pathway)) {
       if (!(signature %in% names(gene_sets))) next  # Skip missing sets
+
+
 
       gs <- gene_sets[[signature]]
 
@@ -64,9 +72,20 @@ plotGSEAenrichment <- function(GSEA_results, DEGList, gene_sets, widthTitle = 24
       nes_value <- round(gsea_row$NES, 2)
       padj_value <- signif(gsea_row$padj, 3)
       if(stat_used=="B"){
-        subtitle_text <- paste0("Altered Pathway\nNES: ", nes_value, " | adj. p-value: ", padj_value)
+        if (adjustpval){
+          subtitle_text <- paste0("Altered Pathway\nNES: ", nes_value, " | adj. p-value: ", padj_value)
+        } else {
+          subtitle_text <- paste0("Altered Pathway\nNES: ", nes_value, " | p-value: ", padj_value)
+        }
+
       } else {
-        subtitle_text <- paste0("Enriched/Depleted Pathway\nNES: ", nes_value, " | adj. p-value: ", padj_value)
+
+        if (adjustpval){
+          subtitle_text <- paste0("Enriched/Depleted Pathway\nNES: ", nes_value, " | adj. p-value: ", padj_value)
+        } else {
+          subtitle_text <- paste0("Enriched/Depleted Pathway\nNES: ", nes_value, " | p-value: ", padj_value)
+        }
+
       }
 
 
