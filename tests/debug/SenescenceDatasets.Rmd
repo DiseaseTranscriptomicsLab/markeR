@@ -377,7 +377,12 @@ Score_VariableAssociation(data=corrcounts_merge, metadata=metadata_merge_corr, c
 
 ```
  
+ 
+```{r fig.height=4, fig.width=8}
+options(error=recover)
+Score_VariableAssociation(data=corrcounts_merge, metadata=metadata_merge_corr, cols = c( "random_numeric"), method="ranking", gene_set = list(HernandezSegura=bidirectsigs$HernandezSegura), mode = "extensive", nonsignif_color = "white", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, widthlabels=29, labsize=10, titlesize=14, pointSize=5)
 
+```
 
 # Individual Genes
 

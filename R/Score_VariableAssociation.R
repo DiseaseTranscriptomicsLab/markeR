@@ -30,6 +30,13 @@ compute_cohens_f_pval <- function(model, predictor, type) {
   eta_sq_value <- effectsize::eta_squared(model, partial = FALSE)$Eta2
   cohen_f <- sqrt(eta_sq_value / (1 - eta_sq_value))  # Convert η² to Cohen's f
 
+  # Why different tests?
+
+  #For numeric predictors: The t-test p-value from summary(lm(...)) is correct.
+  #For binary categorical predictors: The t-test and ANOVA p-value will be the same.
+  #For multi-level categorical predictors: The t-test doesn’t work because there’s no
+  # single coefficient that represents all levels. Instead, you need the F-test from ANOVA to capture the overall effect.
+
   # Get p-value
   if (type=="Numeric") {
     # Numeric predictor: get p-value from regression summary
@@ -124,9 +131,9 @@ create_contrast_column <- function(metadata, variable_name, contrast) {
 #'
 #' @return A list with:
 #'   - `Overall`: Data frame with Cohen's F and p-values for overall associations.
-#'   - `Contrasts`: Data frame with Cohen's D and p-values for contrasts.
+#'   - `Contrasts`: Data frame with Cohen's D and p-values for contrasts (only for non numerical variables).
 #'   - `plot`: Combined visualization of results.
-#'   - `plot_contrasts`: Plot of contrast results.
+#'   - `plot_contrasts`: Plot of contrast results (only for non numerical variables).
 #'   - `plot_overall`: Plot of overall associations.
 #'   - `plot_distributions`: List of variable distribution plots.
 #'
@@ -225,15 +232,6 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
 
   }
 
-  df_results_contrast$padj <- p.adjust(df_results_contrast$PValue, method = "BH")
-
-
-  ########### CONTRAST MODE PLOT ############
-
-  # Ensure contrast ordering
-  df_results_contrast$Contrast <- sapply(df_results_contrast$Contrast, function(x) wrap_title(x, widthlabels))
-  df_results_contrast$Contrast <- factor(df_results_contrast$Contrast, levels = df_results_contrast$Contrast[order(df_results_contrast$CohenD)])
-
 
   if(is.null(saturation_value)){
     if (min(df_results_contrast$padj)>sig_threshold){
@@ -247,40 +245,57 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
   }
 
 
-  plot_contrasts <- ggplot2::ggplot(df_results_contrast, ggplot2::aes(x = CohenD, y = Contrast, fill = -log10(padj))) +
-    ggplot2::geom_segment(ggplot2::aes(
-      yend = Contrast,
-      xend = 0,
-      linetype =  "solid",
-      color =  "black"
-    ), size = .5) +
-    ggplot2::geom_point(ggplot2::aes(
-      stroke = 1.2,
-      color =   "black"
-    ), shape = 21, size = pointSize) +
-    ggplot2::scale_fill_gradient2(low = nonsignif_color,
-                                  mid = nonsignif_color,
-                                  high = signif_color,
-                                  midpoint = -log10(sig_threshold),
-                                  limits=c(0,-log10(limit_pval)),
-                                  na.value = signif_color)+
-    ggplot2::scale_linetype_identity() +
-    ggplot2::scale_color_identity() +
-    ggplot2::labs(
-      x = "Cohen's D",
-      y = "Contrast",
-      color = "-log10(Adj. p-value)",
-      fill = "-log10(Adj. p-value)"
-    ) +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(
-      plot.title = ggplot2::element_text(hjust = 0.5, face = "bold", size = titlesize),
-      plot.subtitle = ggplot2::element_text(hjust = 0.5, face = "italic", size = titlesize - 2),
-      legend.position = "top",
-      axis.text = ggplot2::element_text(size = labsize)
-    ) +
-    ggplot2::facet_grid(Variable ~.,   scales = "free", switch = "y", space = "free" ) +
-    theme(strip.background =element_rect(fill="white"))
+  if (nrow(df_results_contrast)!=0){ # Would happen if we have only numeric variables
+
+
+
+    df_results_contrast$padj <- p.adjust(df_results_contrast$PValue, method = "BH")
+
+
+    ########### CONTRAST MODE PLOT ############
+
+    # Ensure contrast ordering
+    df_results_contrast$Contrast <- sapply(df_results_contrast$Contrast, function(x) wrap_title(x, widthlabels))
+    df_results_contrast$Contrast <- factor(df_results_contrast$Contrast, levels = df_results_contrast$Contrast[order(df_results_contrast$CohenD)])
+
+
+    plot_contrasts <- ggplot2::ggplot(df_results_contrast, ggplot2::aes(x = CohenD, y = Contrast, fill = -log10(padj))) +
+      ggplot2::geom_segment(ggplot2::aes(
+        yend = Contrast,
+        xend = 0,
+        linetype =  "solid",
+        color =  "black"
+      ), size = .5) +
+      ggplot2::geom_point(ggplot2::aes(
+        stroke = 1.2,
+        color =   "black"
+      ), shape = 21, size = pointSize) +
+      ggplot2::scale_fill_gradient2(low = nonsignif_color,
+                                    mid = nonsignif_color,
+                                    high = signif_color,
+                                    midpoint = -log10(sig_threshold),
+                                    limits=c(0,-log10(limit_pval)),
+                                    na.value = signif_color)+
+      ggplot2::scale_linetype_identity() +
+      ggplot2::scale_color_identity() +
+      ggplot2::labs(
+        x = "Cohen's D",
+        y = "Contrast",
+        color = "-log10(Adj. p-value)",
+        fill = "-log10(Adj. p-value)"
+      ) +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, face = "bold", size = titlesize),
+        plot.subtitle = ggplot2::element_text(hjust = 0.5, face = "italic", size = titlesize - 2),
+        legend.position = "top",
+        axis.text = ggplot2::element_text(size = labsize)
+      ) +
+      ggplot2::facet_grid(Variable ~.,   scales = "free", switch = "y", space = "free" ) +
+      theme(strip.background =element_rect(fill="white"))
+
+  }
+
 
 
   ########### OVERALL MODE PLOT ############
@@ -373,10 +388,11 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
 
   ########### ALL ############
 
+  if (nrow(df_results_contrast)!=0){
+
   row1 <- ggpubr::ggarrange(plot_distributions,plot_contrasts, nrow=1, widths=c(0.4,0.6))
   plotfinal <- ggpubr::ggarrange(plot_overall, row1, ncol=1, heights=c(0.3,0.7))
   plotfinal <- ggpubr::annotate_figure(plotfinal, top = grid::textGrob(names(gene_set)[1], gp = grid::gpar(cex = 1.3, fontsize = titlesize, face="bold")))
-
 
   print(plotfinal)
 
@@ -386,6 +402,27 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
                  plot_contrasts=plot_contrasts,
                  plot_overall=plot_overall,
                  plot_distributions=list_plts_var_distribution))
+
+
+   } else {
+
+     plotfinal <- ggpubr::ggarrange(plot_overall, plot_distributions, nrow=1, widths=c(0.5,0.5))
+     plotfinal <- ggpubr::annotate_figure(plotfinal, top = grid::textGrob(names(gene_set)[1], gp = grid::gpar(cex = 1.3, fontsize = titlesize, face="bold")))
+
+
+     print(plotfinal)
+
+     invisible(list(Overall=df_results_overall,
+                    Contrasts = NULL,
+                    plot=plotfinal,
+                    plot_contrasts=NULL,
+                    plot_overall=plot_overall,
+                    plot_distributions=list_plts_var_distribution))
+
+
+  }
+
+
 
 
 }

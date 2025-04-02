@@ -75,9 +75,9 @@ Each element should be a named vector where names correspond to factor levels. D
 A list with:
 \itemize{
 \item \code{Overall}: Data frame with Cohen's F and p-values for overall associations.
-\item \code{Contrasts}: Data frame with Cohen's D and p-values for contrasts.
+\item \code{Contrasts}: Data frame with Cohen's D and p-values for contrasts (only for non numerical variables).
 \item \code{plot}: Combined visualization of results.
-\item \code{plot_contrasts}: Plot of contrast results.
+\item \code{plot_contrasts}: Plot of contrast results (only for non numerical variables).
 \item \code{plot_overall}: Plot of overall associations.
 \item \code{plot_distributions}: List of variable distribution plots.
 }
