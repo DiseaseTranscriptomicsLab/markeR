@@ -1096,7 +1096,7 @@ GSEAresults
 #> $`Senescent-Proliferative`
 #>                     pathway       pval       padj    log2err        ES      NES
 #>                      <char>      <num>      <num>      <num>     <num>    <num>
-#> 1: Senescence_Bidirectional 0.01838843 0.01838843 0.15267586 0.7068136 1.653726
+#> 1: Senescence_Bidirectional 0.01838843 0.03677686 0.15267586 0.7068136 1.653726
 #> 2:               Senescence 0.14596611 0.14596611 0.04482895 0.5844505 1.338962
 #>     size                         leadingEdge stat_used
 #>    <int>                              <list>    <char>
@@ -1261,11 +1261,11 @@ GSEA_VariableAssociation(data=counts_example,
     #> $data
     #>       pathway       pval      padj    log2err         ES        NES  size
     #>        <char>      <num>     <num>      <num>      <num>      <num> <int>
-    #> 1: Senescence 0.14596611 0.2919322 0.04482895  0.5844505  1.3389622     7
+    #> 1: Senescence 0.14596611 0.4378983 0.04482895  0.5844505  1.3389622     7
     #> 2: Senescence 0.81534874 0.8596054 0.01825162  0.2197875  0.7218660     7
-    #> 3: Senescence 0.12206168 0.2919322 0.05892753  0.4198163  1.3797736     7
+    #> 3: Senescence 0.12206168 0.7323701 0.05892753  0.4198163  1.3797736     7
     #> 4: Senescence 0.85960544 0.8596054 0.01599026 -0.2113031 -0.6810595     7
-    #> 5: Senescence 0.06299541 0.2919322 0.11671125 -0.4779552 -1.5523084     7
+    #> 5: Senescence 0.06299541 0.4378983 0.11671125 -0.4779552 -1.5523084     7
     #> 6: Senescence 0.54673591 0.8201039 0.02231638 -0.2849369 -0.9161661     7
     #>                                leadingEdge stat_used                  Contrast
     #>                                     <list>    <char>                    <char>
@@ -1292,10 +1292,10 @@ GSEA_VariableAssociation(data=counts_example,
     #>                     pathway        pval       padj    log2err         ES
     #>                      <char>       <num>      <num>      <num>      <num>
     #> 1: Senescence_Bidirectional 0.023760331 0.07128099 0.13405093 -0.7068136
-    #> 2: Senescence_Bidirectional 0.077863457 0.15572691 0.06946518  0.6399995
-    #> 3: Senescence_Bidirectional 0.006124402 0.03674641 0.25663502  0.7274186
+    #> 2: Senescence_Bidirectional 0.077863457 0.23359037 0.06946518  0.6399995
+    #> 3: Senescence_Bidirectional 0.006124402 0.07128099 0.25663502  0.7274186
     #> 4: Senescence_Bidirectional 0.949172812 0.94917281 0.01513268 -0.2471009
-    #> 5: Senescence_Bidirectional 0.173793103 0.26068966 0.08982029 -0.4165066
+    #> 5: Senescence_Bidirectional 0.173793103 0.38632616 0.08982029 -0.4165066
     #> 6: Senescence_Bidirectional 0.321938468 0.38632616 0.03305031  0.4899121
     #>           NES  size                         leadingEdge stat_used
     #>         <num> <int>                              <list>    <char>
@@ -1331,14 +1331,14 @@ GSEA_VariableAssociation(data=counts_example,
     #> $data
     #>       pathway       pval      padj    log2err         ES        NES  size
     #>        <char>      <num>     <num>      <num>      <num>      <num> <int>
-    #> 1: Senescence 0.14596611 0.3284238 0.04482895  0.5844505  1.3389622     7
+    #> 1: Senescence 0.14596611 0.6568475 0.04482895  0.5844505  1.3389622     7
     #> 2: Senescence 0.81534874 0.9002970 0.01825162  0.2197875  0.7218660     7
-    #> 3: Senescence 0.12206168 0.3284238 0.05892753  0.4198163  1.3797736     7
+    #> 3: Senescence 0.12206168 0.9002970 0.05892753  0.4198163  1.3797736     7
     #> 4: Senescence 0.85960544 0.9002970 0.01599026 -0.2113031 -0.6810595     7
-    #> 5: Senescence 0.13754081 0.3284238 0.05556785  0.4091501  1.3460917     7
+    #> 5: Senescence 0.13754081 0.9002970 0.05556785  0.4091501  1.3460917     7
     #> 6: Senescence 0.72727273 0.9002970 0.01830571 -0.2423185 -0.7803526     7
     #> 7: Senescence 0.90029699 0.9002970 0.01680350  0.1962844  0.6451577     7
-    #> 8: Senescence 0.06299541 0.3284238 0.11671125 -0.4779552 -1.5523084     7
+    #> 8: Senescence 0.06299541 0.6568475 0.11671125 -0.4779552 -1.5523084     7
     #> 9: Senescence 0.54673591 0.9002970 0.02231638 -0.2849369 -0.9161661     7
     #>                                leadingEdge stat_used                   Contrast
     #>                                     <list>    <char>                     <char>
@@ -1365,17 +1365,17 @@ GSEA_VariableAssociation(data=counts_example,
 
     #> 
     #> $data
-    #>                     pathway        pval       padj    log2err         ES
-    #>                      <char>       <num>      <num>      <num>      <num>
-    #> 1: Senescence_Bidirectional 0.023760331 0.07128099 0.13405093 -0.7068136
-    #> 2: Senescence_Bidirectional 0.077863457 0.17519278 0.06946518  0.6399995
-    #> 3: Senescence_Bidirectional 0.006124402 0.05511962 0.25663502  0.7274186
-    #> 4: Senescence_Bidirectional 0.949172812 0.94917281 0.01513268 -0.2471009
-    #> 5: Senescence_Bidirectional 0.018775817 0.07128099 0.14390962  0.6955465
-    #> 6: Senescence_Bidirectional 0.218617227 0.32792584 0.04038999  0.5527943
-    #> 7: Senescence_Bidirectional 0.280341218 0.36043871 0.03509657  0.4842608
-    #> 8: Senescence_Bidirectional 0.173793103 0.31282759 0.08982029 -0.4165066
-    #> 9: Senescence_Bidirectional 0.321938468 0.36218078 0.03305031  0.4899121
+    #>                     pathway        pval      padj    log2err         ES
+    #>                      <char>       <num>     <num>      <num>      <num>
+    #> 1: Senescence_Bidirectional 0.023760331 0.1653589 0.13405093 -0.7068136
+    #> 2: Senescence_Bidirectional 0.077863457 0.3503856 0.06946518  0.6399995
+    #> 3: Senescence_Bidirectional 0.006124402 0.1653589 0.25663502  0.7274186
+    #> 4: Senescence_Bidirectional 0.949172812 0.9491728 0.01513268 -0.2471009
+    #> 5: Senescence_Bidirectional 0.018775817 0.1689824 0.14390962  0.6955465
+    #> 6: Senescence_Bidirectional 0.218617227 0.3784606 0.04038999  0.5527943
+    #> 7: Senescence_Bidirectional 0.280341218 0.3784606 0.03509657  0.4842608
+    #> 8: Senescence_Bidirectional 0.173793103 0.3784606 0.08982029 -0.4165066
+    #> 9: Senescence_Bidirectional 0.321938468 0.3784606 0.03305031  0.4899121
     #>           NES  size                           leadingEdge stat_used
     #>         <num> <int>                                <list>    <char>
     #> 1: -1.6491022     7   LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t

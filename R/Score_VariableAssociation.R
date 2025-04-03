@@ -233,24 +233,22 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
   }
 
 
-  if(is.null(saturation_value)){
-    if (min(df_results_contrast$padj)>sig_threshold){
-      limit_pval <- 0.001
-    } else{
-      limit_pval <- min(df_results_contrast$padj)
-    }
-
-  } else {
-    limit_pval <- saturation_value
-  }
 
 
   if (nrow(df_results_contrast)!=0){ # Would happen if we have only numeric variables
 
-
-
     df_results_contrast$padj <- p.adjust(df_results_contrast$PValue, method = "BH")
 
+    if(is.null(saturation_value)){
+      if (min(df_results_contrast$padj)>sig_threshold){
+        limit_pval <- 0.001
+      } else{
+        limit_pval <- min(df_results_contrast$padj)
+      }
+
+    } else {
+      limit_pval <- saturation_value
+    }
 
     ########### CONTRAST MODE PLOT ############
 
@@ -280,16 +278,17 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
       ggplot2::scale_color_identity() +
       ggplot2::labs(
         x = "Cohen's D",
-        y = "Contrast",
-        color = "-log10(Adj. p-value)",
-        fill = "-log10(Adj. p-value)"
+        y = "Pairwise Contrasts",
+        color = "-log10(adj. p-value)",
+        fill = "-log10(adj. p-value)"
       ) +
       ggplot2::theme_minimal() +
       ggplot2::theme(
         plot.title = ggplot2::element_text(hjust = 0.5, face = "bold", size = titlesize),
         plot.subtitle = ggplot2::element_text(hjust = 0.5, face = "italic", size = titlesize - 2),
         legend.position = "top",
-        axis.text = ggplot2::element_text(size = labsize)
+        axis.text = ggplot2::element_text(size = labsize),
+        axis.title.y = element_text(face = "bold")
       ) +
       ggplot2::facet_grid(Variable ~.,   scales = "free", switch = "y", space = "free" ) +
       theme(strip.background =element_rect(fill="white"))
@@ -297,6 +296,17 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
   }
 
 
+
+  if(is.null(saturation_value)){
+    if (min(df_results_overall$padj)>sig_threshold){
+      limit_pval <- 0.001
+    } else{
+      limit_pval <- min(df_results_overall$padj)
+    }
+
+  } else {
+    limit_pval <- saturation_value
+  }
 
   ########### OVERALL MODE PLOT ############
 
@@ -372,15 +382,29 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
 
       }
 
-      list_plts_var_distribution[[var]] <- ggplot2:: ggplot(df_ranking, ggplot2::aes_string(x = "score", fill = var)) +
+      # Compute the maximum density value, to be used for the geom_rug() position
+      max_density <- max(ggplot2::ggplot_build(
+        ggplot2::ggplot(df_ranking, ggplot2::aes_string(x = "score", fill = var)) +
+          ggplot2::geom_density()
+      )$data[[1]]$y)
+
+      # Define a proportion of space below 0
+      y_margin <- 0.1 * max_density  # Adjust this factor as needed
+
+      list_plts_var_distribution[[var]] <- ggplot2::ggplot(df_ranking, ggplot2::aes_string(x = "score", fill = var)) +
         ggplot2::geom_density(alpha = 0.6) +
+        ggplot2::geom_rug(ggplot2::aes_string(x = "score", color=var), sides = "b",  alpha = 0.8, size = .5, length = grid::unit(0.08, "npc")) + # add lines at the bottom
+        #(sides = "b", alpha = 0.6, size = 1.5, length = grid::unit(0.1, "npc"))
         ggplot2::scale_fill_manual(values = colors) +  # Apply custom discrete colors
-        ggplot2::coord_cartesian(clip = "off") +
+        ggplot2::scale_color_manual(values = colors, guide = "none") +  # Apply custom discrete colors
+        ggplot2::coord_cartesian(ylim = c(-y_margin, max_density * 1.1), clip = "off") +
         ggplot2::theme_classic() +
         ggplot2::ggtitle(var) +
         ggplot2::labs(x = paste0("Score (",method,")"), y = "Density", fill="") +
         ggplot2::theme(legend.position = "right",
                        plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"))
+
+
     }
   }
 
@@ -392,8 +416,13 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
 
   row1 <- ggpubr::ggarrange(plot_distributions,plot_contrasts, nrow=1, widths=c(0.4,0.6))
   plotfinal <- ggpubr::ggarrange(plot_overall, row1, ncol=1, heights=c(0.3,0.7))
-  plotfinal <- ggpubr::annotate_figure(plotfinal, top = grid::textGrob(names(gene_set)[1], gp = grid::gpar(cex = 1.3, fontsize = titlesize, face="bold")))
-
+  plotfinal <- ggpubr::annotate_figure(
+    plotfinal,
+    top = grid::textGrob(
+      names(gene_set)[1],
+      gp = grid::gpar(cex = 1.3, fontsize = titlesize, fontface = "bold")
+    )
+  )
   print(plotfinal)
 
   invisible(list(Overall=df_results_overall,
@@ -407,8 +436,13 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
    } else {
 
      plotfinal <- ggpubr::ggarrange(plot_overall, plot_distributions, nrow=1, widths=c(0.5,0.5))
-     plotfinal <- ggpubr::annotate_figure(plotfinal, top = grid::textGrob(names(gene_set)[1], gp = grid::gpar(cex = 1.3, fontsize = titlesize, face="bold")))
-
+     plotfinal <- ggpubr::annotate_figure(
+       plotfinal,
+       top = grid::textGrob(
+         names(gene_set)[1],
+         gp = grid::gpar(cex = 1.3, fontsize = titlesize, fontface = "bold")
+       )
+     )
 
      print(plotfinal)
 

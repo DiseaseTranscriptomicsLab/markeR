@@ -124,7 +124,7 @@ counts_example[1:5,1:5]
 ### Visualise Individual Genes from Senescence Signature
 
 #### Expression Heatmap
-
+ 
 ```{r example_exprheatmap, fig.width=8, fig.height=3, out.width="70%", warning=FALSE, message=FALSE}
 
 annotation_colors <- list( 
