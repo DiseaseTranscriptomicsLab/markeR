@@ -477,43 +477,6 @@ The following example uses the **“ssGSEA”** method for score
 calculation, both for unidirectional and bidirectional signatures.
 
 ``` r
-#  
-# df_Scores <- CalculateScores(data = counts_example, 
-#                              metadata = metadata_example, 
-#                              method = "ssGSEA", 
-#                              gene_sets = list(Senescence=SimpleSenescenceSignature))
-
-senescence_triggers_colors <- c(
-  "none" = "#E57373",  # Soft red   
-  "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
-)
-
-cond_cohend <- list(A=c("Senescent"),  
-                    B=c("Proliferative"))
-
-PlotScores(data = counts_example, 
-           metadata = metadata_example, 
-           gene_sets = list(Senescence=SimpleSenescenceSignature),
-           ColorVariable = "SenescentType", 
-           GroupingVariable="Condition",  
-           method ="ssGSEA", 
-           ColorValues = senescence_triggers_colors, 
-           ConnectGroups=TRUE, 
-           ncol = NULL, 
-           nrow = NULL, 
-           widthTitle=24, 
-           limits = NULL, 
-           legend_nrow = 1, 
-           pointSize=4,
-           cond_cohend=cond_cohend,
-           title="Marthandan et al. 2016",
-           labsize=7, 
-           titlesize = 10)  
-```
-
-<img src="man/figures/README-exampleScoresGSEA_uni-1.png" width="40%" />
-
-``` r
 # df_Scores <- CalculateScores(data = counts_example, 
 #                              metadata = metadata_example, 
 #                              method = "ssGSEA", 
@@ -529,7 +492,8 @@ cond_cohend <- list(A=c("Senescent"),
 
 PlotScores(data = counts_example, 
            metadata = metadata_example, 
-           gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional),
+           gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                          Senescence  = SimpleSenescenceSignature),
            ColorVariable = "SenescentType", 
            GroupingVariable="Condition",  
            method ="ssGSEA", 
@@ -547,7 +511,7 @@ PlotScores(data = counts_example,
            titlesize = 10)  
 ```
 
-<img src="man/figures/README-examplessGSEA_bi-1.png" width="40%" />
+<img src="man/figures/README-examplessGSEA-1.png" width="100%" />
 
 #### Ranking method
 
@@ -558,42 +522,6 @@ calculation, both for unidirectional and bidirectional signatures.
 # df_Scores <- CalculateScores(data = counts_example, 
 #                              metadata = metadata_example, 
 #                              method = "ranking", 
-#                              gene_sets = list(Senescence=SimpleSenescenceSignature))
-
-senescence_triggers_colors <- c(
-  "none" = "#E57373",  # Soft red   
-  "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
-)
-
-cond_cohend <- list(A=c("Senescent"),  
-                    B=c("Proliferative"))
-
-PlotScores(data = counts_example, 
-           metadata = metadata_example, 
-           gene_sets = list(Senescence=SimpleSenescenceSignature),
-           ColorVariable = "SenescentType", 
-           GroupingVariable="Condition",  
-           method ="ranking", 
-           ColorValues = senescence_triggers_colors, 
-           ConnectGroups=TRUE, 
-           ncol = NULL, 
-           nrow = NULL, 
-           widthTitle=24, 
-           limits = NULL, 
-           legend_nrow = 1, 
-           pointSize=4,
-           cond_cohend=cond_cohend,
-           title="Marthandan et al. 2016",
-           labsize=7, 
-           titlesize = 10)  
-```
-
-<img src="man/figures/README-ranking_unidirect-1.png" width="40%" />
-
-``` r
-# df_Scores <- CalculateScores(data = counts_example, 
-#                              metadata = metadata_example, 
-#                              method = "ranking", 
 #                              gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional))
 
 senescence_triggers_colors <- c(
@@ -606,7 +534,8 @@ cond_cohend <- list(A=c("Senescent"),
 
 PlotScores(data = counts_example, 
            metadata = metadata_example, 
-           gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional),
+           gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                          Senescence  = SimpleSenescenceSignature),
            ColorVariable = "SenescentType", 
            GroupingVariable="Condition",  
            method ="ranking", 
@@ -624,7 +553,7 @@ PlotScores(data = counts_example,
            titlesize = 10)  
 ```
 
-<img src="man/figures/README-ranking_bidirect-1.png" width="40%" />
+<img src="man/figures/README-ranking-1.png" width="100%" />
 
 #### All methods
 
@@ -1024,7 +953,7 @@ DEGs_continuous2$days[1:3,]
 #> RNA18SN3  0.06743439 9.577467  1.554171 0.1280974 0.9997685 -6.129426
 ```
 
-This usage of the `lmexpression`parameter also allows the user to
+This usage of the `lmexpression` parameter also allows the user to
 combine categorical variables with numeric variables:
 
 -   `Intercept`: Baseline expression when days = 0 and Condition =
