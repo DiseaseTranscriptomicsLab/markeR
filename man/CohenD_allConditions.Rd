@@ -19,11 +19,13 @@ column indicates the expected direction (1 for upregulated, -1 for downregulated
 \item{variable}{A string specifying the grouping variable in \code{metadata} used to compare scores between conditions.}
 }
 \value{
-A named list where each element corresponds to a gene signature. Each signature element is a list with two components:
+A named list where each element corresponds to a gene signature. Each signature element is a list with three components:
 \describe{
 \item{CohenD}{A data frame where rows are methods and columns are group contrasts (formatted as \"Group1:Group2\"),
 containing the computed Cohen\'s d effect sizes.}
 \item{PValue}{A data frame with the same structure as \code{CohenD} containing the corresponding p-values.}
+\item{padj}{A data frame with the same structure as \code{PValue} containing the corresponding p-values corrected using the BH method, for all signatures and contrasts,
+and by method.}
 }
 }
 \description{

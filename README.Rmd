@@ -48,10 +48,10 @@ knitr::opts_chunk$set(
     -   [Gene Set Enrichment Analyses](#gene-set-enrichment-analyses)
     -   [GSEA Association with Chosen Variables](#gsea-association-with-chosen-variables)
 
-## Installation
+## Installation 
 
 You can install the development version of markeR from [GitHub](https://github.com/) with:
-
+   
 ``` r
 # install.packages("devtools")
 devtools::install_github("DiseaseTranscriptomicsLab/markeR")
@@ -458,7 +458,7 @@ PlotScores(data = counts_example,
 
 #### All methods
 
-To compare various metrics across different condition combinations, violin plots may not always be the best choice. In such cases, users can set`method = "all"` to generate a summary heatmap. The function will return one heatmap per gene set, with rows corresponding to all possible combinations of values in the `GroupingVariable`.
+To compare various metrics across different condition combinations, violin plots may not always be the best choice. In such cases, users can set`method = "all"` to generate a summary heatmap. The function will return one heatmap per gene set, with rows corresponding to all possible combinations of values in the `GroupingVariable`. In parenthesis is represented the p-value, adjusted using the `BH` method, and corrected by contrast and signature.
 
 ```{r heatmap_all, fig.width=6, fig.height=3, out.width="80%", warning=FALSE, message=FALSE}
 

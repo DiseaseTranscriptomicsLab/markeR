@@ -324,16 +324,7 @@ PlotScores(data = corrcounts_merge,
            title="Marthandan et al. 2016", 
            titlesize = 12,
            ColorValues = NULL)  
-
-
-# missing: 
-# - combine legends
-# - wrap title
-# - tilt x labels to 60 degrees
-# - change default colors
-# wrap x labels with wrap_title
-# grid with common legends https://support.bioconductor.org/p/87318/
-
+ 
 
 ```
 

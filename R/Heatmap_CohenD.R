@@ -65,7 +65,7 @@ Heatmap_CohenD <- function(data, metadata, gene_sets, variable, nrow = NULL, nco
 
   for (signature in names(cohenlist)) {
     cohen_d_mat <- t(as.matrix(cohenlist[[signature]]$CohenD))
-    p_value_mat <- t(as.matrix(cohenlist[[signature]]$PValue))
+    p_value_mat <- t(as.matrix(cohenlist[[signature]]$padj))
 
     # Convert to long format manually
     long_data <- data.frame(
@@ -159,11 +159,13 @@ Heatmap_CohenD <- function(data, metadata, gene_sets, variable, nrow = NULL, nco
 #'   column indicates the expected direction (1 for upregulated, -1 for downregulated).
 #' @param variable A string specifying the grouping variable in \code{metadata} used to compare scores between conditions.
 #'
-#' @return A named list where each element corresponds to a gene signature. Each signature element is a list with two components:
+#' @return A named list where each element corresponds to a gene signature. Each signature element is a list with three components:
 #' \describe{
 #'   \item{CohenD}{A data frame where rows are methods and columns are group contrasts (formatted as \"Group1:Group2\"),
 #'   containing the computed Cohen\'s d effect sizes.}
 #'   \item{PValue}{A data frame with the same structure as \code{CohenD} containing the corresponding p-values.}
+#'   \item{padj}{A data frame with the same structure as \code{PValue} containing the corresponding p-values corrected using the BH method, for all signatures and contrasts,
+#'   and by method.}
 #' }
 #'
 #' @examples
@@ -225,7 +227,47 @@ CohenD_allConditions <- function(data, metadata, gene_sets, variable) {
     result_list[[signature]] <- list(CohenD = cohen_d_df, PValue = p_value_df)
   }
 
-  # Step 7: Return the list
+  # Step 7: Correct for multiple testing across all signatures and contrasts (but NOT methods)
+  # Initialize storage for adjusted p-values
+  all_pvalues <- list()
+
+  # Step 1: Extract all p-values grouped by method
+  for (signature in names(result_list)) {
+    for (method in rownames(result_list[[signature]]$PValue)) {
+      if (!method %in% names(all_pvalues)) {
+        all_pvalues[[method]] <- c()
+      }
+      all_pvalues[[method]] <- c(all_pvalues[[method]], as.vector(result_list[[signature]]$PValue[method, ]))
+    }
+  }
+
+  # Step 2: Apply BH correction within each method
+  all_padj <- lapply(all_pvalues, function(pvals) p.adjust(pvals, method = "BH"))
+
+  # Step 3: Store corrected p-values back into result_list
+  index_tracker <- list()  # Track index position for each method
+  for (signature in names(result_list)) {
+    padj_matrix <- matrix(nrow = nrow(result_list[[signature]]$PValue),
+                          ncol = ncol(result_list[[signature]]$PValue),
+                          dimnames = dimnames(result_list[[signature]]$PValue))
+
+    for (method in rownames(result_list[[signature]]$PValue)) {
+      # Initialize index tracker for the method
+      if (is.null(index_tracker[[method]])) index_tracker[[method]] <- 1
+
+      # Assign adjusted p-values in order
+      num_vals <- length(result_list[[signature]]$PValue[method, ])
+      padj_matrix[method, ] <- all_padj[[method]][index_tracker[[method]]:(index_tracker[[method]] + num_vals - 1)]
+
+      # Update index tracker
+      index_tracker[[method]] <- index_tracker[[method]] + num_vals
+    }
+
+    # Store in result_list under padj
+    result_list[[signature]]$padj <- as.data.frame(padj_matrix)
+  }
+
+  # Step 8: Return the list
   return(result_list)
 }
 
@@ -295,11 +337,14 @@ compute_cohen_d <- function(dfScore, variable, quantitative_var="score") {
 
   # Compute Cohen\'s d and p-value for all unique pairs
   combs <- combn(unique_groups, 2, simplify = FALSE)
+
+
   for (pair in combs) {
     x <- dfScore[dfScore[[variable]] == pair[1], quantitative_var, drop = TRUE]
     y <- dfScore[dfScore[[variable]] == pair[2], quantitative_var, drop = TRUE]
 
     d <- cohen_d(x, y)
+    set.seed("03042025")
     p_val <- t.test(x, y, var.equal = TRUE)$p.value
 
     results <- rbind(results, data.frame(Group1 = pair[1], Group2 = pair[2],

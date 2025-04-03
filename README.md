@@ -561,7 +561,9 @@ To compare various metrics across different condition combinations,
 violin plots may not always be the best choice. In such cases, users can
 set`method = "all"` to generate a summary heatmap. The function will
 return one heatmap per gene set, with rows corresponding to all possible
-combinations of values in the `GroupingVariable`.
+combinations of values in the `GroupingVariable`. In parenthesis is
+represented the p-value, adjusted using the `BH` method, and corrected
+by contrast and signature.
 
 ``` r
 PlotScores(data = counts_example, 
