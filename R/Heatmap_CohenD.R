@@ -88,7 +88,7 @@ Heatmap_CohenD <- function(data, metadata, gene_sets, variable, nrow = NULL, nco
       ggplot2::geom_text(aes(label = label), color = "black", size = 3) +
       ggplot2::scale_fill_gradientn(colors = ColorValues, limits = limits) +
       ggplot2::labs(title = signature_title, x = NULL, y = NULL, fill = "Cohen\'s D") +
-      ggplot2::theme_minimal() +
+      ggplot2::theme_bw() +
       ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
                      plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize) )
 

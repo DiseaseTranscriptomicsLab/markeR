@@ -511,7 +511,7 @@ PlotScores(data = counts_example,
            titlesize = 10)  
 ```
 
-<img src="man/figures/README-examplessGSEA-1.png" width="100%" />
+<img src="man/figures/README-examplessGSEA-1.png" width="80%" />
 
 #### Ranking method
 
@@ -553,7 +553,7 @@ PlotScores(data = counts_example,
            titlesize = 10)  
 ```
 
-<img src="man/figures/README-ranking-1.png" width="100%" />
+<img src="man/figures/README-ranking-1.png" width="80%" />
 
 #### All methods
 
@@ -577,11 +577,80 @@ PlotScores(data = counts_example,
            widthTitle=30, 
            limits = NULL,   
            title="Marthandan et al. 2016", 
-           titlesize = 12,
+           titlesize = 10,
            ColorValues = NULL)  
 ```
 
 <img src="man/figures/README-heatmap_all-1.png" width="80%" />
+
+The `ROC_Scores` and `AUC_Scores` functions allow users to evaluate the
+classification potential of gene set scores based on ROC curves and AUC
+values, respectively. These functions help assess how well a given score
+can differentiate between conditions, based on predefined contrasts.
+Besides `method="all"`, these functions can also be used for each method
+individually.
+
+The `mode` parameter controls how contrasts are generated for
+categorical variables, allowing users to adjust the complexity of the
+analysis:
+
+-   **“simple”**: Performs the minimal number of contrasts, typically
+    comparing each category to a baseline (e.g., for a factor with
+    levels A, B, C and D, it may generate A - B, A - C, A - D, B - C,
+    B - D, C - D).
+-   **“medium”**: Expands on the simple mode by including additional
+    pairwise comparisons between groups (e.g., A - (B + C + D), B - (A +
+    C + D), etc).
+-   **“extensive”**: Conducts all possible comparisons, including
+    complex interactions if applicable, providing the most comprehensive
+    analysis. (e.g., (A + B) - (C + D)).
+
+The `ROC_Scores` function generates ROC curves for different scoring
+methods across contrasts, allowing users to visualize performance
+differences.
+
+``` r
+ ROC_Scores(data = counts_example, 
+           metadata = metadata_example, 
+           gene_sets=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                          Senescence  = SimpleSenescenceSignature), 
+           method = "all", 
+           variable ="Condition",
+           colors = c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52"), 
+           grid = TRUE, 
+           spacing_annotation=0.3, 
+           ncol=NULL, 
+           nrow=1,
+            mode = "simple",
+            widthTitle = 28,
+           titlesize = 10,  
+           title="Marthandan et al. 2016") 
+```
+
+<img src="man/figures/README-roc_scores-1.png" width="80%" />
+
+The `AUC_Scores` function generates heatmaps for each gene signature,
+with methods as columns and contrasts as rows, summarizing AUC values in
+a heatmap format.
+
+``` r
+AUC_Scores(data = counts_example, 
+           metadata = metadata_example, 
+           gene_sets=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                          Senescence  = SimpleSenescenceSignature), 
+           method = "all", 
+           mode = "simple", 
+           variable="Condition", 
+           nrow = NULL, 
+           ncol = NULL, 
+           limits = NULL, 
+           widthTitle = 28, 
+           titlesize = 10, 
+           ColorValues = c("#F9F4AE", "#B44141"),   
+           title="Marthandan et al. 2016") 
+```
+
+<img src="man/figures/README-auc_scores-1.png" width="80%" />
 
 #### False Discovery Rate (FDR) Calculations
 
@@ -637,21 +706,6 @@ The function returns a structured list containing:
 
 This approach allows users to quickly **identify potential relationships
 between scores and predictor variables**, guiding further analysis.
-
-The `mode` parameter controls how contrasts are generated for
-categorical variables, allowing users to adjust the complexity of the
-analysis:
-
--   **“simple”**: Performs the minimal number of contrasts, typically
-    comparing each category to a baseline (e.g., for a factor with
-    levels A, B, C and D, it may generate A - B, A - C, A - D, B - C,
-    B - D, C - D).
--   **“medium”**: Expands on the simple mode by including additional
-    pairwise comparisons between groups (e.g., A - (B + C + D), B - (A +
-    C + D), etc).
--   **“extensive”**: Conducts all possible comparisons, including
-    complex interactions if applicable, providing the most comprehensive
-    analysis. (e.g., (A + B) - (C + D)).
 
 This approach requires that the user is analysing a specific method for
 score calculation and gene signature. For illustration purposes, we will

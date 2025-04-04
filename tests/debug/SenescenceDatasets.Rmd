@@ -329,6 +329,77 @@ PlotScores(data = corrcounts_merge,
 ```
 
 
+```{r fig.width=12, fig.height=24} 
+ plt2 <- ROC_Scores(data = corrcounts_merge, 
+           metadata = metadata_merge_corr, 
+           gene_sets=bidirectsigs, 
+           method = "logmedian", 
+           variable ="Condition",
+           colors = "pink", 
+           grid = TRUE, 
+           spacing_annotation=0.35, 
+           ncol=NULL, 
+           nrow=NULL,
+            mode = "simple",
+            widthTitle = 28) 
+
+plt2
+ 
+```
+
+
+
+```{r fig.width=12, fig.height=24} 
+ plt2 <- ROC_Scores(data = corrcounts_merge, 
+           metadata = metadata_merge_corr, 
+           gene_sets=bidirectsigs, 
+           method = "all", 
+           variable ="Condition",
+           colors = c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52"), 
+           grid = TRUE, 
+           spacing_annotation=0.35, 
+           ncol=NULL, 
+           nrow=NULL,
+            mode = "simple",
+            widthTitle = 28) 
+
+plt2
+ 
+```
+
+
+```{r fig.width=22, fig.height=25} 
+ plt <- ROC_Scores(data = corrcounts_merge, 
+           metadata = metadata_merge_corr, 
+           gene_sets=bidirectsigs, 
+           method = "all", 
+           variable ="Condition",
+           colors = c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52"), 
+           grid = TRUE, 
+           spacing_annotation=0.35, 
+           ncol=NULL, 
+           nrow=NULL,
+            mode = "extensive",
+            widthTitle = 28) 
+
+plt
+ 
+```
+
+
+```{r fig.width=12, fig.height=14}
+plt <- AUC_Scores(data = corrcounts_merge, metadata=metadata_merge_corr, gene_sets=bidirectsigs, method = "all", mode = "extensive", variable="Condition", nrow = NULL, ncol = NULL, limits = NULL, widthTitle = 28, titlesize = 12, ColorValues = c("#F9F4AE", "#B44141"), title = NULL) 
+
+plt
+```
+
+```{r fig.width=28, fig.height=4}
+plt <- AUC_Scores(data = corrcounts_merge, metadata=metadata_merge_corr, gene_sets=bidirectsigs, method = "all", variable="Condition", nrow = 1, ncol = NULL, limits = NULL, widthTitle = 28, titlesize = 12, ColorValues = c("#F9F4AE", "#B44141"), title = NULL) 
+
+plt
+```
+
+
 ## Association with Variable
 
 If the user is investigating if a certain variable can be described from the score, and not already knowing that variable. More exploratory...
