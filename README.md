@@ -565,31 +565,6 @@ combinations of values in the `GroupingVariable`. In parenthesis is
 represented the p-value, adjusted using the `BH` method, and corrected
 by contrast and signature.
 
-``` r
-PlotScores(data = counts_example, 
-           metadata = metadata_example,  
-           gene_sets=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
-                          Senescence  = SimpleSenescenceSignature), 
-           GroupingVariable="Condition",  
-           method ="all",   
-           ncol = NULL, 
-           nrow = NULL, 
-           widthTitle=30, 
-           limits = NULL,   
-           title="Marthandan et al. 2016", 
-           titlesize = 10,
-           ColorValues = NULL)  
-```
-
-<img src="man/figures/README-heatmap_all-1.png" width="80%" />
-
-The `ROC_Scores` and `AUC_Scores` functions allow users to evaluate the
-classification potential of gene set scores based on ROC curves and AUC
-values, respectively. These functions help assess how well a given score
-can differentiate between conditions, based on predefined contrasts.
-Besides `method="all"`, these functions can also be used for each method
-individually.
-
 The `mode` parameter controls how contrasts are generated for
 categorical variables, allowing users to adjust the complexity of the
 analysis:
@@ -604,6 +579,33 @@ analysis:
 -   **“extensive”**: Conducts all possible comparisons, including
     complex interactions if applicable, providing the most comprehensive
     analysis. (e.g., (A + B) - (C + D)).
+
+``` r
+ 
+PlotScores(data = counts_example, 
+           metadata = metadata_example,  
+           gene_sets=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                          Senescence  = SimpleSenescenceSignature), 
+           GroupingVariable="Condition",  
+           method ="all",   
+           ncol = NULL, 
+           nrow = NULL, 
+           widthTitle=30, 
+           limits = NULL,   
+           title="Marthandan et al. 2016", 
+           titlesize = 10,
+           ColorValues = NULL,
+           mode="simple")  
+```
+
+<img src="man/figures/README-heatmap_all-1.png" width="80%" />
+
+The `ROC_Scores` and `AUC_Scores` functions allow users to evaluate the
+classification potential of gene set scores based on ROC curves and AUC
+values, respectively. These functions help assess how well a given score
+can differentiate between conditions, based on predefined contrasts.
+Besides `method="all"`, these functions can also be used for each method
+individually.
 
 The `ROC_Scores` function generates ROC curves for different scoring
 methods across contrasts, allowing users to visualize performance
@@ -627,7 +629,7 @@ differences.
            title="Marthandan et al. 2016") 
 ```
 
-<img src="man/figures/README-roc_scores-1.png" width="80%" />
+<img src="man/figures/README-roc_scores-1.png" width="70%" />
 
 The `AUC_Scores` function generates heatmaps for each gene signature,
 with methods as columns and contrasts as rows, summarizing AUC values in
@@ -727,6 +729,7 @@ metadata_example_illustration$days <- sample(c(1:20),39, replace = T)
 ```
 
 ``` r
+options(error=recover)
 results_scoreassoc_bidirect <- Score_VariableAssociation(data = counts_example, 
                           metadata = metadata_example_illustration, 
                           cols = c("Condition","person","days"), 

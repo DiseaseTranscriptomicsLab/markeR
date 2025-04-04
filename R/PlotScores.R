@@ -57,6 +57,11 @@
 #'   If not provided, Cohen's d is not computed. Currently works only for two groups. Only applicable if `method != "all"`.
 #' @param labsize Numeric; font size of the plot's axis labels (default = `14`). Only applicable if `method != "all"`.
 #' @param pvalcalc Logical; Calculates p-value and presents it on plot (default = FALSE). Always calculates for the same comparison as `cond_cohend`.
+#' @param mode A string specifying the level of detail for contrasts. Only applicable for method = "all".
+#' Options are:
+#' - `"simple"`: Pairwise comparisons (e.g., A - B).
+#' - `"medium"`: Pairwise comparisons plus comparisons against the mean of other groups.
+#' - `"extensive"`: All possible groupwise contrasts, ensuring balance in the number of terms on each side.
 #'
 #' @return
 #' - If `method != "all"`: A combined ggplot object (using `ggpubr::ggarrange` and `ggpubr::annotate_figure`) displaying violin plots for each gene signature.
@@ -83,7 +88,7 @@ PlotScores <- function(data, metadata, gene_sets,
                        ColorVariable = NULL, GroupingVariable = NULL,
                        ColorValues = NULL, ConnectGroups = FALSE, ncol = NULL, nrow = NULL, title = NULL,
                        widthTitle = 10, titlesize = 12, limits = NULL, legend_nrow = NULL, pointSize = 2,
-                       xlab = NULL, labsize = 10, cond_cohend = NULL, pvalcalc = FALSE) {
+                       xlab = NULL, labsize = 10, cond_cohend = NULL, pvalcalc = FALSE, mode = c("simple","medium","extensive")) {
 
   method <- match.arg(method)
 
@@ -100,7 +105,8 @@ PlotScores <- function(data, metadata, gene_sets,
                                     widthTitle = widthTitle,
                                     titlesize = titlesize,
                                     ColorValues = ColorValues,
-                                    title = title)
+                                    title = title,
+                                    mode=mode)
     return(Heatmap_Final$plt)
 
   } else {

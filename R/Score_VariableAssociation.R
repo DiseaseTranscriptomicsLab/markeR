@@ -207,13 +207,13 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
     if (type =="Numeric"){
       next
     }
-    contrasts <- generate_all_contrasts(unique(df_ranking[[var]]), mode = mode)
-    contrasts <- remove_division(contrasts)
+    #contrasts <- generate_all_contrasts(unique(df_ranking[[var]]), mode = mode)
+    #contrasts <- remove_division(contrasts)
 
-    for (cont in contrasts){
+    #for (cont in contrasts){
 
-      metadata_cohentest <- create_contrast_column(df_ranking, var, cont) # subsets metadata and adds new column "cohentest" with the two parts of the contrast
-      result_cohen_contrast <- compute_cohen_d(metadata_cohentest, "cohentest", quantitative_var="score")
+     # metadata_cohentest <- create_contrast_column(df_ranking, var, cont) # subsets metadata and adds new column "cohentest" with the two parts of the contrast
+      result_cohen_contrast <- compute_cohen_d(df_ranking, var, quantitative_var="score", mode=mode)
       df_results_contrast <-  rbind(df_results_contrast,
                                     data.frame(
                                       Variable = var,
@@ -227,7 +227,7 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
 
 
 
-    }
+    #}
 
 
   }

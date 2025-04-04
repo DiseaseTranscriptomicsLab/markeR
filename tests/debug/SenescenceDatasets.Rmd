@@ -307,7 +307,24 @@ PlotScores(ResultsList = df_ranking, ColorVariable = "CellType", GroupingVariabl
 
 ## Heatmap for Cohen's D
 
+```{r fig.width=15, fig.height=18}
 
+PlotScores(data = corrcounts_merge, 
+           metadata = metadata_merge,  
+           gene_sets=bidirectsigs, 
+           GroupingVariable="Condition",  
+           method ="all",   
+           ncol = NULL, 
+           nrow = NULL, 
+           widthTitle=30, 
+           limits = NULL,   
+           title=NULL, 
+           titlesize = 12,
+           ColorValues = NULL,
+           mode = "extensive")  
+ 
+
+```
 
 
 ```{r fig.width=15, fig.height=12}
@@ -321,9 +338,10 @@ PlotScores(data = corrcounts_merge,
            nrow = NULL, 
            widthTitle=30, 
            limits = NULL,   
-           title="Marthandan et al. 2016", 
+           title=NULL, 
            titlesize = 12,
-           ColorValues = NULL)  
+           ColorValues = NULL,
+           mode = "simple")  
  
 
 ```

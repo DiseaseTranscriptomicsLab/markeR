@@ -20,6 +20,12 @@
 #' @param titlesize An integer specifying the text size for each of the heatmap titles. Default is 12.
 #' @param ColorValues A character vector specifying the colors for the gradient fill in the heatmaps. Default is \code{c("#F9F4AE", "#B44141")}.
 #' @param title Title for the grid of plots.
+#' @param mode A string specifying the level of detail for contrasts.
+#' Options are:
+#' - `"simple"`: Pairwise comparisons (e.g., A - B).
+#' - `"medium"`: Pairwise comparisons plus comparisons against the mean of other groups.
+#' - `"extensive"`: All possible groupwise contrasts, ensuring balance in the number of terms on each side.
+#'
 #' @return A list with two elements:
 #' \describe{
 #'   \item{plt}{A combined heatmap arranged in a grid using \code{ggpubr::ggarrange}.}
@@ -55,9 +61,9 @@
 #' @importFrom ggpubr ggarrange
 #'
 #' @export
-Heatmap_CohenD <- function(data, metadata, gene_sets, variable, nrow = NULL, ncol = NULL, limits = NULL, widthTitle = 22, titlesize = 12, ColorValues = NULL,title=NULL) {
+Heatmap_CohenD <- function(data, metadata, gene_sets, variable, nrow = NULL, ncol = NULL, limits = NULL, widthTitle = 22, titlesize = 12, ColorValues = NULL,title=NULL, mode = c("simple","medium","extensive")) {
 
-  cohenlist <- CohenD_allConditions(data = data, metadata = metadata, gene_sets = gene_sets, variable = variable)
+  cohenlist <- CohenD_allConditions(data = data, metadata = metadata, gene_sets = gene_sets, variable = variable, mode = mode)
 
   heatmaps <- list()
 
@@ -158,6 +164,11 @@ Heatmap_CohenD <- function(data, metadata, gene_sets, variable, nrow = NULL, nco
 #'   for bidirectional gene sets, each element is a data frame where the first column contains gene names and the second
 #'   column indicates the expected direction (1 for upregulated, -1 for downregulated).
 #' @param variable A string specifying the grouping variable in \code{metadata} used to compare scores between conditions.
+#' @param mode A string specifying the level of detail for contrasts.
+#' Options are:
+#' - `"simple"`: Pairwise comparisons (e.g., A - B).
+#' - `"medium"`: Pairwise comparisons plus comparisons against the mean of other groups.
+#' - `"extensive"`: All possible groupwise contrasts, ensuring balance in the number of terms on each side.
 #'
 #' @return A named list where each element corresponds to a gene signature. Each signature element is a list with three components:
 #' \describe{
@@ -179,7 +190,7 @@ Heatmap_CohenD <- function(data, metadata, gene_sets, variable, nrow = NULL, nco
 #' }
 #'
 #' @export
-CohenD_allConditions <- function(data, metadata, gene_sets, variable) {
+CohenD_allConditions <- function(data, metadata, gene_sets, variable, mode = c("simple","medium","extensive")) {
 
   # Step 1: Check if variable exists in metadata
   if (!variable %in% colnames(metadata)) {
@@ -212,11 +223,11 @@ CohenD_allConditions <- function(data, metadata, gene_sets, variable) {
       df_method <- df_subset[df_subset$method == method, ]
 
       # Compute Cohen\'s d and p-values
-      cohen_results <- compute_cohen_d(df_method, variable)
+      cohen_results <- compute_cohen_d(df_method, variable, quantitative_var = "score", mode=mode)
 
       # Convert to named vectors (column names = comparisons)
-      cohen_d_results[[method]] <- setNames(cohen_results$CohenD, paste0(cohen_results$Group1, ":", cohen_results$Group2))
-      p_value_results[[method]] <- setNames(cohen_results$PValue, paste0(cohen_results$Group1, ":", cohen_results$Group2))
+      cohen_d_results[[method]] <- setNames(cohen_results$CohenD, paste0(cohen_results$Group1, " - ", cohen_results$Group2))
+      p_value_results[[method]] <- setNames(cohen_results$PValue, paste0(cohen_results$Group1, " - ", cohen_results$Group2))
     }
 
     # Convert lists to data frames
@@ -319,7 +330,7 @@ cohen_d <- function(x, y) {
 #' }
 #'
 #' @keywords internal
-compute_cohen_d <- function(dfScore, variable, quantitative_var="score") {
+compute_cohen_d <- function(dfScore, variable, quantitative_var="score", mode = c("simple","medium","extensive")) {
 
   # Get unique group values
   unique_groups <- unique(dfScore[[variable]])
@@ -330,24 +341,29 @@ compute_cohen_d <- function(dfScore, variable, quantitative_var="score") {
   }
 
 
-
   # Store results
   results <- data.frame(Group1 = character(), Group2 = character(),
                         CohenD = numeric(), PValue = numeric(), stringsAsFactors = FALSE)
 
   # Compute Cohen\'s d and p-value for all unique pairs
-  combs <- combn(unique_groups, 2, simplify = FALSE)
-
+  #combs <- combn(unique_groups, 2, simplify = FALSE)
+  combs <- generate_all_contrasts(unique(dfScore[[variable]]), mode = mode)
+  combs <- remove_division(combs)
 
   for (pair in combs) {
-    x <- dfScore[dfScore[[variable]] == pair[1], quantitative_var, drop = TRUE]
-    y <- dfScore[dfScore[[variable]] == pair[2], quantitative_var, drop = TRUE]
+
+    dfScore_subset <- create_contrast_column(dfScore, variable, pair) # subsets metadata and adds new column "cohentest" with the two parts of the contrast
+    group1 <- unique(dfScore_subset$cohentest)[1]
+    group2 <- unique(dfScore_subset$cohentest)[2]
+
+    x <- dfScore_subset[dfScore_subset[["cohentest"]] == group1, quantitative_var, drop = TRUE]
+    y <- dfScore_subset[dfScore_subset[["cohentest"]] == group2, quantitative_var, drop = TRUE]
 
     d <- cohen_d(x, y)
     set.seed("03042025")
     p_val <- t.test(x, y, var.equal = TRUE)$p.value
 
-    results <- rbind(results, data.frame(Group1 = pair[1], Group2 = pair[2],
+    results <- rbind(results, data.frame(Group1 = group1, Group2 = group2,
                                          CohenD = d, PValue = p_val, stringsAsFactors = FALSE))
   }
 

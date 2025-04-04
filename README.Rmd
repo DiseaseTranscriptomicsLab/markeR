@@ -460,8 +460,15 @@ PlotScores(data = counts_example,
 
 To compare various metrics across different condition combinations, violin plots may not always be the best choice. In such cases, users can set`method = "all"` to generate a summary heatmap. The function will return one heatmap per gene set, with rows corresponding to all possible combinations of values in the `GroupingVariable`. In parenthesis is represented the p-value, adjusted using the `BH` method, and corrected by contrast and signature.
 
-```{r heatmap_all, fig.width=6, fig.height=2, out.width="80%", warning=FALSE, message=FALSE}
+The `mode` parameter controls how contrasts are generated for categorical variables, allowing users to adjust the complexity of the analysis:
 
+-   **"simple"**: Performs the minimal number of contrasts, typically comparing each category to a baseline (e.g., for a factor with levels A, B, C and D, it may generate A - B, A - C, A - D, B - C, B - D, C - D).
+-   **"medium"**: Expands on the simple mode by including additional pairwise comparisons between groups (e.g., A - (B + C + D), B - (A + C + D), etc).
+-   **"extensive"**: Conducts all possible comparisons, including complex interactions if applicable, providing the most comprehensive analysis. (e.g., (A + B) - (C + D)).
+
+
+```{r heatmap_all, fig.width=6, fig.height=2, out.width="80%", warning=FALSE, message=FALSE}
+ 
 PlotScores(data = counts_example, 
            metadata = metadata_example,  
            gene_sets=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
@@ -474,7 +481,8 @@ PlotScores(data = counts_example,
            limits = NULL,   
            title="Marthandan et al. 2016", 
            titlesize = 10,
-           ColorValues = NULL)  
+           ColorValues = NULL,
+           mode="simple")  
 
 
 ```
@@ -482,16 +490,9 @@ PlotScores(data = counts_example,
 
 The `ROC_Scores` and `AUC_Scores` functions allow users to evaluate the classification potential of gene set scores based on ROC curves and AUC values, respectively. These functions help assess how well a given score can differentiate between conditions, based on predefined contrasts. Besides `method="all"`, these functions can also be used for each method individually.
 
-The `mode` parameter controls how contrasts are generated for categorical variables, allowing users to adjust the complexity of the analysis:
-
--   **"simple"**: Performs the minimal number of contrasts, typically comparing each category to a baseline (e.g., for a factor with levels A, B, C and D, it may generate A - B, A - C, A - D, B - C, B - D, C - D).
--   **"medium"**: Expands on the simple mode by including additional pairwise comparisons between groups (e.g., A - (B + C + D), B - (A + C + D), etc).
--   **"extensive"**: Conducts all possible comparisons, including complex interactions if applicable, providing the most comprehensive analysis. (e.g., (A + B) - (C + D)).
-
-
 The `ROC_Scores` function generates ROC curves for different scoring methods across contrasts, allowing users to visualize performance differences.
 
-```{r roc_scores, fig.width=6, fig.height=3, out.width="80%", warning=FALSE, message=FALSE}
+```{r roc_scores, fig.width=6, fig.height=3, out.width="70%", warning=FALSE, message=FALSE}
  ROC_Scores(data = counts_example, 
            metadata = metadata_example, 
            gene_sets=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
@@ -583,6 +584,7 @@ metadata_example_illustration$days <- sample(c(1:20),39, replace = T)
 ```
  
 ```{r variableassoc_score_bidirectsen, fig.width=10, fig.height=7, out.width="100%", warning=FALSE, message=FALSE}
+options(error=recover)
 results_scoreassoc_bidirect <- Score_VariableAssociation(data = counts_example, 
                           metadata = metadata_example_illustration, 
                           cols = c("Condition","person","days"), 
