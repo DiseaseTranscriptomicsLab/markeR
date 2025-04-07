@@ -52,6 +52,9 @@
 #'   Only applicable if `method != "all"`.
 #' @param xlab Optional character string specifying the x-axis label. Default is the name of `GroupingVariable`.
 #'   Only applicable if `method != "all"`.
+#' @param compute_cohen Logical. If TRUE (default), effect sizes are computed. When the grouping variable has only two levels,
+#' Cohen's d is calculated. If there are more than two levels, Cohen's f is used unless a specific pairwise comparison is defined via `cond_cohend`,
+#' for which Cohen's d will be reported.
 #' @param cond_cohend Optional named list specifying two groups for which Cohen's d effect size should be calculated.
 #'   The list should contain exactly two named elements (e.g., `list("GroupA" = c("Condition1"), "GroupB" = c("Condition2", "Condition3"))`).
 #'   If not provided, Cohen's d is not computed. Currently works only for two groups. Only applicable if `method != "all"`.
@@ -97,7 +100,7 @@ PlotScores <- function(data, metadata, gene_sets,
                        ColorVariable = NULL, GroupingVariable = NULL,
                        ColorValues = NULL, ConnectGroups = FALSE, ncol = NULL, nrow = NULL, title = NULL,
                        widthTitle = 10, titlesize = 12, limits = NULL, legend_nrow = NULL, pointSize = 2,
-                       xlab = NULL, labsize = 10, cond_cohend = NULL, pvalcalc = FALSE, mode = c("simple","medium","extensive"),
+                       xlab = NULL, labsize = 10, compute_cohen=TRUE, cond_cohend = NULL, pvalcalc = FALSE, mode = c("simple","medium","extensive"),
                        widthlegend=22, sig_threshold=0.05, cohend_threshold=0.6,PointSize=4,colorPalette="Set3") {
 
   method <- match.arg(method)
@@ -237,26 +240,115 @@ PlotScores <- function(data, metadata, gene_sets,
                                      position = ggplot2::position_dodge(width = 0.13))
 
       # Add stats: Compute Cohen's d (and optionally p‑value)
-      if (!is.null(cond_cohend)) {
+      if(compute_cohen){
+        if (!is.null(cond_cohend)){
+          # can be of the following form:
+          # cond_cohend <- list(A=c("Senescent"),
+          #                     B=c("Proliferative","Quiescent"))
 
-        if (sum(unlist(cond_cohend) %in% unique(df[, GroupingVariable])) != length(unique(df[, GroupingVariable])))
-          warning("Warning: Not all conditions of GroupingVariable were specified for Cohen's d calculation")
+          if (sum(unlist(cond_cohend) %in% unique(df[, GroupingVariable])) != length(unique(df[, GroupingVariable])))
+            warning("Warning: Not all conditions of GroupingVariable were specified for Cohen's d calculation")
 
-        df$cohen <- ifelse(df[, GroupingVariable] %in% cond_cohend[[1]], names(cond_cohend)[1], names(cond_cohend)[2])
-        cohen_d_results <- rstatix::cohens_d(df, formula = score ~ cohen)
+          x <- df[df[[GroupingVariable]] %in% cond_cohend[[1]], "score", drop = TRUE]
+          y <- df[df[[GroupingVariable]]  %in% cond_cohend[[2]], "score", drop = TRUE]
 
-        if (pvalcalc) {
-          ttest_results <- rstatix::t_test(df, formula = score ~ cohen)
-          p_val <- ttest_results$p[1]
-          line1 <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results$effsize, 3)), width = widthTitle)
-          line2 <- wrap_title(paste0("p = ", round(p_val, 3)), width = widthTitle)
-          subtitle <- paste(line1, line2, sep = "\n")
+          cohen_d_results <- cohen_d(x, y)
+
+          # df$cohen <- ifelse(df[, GroupingVariable] %in% cond_cohend[[1]], names(cond_cohend)[1], names(cond_cohend)[2])
+          # cohen_d_results <- rstatix::cohens_d(df, formula = score ~ cohen)
+
+          if (pvalcalc) {
+            df$cohen <- ifelse(df[, GroupingVariable] %in% cond_cohend[[1]], names(cond_cohend)[1], names(cond_cohend)[2])
+            ttest_results <- rstatix::t_test(df, formula = score ~ cohen)
+            p_val <- ttest_results$p[1]
+            line1 <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results, 3)), width = widthTitle)
+            line2 <- wrap_title(paste0("p = ", round(p_val, 3)), width = widthTitle)
+            subtitle <- paste(line1, line2, sep = "\n")
+          } else {
+            subtitle <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results, 3)), width = widthTitle)
+          }
+
+
         } else {
-          subtitle <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results$effsize, 3)), width = widthTitle)
+
+          if(length(unique(df[, GroupingVariable])) < 2){
+
+            warning("Not enough conditions available to report Cohen's d.")
+
+          } else if(length(unique(df[, GroupingVariable])) == 2) {
+
+            # Calculate Cohen's d based on ordering of the x axis
+            group1 <- levels(df[, GroupingVariable])[1]
+            group2 <- levels(df[, GroupingVariable])[2]
+
+            x <- df[df[[GroupingVariable]] == group1, "score", drop = TRUE]
+            y <- df[df[[GroupingVariable]] == group2, "score", drop = TRUE]
+
+            cohen_d_results <- cohen_d(x, y)
+
+            if (pvalcalc) {
+              ttest_results <- rstatix::t_test(df, formula = score ~ GroupingVariable)
+              p_val <- ttest_results$p[1]
+              line1 <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results$effsize, 3)), width = widthTitle)
+              line2 <- wrap_title(paste0("p = ", round(p_val, 3)), width = widthTitle)
+              subtitle <- paste(line1, line2, sep = "\n")
+            } else {
+              subtitle <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results$effsize, 3)), width = widthTitle)
+            }
+
+
+
+          } else if(length(unique(df[, GroupingVariable])) > 2){
+
+            # Calculate Cohen's f
+            type <- identify_variable_type(df, GroupingVariable)[GroupingVariable]
+            #Without scaling, the coefficient represents the change in score per unit increase in the variable (if numeric, the unit of the variable. Makes sense to not scale...)
+            model <- lm(score ~ get(GroupingVariable), data = df)
+            results_var <- compute_cohens_f_pval(model, type)
+
+            #'   \item \code{Cohen_f}: The Cohen's f effect size value.
+            #'   \item \code{P_Value}: The p-value from the statistical test.
+            #'
+
+            if (pvalcalc) {
+              line1 <- wrap_title(paste0("Cohen's f = ", round(results_var["Cohen_f"], 3)), width = widthTitle)
+              line2 <- wrap_title(paste0("p = ", round(results_var["P_Value"], 3)), width = widthTitle)
+              subtitle <- paste(line1, line2, sep = "\n")
+            } else {
+              subtitle <- wrap_title(paste0("Cohen's f = ", round(results_var["Cohen_f"], 3)), width = widthTitle)
+            }
+
+          }
+
+
         }
+
       } else {
+
         subtitle <- NULL
+
       }
+      #
+      # if (!is.null(cond_cohend)) {
+      #
+      #   if (sum(unlist(cond_cohend) %in% unique(df[, GroupingVariable])) != length(unique(df[, GroupingVariable])))
+      #     warning("Warning: Not all conditions of GroupingVariable were specified for Cohen's d calculation")
+      #
+      #   df$cohen <- ifelse(df[, GroupingVariable] %in% cond_cohend[[1]], names(cond_cohend)[1], names(cond_cohend)[2])
+      #   cohen_d_results <- rstatix::cohens_d(df, formula = score ~ cohen)
+      #
+      #   if (pvalcalc) {
+      #     ttest_results <- rstatix::t_test(df, formula = score ~ cohen)
+      #     p_val <- ttest_results$p[1]
+      #     line1 <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results$effsize, 3)), width = widthTitle)
+      #     line2 <- wrap_title(paste0("p = ", round(p_val, 3)), width = widthTitle)
+      #     subtitle <- paste(line1, line2, sep = "\n")
+      #   } else {
+      #     subtitle <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results$effsize, 3)), width = widthTitle)
+      #   }
+      # } else {
+      #   subtitle <- NULL
+      # }
 
       # If ConnectGroups is TRUE, add a line connecting medians across groups.
       if (ConnectGroups && !is.null(ColorVariable)) {

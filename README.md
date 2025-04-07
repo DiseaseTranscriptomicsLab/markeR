@@ -383,6 +383,14 @@ head(df_Scores$Senescence)
 
 The user can also chose to directly plot the scores.
 
+Effect sizes can be computed using the `compute_cohen` parameter
+(default = `T`): when the grouping variable has only two levels, Cohen’s
+d is calculated by default. If there are more than two levels, Cohen’s f
+is used unless a specific pairwise comparison is defined via
+`cond_cohend`, in which case Cohen’s d is reported for that comparison.
+If `pvalcalc==TRUE` (default = `F`), then the associated p-value (not
+corrected for multiple testing) is reported.
+
 ``` r
 # df_Scores <- CalculateScores(data = counts_example, 
 #                              metadata = metadata_example, 
@@ -411,6 +419,7 @@ PlotScores(data = counts_example,
            limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
+           compute_cohen=T,
            cond_cohend=cond_cohend,
            title="Marthandan et al. 2016",
            labsize=7, 
@@ -446,6 +455,7 @@ PlotScores(data = counts_example,
            limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
+           compute_cohen=T,
            cond_cohend=cond_cohend,
            title="Marthandan et al. 2016",
            labsize=7, 
@@ -511,6 +521,7 @@ PlotScores(data = counts_example,
            limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
+           compute_cohen=T,
            cond_cohend=cond_cohend,
            title="Marthandan et al. 2016",
            labsize=7, 
@@ -553,6 +564,7 @@ PlotScores(data = counts_example,
            limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
+           compute_cohen=T,
            cond_cohend=cond_cohend,
            title="Marthandan et al. 2016",
            labsize=7, 
@@ -782,14 +794,14 @@ results_scoreassoc_bidirect$Contrasts
 #> 5    person  Ana - (Francisca + John)             Ana Francisca + John
 #> 6    person  (Ana + Francisca) - John Ana + Francisca             John
 #> 7    person  (Ana + John) - Francisca      Ana + John        Francisca
-#>       CohenD       PValue         padj
-#> 1 2.07459395 1.506777e-07 1.054744e-06
-#> 2 0.04500138 9.210884e-01 9.210884e-01
-#> 3 0.23159722 5.182369e-01 8.332768e-01
-#> 4 0.26842164 5.641611e-01 8.332768e-01
-#> 5 0.14831958 6.487018e-01 8.332768e-01
-#> 6 0.15396594 7.142373e-01 8.332768e-01
-#> 7 0.25123032 4.501287e-01 8.332768e-01
+#>        CohenD       PValue         padj
+#> 1 -2.07459395 1.506777e-07 1.054744e-06
+#> 2  0.04500138 9.210884e-01 9.210884e-01
+#> 3 -0.23159722 5.182369e-01 8.332768e-01
+#> 4 -0.26842164 5.641611e-01 8.332768e-01
+#> 5 -0.14831958 6.487018e-01 8.332768e-01
+#> 6  0.15396594 7.142373e-01 8.332768e-01
+#> 7 -0.25123032 4.501287e-01 8.332768e-01
 ```
 
 ``` r

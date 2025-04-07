@@ -280,7 +280,9 @@ df_Scores <- CalculateScores(data = counts_example,
 head(df_Scores$Senescence)
 ```
 
-The user can also chose to directly plot the scores.
+The user can also chose to directly plot the scores. 
+
+Effect sizes can be computed using the `compute_cohen` parameter (default = `T`): when the grouping variable has only two levels, Cohen’s d is calculated by default. If there are more than two levels, Cohen’s f is used unless a specific pairwise comparison is defined via `cond_cohend`, in which case Cohen’s d is reported for that comparison. If `pvalcalc==TRUE` (default = `F`), then the associated p-value (not corrected for multiple testing) is reported.
 
 ```{r exampleScore, fig.width=3, fig.height=4, out.width="40%", warning=FALSE, message=FALSE}
 # df_Scores <- CalculateScores(data = counts_example, 
@@ -310,6 +312,7 @@ PlotScores(data = counts_example,
            limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
+           compute_cohen=T,
            cond_cohend=cond_cohend,
            title="Marthandan et al. 2016",
            labsize=7, 
@@ -342,6 +345,7 @@ PlotScores(data = counts_example,
            limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
+           compute_cohen=T,
            cond_cohend=cond_cohend,
            title="Marthandan et al. 2016",
            labsize=7, 
@@ -405,6 +409,7 @@ PlotScores(data = counts_example,
            limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
+           compute_cohen=T,
            cond_cohend=cond_cohend,
            title="Marthandan et al. 2016",
            labsize=7, 
@@ -449,6 +454,7 @@ PlotScores(data = counts_example,
            limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
+           compute_cohen=T,
            cond_cohend=cond_cohend,
            title="Marthandan et al. 2016",
            labsize=7, 

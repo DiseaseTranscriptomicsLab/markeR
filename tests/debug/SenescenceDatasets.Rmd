@@ -220,13 +220,21 @@ cellTypes_colors <- c(
   "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
 )
 
-cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the first that appears in the ggplot
-                    B=c("Proliferative","Quiescent"))
+cond_cohend <- list(A=c("Senescent"),
+                    B=c("Proliferative","Quiescent")
+                    ) # if no variable is defined, will be the first that appears in the ggplot 
 
-PlotScores(ResultsList = df_logmedian, ColorVariable = "CellType", GroupingVariable="Condition",  method ="logmedian", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 3, nrow = 3, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend)
+options(error=recover)
+PlotScores(data = corrcounts_merge, metadata = metadata_merge, method = "logmedian", gene_sets = bidirectsigs,  ColorVariable = "CellType", GroupingVariable="Condition",   ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 3, nrow = 3, widthTitle=20, limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend, compute_cohen=T)
 
 ```
 
+
+```{r fig.width=8, fig.height=10}
+options(error=recover)
+PlotScores(data = corrcounts_merge, metadata = metadata_merge, method = "logmedian", gene_sets = bidirectsigs,  ColorVariable = "CellType", GroupingVariable="Condition",   ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 3, nrow = 3, widthTitle=20, limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = NULL, compute_cohen=T, pvalcalc = F)
+
+```
 
 ```{r fig.width=8, fig.height=10}
 
@@ -339,8 +347,6 @@ Scores_Overview_All$heatmap
 ```{r fig.width=13, fig.height=5}
 Scores_Overview_All$volcano
 ```
-
-
 
 ```{r fig.width=15, fig.height=12}
 
