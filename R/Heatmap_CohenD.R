@@ -301,7 +301,7 @@ cohen_d <- function(x, y) {
   pooled_sd <- sqrt(((n1 - 1) * s1^2 + (n2 - 1) * s2^2) / (n1 + n2 - 2))
   if (pooled_sd == 0) return(NA)
   d <- (m1 - m2) / pooled_sd
-  d <- abs(d) # dor this application we don't need the direction of the classification, just if it works
+  #d <- abs(d) # dor this application we don't need the direction of the classification, just if it works
   return(d)
 }
 
