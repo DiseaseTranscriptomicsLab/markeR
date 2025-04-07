@@ -4,7 +4,6 @@
 #' or ANOVA model based on the predictor variable type (numeric or categorical).
 #'
 #' @param model A linear model (\code{lm}) or ANOVA model (\code{aov}) fitted to the data.
-#' @param predictor A character string specifying the name of the predictor variable in the model.
 #' @param type A string indicating whether the predictor is numeric or categorical. Options are "Numeric" or "Categorical".
 #'
 #' @details
@@ -26,7 +25,7 @@
 #' @importFrom stats anova lm
 #'
 #' @export
-compute_cohens_f_pval <- function(model, predictor, type) {
+compute_cohens_f_pval <- function(model, type) {
   eta_sq_value <- effectsize::eta_squared(model, partial = FALSE)$Eta2
   cohen_f <- sqrt(eta_sq_value / (1 - eta_sq_value))  # Convert η² to Cohen's f
 
@@ -91,6 +90,7 @@ create_contrast_column <- function(metadata, variable_name, contrast) {
   relevant_metadata$cohentest <- ifelse(relevant_metadata[[variable_name]] %in% right_levels,
                                         right_side,
                                         left_side)
+  relevant_metadata$cohentest <- factor(relevant_metadata$cohentest, levels=c(left_side,right_side))
 
   return(relevant_metadata)  # Return only the relevant subset
 }
@@ -189,7 +189,7 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
     type <- identify_variable_type(metadata, var)[var]
     #Without scaling, the coefficient represents the change in score per unit increase in the variable (if numeric, the unit of the variable. Makes sense to not scale...)
     model <- lm(score ~ get(var), data = df_ranking)
-    results_var <- compute_cohens_f_pval(model, predictor, type)
+    results_var <- compute_cohens_f_pval(model, type)
 
     df_results_overall <- rbind(
       df_results_overall,

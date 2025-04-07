@@ -73,7 +73,7 @@ Volcano_CohenD <- function(cohenlist,
   }
 
   # Generate plot
-  plt <- ggplot2::ggplot(final_df, ggplot2::aes(x = cohend, y = -log10(padj), shape = method)) +
+  plt <- ggplot2::ggplot(final_df, ggplot2::aes(x = abs(cohend), y = -log10(padj), shape = method)) +
     ggplot2::geom_point(colour = "black", size = PointSize) +
     ggplot2::geom_point(ggplot2::aes(colour = signature), size = PointSize - 1.5) +
     ggplot2::facet_wrap(. ~ contrast, scales = "free") +
@@ -82,7 +82,7 @@ Volcano_CohenD <- function(cohenlist,
     ggplot2::scale_color_manual(values = ColorValues) +
     ggplot2::scale_shape_manual(values = 15:(15 + length(unique(final_df$method)) - 1)) +
     ggplot2::labs(
-      x = "Cohen's d",
+      x = "|Cohen's d|",
       y = "-log10(Adj. p-value)",
       color = "Signature",
       shape = "Method"

@@ -69,7 +69,7 @@ Heatmap_CohenD <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, w
     long_data <- data.frame(
       Var1 = rep(rownames(cohen_d_mat), times = ncol(cohen_d_mat)),
       Var2 = rep(colnames(cohen_d_mat), each = nrow(cohen_d_mat)),
-      CohenD = as.vector(cohen_d_mat),
+      CohenD = abs(as.vector(cohen_d_mat)), # absolute value
       PValue = as.vector(p_value_mat),
       stringsAsFactors = FALSE
     )
@@ -85,7 +85,7 @@ Heatmap_CohenD <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, w
       ggplot2::geom_tile() +
       ggplot2::geom_text(aes(label = label), color = "black", size = 3) +
       ggplot2::scale_fill_gradientn(colors = ColorValues, limits = limits) +
-      ggplot2::labs(title = signature_title, x = NULL, y = NULL, fill = "Cohen\'s D") +
+      ggplot2::labs(title = signature_title, x = NULL, y = NULL, fill = "|Cohen\'s D|") +
       ggplot2::theme_bw() +
       ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
                      plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize) )
@@ -347,8 +347,11 @@ compute_cohen_d <- function(dfScore, variable, quantitative_var="score", mode = 
   for (pair in combs) {
 
     dfScore_subset <- create_contrast_column(dfScore, variable, pair) # subsets metadata and adds new column "cohentest" with the two parts of the contrast
-    group1 <- unique(dfScore_subset$cohentest)[1]
-    group2 <- unique(dfScore_subset$cohentest)[2]
+    group1 <- levels(dfScore_subset$cohentest)[1]
+    group2 <- levels(dfScore_subset$cohentest)[2]
+
+    # group1 <- unique(dfScore_subset$cohentest)[1]
+    # group2 <- unique(dfScore_subset$cohentest)[2]
 
     x <- dfScore_subset[dfScore_subset[["cohentest"]] == group1, quantitative_var, drop = TRUE]
     y <- dfScore_subset[dfScore_subset[["cohentest"]] == group2, quantitative_var, drop = TRUE]
