@@ -24,7 +24,13 @@ PlotScores(
   xlab = NULL,
   labsize = 10,
   cond_cohend = NULL,
-  pvalcalc = FALSE
+  pvalcalc = FALSE,
+  mode = c("simple", "medium", "extensive"),
+  widthlegend = 22,
+  sig_threshold = 0.05,
+  cohend_threshold = 0.6,
+  PointSize = 4,
+  colorPalette = "Set3"
 )
 }
 \arguments{
@@ -95,11 +101,32 @@ The list should contain exactly two named elements (e.g., \code{list("GroupA" = 
 If not provided, Cohen's d is not computed. Currently works only for two groups. Only applicable if \code{method != "all"}.}
 
 \item{pvalcalc}{Logical; Calculates p-value and presents it on plot (default = FALSE). Always calculates for the same comparison as \code{cond_cohend}.}
+
+\item{mode}{A string specifying the level of detail for contrasts. Only applicable for method = "all".
+Options are:
+\itemize{
+\item \code{"simple"}: Pairwise comparisons (e.g., A - B).
+\item \code{"medium"}: Pairwise comparisons plus comparisons against the mean of other groups.
+\item \code{"extensive"}: All possible groupwise contrasts, ensuring balance in the number of terms on each side.
+}}
+
+\item{widthlegend}{Numeric, default = 22 Controls the width of pathway labels in the legend. Only for volcano-like plot of Cohen's d if method="all".}
+
+\item{sig_threshold}{Numeric, default = 0.05. Adjusted p-value threshold for significance. Only for volcano-like plot of Cohen's d if method="all"
+A dashed horizontal line is drawn at this threshold}
+
+\item{cohend_threshold}{Numeric, default = 0.6. Cohen's D threshold. Only for volcano-like plot of Cohen's d if method="all"
+A dashed vertical line is drawn at this threshold.}
+
+\item{PointSize}{Numeric, default = 4. Size of the plotted points. Only for volcano-like plot of Cohen's d if method="all"}
+
+\item{colorPalette}{Character. Name of RColorBrewer palette to use if \code{ColorValues} is not provided. Default is "Set3".}
 }
 \value{
 \itemize{
 \item If \code{method != "all"}: A combined ggplot object (using \code{ggpubr::ggarrange} and \code{ggpubr::annotate_figure}) displaying violin plots for each gene signature.
-\item If \code{method == "all"}: A heatmap summarizing Cohen's D for all metric combinations of the \code{GroupingVariable}.
+\item If \code{method == "all"}: A heatmap summarizing Cohen's D for all metric combinations of the \code{GroupingVariable}, and a volcano-like plot depicting
+the relationship between cohen's D and -log10(adjusted p-value), with resolution given by the parameter \code{mode}.
 }
 }
 \description{
@@ -124,5 +151,6 @@ The x-axis is determined by the grouping variable (e.g., \code{Condition}), whil
 Jittered points are overlaid and optionally colored by \code{ColorVariable}. A median summary is added as a crossbar.
 If \code{ConnectGroups = TRUE}, median values across groups are connected with lines, colored by \code{ColorVariable}.
 
-If \code{method == "all"}, the function instead returns a heatmap displaying Cohen's D effect sizes for all variable combinations.
+If \code{method == "all"}, the function instead returns a heatmap displaying Cohen's D effect sizes for all variable combinations, and volcano-like plot depicting
+the relationship between cohen's D and -log10(adjusted p-value).
 }

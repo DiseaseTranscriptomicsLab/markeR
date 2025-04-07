@@ -4,7 +4,13 @@
 \alias{CohenD_allConditions}
 \title{Compute Cohen\'s d for All Gene Signatures Across Conditions}
 \usage{
-CohenD_allConditions(data, metadata, gene_sets, variable)
+CohenD_allConditions(
+  data,
+  metadata,
+  gene_sets,
+  variable,
+  mode = c("simple", "medium", "extensive")
+)
 }
 \arguments{
 \item{data}{A data frame of gene expression data, with genes as rows and samples as columns.}
@@ -17,6 +23,14 @@ for bidirectional gene sets, each element is a data frame where the first column
 column indicates the expected direction (1 for upregulated, -1 for downregulated).}
 
 \item{variable}{A string specifying the grouping variable in \code{metadata} used to compare scores between conditions.}
+
+\item{mode}{A string specifying the level of detail for contrasts.
+Options are:
+\itemize{
+\item \code{"simple"}: Pairwise comparisons (e.g., A - B).
+\item \code{"medium"}: Pairwise comparisons plus comparisons against the mean of other groups.
+\item \code{"extensive"}: All possible groupwise contrasts, ensuring balance in the number of terms on each side.
+}}
 }
 \value{
 A named list where each element corresponds to a gene signature. Each signature element is a list with three components:

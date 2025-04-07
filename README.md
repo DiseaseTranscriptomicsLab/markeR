@@ -62,15 +62,21 @@ devtools::install_github("DiseaseTranscriptomicsLab/markeR")
 
 ## Main Functions and Future Modules
 
-The current release of **`markeR`** includes two primary functions for
+The current release of **`markeR`** includes four primary functions for
 **score-based analysis**:
 
 -   **`CalculateScores`:** Calculates gene signature scores for each
     sample using either the ssGSEA, log2 median-centered or ranking
     method.
 -   **`PlotScores`:** Calculates and displays the calculated scores
-    across conditions using violin plots, density plots or heatmaps,
-    depending on the chosen parameters.
+    across conditions using violin plots, density plots, heatmaps or
+    volcano-like plots, depending on the chosen parameters.
+-   **`ROC_Scores`:** Generates ROC curves for different scoring methods
+    across contrasts, allowing users to visualize performance
+    differences.
+-   **`AUC_Scores`:** Generates heatmaps for each gene signature, with
+    methods as columns and contrasts as rows, summarizing AUC values in
+    a heatmap format.
 
 Additionally, it includes a function for FDR calculation based on random
 sets of genes for each signature:
@@ -78,8 +84,8 @@ sets of genes for each signature:
 -   **`FDR_Simulation`:** Computes false discovery rates using random
     gene sets.
 
-Although still being developed, the package already includes two
-functions for **enrichment-based analysis**:
+Tthe package also includes several functions for **enrichment-based
+analysis**:
 
 -   **`calculateDE`:** Performs differential expression analysis.
 -   **`plotVolcano`:** Generates volcano plots to visualize
@@ -559,11 +565,15 @@ PlotScores(data = counts_example,
 
 To compare various metrics across different condition combinations,
 violin plots may not always be the best choice. In such cases, users can
-set`method = "all"` to generate a summary heatmap. The function will
-return one heatmap per gene set, with rows corresponding to all possible
-combinations of values in the `GroupingVariable`. In parenthesis is
-represented the p-value, adjusted using the `BH` method, and corrected
-by contrast and signature.
+set`method = "all"` to generate a summary heatmap and volcano-like plot.
+The function will return one heatmap per gene set, with rows
+corresponding to all possible combinations of values in the
+`GroupingVariable`. In parenthesis is represented the p-value, adjusted
+using the `BH` method, and corrected by contrast and signature. It will
+also return a volcano-like plot (Cohen’s d effect sizes vs
+-log10(adjusted p-values)), where each dot represents a method-signature
+pair, faceted by contrast. The dashed lines represent user-defined
+thresholds for significance and effect size.
 
 The `mode` parameter controls how contrasts are generated for
 categorical variables, allowing users to adjust the complexity of the
@@ -581,24 +591,38 @@ analysis:
     analysis. (e.g., (A + B) - (C + D)).
 
 ``` r
- 
-PlotScores(data = counts_example, 
-           metadata = metadata_example,  
-           gene_sets=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
-                          Senescence  = SimpleSenescenceSignature), 
-           GroupingVariable="Condition",  
-           method ="all",   
-           ncol = NULL, 
-           nrow = NULL, 
-           widthTitle=30, 
-           limits = NULL,   
-           title="Marthandan et al. 2016", 
-           titlesize = 10,
-           ColorValues = NULL,
-           mode="simple")  
+Overall_Scores <- PlotScores(data = counts_example, 
+                             metadata = metadata_example,  
+                             gene_sets=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                                            Senescence  = SimpleSenescenceSignature), 
+                             GroupingVariable="Condition",  
+                             method ="all",   
+                             ncol = NULL, 
+                             nrow = NULL, 
+                             widthTitle=30, 
+                             limits = NULL,   
+                             title="Marthandan et al. 2016", 
+                             titlesize = 10,
+                             ColorValues = NULL,
+                             mode="simple",
+                             widthlegend=30, 
+                             sig_threshold=0.05, 
+                             cohend_threshold=0.6,
+                             PointSize=6,
+                             colorPalette="Set3")  
 ```
 
-<img src="man/figures/README-heatmap_all-1.png" width="80%" />
+``` r
+Overall_Scores$heatmap
+```
+
+<img src="man/figures/README-Overall_Scores_heatmap-1.png" width="80%" />
+
+``` r
+Overall_Scores$volcano
+```
+
+<img src="man/figures/README-Overall_Scores_volcano-1.png" width="60%" />
 
 The `ROC_Scores` and `AUC_Scores` functions allow users to evaluate the
 classification potential of gene set scores based on ROC curves and AUC
@@ -750,14 +774,14 @@ results_scoreassoc_bidirect$Overall
 #> 2    person 0.12648382 7.514973e-01
 #> 3      days 0.01324252 9.362331e-01
 results_scoreassoc_bidirect$Contrasts
-#>    Variable                      Contrast          Group1           Group2
-#> 1 Condition (Senescent) - (Proliferative)       Senescent    Proliferative
-#> 2    person                (Ana) - (John)             Ana             John
-#> 3    person           (Ana) - (Francisca)             Ana        Francisca
-#> 4    person          (John) - (Francisca)            John        Francisca
-#> 5    person    (Ana) - (Francisca + John)             Ana Francisca + John
-#> 6    person    (Ana + Francisca) - (John) Ana + Francisca             John
-#> 7    person    (Ana + John) - (Francisca)      Ana + John        Francisca
+#>    Variable                  Contrast          Group1           Group2
+#> 1 Condition Proliferative - Senescent       Senescent    Proliferative
+#> 2    person                Ana - John             Ana             John
+#> 3    person           Ana - Francisca             Ana        Francisca
+#> 4    person          Francisca - John            John        Francisca
+#> 5    person  Ana - (Francisca + John)             Ana Francisca + John
+#> 6    person  (Ana + Francisca) - John Ana + Francisca             John
+#> 7    person  (Ana + John) - Francisca      Ana + John        Francisca
 #>       CohenD       PValue         padj
 #> 1 2.07459395 1.506777e-07 1.054744e-06
 #> 2 0.04500138 9.210884e-01 9.210884e-01
@@ -789,14 +813,14 @@ results_scoreassoc_bidirect$Overall
 #> 2    person 0.17329879 5.870614e-01
 #> 3      days 0.04759144 7.738244e-01
 results_scoreassoc_bidirect$Contrasts
-#>    Variable                      Contrast          Group1           Group2
-#> 1 Condition (Senescent) - (Proliferative)       Senescent    Proliferative
-#> 2    person                (Ana) - (John)             Ana             John
-#> 3    person           (Ana) - (Francisca)             Ana        Francisca
-#> 4    person          (John) - (Francisca)            John        Francisca
-#> 5    person    (Ana) - (Francisca + John)             Ana Francisca + John
-#> 6    person    (Ana + Francisca) - (John) Ana + Francisca             John
-#> 7    person    (Ana + John) - (Francisca)      Ana + John        Francisca
+#>    Variable                  Contrast          Group1           Group2
+#> 1 Condition Proliferative - Senescent       Senescent    Proliferative
+#> 2    person                Ana - John             Ana             John
+#> 3    person           Ana - Francisca             Ana        Francisca
+#> 4    person          Francisca - John            John        Francisca
+#> 5    person  Ana - (Francisca + John)             Ana Francisca + John
+#> 6    person  (Ana + Francisca) - John Ana + Francisca             John
+#> 7    person  (Ana + John) - Francisca      Ana + John        Francisca
 #>       CohenD       PValue         padj
 #> 1 2.98420572 3.278479e-11 2.294935e-10
 #> 2 0.19639043 6.661502e-01 8.626076e-01

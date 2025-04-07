@@ -5,10 +5,7 @@
 \title{Generate Heatmaps for Cohen\'s d Effect Sizes using ggplot2}
 \usage{
 Heatmap_CohenD(
-  data,
-  metadata,
-  gene_sets,
-  variable,
+  cohenlist,
   nrow = NULL,
   ncol = NULL,
   limits = NULL,
@@ -19,17 +16,14 @@ Heatmap_CohenD(
 )
 }
 \arguments{
-\item{data}{A data frame of gene expression data with genes as rows and samples as columns.
-Row names should contain gene names and column names sample identifiers.}
-
-\item{metadata}{A data frame of sample metadata. The first column must contain sample
-identifiers matching those in \code{data}.}
-
-\item{gene_sets}{A named list of gene sets. For unidirectional gene sets, each element is a vector of gene names;
-for bidirectional gene sets, each element is a data frame with the first column as gene names and the second column as the expected direction
-(1 for upregulated, -1 for downregulated).}
-
-\item{variable}{A string specifying the grouping variable in \code{metadata} used for computing Cohen\'s d comparisons.}
+\item{cohenlist}{A named list where each element corresponds to a gene signature. Output of \code{CohenD_allConditions}. Each signature element is a list with three components:
+\describe{
+\item{CohenD}{A data frame where rows are methods and columns are group contrasts (formatted as \"Group1:Group2\"),
+containing the computed Cohen\'s d effect sizes.}
+\item{PValue}{A data frame with the same structure as \code{CohenD} containing the corresponding p-values.}
+\item{padj}{A data frame with the same structure as \code{PValue} containing the corresponding p-values corrected using the BH method, for all signatures and contrasts,
+and by method.}
+}}
 
 \item{nrow}{Optional. An integer specifying the number of rows in the heatmap grid. If \code{NULL}, the number of rows
 is computed automatically.}

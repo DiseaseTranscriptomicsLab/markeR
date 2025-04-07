@@ -217,7 +217,8 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
       df_results_contrast <-  rbind(df_results_contrast,
                                     data.frame(
                                       Variable = var,
-                                      Contrast = paste0("(",result_cohen_contrast$Group1,") - (",result_cohen_contrast$Group2,")"),
+                                      #Contrast = paste0("(",result_cohen_contrast$Group1,") - (",result_cohen_contrast$Group2,")"),
+                                      Contrast = result_cohen_contrast$contrast,
                                       Group1 = result_cohen_contrast$Group1,
                                       Group2 = result_cohen_contrast$Group2,
                                       CohenD = result_cohen_contrast$CohenD,

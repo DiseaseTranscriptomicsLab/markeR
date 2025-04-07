@@ -305,11 +305,11 @@ PlotScores(ResultsList = df_ranking, ColorVariable = "CellType", GroupingVariabl
 
 
 
-## Heatmap for Cohen's D
+## Heatmap and Volcano for Cohen's D
 
-```{r fig.width=15, fig.height=18}
+```{r fig.width=15, fig.height=6}
 
-PlotScores(data = corrcounts_merge, 
+Scores_Overview_All <- PlotScores(data = corrcounts_merge, 
            metadata = metadata_merge,  
            gene_sets=bidirectsigs, 
            GroupingVariable="Condition",  
@@ -321,10 +321,25 @@ PlotScores(data = corrcounts_merge,
            title=NULL, 
            titlesize = 12,
            ColorValues = NULL,
-           mode = "extensive")  
+           mode = "extensive",
+           widthlegend=22, 
+           sig_threshold=0.05, 
+           cohend_threshold=0.6,
+           PointSize=4,
+           colorPalette="Set3")  
  
 
+
 ```
+
+```{r fig.width=14, fig.height=12}
+Scores_Overview_All$heatmap 
+```
+
+```{r fig.width=13, fig.height=5}
+Scores_Overview_All$volcano
+```
+
 
 
 ```{r fig.width=15, fig.height=12}

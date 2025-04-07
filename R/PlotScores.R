@@ -63,9 +63,17 @@
 #' - `"medium"`: Pairwise comparisons plus comparisons against the mean of other groups.
 #' - `"extensive"`: All possible groupwise contrasts, ensuring balance in the number of terms on each side.
 #'
+#' @param sig_threshold Numeric, default = 0.05. Adjusted p-value threshold for significance. Only for volcano-like plot of Cohen's d if method="all"
+#' A dashed horizontal line is drawn at this threshold
+#' @param cohend_threshold Numeric, default = 0.6. Cohen's D threshold. Only for volcano-like plot of Cohen's d if method="all"
+#' A dashed vertical line is drawn at this threshold.
+#' @param PointSize Numeric, default = 4. Size of the plotted points. Only for volcano-like plot of Cohen's d if method="all"
+#' @param widthlegend Numeric, default = 22 Controls the width of pathway labels in the legend. Only for volcano-like plot of Cohen's d if method="all".
+#' @param colorPalette Character. Name of RColorBrewer palette to use if `ColorValues` is not provided. Default is "Set3".
 #' @return
 #' - If `method != "all"`: A combined ggplot object (using `ggpubr::ggarrange` and `ggpubr::annotate_figure`) displaying violin plots for each gene signature.
-#' - If `method == "all"`: A heatmap summarizing Cohen's D for all metric combinations of the `GroupingVariable`.
+#' - If `method == "all"`: A heatmap summarizing Cohen's D for all metric combinations of the `GroupingVariable`, and a volcano-like plot depicting
+#' the relationship between cohen's D and -log10(adjusted p-value), with resolution given by the parameter `mode`.
 #'
 #' @details
 #' For each gene signature in `ResultsList`, the function creates a violin plot using `ggplot2`.
@@ -73,7 +81,8 @@
 #' Jittered points are overlaid and optionally colored by `ColorVariable`. A median summary is added as a crossbar.
 #' If `ConnectGroups = TRUE`, median values across groups are connected with lines, colored by `ColorVariable`.
 #'
-#' If `method == "all"`, the function instead returns a heatmap displaying Cohen's D effect sizes for all variable combinations.
+#' If `method == "all"`, the function instead returns a heatmap displaying Cohen's D effect sizes for all variable combinations, and volcano-like plot depicting
+#' the relationship between cohen's D and -log10(adjusted p-value).
 #'
 #' @importFrom ggpubr ggarrange
 #' @importFrom ggpubr annotate_figure
@@ -88,26 +97,39 @@ PlotScores <- function(data, metadata, gene_sets,
                        ColorVariable = NULL, GroupingVariable = NULL,
                        ColorValues = NULL, ConnectGroups = FALSE, ncol = NULL, nrow = NULL, title = NULL,
                        widthTitle = 10, titlesize = 12, limits = NULL, legend_nrow = NULL, pointSize = 2,
-                       xlab = NULL, labsize = 10, cond_cohend = NULL, pvalcalc = FALSE, mode = c("simple","medium","extensive")) {
+                       xlab = NULL, labsize = 10, cond_cohend = NULL, pvalcalc = FALSE, mode = c("simple","medium","extensive"),
+                       widthlegend=22, sig_threshold=0.05, cohend_threshold=0.6,PointSize=4,colorPalette="Set3") {
 
   method <- match.arg(method)
 
   if (method == "all") { # returns heatmap
 
+    cohenlist <- CohenD_allConditions(data = data, metadata = metadata, gene_sets = gene_sets, variable = GroupingVariable, mode = mode)
+
     # if user wants "all" methods, a heatmap of Cohen's d's is returned, for all combination of variables in GroupingVariable
-    Heatmap_Final <- Heatmap_CohenD(data = data,
-                                    metadata = metadata,
-                                    gene_sets = gene_sets,
-                                    variable = GroupingVariable,
+    Heatmap_Final <- Heatmap_CohenD(cohenlist = cohenlist,
                                     nrow = nrow,
                                     ncol = ncol,
                                     limits = limits,
                                     widthTitle = widthTitle,
                                     titlesize = titlesize,
                                     ColorValues = ColorValues,
-                                    title = title,
-                                    mode=mode)
-    return(Heatmap_Final$plt)
+                                    title = title )
+
+    Volcano_CohenD <- Volcano_CohenD(cohenlist = cohenlist,
+                                     titlesize = 12,
+                                     ColorValues = ColorValues,
+                                     title = title,
+                                     widthlegend = widthlegend,
+                                     PointSize = PointSize,
+                                     sig_threshold = sig_threshold,
+                                     cohend_threshold = cohend_threshold,
+                                     colorPalette =colorPalette,
+                                     ncol = ncol,
+                                     nrow = nrow)
+
+    return(list(heatmap=Heatmap_Final$plt,
+                volcano=Volcano_CohenD$plt))
 
   } else {
 

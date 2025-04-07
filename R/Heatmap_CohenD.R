@@ -2,14 +2,14 @@
 #'
 #' This function computes Cohen\'s d effect sizes and corresponding p-values for multiple gene signatures and produces individual heatmaps. Each heatmap displays cell text showing the Cohen\'s d value along with its p-value. The heatmaps are then arranged in a grid layout.
 #'
-#' @param data A data frame of gene expression data with genes as rows and samples as columns.
-#'   Row names should contain gene names and column names sample identifiers.
-#' @param metadata A data frame of sample metadata. The first column must contain sample
-#'   identifiers matching those in \code{data}.
-#' @param gene_sets A named list of gene sets. For unidirectional gene sets, each element is a vector of gene names;
-#'   for bidirectional gene sets, each element is a data frame with the first column as gene names and the second column as the expected direction
-#'   (1 for upregulated, -1 for downregulated).
-#' @param variable A string specifying the grouping variable in \code{metadata} used for computing Cohen\'s d comparisons.
+#' @param cohenlist A named list where each element corresponds to a gene signature. Output of `CohenD_allConditions`. Each signature element is a list with three components:
+#' \describe{
+#'   \item{CohenD}{A data frame where rows are methods and columns are group contrasts (formatted as \"Group1:Group2\"),
+#'   containing the computed Cohen\'s d effect sizes.}
+#'   \item{PValue}{A data frame with the same structure as \code{CohenD} containing the corresponding p-values.}
+#'   \item{padj}{A data frame with the same structure as \code{PValue} containing the corresponding p-values corrected using the BH method, for all signatures and contrasts,
+#'   and by method.}
+#' }
 #' @param nrow Optional. An integer specifying the number of rows in the heatmap grid. If \code{NULL}, the number of rows
 #'   is computed automatically.
 #' @param ncol Optional. An integer specifying the number of columns in the heatmap grid. If \code{NULL}, the number of columns
@@ -20,12 +20,6 @@
 #' @param titlesize An integer specifying the text size for each of the heatmap titles. Default is 12.
 #' @param ColorValues A character vector specifying the colors for the gradient fill in the heatmaps. Default is \code{c("#F9F4AE", "#B44141")}.
 #' @param title Title for the grid of plots.
-#' @param mode A string specifying the level of detail for contrasts.
-#' Options are:
-#' - `"simple"`: Pairwise comparisons (e.g., A - B).
-#' - `"medium"`: Pairwise comparisons plus comparisons against the mean of other groups.
-#' - `"extensive"`: All possible groupwise contrasts, ensuring balance in the number of terms on each side.
-#'
 #' @return A list with two elements:
 #' \describe{
 #'   \item{plt}{A combined heatmap arranged in a grid using \code{ggpubr::ggarrange}.}
@@ -61,9 +55,7 @@
 #' @importFrom ggpubr ggarrange
 #'
 #' @export
-Heatmap_CohenD <- function(data, metadata, gene_sets, variable, nrow = NULL, ncol = NULL, limits = NULL, widthTitle = 22, titlesize = 12, ColorValues = NULL,title=NULL, mode = c("simple","medium","extensive")) {
-
-  cohenlist <- CohenD_allConditions(data = data, metadata = metadata, gene_sets = gene_sets, variable = variable, mode = mode)
+Heatmap_CohenD <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, widthTitle = 22, titlesize = 12, ColorValues = NULL,title=NULL ) {
 
   heatmaps <- list()
 
@@ -226,8 +218,10 @@ CohenD_allConditions <- function(data, metadata, gene_sets, variable, mode = c("
       cohen_results <- compute_cohen_d(df_method, variable, quantitative_var = "score", mode=mode)
 
       # Convert to named vectors (column names = comparisons)
-      cohen_d_results[[method]] <- setNames(cohen_results$CohenD, paste0(cohen_results$Group1, " - ", cohen_results$Group2))
-      p_value_results[[method]] <- setNames(cohen_results$PValue, paste0(cohen_results$Group1, " - ", cohen_results$Group2))
+      # cohen_d_results[[method]] <- setNames(cohen_results$CohenD, paste0(cohen_results$Group1, " - ", cohen_results$Group2))
+      # p_value_results[[method]] <- setNames(cohen_results$PValue, paste0(cohen_results$Group1, " - ", cohen_results$Group2))
+      cohen_d_results[[method]] <- setNames(cohen_results$CohenD, cohen_results$contrast)
+      p_value_results[[method]] <- setNames(cohen_results$PValue, cohen_results$contrast)
     }
 
     # Convert lists to data frames
@@ -364,7 +358,7 @@ compute_cohen_d <- function(dfScore, variable, quantitative_var="score", mode = 
     p_val <- t.test(x, y, var.equal = TRUE)$p.value
 
     results <- rbind(results, data.frame(Group1 = group1, Group2 = group2,
-                                         CohenD = d, PValue = p_val, stringsAsFactors = FALSE))
+                                         CohenD = d, PValue = p_val, contrast = pair, stringsAsFactors = FALSE))
   }
 
   return(results)

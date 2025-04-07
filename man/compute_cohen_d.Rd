@@ -4,7 +4,12 @@
 \alias{compute_cohen_d}
 \title{Compute Pairwise Cohen\'s d and P-Values}
 \usage{
-compute_cohen_d(dfScore, variable, quantitative_var = "score")
+compute_cohen_d(
+  dfScore,
+  variable,
+  quantitative_var = "score",
+  mode = c("simple", "medium", "extensive")
+)
 }
 \arguments{
 \item{dfScore}{A data frame containing at least one numeric column and a grouping variable. Output from flatten_results.}
