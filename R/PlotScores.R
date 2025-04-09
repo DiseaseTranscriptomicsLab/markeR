@@ -160,8 +160,11 @@ PlotScores <- function(data, metadata, gene_sets,
 
         # Customize the plot appearance.
         p <- p + ggplot2::theme_classic() +
-          ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize)) +
-          ggplot2::labs(title = wrapped_title, color = "", x = "", y = "")
+          ggplot2::labs(title = wrapped_title, color = "", x = "", y = "") +
+          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = labsize - .5),
+                         axis.text.y = ggplot2::element_text(  size = labsize - .5),
+                         plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize-1),
+                         plot.subtitle = ggplot2::element_text(hjust = 0.5, size = titlesize - 1.5, face = "italic"))
 
         # If limits is specified, crop the plot without adjusting the data (violins).
         if (!is.null(limits)) {
@@ -358,9 +361,10 @@ PlotScores <- function(data, metadata, gene_sets,
 
       # Customize the plot appearance.
       p <- p + ggplot2::theme_bw() +
-        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-                       plot.title = ggplot2::element_text(hjust = 0.5, size = 8),
-                       plot.subtitle = ggplot2::element_text(hjust = 0.5, size = 8, face = "italic")) +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = labsize),
+                       axis.text.y = ggplot2::element_text(  size = labsize),
+                       plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize-1),
+                       plot.subtitle = ggplot2::element_text(hjust = 0.5, size = titlesize - 1.5, face = "italic")) +
         ggplot2::labs(title = wrapped_title, subtitle = subtitle, color = "", x = "", y = "")
 
       # If ColorValues is provided, use a manual color scale; otherwise, if ColorVariable is provided,

@@ -11,7 +11,7 @@
 #'   A warning is issued if more than 30 genes are selected.
 #' @param condition_var A character string specifying the column name in \code{metadata} representing the condition of interest.
 #'   (Mandatory; no default.)
-#' @param class A character string specifying the positive class label for the condition.
+#' @param class A character string or vector specifying the positive class label for the condition.
 #'   (Mandatory; no default.)
 #' @param group_var An optional character string specifying the column name in \code{metadata} used for grouping samples.
 #'   If not provided (\code{NULL}), all samples are treated as a single group.
@@ -133,8 +133,8 @@ CohenD_IndividualGenes <- function(data, metadata,
   for (gene in genes) {
     for (group in groups) {
       subset_data <- data_merge[data_merge[[group_var]] == group, ]
-      pos <- subset_data[[gene]][subset_data[[condition_var]] == class]
-      neg <- subset_data[[gene]][subset_data[[condition_var]] != class]
+      pos <- subset_data[[gene]][subset_data[[condition_var]] %in% class]
+      neg <- subset_data[[gene]][ ! subset_data[[condition_var]] %in% class]
       d_val <- compute_cohens_d(pos, neg)
       effect_values <- rbind(effect_values, data.frame(Gene = gene, Group = group, CohensD = d_val))
     }

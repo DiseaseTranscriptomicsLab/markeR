@@ -9,7 +9,7 @@
 #'   A warning is issued if more than 30 genes are selected.
 #' @param condition_var A character string specifying the column name in \code{metadata} representing the condition of interest.
 #'   (Mandatory; no default.)
-#' @param class A character string specifying the positive class label for the condition.
+#' @param class A character string or vector specifying the positive class label for the condition.
 #'   (Mandatory; no default.)
 #' @param group_var An optional character string specifying the column name in \code{metadata} used for grouping samples (e.g., cell types).
 #'   If not provided (\code{NULL}), all samples are treated as a single group.
@@ -148,7 +148,7 @@ ROCandAUCplot <- function(data, metadata,
       subset_data <- data_roc[data_roc[[group_var]] == group, ]
 
       # Convert condition to binary labels (1 for class, 0 for others)
-      subset_data$Binary_Label <- as.numeric(subset_data[[condition_var]] == class)
+      subset_data$Binary_Label <- as.numeric(subset_data[[condition_var]] %in% class)
 
       # Compute ROC curve
       roc_obj <- pROC::roc(subset_data$Binary_Label, subset_data[[gene]], direction = "<", quiet = TRUE)
