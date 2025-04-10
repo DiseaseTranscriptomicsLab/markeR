@@ -111,18 +111,29 @@ To keep things simple and illustrative, we use a basic senescence gene signature
 library(markeR)
 ```
 
-```{r}
+```{r definesig}
 # Define simple Senescence Signature
 SimpleSenescenceSignature <- c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2", "LMNB1", "MKI67" )
 ```
 
-```{r}
-data(metadata_example)
+```{r loaddata}
 data(counts_example)
-
 # Load example data
-head(metadata_example)
 counts_example[1:5,1:5]
+```
+
+For illustration purposes of different variable types, let's imagine we also had two more variables: one defining the number of days that passed between sample preparation and sequencing, and one defining the person that processed it. These variables are completely random, and not from the initial study.
+ 
+
+```{r load_metadata}
+data(metadata_example)
+
+set.seed("123456")
+
+metadata_example$person <- sample(c("John","Ana","Francisca"),39, replace = T)
+metadata_example$days <- sample(c(1:20),39, replace = T)
+ 
+head(metadata_example)
 ```
 
 ### Visualise Individual Genes from Senescence Signature
@@ -332,7 +343,7 @@ PlotScores(data = counts_example,
            metadata = metadata_example, 
            gene_sets = list(Senescence=SimpleSenescenceSignature),
            ColorVariable = "SenescentType", 
-           GroupingVariable="Condition",  
+           Variable="Condition",  
            method ="logmedian", 
            ColorValues = senescence_triggers_colors, 
            ConnectGroups=TRUE, 
@@ -349,30 +360,6 @@ PlotScores(data = counts_example,
            titlesize = 12)  
 
 ```
-
-
-<!-- ```{r} -->
-<!-- PlotScores_Numeric(data = counts_example,  -->
-<!--            metadata = metadata_example_illustration,  -->
-<!--            gene_sets =list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional, -->
-<!--                             Senescence  = SimpleSenescenceSignature), -->
-<!--            ColorVariable = NULL,  -->
-<!--            GroupingVariable="days",   -->
-<!--            method ="logmedian",  -->
-<!--            ColorValues = NULL,  -->
-<!--            ConnectGroups=TRUE,  -->
-<!--            ncol = NULL,  -->
-<!--            nrow = NULL,  -->
-<!--            widthTitle=24,  -->
-<!--            limits = NULL,  -->
-<!--            legend_nrow = 1,  -->
-<!--            pointSize=8, -->
-<!--            compute_cohen=T,  -->
-<!--            pvalcalc = T, -->
-<!--            title="Marthandan et al. 2016", -->
-<!--            labsize=10,  -->
-<!--            titlesize = 14)   -->
-<!-- ``` -->
 
 
 Given that some genes are expected to be upregulated while others are expected to be downregulated in senescence, it is useful to consider a **bidirectional signature**. In a bidirectional signature, the direction of gene regulation (either up or down) is explicitly accounted for, offering more nuanced insights into gene expression changes in different conditions.
@@ -398,7 +385,7 @@ PlotScores(data = counts_example,
            metadata = metadata_example, 
            gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional),
            ColorVariable = "SenescentType", 
-           GroupingVariable="Condition",  
+           Variable="Condition",  
            method ="logmedian", 
            ColorValues = senescence_triggers_colors, 
            ConnectGroups=TRUE, 
@@ -416,10 +403,36 @@ PlotScores(data = counts_example,
 
 ```
 
+
+To use the function for numeric variables, the user should specify the relevant parameters, including the numeric variable to be analyzed. The function will generate a scatter plot for the numeric variable, optionally calculating Cohen's f as the effect size. The user can choose a correlation method (e.g., Pearson, Spearman, or Kendall) to assess the relationship between the variable and the signature scores. The plot will also include optional p-value calculations for comparisons.
+
+Here is an example of how to configure the function for numeric variables:
+
+```{r examplenumeric, fig.width=7, fig.height=3.5, out.width="80%", warning=FALSE, message=FALSE}
+PlotScores(data = counts_example,
+           metadata = metadata_example,
+           gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                            Senescence = SimpleSenescenceSignature),
+           Variable = "days",               
+           method = "logmedian",            
+           ColorValues = "#3B415B",             
+           ConnectGroups = FALSE,          
+           ncol = NULL,                    
+           nrow = NULL,                    
+           pointSize = 6,                  
+           compute_cohen = TRUE,          
+           pvalcalc = TRUE,                
+           title = "Marthandan et al. 2016",  
+           labsize=9, 
+           titlesize = 12, 
+           widthTitle = 26,
+           cor = "pearson")
+```
+
 For users interested in viewing the overall distribution of scores across gene signatures, the `PlotScores` function can be used without specifying the `GroupingVariable` parameter. In this case, the function will automatically generate a grid of density plots, with each plot representing the distribution of scores for a specific gene signature. This provides a quick way to visualize how each gene signature is distributed across all samples, allowing users to assess the overall spread of the scores without grouping them by any metadata variable.
 
 ```{r plotscores_density, fig.width=6, fig.height=3, out.width="80%", warning=FALSE, message=FALSE}
-
+ 
 PlotScores(data = counts_example, 
            metadata = metadata_example, 
            gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
@@ -433,7 +446,6 @@ PlotScores(data = counts_example,
            title="Marthandan et al. 2016",
            labsize=9, 
            titlesize = 12)  
-
 
 ```
 
@@ -457,7 +469,7 @@ PlotScores(data = counts_example,
            gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
                           Senescence  = SimpleSenescenceSignature),
            ColorVariable = "SenescentType", 
-           GroupingVariable="Condition",  
+           Variable="Condition",  
            method ="ssGSEA", 
            ColorValues = senescence_triggers_colors, 
            ConnectGroups=TRUE, 
@@ -496,7 +508,7 @@ PlotScores(data = counts_example,
            gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
                           Senescence  = SimpleSenescenceSignature),
            ColorVariable = "SenescentType", 
-           GroupingVariable="Condition",  
+           Variable="Condition",  
            method ="ranking", 
            ColorValues = senescence_triggers_colors, 
            ConnectGroups=TRUE, 
@@ -531,21 +543,23 @@ Overall_Scores <- PlotScores(data = counts_example,
                              metadata = metadata_example,  
                              gene_sets=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
                                             Senescence  = SimpleSenescenceSignature), 
-                             GroupingVariable="Condition",  
+                             Variable="Condition",  
                              method ="all",   
                              ncol = NULL, 
                              nrow = NULL, 
                              widthTitle=30, 
-                             limits = NULL,   
+                             limits = c(0,3.5),   
                              title="Marthandan et al. 2016", 
                              titlesize = 10,
-                             ColorValues = NULL,
+                             ColorValues = list(heatmap=c("#F9F4AE", "#B44141"),
+                                                volcano=c(Senescence="#A07395",
+                                                          Senescence_Bidirectional="#CA7E45")),
                              mode="simple",
                              widthlegend=30, 
                              sig_threshold=0.05, 
-                             cohend_threshold=0.6,
-                             PointSize=6,
-                             colorPalette="Set3")  
+                             cohen_threshold=0.6,
+                             pointSize=6,
+                             colorPalette="Paired")  
 
 ```
 
@@ -556,6 +570,7 @@ Overall_Scores$heatmap
 ```{r Overall_Scores_volcano, fig.width=6, fig.height=3, out.width="60%", warning=FALSE, message=FALSE}
 Overall_Scores$volcano
 ```
+
 
 #### Classification Potential of Gene Signatures
 
@@ -636,24 +651,11 @@ The function returns a structured list containing:
 This approach allows users to quickly **identify potential relationships between scores and predictor variables**, guiding further analysis.
 
 This approach requires that the user is analysing a specific method for score calculation and gene signature. For illustration purposes, we will go with the `logmedian` method and compare the two signatures for Senescence, using the `mode=extensive`.
-
-For illustration purposes, let's imagine we also had two more variables: one defining the number of days that passed between sample preparation and sequencing, and one defining the person that processed it.
- 
-
-```{r variableassoc1_aux}
-set.seed("123456")
-
-metadata_example_illustration <- metadata_example
-
-metadata_example_illustration$person <- sample(c("John","Ana","Francisca"),39, replace = T)
-metadata_example_illustration$days <- sample(c(1:20),39, replace = T)
- 
-```
  
 ```{r variableassoc_score_bidirectsen, fig.width=10, fig.height=7, out.width="100%", warning=FALSE, message=FALSE}
 options(error=recover)
 results_scoreassoc_bidirect <- Score_VariableAssociation(data = counts_example, 
-                          metadata = metadata_example_illustration, 
+                          metadata = metadata_example, 
                           cols = c("Condition","person","days"), 
                           method="logmedian", 
                           gene_set = list(Senescence = SimpleSenescenceSignature ),
@@ -668,7 +670,7 @@ results_scoreassoc_bidirect$Contrasts
 
 ```{r variableassoc_score_sen, fig.width=10, fig.height=7, out.width="100%", warning=FALSE, message=FALSE}
 results_scoreassoc_bidirect <- Score_VariableAssociation(data = counts_example, 
-                          metadata = metadata_example_illustration, 
+                          metadata = metadata_example, 
                           cols = c("Condition","person","days"), 
                           method="logmedian", 
                           gene_set = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional),
@@ -790,7 +792,7 @@ If the user wants to analyze continuous variables (e.g., time points or dosage),
 # First example, using the variables argument.
 # NOT suitable for continuous variables
 DEGs_continuous <- calculateDE(data = counts_example,
-                               metadata = metadata_example_illustration,
+                               metadata = metadata_example,
                                variables = "days")
 DEGs_continuous$days[1:3,]
 ```
@@ -801,7 +803,7 @@ By using the `lmexpression`, the user can treat continuous variables as such, an
 
 ```{r example_continuousDEG_2}
 DEGs_continuous2 <- calculateDE(data = counts_example,
-                                metadata = metadata_example_illustration,
+                                metadata = metadata_example,
                                 lmexpression = "~days")
 DEGs_continuous2$`(Intercept)`[1:3,]
 DEGs_continuous2$days[1:3,]
@@ -815,7 +817,7 @@ This usage of the `lmexpression` parameter also allows the user to combine categ
 
 ```{r example_continuousDEG_3}
 DEGs_continuous3 <- calculateDE(data = counts_example,
-                                metadata = metadata_example_illustration,
+                                metadata = metadata_example,
                                 lmexpression = "~days + Condition")
 DEGs_continuous3$`(Intercept)`[1:3,]
 DEGs_continuous3$days[1:3,]
@@ -922,7 +924,7 @@ Depending on the statistic used (B- or t-statistic):
 ```{r GSEA_varassoc_1, fig.width=6, fig.height=4, out.width="60%", warning=FALSE, message=FALSE}
 options(error=recover)
 GSEA_VariableAssociation(data=counts_example, 
-                         metadata=metadata_example_illustration, 
+                         metadata=metadata_example, 
                          cols=c("Condition","person","days"), 
                          mode="simple", 
                          gene_set=list(Senescence  = SimpleSenescenceSignature), 
@@ -930,7 +932,7 @@ GSEA_VariableAssociation(data=counts_example,
                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
 
 GSEA_VariableAssociation(data=counts_example, 
-                         metadata=metadata_example_illustration, 
+                         metadata=metadata_example, 
                          cols=c("Condition","person","days"), 
                          mode="simple", 
                          gene_set=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional), 
@@ -940,7 +942,7 @@ GSEA_VariableAssociation(data=counts_example,
 
 ```{r GSEA_varassoc_2, fig.width=6, fig.height=6, out.width="60%", warning=FALSE, message=FALSE}
 GSEA_VariableAssociation(data=counts_example, 
-                         metadata=metadata_example_illustration, 
+                         metadata=metadata_example, 
                          cols=c("Condition","person","days"), 
                          mode="extensive", 
                          gene_set=list(Senescence  = SimpleSenescenceSignature), 
@@ -948,7 +950,7 @@ GSEA_VariableAssociation(data=counts_example,
                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
 
 GSEA_VariableAssociation(data=counts_example, 
-                         metadata=metadata_example_illustration, 
+                         metadata=metadata_example, 
                          cols=c("Condition","person","days"), 
                          mode="extensive", 
                          gene_set=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional), 

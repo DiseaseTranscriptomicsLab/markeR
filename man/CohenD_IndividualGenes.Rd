@@ -27,7 +27,7 @@ A warning is issued if more than 30 genes are selected.}
 \item{condition_var}{A character string specifying the column name in \code{metadata} representing the condition of interest.
 (Mandatory; no default.)}
 
-\item{class}{A character string specifying the positive class label for the condition.
+\item{class}{A character string or vector specifying the positive class label for the condition.
 (Mandatory; no default.)}
 
 \item{group_var}{An optional character string specifying the column name in \code{metadata} used for grouping samples.

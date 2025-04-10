@@ -4,12 +4,10 @@
 \alias{compute_cohens_f_pval}
 \title{Compute Cohen's f and p-value for a given model and predictor}
 \usage{
-compute_cohens_f_pval(model, predictor, type)
+compute_cohens_f_pval(model, type)
 }
 \arguments{
 \item{model}{A linear model (\code{lm}) or ANOVA model (\code{aov}) fitted to the data.}
-
-\item{predictor}{A character string specifying the name of the predictor variable in the model.}
 
 \item{type}{A string indicating whether the predictor is numeric or categorical. Options are "Numeric" or "Categorical".}
 }

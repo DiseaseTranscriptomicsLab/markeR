@@ -2,7 +2,7 @@
 % Please edit documentation in R/PlotScores.R
 \name{PlotScores}
 \alias{PlotScores}
-\title{Plot Gene Signature Scores as Violin Plots}
+\title{Plot gene signature scores using various methods.}
 \usage{
 PlotScores(
   data,
@@ -10,99 +10,128 @@ PlotScores(
   gene_sets,
   method = c("ssGSEA", "logmedian", "ranking", "all"),
   ColorVariable = NULL,
-  GroupingVariable = NULL,
+  Variable = NULL,
   ColorValues = NULL,
   ConnectGroups = FALSE,
   ncol = NULL,
   nrow = NULL,
   title = NULL,
-  widthTitle = 10,
+  widthTitle = 20,
   titlesize = 12,
   limits = NULL,
   legend_nrow = NULL,
-  pointSize = 2,
+  pointSize = 4,
   xlab = NULL,
   labsize = 10,
+  compute_cohen = TRUE,
   cond_cohend = NULL,
   pvalcalc = FALSE,
   mode = c("simple", "medium", "extensive"),
   widthlegend = 22,
   sig_threshold = 0.05,
-  cohend_threshold = 0.6,
-  PointSize = 4,
-  colorPalette = "Set3"
+  cohen_threshold = 0.6,
+  colorPalette = "Set3",
+  cor = c("pearson", "spearman", "kendall")
 )
 }
 \arguments{
 \item{data}{A data frame of normalized (non-transformed) counts where each row is a gene and each column is a sample.
 Row names should contain gene names, and column names should contain sample identifiers. \strong{(Required)}}
 
-\item{metadata}{A data frame describing the attributes of each sample, where each row corresponds to a sample and each column to an attribute.
-The first column should contain sample identifiers (i.e., the column names of \code{data}). \strong{(Required if method = "all")}}
+\item{metadata}{A data frame with sample-level attributes. Each row corresponds to a sample, with the first column containing sample IDs
+that match \code{colnames(data)}. \strong{Required if \code{method = "all"} or if metadata-derived groupings or colors are used.}}
 
-\item{gene_sets}{Gene set input. \strong{(Required)}
+\item{gene_sets}{A named list of gene sets to score.
 \itemize{
-\item \strong{Unidirectional gene sets}: Provide a named list where each element is a vector of gene names representing a gene signature.
-\item \strong{Bidirectional gene sets}: Provide a named list where each element is a data frame with two columns:
-\itemize{
-\item The \strong{first column} contains gene names.
-\item The \strong{second column} indicates the expected direction of enrichment (1 for upregulated genes, -1 for downregulated genes).
-}
+\item For \strong{unidirectional gene sets}: a list of character vectors.
+\item For \strong{bidirectional gene sets}: a list of data frames with two columns: gene names and direction (1 = up, -1 = down). \strong{(Required)}
 }}
 
-\item{method}{A character string indicating the scoring method to use. Options are \code{"ssGSEA"},
-\code{"logmedian"}, \code{"ranking"}, or \code{"all"} (to compute scores using all methods). Defaults to \code{"logmedian"}.}
+\item{method}{Scoring method to use. One of \code{"ssGSEA"}, \code{"logmedian"}, \code{"ranking"}, or \code{"all"} (default = \code{"logmedian"}).
+\itemize{
+\item \code{"all"} triggers a full analysis returning both heatmap and volcano plots.
+\item Other values return single-score plots depending on \code{Variable} type.
+}}
 
-\item{ColorVariable}{A character string indicating the column name used to color the points.
-If \code{NULL} (default), the "Paired" brewer palette is applied. Only applicable if \code{method != "all"}.}
+\item{ColorVariable}{Name of a metadata column to color points by. Used in \strong{single-method mode} (\code{"ssGSEA"}, etc.). Ignored in \code{"all"} mode.}
 
-\item{GroupingVariable}{A character string indicating the column name in \code{metadata} used for grouping
-on the x-axis. If \code{GroupingVariable==NULL}, the function will return a density plot for each gene set.
-If \code{method == "all"}, this variable is \strong{required}, and used for generating comparisons.}
+\item{Variable}{Metadata column to define groups or numeric comparisons.
+\itemize{
+\item \strong{Required if \code{method = "all"}} (used to compute and compare effect sizes).
+\item If \code{NULL} and \code{method != "all"}, density plots of each signature scores across samples are shown (no grouping or comparison).
+}}
 
-\item{ColorValues}{An optional named vector mapping unique values of \code{GroupingVariable} to specific colors.
-If not provided, the "Paired" brewer palette is used. If \code{method == "all"}, it should be a vector of length two, specifying
-the colors for the color bar (detault: c("#F9F4AE", "#B44141")). If \code{ColorVariable} is NULL, then it defaults to the color
-"#ECBD78", and can be changed to define the color of the density curve.}
+\item{ColorValues}{Optional. A named vector or list of colors used to control the coloring of plot elements across different methods and variable types.
+Behavior depends on the combination of \code{method} and \code{Variable}:
+\itemize{
+\item \strong{If \code{method != "all"}}:
+\itemize{
+\item If \code{Variable} is \code{NULL}:
+\itemize{
+\item Used in density plots; a \strong{single color} will be applied (default: \code{"#ECBD78"} if \code{ColorValues} is not specified).
+}
+\item If \code{Variable} is \strong{categorical}:
+\itemize{
+\item A \strong{named vector} should map each level of \code{Variable} (or \code{ColorVariable}) to a specific color.
+\item Overrides the palette specified by \code{colorPalette}.
+}
+\item If \code{Variable} is \strong{numeric}:
+\itemize{
+\item A \strong{single color} is applied to all points in the scatter plot (default: \code{"#5264B6"}).
+}
+}
+\item \strong{If \code{method == "all"}}:
+\itemize{
+\item \code{ColorValues} can be a \strong{named list} with two elements:
+\itemize{
+\item \code{heatmap}: A vector of \strong{two colors} used as a diverging scale for the heatmap of effect sizes (default: \code{c("#F9F4AE", "#B44141")}).
+\item \code{volcano}: A named vector of colors used for labeling or grouping gene signatures (e.g., in the volcano plot).
+}
+\item If not provided, defaults will be used for both components.
+}
+}
 
-\item{ConnectGroups}{Logical, indicating whether to connect groups using lines across the x-axis.
-If \code{TRUE}, a line connecting median values across groups is drawn, colored by \code{ColorVariable}.
-Default is \code{FALSE}. Only applicable if \code{method != "all"}.}
+In all cases, \code{ColorValues} takes precedence over the default \code{colorPalette} setting if specified.}
 
-\item{ncol}{Optional numeric value specifying the number of columns in the grid layout for the combined plots.
-If \code{NULL}, a near-square grid is computed.}
+\item{ConnectGroups}{Logical. If \code{TRUE}, connects points by sample ID across conditions (used for categorical variables and \code{method != "all"}).}
 
-\item{nrow}{Optional numeric value specifying the number of rows in the grid layout. If \code{NULL}, it is computed based on \code{ncol}.}
+\item{ncol, }{nrow Number of columns or rows for facet layout (used in both heatmaps and score plots).}
 
-\item{title}{A string specifying the main title of the grid of plots.}
+\item{title}{Plot title (optional).}
 
-\item{widthTitle}{Optional integer specifying the maximum width of the title before inserting line breaks.
-Titles break at \verb{_}, \code{-}, or \code{:} where possible, or at the exact width if no such character is found.
-Default is \code{10}.}
+\item{widthTitle}{Width allocated for title (affects alignment).}
 
-\item{titlesize}{Numeric; font size of the main title of the grid of plots (default = \code{14}).}
+\item{titlesize}{Font size for plot title.}
 
-\item{limits}{Optional numeric vector of length 2 specifying the y-axis limits (if \code{method != "all"}), the limits of the color scale
-(if \code{method == "all"}), or the color of the density curve if \code{GroupingVariable==NULL}. If \code{NULL}, the limits adjusts automatically.}
+\item{limits}{Y-axis limits (numeric vector of length 2).}
 
-\item{legend_nrow}{Optional numeric value specifying the number of rows in the legend. If \code{NULL}, determined by ggplot2.
-Only applicable if \code{method != "all"}.}
+\item{legend_nrow}{Number of rows for plot legend (used in single-method plots).}
 
-\item{pointSize}{Optional numeric value specifying the point size. Default is \code{2}.
-Only applicable if \code{method != "all"}.}
+\item{pointSize}{Numeric. Size of points in \strong{score plots} (violin or scatter),
+used when plotting individual sample scores for both categorical and numeric variables,
+including when \code{method = "all"}.}
 
-\item{xlab}{Optional character string specifying the x-axis label. Default is the name of \code{GroupingVariable}.
-Only applicable if \code{method != "all"}.}
+\item{xlab}{Label for x-axis (optional; defaults to \code{Variable}).}
 
-\item{labsize}{Numeric; font size of the plot's axis labels (default = \code{14}). Only applicable if \code{method != "all"}.}
+\item{labsize}{Font size for axis and facet labels.}
 
-\item{cond_cohend}{Optional named list specifying two groups for which Cohen's d effect size should be calculated.
-The list should contain exactly two named elements (e.g., \code{list("GroupA" = c("Condition1"), "GroupB" = c("Condition2", "Condition3"))}).
-If not provided, Cohen's d is not computed. Currently works only for two groups. Only applicable if \code{method != "all"}.}
+\item{compute_cohen}{Logical. Whether to compute Cohen's effect sizes in \strong{score plots} (\code{method != "all"}).
+\itemize{
+\item \strong{Only applies when \code{method != "all"}}; ignored otherwise.
+\item If the variable is \strong{categorical} and \code{cond_cohend} is specified, computes \strong{Cohen's d} for the specified comparison.
+\item If the variable is \strong{categorical} and \code{cond_cohend} is not specified, computes:
+\itemize{
+\item \strong{Cohen's d} if there are exactly two groups.
+\item \strong{Cohen's f} if there are more than two groups.
+}
+\item If the variable is \strong{numeric}, computes \strong{Cohen's f} regardless of \code{cond_cohend}.
+}}
 
-\item{pvalcalc}{Logical; Calculates p-value and presents it on plot (default = FALSE). Always calculates for the same comparison as \code{cond_cohend}.}
+\item{cond_cohend}{Optional. Subset condition or contrast label to compute effect size for (used with \code{compute_cohen = TRUE}).}
 
-\item{mode}{A string specifying the level of detail for contrasts. Only applicable for method = "all".
+\item{pvalcalc}{Logical. If \code{TRUE}, computes p-values between groups.}
+
+\item{mode}{A string specifying the level of detail for contrasts, if \code{method = "all"}.
 Options are:
 \itemize{
 \item \code{"simple"}: Pairwise comparisons (e.g., A - B).
@@ -110,47 +139,111 @@ Options are:
 \item \code{"extensive"}: All possible groupwise contrasts, ensuring balance in the number of terms on each side.
 }}
 
-\item{widthlegend}{Numeric, default = 22 Controls the width of pathway labels in the legend. Only for volcano-like plot of Cohen's d if method="all".}
+\item{widthlegend}{Width of the legend in \strong{volcano plots} (used only if \code{method = "all"}) and violin score plots.}
 
-\item{sig_threshold}{Numeric, default = 0.05. Adjusted p-value threshold for significance. Only for volcano-like plot of Cohen's d if method="all"
-A dashed horizontal line is drawn at this threshold}
+\item{sig_threshold}{P-value cutoff shown as a \strong{guide line} in volcano plots. Only applies when \code{method = "all"}.}
 
-\item{cohend_threshold}{Numeric, default = 0.6. Cohen's D threshold. Only for volcano-like plot of Cohen's d if method="all"
-A dashed vertical line is drawn at this threshold.}
+\item{colorPalette}{Name of an RColorBrewer palette used to assign colors in plots. Applies to all methods. Default is "Set3".
+If \code{ColorValues} is provided, it overrides this palette.
+\itemize{
+\item If \code{Variable} is \code{NULL} and \code{method != "all"} (i.e., for density plots), a default color \code{"#ECBD78"} is used.
+\item If \code{method = "all"} (i.e., for heatmaps and volcano plots), a default diverging color scale is used: \code{c("#F9F4AE", "#B44141")}, unless \code{ColorValues} is manually specified.
+}}
 
-\item{PointSize}{Numeric, default = 4. Size of the plotted points. Only for volcano-like plot of Cohen's d if method="all"}
+\item{cor}{Correlation method for numeric variables. One of \code{"pearson"} (default), \code{"spearman"}, or \code{"kendall"}.
+Only applies when the variable is numeric and \code{method != "all"}.}
 
-\item{colorPalette}{Character. Name of RColorBrewer palette to use if \code{ColorValues} is not provided. Default is "Set3".}
+\item{cohend_threshold}{Effect size threshold shown as a \strong{guide line} in volcano plots. Used only when \code{method = "all"}.}
 }
 \value{
+Depending on \code{method}:
 \itemize{
-\item If \code{method != "all"}: A combined ggplot object (using \code{ggpubr::ggarrange} and \code{ggpubr::annotate_figure}) displaying violin plots for each gene signature.
-\item If \code{method == "all"}: A heatmap summarizing Cohen's D for all metric combinations of the \code{GroupingVariable}, and a volcano-like plot depicting
-the relationship between cohen's D and -log10(adjusted p-value), with resolution given by the parameter \code{mode}.
+\item If \code{method = "all"}: returns a list with \code{heatmap} and \code{volcano} ggplot objects.
+\item If \code{method} is a single method: returns a single ggplot object (scatter or violin plot depending on variable type).
 }
 }
 \description{
-This function generates violin plots (with overlaid jittered points, median summary crossbars,
-and optional group connection lines) for each sample based on one or more predefined gene sets
-(signatures). Four methods are available:
+Computes and visualizes gene signature scores using one or more methods, returning plots
+such as scatter plots, violin plots, heatmaps, or volcano plots depending on inputs.
 }
 \details{
+\strong{Behavior Based on \code{method}:}
 \itemize{
-\item \strong{ssGSEA}: Uses the single-sample Gene Set Enrichment Analysis (ssGSEA) method to compute an enrichment score
-for each signature in each sample using an adapation of the \code{gsva()} function from the \code{GSVA} package.
-\item \strong{logmedian}: Computes the score as the sum of the normalized (log2-median-centered) expression values of the
-signature genes divided by the number of genes in the signature.
-\item \strong{ranking}: Computes gene signature scores for each sample by ranking the expression of signature genes
-in the dataset and normalizing the score based on the total number of genes.
-\item \strong{all}: Computes gene signature scores using all three methods (\code{ssGSEA}, \code{logmedian}, and \code{ranking}).
-Returns a heatmap summarizing Cohen's D for all metric combinations of the variables of interest.
+\item \code{"all"}:
+\itemize{
+\item Requires \code{metadata} and \code{Variable}.
+\item Computes scores using all available methods and returns:
+\itemize{
+\item A heatmap of Cohen’s effect sizes.
+\item A volcano plot showing effect size vs p-value across gene signatures.
+}
+\item Uses additional parameters:
+\itemize{
+\item \code{mode}: defines how contrasts between groups are constructed.
+\item \code{sig_threshold} and \code{cohend_threshold}: add \strong{guide dashed lines} to the volcano plot (do not affect point coloring).
+\item \code{widthlegend}: controls width of the volcano plot legend.
+\item \code{pointSize}: controls dot size for signature points in the volcano plot.
+}
+\item \code{ColorValues} can be a \strong{named list}:
+\itemize{
+\item \code{heatmap}: two-color gradient for effect sizes (default: \code{c("#F9F4AE", "#B44141")}).
+\item \code{signatures}: named vector of colors for gene signatures in the volcano plot (default is color palette "Set3").
+}
+}
+\item \code{"ssGSEA"}, \code{"logmedian"}, or \code{"ranking"}:
+\itemize{
+\item The type of \code{Variable} determines the plot:
+\itemize{
+\item If \strong{categorical}: produces violin plots with optional group comparisons.
+\item If \strong{numeric}: produces scatter plots with correlation.
+\item If \code{Variable} is \code{NULL}: produces density plots for each signature across all samples.
+}
+\item Additional arguments:
+\itemize{
+\item \code{ColorVariable} and \code{ColorValues}: control coloring of points or violins.
+\item \code{colorPalette}: default palette (overridden by \code{ColorValues} if present).
+\item \code{ConnectGroups}: links samples by ID (for categorical \code{Variable} only).
+\item \code{cor}: specifies correlation method for numeric \code{Variable}.
+\item \code{pvalcalc}: enables group-wise p-value calculations (categorical only).
+\item \code{compute_cohen}: calculates effect sizes when applicable.
+\item \code{cond_cohend}: focuses Cohen’s d calculation on a specific comparison.
+}
+}
 }
 
-For each gene signature in \code{ResultsList}, the function creates a violin plot using \code{ggplot2}.
-The x-axis is determined by the grouping variable (e.g., \code{Condition}), while the y-axis shows the signature score.
-Jittered points are overlaid and optionally colored by \code{ColorVariable}. A median summary is added as a crossbar.
-If \code{ConnectGroups = TRUE}, median values across groups are connected with lines, colored by \code{ColorVariable}.
-
-If \code{method == "all"}, the function instead returns a heatmap displaying Cohen's D effect sizes for all variable combinations, and volcano-like plot depicting
-the relationship between cohen's D and -log10(adjusted p-value).
+\strong{Behavior Based on \code{Variable} Type:}
+\itemize{
+\item \strong{If \code{Variable} is numeric}:
+\itemize{
+\item Outputs scatter plots (in single-method mode).
+\item Computes correlation (\code{cor}).
+\item Ignores \code{compute_cohen}, \code{cond_cohend}, and \code{pvalcalc}.
+\item Color is uniform (default: \code{"#5264B6"}) unless overridden via \code{ColorValues}.
+\item Cohen’s f effect size estimation (\code{compute_cohen = TRUE}) and significance if \code{pvalcalc} is \code{TRUE}.
+}
+\item \strong{If \code{Variable} is categorical}:
+\itemize{
+\item Outputs violin plots (in single-method mode).
+\item Supports:
+\itemize{
+\item p-value comparisons (\code{pvalcalc = TRUE}),
+\item optional connection lines (\code{ConnectGroups = TRUE}),
+\item Cohen’s effect size estimation (\code{compute_cohen = TRUE}) and significance (\code{pvalcalc} is \code{TRUE}):
+\itemize{
+\item If \code{cond_cohend} is specified, computes \strong{Cohen's d} for that comparison.
+\item If not specified:
+\itemize{
+\item Computes \strong{Cohen’s d} if 2 groups.
+\item Computes \strong{Cohen’s f} if >2 groups.
+}
+}
+}
+\item Colors are matched to factor levels using \code{ColorValues} or \code{colorPalette}.
+}
+\item \strong{If \code{Variable} is NULL and \code{method != "all"}}:
+\itemize{
+\item Produces density plots of signature scores.
+\item Uses a \strong{single fill color} (\code{"#ECBD78"} by default or from \code{ColorValues}).
+}
+}
 }

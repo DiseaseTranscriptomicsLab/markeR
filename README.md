@@ -173,10 +173,31 @@ SimpleSenescenceSignature <- c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2", "LMNB1"
 ```
 
 ``` r
-data(metadata_example)
 data(counts_example)
-
 # Load example data
+counts_example[1:5,1:5]
+#>          SRR1660534 SRR1660535 SRR1660536 SRR1660537 SRR1660538
+#> A1BG        9.94566   9.476768   8.229231   8.515083   7.806479
+#> A1BG-AS1   12.08655  11.550303  12.283976   7.580694   7.312666
+#> A2M        77.50289  56.612839  58.860268   8.997624   6.981857
+#> A4GALT     14.74183  15.226083  14.815891  14.675780  15.222488
+#> AAAS       47.92755  46.292377  43.965972  47.109493  47.213739
+```
+
+For illustration purposes of different variable types, let’s imagine we
+also had two more variables: one defining the number of days that passed
+between sample preparation and sequencing, and one defining the person
+that processed it. These variables are completely random, and not from
+the initial study.
+
+``` r
+data(metadata_example)
+
+set.seed("123456")
+
+metadata_example$person <- sample(c("John","Ana","Francisca"),39, replace = T)
+metadata_example$days <- sample(c(1:20),39, replace = T)
+ 
 head(metadata_example)
 #>       sampleID      DatasetID   CellType     Condition       SenescentType
 #> 252 SRR1660534 Marthandan2016 Fibroblast     Senescent Telomere shortening
@@ -185,20 +206,13 @@ head(metadata_example)
 #> 255 SRR1660537 Marthandan2016 Fibroblast Proliferative                none
 #> 256 SRR1660538 Marthandan2016 Fibroblast Proliferative                none
 #> 257 SRR1660539 Marthandan2016 Fibroblast Proliferative                none
-#>                         Treatment
-#> 252 PD72 (Replicative senescence)
-#> 253 PD72 (Replicative senescence)
-#> 254 PD72 (Replicative senescence)
-#> 255                         young
-#> 256                         young
-#> 257                         young
-counts_example[1:5,1:5]
-#>          SRR1660534 SRR1660535 SRR1660536 SRR1660537 SRR1660538
-#> A1BG        9.94566   9.476768   8.229231   8.515083   7.806479
-#> A1BG-AS1   12.08655  11.550303  12.283976   7.580694   7.312666
-#> A2M        77.50289  56.612839  58.860268   8.997624   6.981857
-#> A4GALT     14.74183  15.226083  14.815891  14.675780  15.222488
-#> AAAS       47.92755  46.292377  43.965972  47.109493  47.213739
+#>                         Treatment    person days
+#> 252 PD72 (Replicative senescence)       Ana    6
+#> 253 PD72 (Replicative senescence)       Ana   18
+#> 254 PD72 (Replicative senescence)      John   19
+#> 255                         young       Ana    2
+#> 256                         young Francisca    9
+#> 257                         young      John   10
 ```
 
 ### Visualise Individual Genes from Senescence Signature
@@ -485,13 +499,13 @@ head(df_Scores$Senescence)
 #> 4 SRR1660537 -0.2198753 Marthandan2016 Fibroblast Proliferative
 #> 5 SRR1660538 -0.2672930 Marthandan2016 Fibroblast Proliferative
 #> 6 SRR1660539 -0.2623188 Marthandan2016 Fibroblast Proliferative
-#>         SenescentType                     Treatment
-#> 1 Telomere shortening PD72 (Replicative senescence)
-#> 2 Telomere shortening PD72 (Replicative senescence)
-#> 3 Telomere shortening PD72 (Replicative senescence)
-#> 4                none                         young
-#> 5                none                         young
-#> 6                none                         young
+#>         SenescentType                     Treatment    person days
+#> 1 Telomere shortening PD72 (Replicative senescence)       Ana    6
+#> 2 Telomere shortening PD72 (Replicative senescence)       Ana   18
+#> 3 Telomere shortening PD72 (Replicative senescence)      John   19
+#> 4                none                         young       Ana    2
+#> 5                none                         young Francisca    9
+#> 6                none                         young      John   10
 ```
 
 The user can also chose to directly plot the scores.
@@ -517,7 +531,7 @@ PlotScores(data = counts_example,
            metadata = metadata_example, 
            gene_sets = list(Senescence=SimpleSenescenceSignature),
            ColorVariable = "SenescentType", 
-           GroupingVariable="Condition",  
+           Variable="Condition",  
            method ="logmedian", 
            ColorValues = senescence_triggers_colors, 
            ConnectGroups=TRUE, 
@@ -535,29 +549,6 @@ PlotScores(data = counts_example,
 ```
 
 <img src="man/figures/README-exampleScore-1.png" width="40%" />
-
-<!-- ```{r} -->
-<!-- PlotScores_Numeric(data = counts_example,  -->
-<!--            metadata = metadata_example_illustration,  -->
-<!--            gene_sets =list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional, -->
-<!--                             Senescence  = SimpleSenescenceSignature), -->
-<!--            ColorVariable = NULL,  -->
-<!--            GroupingVariable="days",   -->
-<!--            method ="logmedian",  -->
-<!--            ColorValues = NULL,  -->
-<!--            ConnectGroups=TRUE,  -->
-<!--            ncol = NULL,  -->
-<!--            nrow = NULL,  -->
-<!--            widthTitle=24,  -->
-<!--            limits = NULL,  -->
-<!--            legend_nrow = 1,  -->
-<!--            pointSize=8, -->
-<!--            compute_cohen=T,  -->
-<!--            pvalcalc = T, -->
-<!--            title="Marthandan et al. 2016", -->
-<!--            labsize=10,  -->
-<!--            titlesize = 14)   -->
-<!-- ``` -->
 
 Given that some genes are expected to be upregulated while others are
 expected to be downregulated in senescence, it is useful to consider a
@@ -613,7 +604,7 @@ PlotScores(data = counts_example,
            metadata = metadata_example, 
            gene_sets = list(Senescence=SimpleSenescenceSignature_bidirectional),
            ColorVariable = "SenescentType", 
-           GroupingVariable="Condition",  
+           Variable="Condition",  
            method ="logmedian", 
            ColorValues = senescence_triggers_colors, 
            ConnectGroups=TRUE, 
@@ -632,6 +623,40 @@ PlotScores(data = counts_example,
 
 <img src="man/figures/README-exampleScore_bidirectional-1.png" width="40%" />
 
+To use the function for numeric variables, the user should specify the
+relevant parameters, including the numeric variable to be analyzed. The
+function will generate a scatter plot for the numeric variable,
+optionally calculating Cohen’s f as the effect size. The user can choose
+a correlation method (e.g., Pearson, Spearman, or Kendall) to assess the
+relationship between the variable and the signature scores. The plot
+will also include optional p-value calculations for comparisons.
+
+Here is an example of how to configure the function for numeric
+variables:
+
+``` r
+PlotScores(data = counts_example,
+           metadata = metadata_example,
+           gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
+                            Senescence = SimpleSenescenceSignature),
+           Variable = "days",               
+           method = "logmedian",            
+           ColorValues = "#3B415B",             
+           ConnectGroups = FALSE,          
+           ncol = NULL,                    
+           nrow = NULL,                    
+           pointSize = 6,                  
+           compute_cohen = TRUE,          
+           pvalcalc = TRUE,                
+           title = "Marthandan et al. 2016",  
+           labsize=9, 
+           titlesize = 12, 
+           widthTitle = 26,
+           cor = "pearson")
+```
+
+<img src="man/figures/README-examplenumeric-1.png" width="80%" />
+
 For users interested in viewing the overall distribution of scores
 across gene signatures, the `PlotScores` function can be used without
 specifying the `GroupingVariable` parameter. In this case, the function
@@ -642,6 +667,7 @@ distributed across all samples, allowing users to assess the overall
 spread of the scores without grouping them by any metadata variable.
 
 ``` r
+ 
 PlotScores(data = counts_example, 
            metadata = metadata_example, 
            gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
@@ -688,7 +714,7 @@ PlotScores(data = counts_example,
            gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
                           Senescence  = SimpleSenescenceSignature),
            ColorVariable = "SenescentType", 
-           GroupingVariable="Condition",  
+           Variable="Condition",  
            method ="ssGSEA", 
            ColorValues = senescence_triggers_colors, 
            ConnectGroups=TRUE, 
@@ -733,7 +759,7 @@ PlotScores(data = counts_example,
            gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
                           Senescence  = SimpleSenescenceSignature),
            ColorVariable = "SenescentType", 
-           GroupingVariable="Condition",  
+           Variable="Condition",  
            method ="ranking", 
            ColorValues = senescence_triggers_colors, 
            ConnectGroups=TRUE, 
@@ -786,21 +812,23 @@ Overall_Scores <- PlotScores(data = counts_example,
                              metadata = metadata_example,  
                              gene_sets=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
                                             Senescence  = SimpleSenescenceSignature), 
-                             GroupingVariable="Condition",  
+                             Variable="Condition",  
                              method ="all",   
                              ncol = NULL, 
                              nrow = NULL, 
                              widthTitle=30, 
-                             limits = NULL,   
+                             limits = c(0,3.5),   
                              title="Marthandan et al. 2016", 
                              titlesize = 10,
-                             ColorValues = NULL,
+                             ColorValues = list(heatmap=c("#F9F4AE", "#B44141"),
+                                                volcano=c(Senescence="#A07395",
+                                                          Senescence_Bidirectional="#CA7E45")),
                              mode="simple",
                              widthlegend=30, 
                              sig_threshold=0.05, 
-                             cohend_threshold=0.6,
-                             PointSize=6,
-                             colorPalette="Set3")  
+                             cohen_threshold=0.6,
+                             pointSize=6,
+                             colorPalette="Paired")  
 ```
 
 ``` r
@@ -931,24 +959,10 @@ score calculation and gene signature. For illustration purposes, we will
 go with the `logmedian` method and compare the two signatures for
 Senescence, using the `mode=extensive`.
 
-For illustration purposes, let’s imagine we also had two more variables:
-one defining the number of days that passed between sample preparation
-and sequencing, and one defining the person that processed it.
-
-``` r
-set.seed("123456")
-
-metadata_example_illustration <- metadata_example
-
-metadata_example_illustration$person <- sample(c("John","Ana","Francisca"),39, replace = T)
-metadata_example_illustration$days <- sample(c(1:20),39, replace = T)
- 
-```
-
 ``` r
 options(error=recover)
 results_scoreassoc_bidirect <- Score_VariableAssociation(data = counts_example, 
-                          metadata = metadata_example_illustration, 
+                          metadata = metadata_example, 
                           cols = c("Condition","person","days"), 
                           method="logmedian", 
                           gene_set = list(Senescence = SimpleSenescenceSignature ),
@@ -987,7 +1001,7 @@ results_scoreassoc_bidirect$Contrasts
 
 ``` r
 results_scoreassoc_bidirect <- Score_VariableAssociation(data = counts_example, 
-                          metadata = metadata_example_illustration, 
+                          metadata = metadata_example, 
                           cols = c("Condition","person","days"), 
                           method="logmedian", 
                           gene_set = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional),
@@ -1197,7 +1211,7 @@ dosage), they should use the `lmexpression` argument, instead of the
 # First example, using the variables argument.
 # NOT suitable for continuous variables
 DEGs_continuous <- calculateDE(data = counts_example,
-                               metadata = metadata_example_illustration,
+                               metadata = metadata_example,
                                variables = "days")
 DEGs_continuous$days[1:3,]
 #>            logFC  AveExpr        t      P.Value    adj.P.Val        B
@@ -1215,7 +1229,7 @@ reflects how much expression changes per unit increase in days.
 
 ``` r
 DEGs_continuous2 <- calculateDE(data = counts_example,
-                                metadata = metadata_example_illustration,
+                                metadata = metadata_example,
                                 lmexpression = "~days")
 DEGs_continuous2$`(Intercept)`[1:3,]
 #>           logFC  AveExpr         t      P.Value    adj.P.Val         B
@@ -1240,7 +1254,7 @@ combine categorical variables with numeric variables:
 
 ``` r
 DEGs_continuous3 <- calculateDE(data = counts_example,
-                                metadata = metadata_example_illustration,
+                                metadata = metadata_example,
                                 lmexpression = "~days + Condition")
 DEGs_continuous3$`(Intercept)`[1:3,]
 #>           logFC  AveExpr         t      P.Value    adj.P.Val         B
@@ -1433,7 +1447,7 @@ Depending on the statistic used (B- or t-statistic):
 ``` r
 options(error=recover)
 GSEA_VariableAssociation(data=counts_example, 
-                         metadata=metadata_example_illustration, 
+                         metadata=metadata_example, 
                          cols=c("Condition","person","days"), 
                          mode="simple", 
                          gene_set=list(Senescence  = SimpleSenescenceSignature), 
@@ -1464,7 +1478,7 @@ GSEA_VariableAssociation(data=counts_example,
     #> 6:     LMNB1,MKI67,CDKN2A,TP53,CCL2,CDKN1A         B                      days
 
     GSEA_VariableAssociation(data=counts_example, 
-                             metadata=metadata_example_illustration, 
+                             metadata=metadata_example, 
                              cols=c("Condition","person","days"), 
                              mode="simple", 
                              gene_set=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional), 
@@ -1503,7 +1517,7 @@ GSEA_VariableAssociation(data=counts_example,
 
 ``` r
 GSEA_VariableAssociation(data=counts_example, 
-                         metadata=metadata_example_illustration, 
+                         metadata=metadata_example, 
                          cols=c("Condition","person","days"), 
                          mode="extensive", 
                          gene_set=list(Senescence  = SimpleSenescenceSignature), 
@@ -1540,7 +1554,7 @@ GSEA_VariableAssociation(data=counts_example,
     #> 9:     LMNB1,MKI67,CDKN2A,TP53,CCL2,CDKN1A         B                       days
 
     GSEA_VariableAssociation(data=counts_example, 
-                             metadata=metadata_example_illustration, 
+                             metadata=metadata_example, 
                              cols=c("Condition","person","days"), 
                              mode="extensive", 
                              gene_set=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional), 

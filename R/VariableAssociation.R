@@ -6,7 +6,7 @@
 #' categorical variables have more than 10 unique values.
 #'
 #' @param df A data frame containing the variables to classify.
-#' @param cols Optional. A character vector of column names to consider. If NULL, all columns in `df` are used.
+#' @param cols A character vector of column names to consider.
 #'
 #' @return A named character vector where names correspond to column names
 #' and values indicate the variable type: "Numeric", "Categorical Bin", or "Categorical Multi".
@@ -23,6 +23,10 @@
 identify_variable_type <- function(df, cols = NULL) {
 
   # Define only cols of interest
+  #if (!is.null(cols)) df <- df[, cols, drop = FALSE]
+
+  if (is.null(cols)) return("Unknown")
+
   if (!is.null(cols)) df <- df[, cols, drop = FALSE]
 
   variable_types <- sapply(names(df), function(col_name) {
@@ -31,13 +35,13 @@ identify_variable_type <- function(df, cols = NULL) {
     unique_vals <- length(unique(col))
 
     if (is.numeric(col) | is.integer(col)) {
-      if (unique_vals > 10) {
+ #     if (unique_vals > 10) {
         return("Numeric")
-      } else if (unique_vals == 2) {
-        return("Categorical Bin")
-      } else {
-        return("Categorical Multi")
-      }
+      # } else if (unique_vals == 2) {
+      #   return("Categorical Bin")
+      # } else {
+      #   return("Categorical Multi")
+      # }
     } else if (is.character(col) || is.factor(col)) {
       if (unique_vals == 2) {
         return("Categorical Bin")
