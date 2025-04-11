@@ -127,7 +127,7 @@ including when \code{method = "all"}.}
 \item If the variable is \strong{numeric}, computes \strong{Cohen's f} regardless of \code{cond_cohend}.
 }}
 
-\item{cond_cohend}{Optional. Subset condition or contrast label to compute effect size for (used with \code{compute_cohen = TRUE}).}
+\item{cond_cohend}{Optional. List of length 2 with the two groups being used to compute effect size. The values in each entry should be levels of \verb{Variable (used with }compute_cohen = TRUE`).}
 
 \item{pvalcalc}{Logical. If \code{TRUE}, computes p-values between groups.}
 

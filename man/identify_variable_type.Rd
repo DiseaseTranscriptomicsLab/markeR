@@ -9,7 +9,7 @@ identify_variable_type(df, cols = NULL)
 \arguments{
 \item{df}{A data frame containing the variables to classify.}
 
-\item{cols}{Optional. A character vector of column names to consider. If NULL, all columns in \code{df} are used.}
+\item{cols}{A character vector of column names to consider.}
 }
 \value{
 A named character vector where names correspond to column names

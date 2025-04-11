@@ -56,7 +56,7 @@
 #'       - **Cohen's d** if there are exactly two groups.
 #'       - **Cohen's f** if there are more than two groups.
 #'   - If the variable is **numeric**, computes **Cohen's f** regardless of `cond_cohend`.
-#' @param cond_cohend Optional. Subset condition or contrast label to compute effect size for (used with `compute_cohen = TRUE`).
+#' @param cond_cohend Optional. List of length 2 with the two groups being used to compute effect size. The values in each entry should be levels of `Variable (used with `compute_cohen = TRUE`).
 #' @param pvalcalc Logical. If `TRUE`, computes p-values between groups.
 #' @param mode A string specifying the level of detail for contrasts, if `method = "all"`.
 #' Options are:

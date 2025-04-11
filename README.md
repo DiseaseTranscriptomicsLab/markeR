@@ -919,9 +919,17 @@ FDR_Simulation(data = counts_example,
                original_signatures = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
                                           Senescence  = SimpleSenescenceSignature),
                gene_list = row.names(counts_example),
-               number_of_sims = 100,
-               title_for_plot = "Marthandan et al. 2016",
-               GroupingVariable = "Condition")
+               number_of_sims = 10,
+               title = "Marthandan et al. 2016",
+               widthTitle = 30,
+               Variable = "Condition",
+               titlesize = 12,
+               pointSize = 5,
+               labsize = 10,
+               mode = "simple",
+               ColorValues=NULL,
+               ncol=NULL, 
+               nrow=NULL ) 
 ```
 
 <img src="man/figures/README-FDRSim-1.png" width="80%" />
