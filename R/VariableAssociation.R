@@ -19,7 +19,7 @@
 #' )
 #' identify_variable_type(df)
 #'
-#' @export
+#' @keywords internal
 identify_variable_type <- function(df, cols = NULL) {
 
   # Define only cols of interest
@@ -113,7 +113,7 @@ identify_variable_type <- function(df, cols = NULL) {
 #'
 #' @importFrom stats cor.test t.test wilcox.test aov TukeyHSD
 #'
-#' @export
+#' @keywords internal
 compute_stat_tests <- function(df, target_var, cols = NULL,
                                numeric = "pearson",
                                categorical_bin = "t.test",
@@ -267,7 +267,7 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
 #' @importFrom ggpubr ggarrange annotate_figure
 #' @importFrom RColorBrewer brewer.pal
 #'
-#' @export
+#' @keywords internal
 VariableAssociation <- function(df, cols, target_var, targetvar_lab="Score",
                                 discrete_colors = NULL, continuous_color = "#8C6D03",
                                 color_palette = "Set2",

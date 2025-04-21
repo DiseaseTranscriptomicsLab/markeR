@@ -30,3 +30,4 @@ generate_all_contrasts(levels, mode = "simple")    # Pairwise only
 generate_all_contrasts(levels, mode = "medium")    # Pairwise + mean comparisons
 generate_all_contrasts(levels, mode = "extensive") # All balanced contrasts
 }
+\keyword{internal}

@@ -29,7 +29,7 @@
 #'
 #' @importFrom ggplot2 ggplot geom_point geom_vline geom_hline facet_wrap labs scale_color_manual scale_shape_manual theme_bw ggtitle theme element_text element_rect
 #' @importFrom RColorBrewer brewer.pal
-#' @export
+#' @keywords internal
 Volcano_Cohen <- function(cohenlist,
                            titlesize = 12,
                            ColorValues = NULL,

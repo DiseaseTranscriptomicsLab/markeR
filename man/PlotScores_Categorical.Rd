@@ -124,3 +124,4 @@ Depending on the method and the type of variable (categorical, numeric, or \code
 \item \strong{If \code{method != "all"}} and the variable is \strong{numeric}, a scatter plot will be generated to show the relationship between the scores and the numeric variable.
 }
 }
+\keyword{internal}

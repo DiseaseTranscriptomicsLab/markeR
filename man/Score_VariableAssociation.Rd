@@ -30,7 +30,7 @@ Score_VariableAssociation(
 
 \item{metadata}{A data frame containing sample metadata with at least one column corresponding to the variables of interest.}
 
-\item{cols}{A character vector specifying metadata columns to analyze.}
+\item{cols}{A character vector specifying metadata columns to analyse.}
 
 \item{method}{A character string specifying the scoring method (\code{"logmedian"}, \code{"ssGSEA"}, or \code{"ranking"}).}
 

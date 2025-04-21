@@ -60,3 +60,4 @@ The heatmaps are then adjusted to display axis text and ticks only for the left-
 \seealso{
 \code{\link{CohenD_allConditions}}, \code{\link{CohenF_allConditions}}
 }
+\keyword{internal}

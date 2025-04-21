@@ -59,3 +59,4 @@ faceted by contrast.
 \seealso{
 \code{\link{CohenD_allConditions}}
 }
+\keyword{internal}

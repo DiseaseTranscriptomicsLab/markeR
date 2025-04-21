@@ -78,3 +78,4 @@ results <- compute_stat_tests(df, target_var = "score")
 print(results)
 
 }
+\keyword{internal}

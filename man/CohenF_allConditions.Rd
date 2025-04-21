@@ -36,3 +36,4 @@ option, flattens the results, and fits linear models using the specified variabl
 This function is designed for use with categorical variables, where the goal is to evaluate the overall group effect
 (e.g., using ANOVA) across multiple levels.
 }
+\keyword{internal}

@@ -2,3 +2,45 @@ url: https://diseasetranscriptomicslab.github.io/markeR/
 template:
   bootstrap: 5
 
+reference:
+
+  - title: "Package Help Page"
+    contents:
+      - markeR
+
+  - title: "Example Data"
+    contents:
+      - counts_example
+      - metadata_example
+
+  - title: "Score-based Analysis"
+    contents:
+      - CalculateScores
+      - PlotScores
+      - ROC_Scores
+      - AUC_Scores
+      - FDR_Simulation
+
+  - title: "Enrichment-based Methods"
+    contents:
+      - calculateDE
+      - plotVolcano
+      - runGSEA
+      - plotGSEAenrichment
+      - plotNESlollipop
+      - plotCombinedGSEA
+
+  - title: "Variable Association"
+    contents:
+      - Score_VariableAssociation
+      - GSEA_VariableAssociation
+
+  - title: "Visualization Functions"
+    contents:
+      - IndividualGenes_Violins
+      - CorrelationHeatmap
+      - ExpressionHeatmap
+      - ROCandAUCplot
+      - CohenD_IndividualGenes
+      - plotPCA
+

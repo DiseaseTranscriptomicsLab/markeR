@@ -26,7 +26,7 @@ GSEA_VariableAssociation(
 
 \item{metadata}{A data frame containing sample metadata with at least one column corresponding to the variables of interest.}
 
-\item{cols}{A character vector specifying the metadata columns (variables) to analyze.}
+\item{cols}{A character vector specifying the metadata columns (variables) to analyse.}
 
 \item{stat}{Optional. The statistic to use for ranking genes before GSEA. If \code{NULL}, it is automatically determined based on the gene set:
 \itemize{

@@ -20,3 +20,4 @@ A numeric matrix of the same dimensions as \code{x} where each column contains t
 This function computes the rank of each element in every column of a numeric matrix independently.
 For each column, the smallest element receives a rank of 1, the second smallest a rank of 2, and so on.
 }
+\keyword{internal}

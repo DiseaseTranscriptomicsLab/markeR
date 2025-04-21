@@ -30,3 +30,4 @@ df <- data.frame(
 identify_variable_type(df)
 
 }
+\keyword{internal}

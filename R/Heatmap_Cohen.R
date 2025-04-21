@@ -36,7 +36,7 @@
 #' @importFrom ggplot2 ggplot geom_tile geom_text labs scale_fill_gradientn theme_minimal element_text element_blank element_line margin
 #' @importFrom ggpubr ggarrange
 #'
-#' @export
+#' @keywords internal
 Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, widthTitle = 22, titlesize = 12, ColorValues = NULL,title=NULL ) {
 
   cohentype <- ifelse("CohenD" %in% names(cohenlist[[1]]), "d", ifelse("CohenF" %in% names(cohenlist[[1]]), "f", NULL))
@@ -183,7 +183,7 @@ Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, wi
 #'   results$Signature_A$CohenD
 #' }
 #'
-#' @export
+#' @keywords internal
 CohenD_allConditions <- function(data, metadata, gene_sets, variable, mode = c("simple","medium","extensive")) {
 
   # Step 1: Check if variable exists in metadata
@@ -440,7 +440,7 @@ flatten_results <- function(nested_list) {
 #'   \item{padj}{A data frame of adjusted p-values (Benjamini-Hochberg method) across signatures and contrasts, per method.}
 #' }
 #'
-#' @export
+#' @keywords internal
 CohenF_allConditions <- function(data, metadata, gene_sets, variable ) {
 
   # Step 1: Check if variable exists in metadata

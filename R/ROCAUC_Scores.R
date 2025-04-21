@@ -21,7 +21,7 @@
 #' @importFrom stats as.formula
 #' @importFrom utils combn
 #'
-#' @export
+#' @keywords internal
 ROCAUC_Scores_Calculate <- function(data, metadata, gene_sets, method = c("logmedian", "ssGSEA", "ranking", "all"), variable, mode = c("simple","medium","extensive")) {
 
   method <- match.arg(method)

@@ -37,3 +37,4 @@ scores <- CalculateScores_ssGSEA_unidirectional(data, signature = signature)
 print(scores)
 
 }
+\keyword{internal}

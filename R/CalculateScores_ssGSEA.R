@@ -86,7 +86,7 @@ CalculateScores_ssGSEA <- function(data, metadata = NULL, gene_sets) {
 #' scores <- CalculateScores_ssGSEA_unidirectional(data, signature = signature)
 #' print(scores)
 #'
-#' @export
+#' @keywords internal
 CalculateScores_ssGSEA_unidirectional <- function(data, signature) {
   ResultsList <- list()
 
@@ -146,7 +146,7 @@ CalculateScores_ssGSEA_unidirectional <- function(data, signature) {
 #' scores <- CalculateScores_ssGSEA_bidirectional(data, signature = signature)
 #' print(scores)
 #'
-#' @export
+#' @keywords internal
 CalculateScores_ssGSEA_bidirectional <- function(data, signature) {
   ResultsList <- list()
 

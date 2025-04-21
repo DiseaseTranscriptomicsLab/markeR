@@ -302,7 +302,7 @@ PlotScores <- function(data, metadata, gene_sets,
 #' @importFrom grid textGrob
 #' @importFrom grid gpar
 #' @importFrom rstatix t_test
-#' @export
+#' @keywords internal
 PlotScores_Categorical <- function(data, metadata, gene_sets,
                                    method = c("ssGSEA", "logmedian", "ranking"),
                                    ColorVariable = NULL, GroupingVariable = NULL,
@@ -622,7 +622,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 #' @import ggplot2
 #' @importFrom ggpubr ggarrange annotate_figure stat_cor
 #' @importFrom grid textGrob gpar
-#' @export
+#' @keywords internal
 PlotScores_Numeric <- function(data,
                                metadata,
                                gene_sets,

@@ -82,3 +82,4 @@ For each gene signature, the function:
 
 This version of the function is specifically tailored for use with continuous variables.
 }
+\keyword{internal}

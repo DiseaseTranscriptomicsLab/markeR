@@ -58,3 +58,4 @@ option, flattens the results, and then computes pairwise comparisons for a speci
 }
 
 }
+\keyword{internal}

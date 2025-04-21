@@ -61,3 +61,4 @@ scores <- CalculateScores_Ranking(data, gene_sets = gene_sets)
 print(scores)
 
 }
+\keyword{internal}

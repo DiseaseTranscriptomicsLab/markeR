@@ -41,3 +41,4 @@ rank_score <- getRanking(data, "Sample_1", geneset)
 print(rank_score)
 
 }
+\keyword{internal}

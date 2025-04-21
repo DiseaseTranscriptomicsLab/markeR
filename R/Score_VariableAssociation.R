@@ -21,7 +21,7 @@
 #' @importFrom effectsize eta_squared
 #' @importFrom stats anova lm
 #'
-#' @export
+#' @keywords internal
 compute_cohens_f_pval <- function(model, type) {
   eta_sq_value <- effectsize::eta_squared(model, partial = FALSE)$Eta2
   cohen_f <- sqrt(eta_sq_value / (1 - eta_sq_value))  # Convert η² to Cohen's f
@@ -54,7 +54,7 @@ compute_cohens_f_pval <- function(model, type) {
 #'
 #' @param contrasts A character vector containing contrast labels.
 #' @return A character vector with division notation removed.
-#' @export
+#' @keywords internal
 remove_division <- function(contrasts) {
   gsub("\\)/[0-9]+", ")", contrasts)  # Removes "/2", "/3", etc. after parentheses
 }
@@ -68,7 +68,7 @@ remove_division <- function(contrasts) {
 #' @param variable_name A character string specifying the column name in `metadata` that represents the variable of interest.
 #' @param contrast A character string representing the contrast in the form "(A + B) - (C + D)" (e.g.).
 #' @return A subset of `metadata` with an added `cohentest` column, indicating group membership based on the contrast.
-#' @export
+#' @keywords internal
 create_contrast_column <- function(metadata, variable_name, contrast) {
   # Extract left and right sides of the contrast
   sides <- strsplit(contrast, " - ")[[1]]

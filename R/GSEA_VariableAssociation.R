@@ -201,7 +201,7 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
 #' generate_all_contrasts(levels, mode = "simple")    # Pairwise only
 #' generate_all_contrasts(levels, mode = "medium")    # Pairwise + mean comparisons
 #' generate_all_contrasts(levels, mode = "extensive") # All balanced contrasts
-#' @export
+#' @keywords internal
 generate_all_contrasts <- function(levels, mode = "simple") {
   levels <- unique(levels)  # Ensure unique levels
   n <- length(levels)       # Total number of levels

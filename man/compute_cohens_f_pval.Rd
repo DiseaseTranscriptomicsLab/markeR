@@ -27,3 +27,4 @@ Cohen's f effect size is computed from the eta-squared (\eqn{\eta^2}) value.
 For numeric predictors (continuous variables), the p-value is obtained from the t-test in \code{summary(lm(...))}.
 For categorical predictors (binary or multi-level), the p-value is obtained from the F-test in \code{anova(lm(...))}.
 }
+\keyword{internal}
