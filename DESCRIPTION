@@ -20,6 +20,7 @@ Description:
     performance metrics and visualize results, making it a valuable resource for transcriptomics research (bulk RNA-seq).
 License: MIT + file LICENSE
 Encoding: UTF-8
+Language: en-GB
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2

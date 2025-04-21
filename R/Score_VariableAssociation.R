@@ -100,7 +100,7 @@ create_contrast_column <- function(metadata, variable_name, contrast) {
 #'
 #' @param data A data frame or matrix containing gene expression data.
 #' @param metadata A data frame containing sample metadata with at least one column corresponding to the variables of interest.
-#' @param cols A character vector specifying metadata columns to analyze.
+#' @param cols A character vector specifying metadata columns to analyse.
 #' @param method A character string specifying the scoring method (`"logmedian"`, `"ssGSEA"`, or `"ranking"`).
 #' @param gene_set A named list containing one gene set for scoring.
 #' @param mode A character string specifying the contrast generation method (`"simple"`, `"medium"`, `"extensive"`). Four methods are available:

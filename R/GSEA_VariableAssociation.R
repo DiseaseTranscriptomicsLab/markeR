@@ -6,7 +6,7 @@
 #'
 #' @param data A matrix or data frame containing gene expression data, where rows represent genes and columns represent samples.
 #' @param metadata A data frame containing sample metadata with at least one column corresponding to the variables of interest.
-#' @param cols A character vector specifying the metadata columns (variables) to analyze.
+#' @param cols A character vector specifying the metadata columns (variables) to analyse.
 #' @param stat Optional. The statistic to use for ranking genes before GSEA. If `NULL`, it is automatically determined based on the gene set:
 #'   - `"B"` for gene sets with **no known direction** (vectors).
 #'   - `"t"` for **unidirectional** or **bidirectional** gene sets (data frames).
