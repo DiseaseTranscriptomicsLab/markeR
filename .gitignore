@@ -9,3 +9,4 @@
 .Rprofile
 docs
 renv.lock
+.obsidian/
