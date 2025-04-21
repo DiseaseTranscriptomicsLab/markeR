@@ -8,3 +8,4 @@
 /tests/debug/
 .Rprofile
 docs
+renv.lock
