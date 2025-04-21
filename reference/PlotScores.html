@@ -65,7 +65,7 @@ such as scatter plots, violin plots, heatmaps, or volcano plots depending on inp
 <span>  mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"simple"</span>, <span class="st">"medium"</span>, <span class="st">"extensive"</span><span class="op">)</span>,</span>
 <span>  widthlegend <span class="op">=</span> <span class="fl">22</span>,</span>
 <span>  sig_threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>  cohen_threshold <span class="op">=</span> <span class="fl">0.6</span>,</span>
+<span>  cohen_threshold <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  colorPalette <span class="op">=</span> <span class="st">"Set3"</span>,</span>
 <span>  cor <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pearson"</span>, <span class="st">"spearman"</span>, <span class="st">"kendall"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -129,8 +129,12 @@ Behavior depends on the combination of <code>method</code> and <code>Variable</c
 <dd><p>Logical. If <code>TRUE</code>, connects points by sample ID across conditions (used for categorical variables and <code>method != "all"</code>).</p></dd>
 
 
-<dt id="arg-ncol-">ncol, <a class="anchor" aria-label="anchor" href="#arg-ncol-"></a></dt>
-<dd><p>nrow Number of columns or rows for facet layout (used in both heatmaps and score plots).</p></dd>
+<dt id="arg-ncol">ncol<a class="anchor" aria-label="anchor" href="#arg-ncol"></a></dt>
+<dd><p>Number of columns for facet layout (used in both heatmaps and score plots).</p></dd>
+
+
+<dt id="arg-nrow">nrow<a class="anchor" aria-label="anchor" href="#arg-nrow"></a></dt>
+<dd><p>Number of rows for facet layout (used in both heatmaps and score plots).</p></dd>
 
 
 <dt id="arg-title">title<a class="anchor" aria-label="anchor" href="#arg-title"></a></dt>
@@ -201,6 +205,10 @@ Options are:</p><ul><li><p><code>"simple"</code>: Pairwise comparisons (e.g., A 
 <dd><p>P-value cutoff shown as a <strong>guide line</strong> in volcano plots. Only applies when <code>method = "all"</code>.</p></dd>
 
 
+<dt id="arg-cohen-threshold">cohen_threshold<a class="anchor" aria-label="anchor" href="#arg-cohen-threshold"></a></dt>
+<dd><p>Effect size threshold shown as a <strong>guide line</strong> in volcano plots. Used only when <code>method = "all"</code>.</p></dd>
+
+
 <dt id="arg-colorpalette">colorPalette<a class="anchor" aria-label="anchor" href="#arg-colorpalette"></a></dt>
 <dd><p>Name of an RColorBrewer palette used to assign colors in plots. Applies to all methods. Default is "Set3".
 If <code>ColorValues</code> is provided, it overrides this palette.</p><ul><li><p>If <code>Variable</code> is <code>NULL</code> and <code>method != "all"</code> (i.e., for density plots), a default color <code>"#ECBD78"</code> is used.</p></li>
@@ -211,10 +219,6 @@ If <code>ColorValues</code> is provided, it overrides this palette.</p><ul><li><
 <dt id="arg-cor">cor<a class="anchor" aria-label="anchor" href="#arg-cor"></a></dt>
 <dd><p>Correlation method for numeric variables. One of <code>"pearson"</code> (default), <code>"spearman"</code>, or <code>"kendall"</code>.
 Only applies when the variable is numeric and <code>method != "all"</code>.</p></dd>
-
-
-<dt id="arg-cohend-threshold">cohend_threshold<a class="anchor" aria-label="anchor" href="#arg-cohend-threshold"></a></dt>
-<dd><p>Effect size threshold shown as a <strong>guide line</strong> in volcano plots. Used only when <code>method = "all"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

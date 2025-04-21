@@ -141,19 +141,23 @@ Pathway names are wrapped using the <code>wrap_title</code> function to fit with
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Example GSEA results (mock data)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Example GSEA results (mock data, missing columns if running by runGSEA)</span></span></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">GSEA_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  contrast1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    pathway <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Pathway A"</span>, <span class="st">"Pathway B"</span>, <span class="st">"Pathway C"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    NES <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.5</span>, <span class="op">-</span><span class="fl">2.3</span>, <span class="fl">1.2</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    padj <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.02</span>, <span class="fl">0.08</span>, <span class="fl">0.01</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="op">)</span>,</span></span>
-<span class="r-in"><span>  contrast2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    pathway <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Pathway D"</span>, <span class="st">"Pathway E"</span>, <span class="st">"Pathway F"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    NES <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1.8</span>, <span class="fl">2.5</span>, <span class="op">-</span><span class="fl">1.3</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    padj <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.04</span>, <span class="fl">0.06</span>, <span class="fl">0.10</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="st">"Contrast1"</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>NES <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  padj <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  pathway <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Pathway"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  stat_used <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"t"</span>, <span class="st">"B"</span>, <span class="st">"B"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span>,</span></span>
+<span class="r-in"><span><span class="st">"Contrast2"</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  NES <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  padj <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  pathway <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Pathway"</span>, <span class="fl">4</span><span class="op">:</span><span class="fl">6</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  stat_used <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"t"</span>, <span class="st">"B"</span>, <span class="st">"B"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Generate individual plots without grid</span></span></span>
 <span class="r-in"><span><span class="va">plot_list</span> <span class="op">&lt;-</span> <span class="fu">plotNESlollipop</span><span class="op">(</span><span class="va">GSEA_results</span><span class="op">)</span></span></span>
@@ -161,10 +165,6 @@ Pathway names are wrapped using the <code>wrap_title</code> function to fit with
 <span class="r-in"><span><span class="co"># Generate combined grid of plots with custom title</span></span></span>
 <span class="r-in"><span><span class="va">combined_plot</span> <span class="op">&lt;-</span> <span class="fu">plotNESlollipop</span><span class="op">(</span><span class="va">GSEA_results</span>, grid <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
 <span class="r-in"><span>title <span class="op">=</span> <span class="st">"GSEA Results Overview"</span>, titlesize <span class="op">=</span> <span class="fl">14</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in combine_vars(data, params$plot_env, rows, drop = params$drop):</span> At least one layer must contain all faceting variables: `stat_used`</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span style="color: #BB0000;">✖</span> Plot is missing `stat_used`</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span style="color: #BB0000;">✖</span> Layer 1 is missing `stat_used`</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span style="color: #BB0000;">✖</span> Layer 2 is missing `stat_used`</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
