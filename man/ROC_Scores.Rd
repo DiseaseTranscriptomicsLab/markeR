@@ -67,3 +67,23 @@ A \code{ggplot2} or \code{ggarrange} object containing the ROC curve plots.
 \description{
 This function generates ROC curve plots for different gene signatures across multiple scoring methods.
 }
+\examples{
+# Example data
+data <- as.data.frame(abs(matrix(rnorm(1000), ncol = 10)))
+rownames(data) <- paste0("Gene", 1:100)  # Name columns as Gene1, Gene2, ..., Gene10
+colnames(data) <- paste0("Sample", 1:10)  # Name rows as Sample1, Sample2, ..., Sample100
+
+# Metadata with sample ID and condition
+metadata <- data.frame(
+  SampleID = rownames(data),  # Sample ID matches the rownames of the data
+  Condition = rep(c("A", "B"), each = 50)  # Two conditions (A and B)
+)
+
+# Example gene set
+gene_sets <- list(Signature1 = c("Gene1", "Gene2", "Gene3"))  # Example gene set
+
+# Call ROC_Scores function
+ROC_Scores(data, metadata, gene_sets, method = "ssGSEA", variable = "Condition")
+# View results
+print(results)
+}

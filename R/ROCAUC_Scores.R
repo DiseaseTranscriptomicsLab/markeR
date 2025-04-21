@@ -108,6 +108,7 @@ ROCAUC_Scores_Calculate <- function(data, metadata, gene_sets, method = c("logme
 #' @importFrom ggplot2 ggplot geom_line aes labs theme scale_color_manual
 #' @importFrom ggpubr annotate_figure ggarrange
 #'
+#'@examples
 #' # Example data
 #' data <- as.data.frame(abs(matrix(rnorm(1000), ncol = 10)))
 #' rownames(data) <- paste0("Gene", 1:100)  # Name columns as Gene1, Gene2, ..., Gene10
