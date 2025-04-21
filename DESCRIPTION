@@ -1,8 +1,19 @@
 Package: markeR
-Title: A Toolkit for Evaluating Gene Signatures as Phenotype Markers in R
-Version: 0.0.0.9000
+Title: An R Toolkit for Evaluating Gene Signatures as Phenotypic Markers
+Version: 1.0.0
 Authors@R: 
-    person("Rita", "Martins-Silva", email = "rita.silva@medicina.ulisboa.pt", role = c("aut", "cre"))
+    c(
+      person("Rita", "Martins-Silva", 
+             email = "rita.silva@medicina.ulisboa.pt", 
+             role = c("aut", "cre"),
+             comment = c(ORCID = "0000-0002-1067-7993")), 
+            person("Alexandre", "Kaizeler", 
+             email = "alexandre.afonso@medicina.ulisboa.pt", 
+             role = c("aut", "ctb"),
+             comment = c(ORCID = "0000-0002-9117-6073")),
+        person(c("Nuno", "Luís"), "Barbosa-Morais", role=c("aut", "led", "ths"),
+               comment=c(ORCID="0000-0002-1215-0538"))
+    )
 Description: 
     markeR provides a suite of methods for using gene sets (signatures) to quantify and evaluate the 
     extent to which a given gene signature marks a specific phenotype. The package implements various 
@@ -46,4 +57,5 @@ Suggests:
     renv
 Config/testthat/edition: 3
 Depends: 
-    R (>= 3.5)
+    R (>= 4.4.0)
+URL: https://diseasetranscriptomicslab.github.io/markeR/

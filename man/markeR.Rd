@@ -81,7 +81,20 @@ Future updates will expand the package with additional functions for:
 }
 }
 
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://diseasetranscriptomicslab.github.io/markeR/}
+}
+
+}
 \author{
-\strong{Maintainer}: Rita Martins-Silva \email{rita.silva@medicina.ulisboa.pt}
+\strong{Maintainer}: Rita Martins-Silva \email{rita.silva@medicina.ulisboa.pt} (\href{https://orcid.org/0000-0002-1067-7993}{ORCID})
+
+Authors:
+\itemize{
+  \item Alexandre Kaizeler \email{alexandre.afonso@medicina.ulisboa.pt} (\href{https://orcid.org/0000-0002-9117-6073}{ORCID}) [contributor]
+  \item Nuno Luís Barbosa-Morais (\href{https://orcid.org/0000-0002-1215-0538}{ORCID}) [lead, thesis advisor]
+}
 
 }
