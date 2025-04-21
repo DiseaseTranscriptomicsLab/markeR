@@ -4,11 +4,10 @@ Version: 1.0.0
 Authors@R: 
     c(
       person("Rita", "Martins-Silva", 
-             email = "rita.silva@medicina.ulisboa.pt", 
+             email = "rita.silva@gimm.pt", 
              role = c("aut", "cre"),
              comment = c(ORCID = "0000-0002-1067-7993")), 
-            person("Alexandre", "Kaizeler", 
-             email = "alexandre.afonso@medicina.ulisboa.pt", 
+            person("Alexandre", "Kaizeler",  
              role = c("aut", "ctb"),
              comment = c(ORCID = "0000-0002-9117-6073")),
         person(c("Nuno", "Luís"), "Barbosa-Morais", role=c("aut", "led", "ths"),

@@ -178,8 +178,8 @@ Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, wi
 #'   # Assume gene_data is your gene expression data frame, sample_metadata is your metadata, and
 #'   # gene_sets is a named list of gene sets.
 #'   results <- CohenD_allConditions(data = gene_data, metadata = sample_metadata,
-#'                                    gene_sets = gene_sets, variable = \"Condition\")
-#'   # Access Cohen\'s d for a specific signature:
+#'                                   gene_sets = gene_sets, variable = "Condition")
+#'   # Access Cohen's d for a specific signature:
 #'   results$Signature_A$CohenD
 #' }
 #'
