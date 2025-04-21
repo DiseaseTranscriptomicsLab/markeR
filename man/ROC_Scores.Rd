@@ -67,6 +67,3 @@ A \code{ggplot2} or \code{ggarrange} object containing the ROC curve plots.
 \description{
 This function generates ROC curve plots for different gene signatures across multiple scoring methods.
 }
-\examples{
-ROC_Scores(data, metadata, gene_sets, method = "ssGSEA", variable = "Condition")
-}

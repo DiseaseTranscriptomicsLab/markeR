@@ -33,9 +33,21 @@
 #'
 #' @examples
 #' # Example usage with random data
+#' set.seed(42)  # For reproducibility
+#'
+#' # Create random gene expression data
 #' data <- matrix(rnorm(1000), ncol = 10)
+#'
+#' # Assign gene identifiers as row names (e.g., Gene1, Gene2, ...)
+#' rownames(data) <- paste0("Gene", 1:nrow(data))
+#'
+#' # Create metadata (e.g., group variable)
 #' metadata <- data.frame(group = rep(c("A", "B"), each = 5))
+#'
+#' # Define a gene set
 #' gene_set <- list(SampleSet = c("Gene1", "Gene2", "Gene3"))
+#'
+#' # Call the GSEA_VariableAssociation function
 #' results <- GSEA_VariableAssociation(data, metadata, cols = "group", gene_set = gene_set)
 #'
 #' # View results

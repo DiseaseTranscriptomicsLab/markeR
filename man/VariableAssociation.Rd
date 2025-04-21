@@ -138,12 +138,3 @@ ANOVA F-value, t-test statistic) and p-values.
 }
 }
 }
-\examples{
-df <- data.frame(
-  score = c(80, 85, 90, 95),
-  age = c(25, 30, 35, 40),
-  gender = c("Male", "Female", "Female", "Male")
-)
-plot_stat_tests(df, cols = c("age", "gender"), target_var = "score")
-
-}

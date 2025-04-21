@@ -59,7 +59,9 @@ The first column should contain sample identifiers (i.e., the column names of \c
 
 \item{ConnectGroups}{Logical. If TRUE, connects points of the same sample across conditions.}
 
-\item{ncol, nrow}{Number of columns and rows in the facet layout of the plot.}
+\item{ncol}{Number of columns in the facet layout of the plot.}
+
+\item{nrow}{Number of rows in the facet layout of the plot.}
 
 \item{title}{Optional. Main title of the plot.}
 
@@ -90,8 +92,6 @@ The first column should contain sample identifiers (i.e., the column names of \c
 \item{cohen_threshold}{Numeric. Cohen's d threshold to highlight effect size in volcano plots (default = 0.6).}
 
 \item{colorPalette}{Character. Name of RColorBrewer palette for coloring (default = \code{"Set3"}).}
-
-\item{cor}{Character. Correlation method for use in numeric plots. Options: \code{"pearson"} (default), \code{"kendall"}, or \code{"spearman"}.}
 }
 \description{
 This function computes and visualizes gene set enrichment scores using various methods, optionally comparing across groups or numeric variables.

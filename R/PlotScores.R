@@ -38,7 +38,8 @@
 #'   In all cases, `ColorValues` takes precedence over the default `colorPalette` setting if specified.
 #'
 #' @param ConnectGroups Logical. If `TRUE`, connects points by sample ID across conditions (used for categorical variables and `method != "all"`).
-#' @param ncol, nrow Number of columns or rows for facet layout (used in both heatmaps and score plots).
+#' @param ncol Number of columns for facet layout (used in both heatmaps and score plots).
+#' @param nrow Number of rows for facet layout (used in both heatmaps and score plots).
 #' @param title Plot title (optional).
 #' @param widthTitle Width allocated for title (affects alignment).
 #' @param titlesize Font size for plot title.
@@ -57,6 +58,7 @@
 #'       - **Cohen's f** if there are more than two groups.
 #'   - If the variable is **numeric**, computes **Cohen's f** regardless of `cond_cohend`.
 #' @param cond_cohend Optional. List of length 2 with the two groups being used to compute effect size. The values in each entry should be levels of `Variable (used with `compute_cohen = TRUE`).
+#' @param cohen_threshold Effect size threshold shown as a **guide line** in volcano plots. Used only when `method = "all"`.
 #' @param pvalcalc Logical. If `TRUE`, computes p-values between groups.
 #' @param mode A string specifying the level of detail for contrasts, if `method = "all"`.
 #' Options are:
@@ -65,7 +67,6 @@
 #' - `"extensive"`: All possible groupwise contrasts, ensuring balance in the number of terms on each side.
 #' @param widthlegend Width of the legend in **volcano plots** (used only if `method = "all"`) and violin score plots.
 #' @param sig_threshold P-value cutoff shown as a **guide line** in volcano plots. Only applies when `method = "all"`.
-#' @param cohend_threshold Effect size threshold shown as a **guide line** in volcano plots. Used only when `method = "all"`.
 #' @param colorPalette Name of an RColorBrewer palette used to assign colors in plots. Applies to all methods. Default is "Set3".
 #'   If `ColorValues` is provided, it overrides this palette.
 #'   - If `Variable` is `NULL` and `method != "all"` (i.e., for density plots), a default color `"#ECBD78"` is used.
@@ -141,7 +142,7 @@ PlotScores <- function(data, metadata, gene_sets,
                        ColorValues = NULL, ConnectGroups = FALSE, ncol = NULL, nrow = NULL, title = NULL,
                        widthTitle = 20, titlesize = 12, limits = NULL, legend_nrow = NULL, pointSize = 4,
                        xlab = NULL, labsize = 10, compute_cohen=TRUE, cond_cohend = NULL, pvalcalc = FALSE, mode = c("simple","medium","extensive"),
-                       widthlegend=22, sig_threshold=0.05, cohen_threshold=0.6, colorPalette="Set3", cor=c("pearson","spearman","kendall")) {
+                       widthlegend=22, sig_threshold=0.05, cohen_threshold=0.5, colorPalette="Set3", cor=c("pearson","spearman","kendall")) {
 
   method <- match.arg(method)
 
@@ -272,7 +273,8 @@ PlotScores <- function(data, metadata, gene_sets,
 #' @param GroupingVariable Optional. Name of the metadata column to use for group comparison.
 #' @param ColorValues Optional. Named vector of colors to use for each group in `ColorVariable` or `GroupingVariable`.
 #' @param ConnectGroups Logical. If TRUE, connects points of the same sample across conditions.
-#' @param ncol,nrow Number of columns and rows in the facet layout of the plot.
+#' @param ncol Number of columns in the facet layout of the plot.
+#' @param nrow Number of rows in the facet layout of the plot.
 #' @param title Optional. Main title of the plot.
 #' @param widthTitle Numeric. Width of the title area (for alignment purposes).
 #' @param titlesize Numeric. Font size of the title text.
@@ -288,7 +290,6 @@ PlotScores <- function(data, metadata, gene_sets,
 #' @param widthlegend Numeric. Width of the legend area in volcano plots.
 #' @param cohen_threshold Numeric. Cohen's d threshold to highlight effect size in volcano plots (default = 0.6).
 #' @param colorPalette Character. Name of RColorBrewer palette for coloring (default = `"Set3"`).
-#' @param cor Character. Correlation method for use in numeric plots. Options: `"pearson"` (default), `"kendall"`, or `"spearman"`.
 #'
 #' @details
 #' - **If `method = "all"`** and the variable is **categorical**, the function returns a heatmap of Cohen's d or F statistics and a volcano plot showing contrasts between all groups of that variable.
@@ -300,6 +301,7 @@ PlotScores <- function(data, metadata, gene_sets,
 #' @import ggplot2
 #' @importFrom grid textGrob
 #' @importFrom grid gpar
+#' @importFrom rstatix t_test
 #' @export
 PlotScores_Categorical <- function(data, metadata, gene_sets,
                                    method = c("ssGSEA", "logmedian", "ranking"),
@@ -596,7 +598,6 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 #' @param widthTitle Maximum character width for titles before inserting line breaks. Default is 10.
 #' @param titlesize Numeric value for the font size of plot titles. Default is 12.
 #' @param limits Optional numeric vector of length 2 to define y-axis limits.
-#' @param legend_nrow Unused in this version. Will be ignored.
 #' @param pointSize Size of the plotted points. Default is 2.
 #' @param xlab Optional label for the x-axis. If NULL, defaults to the name of \code{Variable}.
 #' @param labsize Font size for axis labels. Default is 10.

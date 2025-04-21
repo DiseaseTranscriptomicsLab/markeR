@@ -263,14 +263,6 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
 #' - If `discrete_colors` is provided, it overrides `color_palette` for the specified variables.
 #' - If `ncol` and `nrow` are `NULL`, the function automatically determines an optimal grid layout.
 #'
-#' @examples
-#' df <- data.frame(
-#'   score = c(80, 85, 90, 95),
-#'   age = c(25, 30, 35, 40),
-#'   gender = c("Male", "Female", "Female", "Male")
-#' )
-#' plot_stat_tests(df, cols = c("age", "gender"), target_var = "score")
-#'
 #' @import ggplot2 patchwork
 #' @importFrom ggpubr ggarrange annotate_figure
 #' @importFrom RColorBrewer brewer.pal

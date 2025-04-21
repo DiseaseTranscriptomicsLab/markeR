@@ -39,19 +39,23 @@
 #' Pathway names are wrapped using the `wrap_title` function to fit within the specified width (`widthlabels`).
 #'
 #' @examples
-#' # Example GSEA results (mock data)
+#' # Example GSEA results (mock data, missing columns if running by runGSEA)
+#'
 #' GSEA_results <- list(
-#'   contrast1 = data.frame(
-#'     pathway = c("Pathway A", "Pathway B", "Pathway C"),
-#'     NES = c(1.5, -2.3, 1.2),
-#'     padj = c(0.02, 0.08, 0.01)
-#'   ),
-#'   contrast2 = data.frame(
-#'     pathway = c("Pathway D", "Pathway E", "Pathway F"),
-#'     NES = c(-1.8, 2.5, -1.3),
-#'     padj = c(0.04, 0.06, 0.10)
-#'   )
+#' "Contrast1" = data.frame(
+#' NES = rnorm(3),
+#'   padj = runif(3),
+#'   pathway = paste("Pathway", 1:3),
+#'   stat_used = c("t", "B", "B")
+#' ),
+#' "Contrast2" = data.frame(
+#'   NES = rnorm(3),
+#'   padj = runif(3),
+#'   pathway = paste("Pathway", 4:6),
+#'   stat_used = c("t", "B", "B")
 #' )
+#' )
+#'
 #'
 #' # Generate individual plots without grid
 #' plot_list <- plotNESlollipop(GSEA_results)

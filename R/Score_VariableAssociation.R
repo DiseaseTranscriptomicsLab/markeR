@@ -17,9 +17,6 @@
 #'   \item \code{P_Value}: The p-value from the statistical test.
 #' }
 #'
-#' @examples
-#' model <- lm(Sepal.Length ~ Petal.Width, data = iris)
-#' compute_cohens_f_pval(model, "Petal.Width", type = "Numeric")
 #'
 #' @importFrom effectsize eta_squared
 #' @importFrom stats anova lm
@@ -138,10 +135,16 @@ create_contrast_column <- function(metadata, variable_name, contrast) {
 #'   - `plot_distributions`: List of variable distribution plots.
 #'
 #' @examples
-#' data <- matrix(rnorm(1000), ncol = 10)
-#' metadata <- data.frame(group = rep(c("A", "B"), each = 5))
+#' data <- as.data.frame(abs(matrix(rnorm(1000), ncol = 10)))
+#' rownames(data) <- paste0("Gene", 1:100)  # Name columns as Gene1, Gene2, ..., Gene10
+#' colnames(data) <- paste0("Sample", 1:10)  # Name rows as Sample1, Sample2, ..., Sample100
+#'
+#' metadata <- data.frame(
+#'   sample = colnames(data),  # Sample ID matches the rownames of the data
+#'   Condition = rep(c("A", "B"), each = 50)  # Two conditions (A and B)
+#' )
 #' gene_set <- list(SampleSet = c("Gene1", "Gene2", "Gene3"))
-#' results <- Score_VariableAssociation(data, metadata, cols = "group", gene_set = gene_set)
+#' results <- Score_VariableAssociation(data, metadata, cols = "Condition", gene_set = gene_set)
 #' print(results$plot)
 #'
 #' @importFrom ggpubr ggarrange
@@ -158,7 +161,8 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
                                       nonsignif_color = "grey", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05,
                                       widthlabels=18, labsize=10, title=NULL, titlesize=14, pointSize=5, discrete_colors=NULL,
                                       continuous_color = "#8C6D03", color_palette = "Set2"){
-
+  method <- match.arg(method)  # Validate method input
+  mode <- match.arg(mode)
   # calculate scores for a given metric
   df_ranking <- CalculateScores(data = data, metadata = metadata, method = method, gene_sets = gene_set)[[1]] # if more than one gene set is provided, only results for the first one will be returned
 

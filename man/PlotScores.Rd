@@ -29,7 +29,7 @@ PlotScores(
   mode = c("simple", "medium", "extensive"),
   widthlegend = 22,
   sig_threshold = 0.05,
-  cohen_threshold = 0.6,
+  cohen_threshold = 0.5,
   colorPalette = "Set3",
   cor = c("pearson", "spearman", "kendall")
 )
@@ -95,7 +95,9 @@ In all cases, \code{ColorValues} takes precedence over the default \code{colorPa
 
 \item{ConnectGroups}{Logical. If \code{TRUE}, connects points by sample ID across conditions (used for categorical variables and \code{method != "all"}).}
 
-\item{ncol, }{nrow Number of columns or rows for facet layout (used in both heatmaps and score plots).}
+\item{ncol}{Number of columns for facet layout (used in both heatmaps and score plots).}
+
+\item{nrow}{Number of rows for facet layout (used in both heatmaps and score plots).}
 
 \item{title}{Plot title (optional).}
 
@@ -143,6 +145,8 @@ Options are:
 
 \item{sig_threshold}{P-value cutoff shown as a \strong{guide line} in volcano plots. Only applies when \code{method = "all"}.}
 
+\item{cohen_threshold}{Effect size threshold shown as a \strong{guide line} in volcano plots. Used only when \code{method = "all"}.}
+
 \item{colorPalette}{Name of an RColorBrewer palette used to assign colors in plots. Applies to all methods. Default is "Set3".
 If \code{ColorValues} is provided, it overrides this palette.
 \itemize{
@@ -152,8 +156,6 @@ If \code{ColorValues} is provided, it overrides this palette.
 
 \item{cor}{Correlation method for numeric variables. One of \code{"pearson"} (default), \code{"spearman"}, or \code{"kendall"}.
 Only applies when the variable is numeric and \code{method != "all"}.}
-
-\item{cohend_threshold}{Effect size threshold shown as a \strong{guide line} in volcano plots. Used only when \code{method = "all"}.}
 }
 \value{
 Depending on \code{method}:

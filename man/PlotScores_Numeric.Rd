@@ -62,8 +62,6 @@ PlotScores_Numeric(
 \item{colorPalette}{Name of the RColorBrewer palette for coloring. Default is "Set3". Currently unused but kept for consistency.}
 
 \item{cor}{Character string indicating the correlation method to be used in \code{ggpubr::stat_cor()}. Options are "pearson" (default), "kendall", or "spearman".}
-
-\item{legend_nrow}{Unused in this version. Will be ignored.}
 }
 \value{
 A ggplot2 object or a multi-plot figure showing scatter plots for each gene signature, with linear regression lines and optional statistical annotations.

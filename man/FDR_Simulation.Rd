@@ -41,6 +41,8 @@ Default is all genes in \code{data}.}
 
 \item{number_of_sims}{Integer. Number of simulated gene signatures to generate per original signature.}
 
+\item{title}{Optional title for the overall plot.}
+
 \item{widthTitle}{Integer. Max width for wrapping the title text (default: 30).}
 
 \item{titlesize}{Numeric. Font size for the title text (default: 12).}
@@ -59,9 +61,9 @@ Default is all genes in \code{data}.}
 
 \item{ColorValues}{Named vector of colors for plot points, typically \code{Original} and \code{Simulated}. If \code{NULL}, default colors are used.}
 
-\item{ncol, }{nrow Integers. Number of columns/rows for arranging signature plots in a grid layout. If \code{NULL}, layout is auto-calculated.}
+\item{ncol}{Integer. Number of columns for arranging signature plots in a grid layout. If \code{NULL}, layout is auto-calculated.}
 
-\item{title_for_plot}{Character. Title prefix used in the overall plot.}
+\item{nrow}{Integer. Number of rows for arranging signature plots in a grid layout. If \code{NULL}, layout is auto-calculated.}
 }
 \value{
 Invisibly returns the combined \code{ggplot} object showing observed vs simulated effect sizes.

@@ -25,7 +25,6 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Additional_repositories: https://bioconductor.org/packages/release/bioc
 Imports:
-    BiocManager,
     circlize,
     edgeR,
     ComplexHeatmap,
@@ -34,16 +33,12 @@ Imports:
     ggpubr,
     grid,
     gridExtra,
-    knitr,
     pROC,
     RColorBrewer,
     reshape2,
-    rmarkdown,
-    roxygen2,
     rstatix,
     scales,
-    stats,
-    testthat,
+    stats, 
     utils,
     fgsea,
     limma,
@@ -53,7 +48,12 @@ Imports:
 Suggests: 
     devtools,
     markdown,
-    renv
+    renv,
+    testthat,
+    BiocManager,
+    knitr,
+    rmarkdown, 
+    roxygen2
 Config/testthat/edition: 3
 Depends: 
     R (>= 4.4.0)

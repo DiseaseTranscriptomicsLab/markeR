@@ -88,10 +88,16 @@ It uses linear modeling to get Cohen's F, and contrast-based comparisons for cat
 The function generates plots summarizing the results.
 }
 \examples{
-data <- matrix(rnorm(1000), ncol = 10)
-metadata <- data.frame(group = rep(c("A", "B"), each = 5))
+data <- as.data.frame(abs(matrix(rnorm(1000), ncol = 10)))
+rownames(data) <- paste0("Gene", 1:100)  # Name columns as Gene1, Gene2, ..., Gene10
+colnames(data) <- paste0("Sample", 1:10)  # Name rows as Sample1, Sample2, ..., Sample100
+
+metadata <- data.frame(
+  sample = colnames(data),  # Sample ID matches the rownames of the data
+  Condition = rep(c("A", "B"), each = 50)  # Two conditions (A and B)
+)
 gene_set <- list(SampleSet = c("Gene1", "Gene2", "Gene3"))
-results <- Score_VariableAssociation(data, metadata, cols = "group", gene_set = gene_set)
+results <- Score_VariableAssociation(data, metadata, cols = "Condition", gene_set = gene_set)
 print(results$plot)
 
 }

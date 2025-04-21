@@ -24,12 +24,22 @@
 #'
 #' @examples
 #' # Example GSEA results (mock data, missing columns if running by runGSEA)
+#'
 #' GSEA_results <- list(
-#'   "Contrast1" = data.frame(NES = rnorm(10), padj = runif(10),
-#'   pathway = paste("Pathway", 1:10)),
-#'   "Contrast2" = data.frame(NES = rnorm(10), padj = runif(10),
-#'   pathway = paste("Pathway", 11:20))
+#' "Contrast1" = data.frame(
+#' NES = rnorm(3),
+#'   padj = runif(3),
+#'   pathway = paste("Pathway", 1:3),
+#'   stat_used = c("t", "B", "B")
+#' ),
+#' "Contrast2" = data.frame(
+#'   NES = rnorm(3),
+#'   padj = runif(3),
+#'   pathway = paste("Pathway", 4:6),
+#'   stat_used = c("t", "B", "B")
 #' )
+#' )
+#'
 #'
 #' # Generate the plot
 #' plot <- plotCombinedGSEA(GSEA_results, sig_threshold = 0.05, PointSize = 4)
