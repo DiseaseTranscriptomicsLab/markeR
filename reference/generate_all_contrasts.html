@@ -78,18 +78,11 @@ Options are <code>"simple"</code> (pairwise only), <code>"medium"</code> (pairwi
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">levels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"C"</span>, <span class="st">"D"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">generate_all_contrasts</span><span class="op">(</span><span class="va">levels</span>, mode <span class="op">=</span> <span class="st">"simple"</span><span class="op">)</span>    <span class="co"># Pairwise only</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "A - B" "A - C" "A - D" "B - C" "B - D" "C - D"</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in generate_all_contrasts(levels, mode = "simple"):</span> could not find function "generate_all_contrasts"</span>
 <span class="r-in"><span><span class="fu">generate_all_contrasts</span><span class="op">(</span><span class="va">levels</span>, mode <span class="op">=</span> <span class="st">"medium"</span><span class="op">)</span>    <span class="co"># Pairwise + mean comparisons</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "A - B"             "A - C"             "A - D"            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [4] "B - C"             "B - D"             "C - D"            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "A - (B + C + D)/3" "(A + C + D)/3 - B" "(A + B + D)/3 - C"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10] "(A + B + C)/3 - D"</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in generate_all_contrasts(levels, mode = "medium"):</span> could not find function "generate_all_contrasts"</span>
 <span class="r-in"><span><span class="fu">generate_all_contrasts</span><span class="op">(</span><span class="va">levels</span>, mode <span class="op">=</span> <span class="st">"extensive"</span><span class="op">)</span> <span class="co"># All balanced contrasts</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "A - B"                 "A - C"                 "A - D"                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [4] "B - C"                 "B - D"                 "C - D"                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "A - (B + C + D)/3"     "(A + C + D)/3 - B"     "(A + B + D)/3 - C"    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10] "(A + B + C)/3 - D"     "(A + B)/2 - (C + D)/2" "(A + C)/2 - (B + D)/2"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13] "(A + D)/2 - (B + C)/2"</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in generate_all_contrasts(levels, mode = "extensive"):</span> could not find function "generate_all_contrasts"</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
