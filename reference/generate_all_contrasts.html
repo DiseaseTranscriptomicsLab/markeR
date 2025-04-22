@@ -41,7 +41,7 @@ Users can choose the level of complexity:
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Generate All Possible Unique Contrasts Between Groups</h1>
-      <small class="dont-index">Source: <a href="https://github.com/DiseaseTranscriptomicsLab/markeR/blob/0.9.0/R/GSEA_VariableAssociation.R" class="external-link"><code>R/GSEA_VariableAssociation.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/DiseaseTranscriptomicsLab/markeR/blob/main/R/GSEA_VariableAssociation.R" class="external-link"><code>R/GSEA_VariableAssociation.R</code></a></small>
       <div class="d-none name"><code>generate_all_contrasts.Rd</code></div>
     </div>
 
@@ -77,13 +77,12 @@ Options are <code>"simple"</code> (pairwise only), <code>"medium"</code> (pairwi
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">levels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"C"</span>, <span class="st">"D"</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="va">levels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"C"</span>, <span class="st">"D"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">generate_all_contrasts</span><span class="op">(</span><span class="va">levels</span>, mode <span class="op">=</span> <span class="st">"simple"</span><span class="op">)</span>    <span class="co"># Pairwise only</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in generate_all_contrasts(levels, mode = "simple"):</span> could not find function "generate_all_contrasts"</span>
 <span class="r-in"><span><span class="fu">generate_all_contrasts</span><span class="op">(</span><span class="va">levels</span>, mode <span class="op">=</span> <span class="st">"medium"</span><span class="op">)</span>    <span class="co"># Pairwise + mean comparisons</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in generate_all_contrasts(levels, mode = "medium"):</span> could not find function "generate_all_contrasts"</span>
 <span class="r-in"><span><span class="fu">generate_all_contrasts</span><span class="op">(</span><span class="va">levels</span>, mode <span class="op">=</span> <span class="st">"extensive"</span><span class="op">)</span> <span class="co"># All balanced contrasts</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in generate_all_contrasts(levels, mode = "extensive"):</span> could not find function "generate_all_contrasts"</span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
