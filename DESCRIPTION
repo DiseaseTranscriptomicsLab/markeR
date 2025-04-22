@@ -57,7 +57,7 @@ Suggests:
     roxygen2
 Config/testthat/edition: 3
 Depends: 
-    R (>= 4.4.0)
+    R (>= 3.5.0)
 URL: https://diseasetranscriptomicslab.github.io/markeR/,
      https://github.com/DiseaseTranscriptomicsLab/markeR
 BugReports: https://github.com/DiseaseTranscriptomicsLab/markeR/issues
