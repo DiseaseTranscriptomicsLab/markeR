@@ -3,10 +3,34 @@ name: R-CMD-check
 on:
   release:
     types: [published]
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   R-CMD-check:
-    uses: r-lib/actions/.github/workflows/check-standard.yaml@v1
-    with:
-      r-versions: '4.3.0, 4.4.0, 4.4.3'
-      os: 'ubuntu-latest, windows-latest, macos-latest'
+    runs-on: ${{ matrix.config.os }}
+    name: R ${{ matrix.config.r }} on ${{ matrix.config.os }}
+    strategy:
+      matrix:
+        config:
+          - { os: ubuntu-latest, r: '4.3.0' }
+          - { os: ubuntu-latest, r: '4.4.0' }
+          - { os: macos-latest, r: '4.4.0' }
+          - { os: windows-latest, r: '4.4.0' }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.config.r }}
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - name: Check
+        uses: r-lib/actions/check-r-package@v2
