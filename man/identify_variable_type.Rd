@@ -22,12 +22,13 @@ or "Categorical Multi" (multi-level categorical). Warnings are issued if
 categorical variables have more than 10 unique values.
 }
 \examples{
+\dontrun{
 df <- data.frame(
   age = c(25, 30, 35, 40),
   gender = c("Male", "Female", "Female", "Male"),
   score = c(80, 85, 90, 95)
 )
 identify_variable_type(df)
-
+}
 }
 \keyword{internal}

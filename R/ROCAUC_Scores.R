@@ -116,8 +116,8 @@ ROCAUC_Scores_Calculate <- function(data, metadata, gene_sets, method = c("logme
 #'
 #' # Metadata with sample ID and condition
 #' metadata <- data.frame(
-#'   SampleID = rownames(data),  # Sample ID matches the rownames of the data
-#'   Condition = rep(c("A", "B"), each = 50)  # Two conditions (A and B)
+#'   SampleID = colnames(data),  # Sample ID matches the colnames of the data
+#'   Condition = rep(c("A", "B"), each = 5)  # Two conditions (A and B)
 #' )
 #'
 #' # Example gene set
@@ -125,9 +125,7 @@ ROCAUC_Scores_Calculate <- function(data, metadata, gene_sets, method = c("logme
 #'
 #' # Call ROC_Scores function
 #' ROC_Scores(data, metadata, gene_sets, method = "ssGSEA", variable = "Condition")
-
-#' # View results
-#' print(results)
+#'
 #' @export
 #'
 ROC_Scores <- function(data, metadata, gene_sets, method = c("logmedian","ssGSEA","ranking","all"), variable,

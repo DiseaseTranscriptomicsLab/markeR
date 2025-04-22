@@ -29,6 +29,7 @@
 #'   relative comparisons between samples when using the same gene set.
 #'
 #' @examples
+#' \dontrun{
 #' # Example dataset with 5 genes (rows) and 3 samples (columns)
 #' set.seed(123)
 #' data <- as.data.frame(matrix(runif(15, 1, 100), nrow = 5, ncol = 3))
@@ -41,7 +42,7 @@
 #' # Compute scores
 #' scores <- CalculateScores_Ranking(data, gene_sets = gene_sets)
 #' print(scores)
-#'
+#'}
 #' @keywords internal
 CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
 
@@ -130,6 +131,7 @@ CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
 #' - If some genes are missing, they are omitted from the ranking calculation.
 #'
 #' @examples
+#' \dontrun{
 #' # Example dataset with 5 genes and 3 samples
 #' set.seed(123)
 #' data <- as.data.frame(matrix(runif(15, 1, 100), nrow = 5, ncol = 3))
@@ -142,7 +144,7 @@ CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
 #' # Compute ranking for Sample_1
 #' rank_score <- getRanking(data, "Sample_1", geneset)
 #' print(rank_score)
-#'
+#'}
 #' @keywords internal
 getRanking <- function(data, sample, geneset) {
 

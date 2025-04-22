@@ -67,6 +67,7 @@ If an invalid statistical test is requested, the function stops with an error me
 }
 }
 \examples{
+\dontrun{
 df <- data.frame(
   score = c(80, 85, 90, 95, 100),
   age = c(25, 30, 35, 40, 45),
@@ -76,6 +77,6 @@ df <- data.frame(
 
 results <- compute_stat_tests(df, target_var = "score")
 print(results)
-
+}
 }
 \keyword{internal}

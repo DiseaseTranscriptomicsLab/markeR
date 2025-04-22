@@ -37,6 +37,7 @@ a bidirectional gene signature (separating upregulated and downregulated genes).
 }
 }
 \examples{
+\dontrun{
 # Example dataset with 5 genes (rows) and 3 samples (columns)
 set.seed(123)
 data <- matrix(runif(15, 1, 100), nrow = 5, ncol = 3)
@@ -50,6 +51,6 @@ signature <- data.frame(Gene = c("Gene_1", "Gene_3", "Gene_5"),
 # Compute scores
 scores <- CalculateScores_ssGSEA_bidirectional(data, signature = signature)
 print(scores)
-
+}
 }
 \keyword{internal}

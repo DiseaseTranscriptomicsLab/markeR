@@ -75,8 +75,8 @@ colnames(data) <- paste0("Sample", 1:10)  # Name rows as Sample1, Sample2, ..., 
 
 # Metadata with sample ID and condition
 metadata <- data.frame(
-  SampleID = rownames(data),  # Sample ID matches the rownames of the data
-  Condition = rep(c("A", "B"), each = 50)  # Two conditions (A and B)
+  SampleID = colnames(data),  # Sample ID matches the colnames of the data
+  Condition = rep(c("A", "B"), each = 5)  # Two conditions (A and B)
 )
 
 # Example gene set
@@ -84,6 +84,5 @@ gene_sets <- list(Signature1 = c("Gene1", "Gene2", "Gene3"))  # Example gene set
 
 # Call ROC_Scores function
 ROC_Scores(data, metadata, gene_sets, method = "ssGSEA", variable = "Condition")
-# View results
-print(results)
+
 }

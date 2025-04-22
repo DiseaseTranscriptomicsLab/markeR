@@ -12,13 +12,14 @@
 #' and values indicate the variable type: "Numeric", "Categorical Bin", or "Categorical Multi".
 #'
 #' @examples
+#' \dontrun{
 #' df <- data.frame(
 #'   age = c(25, 30, 35, 40),
 #'   gender = c("Male", "Female", "Female", "Male"),
 #'   score = c(80, 85, 90, 95)
 #' )
 #' identify_variable_type(df)
-#'
+#'}
 #' @keywords internal
 identify_variable_type <- function(df, cols = NULL) {
 
@@ -101,6 +102,7 @@ identify_variable_type <- function(df, cols = NULL) {
 #' If an invalid statistical test is requested, the function stops with an error message.
 #'
 #' @examples
+#' \dontrun{
 #' df <- data.frame(
 #'   score = c(80, 85, 90, 95, 100),
 #'   age = c(25, 30, 35, 40, 45),
@@ -110,7 +112,7 @@ identify_variable_type <- function(df, cols = NULL) {
 #'
 #' results <- compute_stat_tests(df, target_var = "score")
 #' print(results)
-#'
+#'}
 #' @importFrom stats cor.test t.test wilcox.test aov TukeyHSD
 #'
 #' @keywords internal
