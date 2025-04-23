@@ -91,17 +91,26 @@
 #'
 #' @export
 CorrelationHeatmap <- function(data, metadata = NULL, genes, separate.by = NULL,
-                                method = "pearson", colorlist = list(low = "blue", mid = "white", high = "red"),
+                                method = c("pearson","spearman","kendall"), colorlist = list(low = "blue", mid = "white", high = "red"),
                                 limits_colorscale = NULL, widthTitle = 16, title = NULL,
                                 cluster_rows = TRUE, cluster_columns = TRUE,
                                 detailedresults = FALSE, legend_position = c("right", "top"), titlesize=20) {
 
+
   # Choose legend position: "side" (vertical) or "top" (horizontal)
   legend_position <- match.arg(legend_position)
+  method <- match.arg(method)
   if (legend_position == "right") {
     leg_side <- "right"
     leg_direction <- "vertical"
-    title_leg <- paste0(method, "'s \ncoefficient")
+    if (method == "spearman"){
+      title_leg <- "Spearman’s \nCorrelation \nCoefficient (ρ)"
+    } else if (method == "pearson"){
+      title_leg <- "Pearson's  \nCorrelation \nCoefficient (r)"
+    } else if (method == "kendall"){
+      title_leg <- "Kendall's  \nCorrelation \nCoefficient (τ)"
+    }
+
   } else {
     leg_side <- "top"
     leg_direction <- "horizontal"

@@ -22,7 +22,7 @@ reference:
       - PlotScores
       - ROC_Scores
       - AUC_Scores
-      - FDR_Simulation
+      - FPR_Simulation
   - title: "Enrichment-based Methods"
     contents:
       - calculateDE

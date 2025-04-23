@@ -60,11 +60,12 @@
 #' @param cond_cohend Optional. List of length 2 with the two groups being used to compute effect size. The values in each entry should be levels of `Variable (used with `compute_cohen = TRUE`).
 #' @param cohen_threshold Effect size threshold shown as a **guide line** in volcano plots. Used only when `method = "all"`.
 #' @param pvalcalc Logical. If `TRUE`, computes p-values between groups.
-#' @param mode A string specifying the level of detail for contrasts, if `method = "all"`.
+#' @param mode A string specifying the contrast mode when `method = "all"`.
+#' Determines the complexity and breadth of comparisons performed between group levels.
 #' Options are:
-#' - `"simple"`: Pairwise comparisons (e.g., A - B).
-#' - `"medium"`: Pairwise comparisons plus comparisons against the mean of other groups.
-#' - `"extensive"`: All possible groupwise contrasts, ensuring balance in the number of terms on each side.
+#' - `"simple"`: Performs the minimal number of pairwise comparisons between individual group levels (e.g., A - B, A - C). Default.
+#' - `"medium"`: Includes comparisons between one group and the union of all other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
+#' - `"extensive"`: Allows for all possible algebraic combinations of group levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.
 #' @param widthlegend Width of the legend in **volcano plots** (used only if `method = "all"`) and violin score plots.
 #' @param sig_threshold P-value cutoff shown as a **guide line** in volcano plots. Only applies when `method = "all"`.
 #' @param colorPalette Name of an RColorBrewer palette used to assign colors in plots. Applies to all methods. Default is "Set3".
@@ -250,11 +251,11 @@ PlotScores <- function(data, metadata, gene_sets,
 #'   - **ranking**: Computes gene signature scores for each sample by ranking the expression of signature genes
 #'     in the dataset and normalizing the score based on the total number of genes.
 #'   - **all**: Computes gene signature scores using all three methods (`ssGSEA`, `logmedian`, and `ranking`).
-#'     Returns a heatmap summarizing Cohen's D for all metric combinations of the variables of interest.
+#'     Returns a heatmap summarizing Cohen's d for all metric combinations of the variables of interest.
 #'
 #' Depending on the method and the type of variable (categorical, numeric, or `NULL`), the function produces different plots:
 #' - **If `method = "all"`** and the variable is **categorical**, a heatmap of Cohen's d or F statistics and a volcano plot showing contrasts between all groups of that variable are produced.
-#' - **If `method = "all"`** and the variable is **numeric**, a heatmap of Cohen's F and a volcano plot are produced.
+#' - **If `method = "all"`** and the variable is **numeric**, a heatmap of Cohen's f and a volcano plot are produced.
 #' - **If `method != "all"`** and the variable is **categorical**, a violin plot for each signature is generated.
 #' - **If `method != "all"`** and the variable is `NULL`, a density plot of the score distribution is displayed.
 #' - **If `method != "all"`** and the variable is **numeric**, a scatter plot is created to show the relationship between the scores and the numeric variable.
@@ -293,7 +294,7 @@ PlotScores <- function(data, metadata, gene_sets,
 #'
 #' @details
 #' - **If `method = "all"`** and the variable is **categorical**, the function returns a heatmap of Cohen's d or F statistics and a volcano plot showing contrasts between all groups of that variable.
-#' - **If `method = "all"`** and the variable is **numeric**, a heatmap of Cohen's F and a volcano plot will be produced.
+#' - **If `method = "all"`** and the variable is **numeric**, a heatmap of Cohen's f and a volcano plot will be produced.
 #' - **If `method != "all"`** and the variable is **categorical**, a violin plot for each signature will be displayed.
 #' - **If `method != "all"`** and the variable is `NULL`, a density plot of the score distribution will be displayed.
 #' - **If `method != "all"`** and the variable is **numeric**, a scatter plot will be generated to show the relationship between the scores and the numeric variable.
@@ -333,7 +334,9 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 
       p <- ggplot2::ggplot(df, ggplot2::aes(x = score)) +
         ggplot2::geom_density(fill = ColorValues, alpha = 0.5) +
-        ggplot2::labs(title = "Density Plot of Score", x = xlab, y = "Density")
+        ggplot2::labs(title = "Density Plot of Score", x = xlab, y = "Density") +
+        # add points below density
+        ggplot2::geom_rug(ggplot2::aes(x = score), color=ColorValues, sides = "b",  alpha = 0.8, size = .5, length = grid::unit(0.035, "npc"))
 
       # Customize the plot appearance.
       p <- p + ggplot2::theme_classic() +
@@ -508,7 +511,8 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
     # If ConnectGroups is TRUE, add a line connecting medians across groups.
     if (ConnectGroups && !is.null(ColorVariable)) {
       p <- p + ggplot2::stat_summary(ggplot2::aes_string(group = ColorVariable, color = ColorVariable),
-                                     fun.y = median, geom = "line", size = 1.5, alpha = 0.75)
+                                     fun.y = median, geom = "line", size = 1.5, alpha = 0.75,
+                                     show.legend = FALSE)
     }
 
     # Customize the plot appearance.

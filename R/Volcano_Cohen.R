@@ -111,7 +111,10 @@ Volcano_Cohen <- function(cohenlist,
       plot.title = element_text(hjust = 0.5, face = "bold"),
       strip.background = ggplot2::element_rect(fill = "white")
     ) +
-    ggplot2::ggtitle(if (!is.null(title)) title else ifelse(cohentype=="d","Cohen's d Volcano Plot", "Cohen's f Volcano Plot"))
+    ggplot2::ggtitle(if (!is.null(title)) title else ifelse(cohentype=="d","Cohen's d Volcano Plot", "Cohen's f Volcano Plot"))+
+    ggplot2::scale_x_continuous(limits = c(0, NA)) +  # Set x-axis to start at 0
+    ggplot2::scale_y_continuous(limits = c(0, NA))
+    #ggplot2::scale_y_continuous(limits = c(min(-log10(final_df$padj)), NA))  # Set y-axis to start at the minimum value of -log10(padj)
 
 
 

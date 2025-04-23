@@ -82,12 +82,14 @@ Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, wi
     # Wrap the signature title using an internal helper function
     signature_title <- wrap_title(signature, widthTitle)
 
+    limits <- if (is.null(limits)) c(0 , max(long_data$Cohen, na.rm = TRUE)) else limits
+
     # Create heatmap using ggplot2
     p <- ggplot2::ggplot(long_data, ggplot2::aes(x = Var2, y = Var1, fill = Cohen)) +
       ggplot2::geom_tile() +
       ggplot2::geom_text(aes(label = label), color = "black", size = 3) +
       ggplot2::scale_fill_gradientn(colors = ColorValues, limits = limits) +
-      ggplot2::labs(title = signature_title, x = NULL, y = NULL, fill = ifelse(cohentype=="d", "|Cohen\'s D|", "|Cohen\'s F|")) +
+      ggplot2::labs(title = signature_title, x = NULL, y = NULL, fill = ifelse(cohentype=="d", "|Cohen\'s d|", "|Cohen\'s f|")) +
       ggplot2::theme_bw() +
       ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
                      plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize) )

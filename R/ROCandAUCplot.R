@@ -1,7 +1,7 @@
 #' ROC and AUC Plot Function
 #'
 #' This function computes ROC curves and AUC values for each gene based on gene expression data and sample metadata.
-#' It can generate ROC plots, an AUC heatmap, or both arranged side‐by‐side.
+#' It can generate ROC plots, an AUC heatmap / barplot, or both arranged side‐by‐side.
 #'
 #' @param data A data frame or matrix containing gene expression data, with genes as rows and samples as columns.
 #' @param metadata A data frame containing sample metadata. The first column should contain sample identifiers that match the column names of \code{data}.
@@ -12,23 +12,24 @@
 #' @param class A character string or vector specifying the positive class label for the condition.
 #'   (Mandatory; no default.)
 #' @param group_var An optional character string specifying the column name in \code{metadata} used for grouping samples (e.g., cell types).
-#'   If not provided (\code{NULL}), all samples are treated as a single group.
+#'   If not provided (\code{NULL}), all samples are treated as a single group. Should be a categorical variable.
 #' @param plot_type A character string indicating which plot(s) to generate.
-#'   Accepted values are \code{"roc"} (only ROC curves), \code{"heatmap"} (only the AUC heatmap), or \code{"all"} (both arranged side-by-side).
+#'   Accepted values are \code{"roc"} (only ROC curves), \code{"auc"} (only the AUC heatmap/barplot), or \code{"all"} (both arranged side-by-side).
 #'   Default is \code{"roc"}.
-#' @param title An optional character string specifying a custom title for the plot(s). If not provided, default titles are generated.
-#' @param widthTitle A numeric value used when wrapping the title. Default is \code{16}.
+#' @param title An optional character string specifying the main title of the plot.
+#' @param titlesize A numeric value specifying the size of the title. Default is \code{14}.
 #' @param roc_params A list of additional parameters for customizing the ROC plot. Possible elements include:
 #'   \describe{
 #'     \item{\code{nrow}}{An integer specifying the number of rows in the ROC plot grid. If \code{NULL} (default), it is calculated automatically.}
 #'     \item{\code{ncol}}{An integer specifying the number of columns in the ROC plot grid. If \code{NULL} (default), it is calculated automatically.}
 #'     \item{\code{colors}}{A named vector of colors for the different groups. If \code{NULL} (default), a default color palette is generated.}
 #'   }
-#' @param heatmap_params A list of additional parameters for customizing the AUC heatmap. Possible elements include:
+#' @param auc_params A list of additional parameters for customizing the AUC heatmap or AUC barplot. Possible elements include:
 #'   \describe{
 #'     \item{\code{cluster_rows}}{Logical; if \code{TRUE} (default), rows are clustered.}
 #'     \item{\code{cluster_columns}}{Logical; if \code{TRUE} (default), columns are clustered.}
-#'     \item{\code{col}}{A vector of length 2 of colors to be used for the minimum and maximum values of the color scale. Defaults to \code{c("#FFFFFF", "#21975C")}.}
+#'     \item{\code{colors}}{If `group_var` is used, should be a vector of length 2 of colors to be used for the minimum and maximum values of the color scale. Defaults to \code{c("#FFFFFF", "#21975C")}.
+#'     If `group_var` is `NULL`, then should be a single color to fill the barplot. If `NULL`, defaults to \code{"#3B415B"}. If a vector is provided, only the first color will be used.}
 #'     \item{\code{limits}}{A numeric vector of length 2 specifying the minimum and maximum values for the color scale.
 #'       If not provided, defaults to \code{c(0.5, 1)}.}
 #'     \item{\code{name}}{A character string for the legend title of the color scale. Default is \code{"AUC"}.}
@@ -52,8 +53,8 @@
 #'
 #' @details
 #' The function processes gene expression data and metadata to compute ROC curves and AUC values for each gene.
-#' Depending on the value of \code{plot_type}, it produces ROC plots (using \pkg{ggplot2}), an AUC heatmap (using \pkg{ComplexHeatmap}),
-#' or both arranged side-by-side (using \pkg{gridExtra}). When \code{group_var} is not provided, all samples are treated as a single group.
+#' Depending on the value of \code{plot_type}, it produces ROC plots (using \pkg{ggplot2}), an AUC heatmap (using \pkg{ComplexHeatmap})
+#' or AUC barplot (if \code{group_var} is `NULL`), or both arranged side-by-side (using \pkg{gridExtra}).
 #'
 #' @examples
 #' \dontrun{
@@ -67,7 +68,7 @@
 #'                           plot_type = "all",
 #'                           title = "My Custom Title",
 #'                           roc_params = list(ncol = 3),
-#'                           heatmap_params = list(limits = c(0.4, 1)),
+#'                           auc_params= list(limits = c(0.4, 1)),
 #'                           commomplot_params = list(widths = c(1, 1)))
 #' }
 #'
@@ -93,9 +94,9 @@ ROCandAUCplot <- function(data, metadata,
                           group_var = NULL,
                           plot_type = "roc",  # "roc", "heatmap", or "all"
                           title = NULL,       # Custom plot title (optional)
-                          widthTitle = 16,
+                          titlesize = 14,
                           roc_params = list(),     # ROC-specific parameters
-                          heatmap_params = list(),
+                          auc_params= list(),
                           commomplot_params = list()) {  # Additional parameters for combined plots
 
   # If genes are not specified, use all available genes
@@ -179,6 +180,8 @@ ROCandAUCplot <- function(data, metadata,
     stop("AUC values contain NAs. Please check the data.")
   }
 
+  auc_values$AUC <- as.numeric(auc_values$AUC)
+
   ### Function to generate the ROC plot
   makeROCplot <- function() {
     # Set default ROC parameters if missing
@@ -207,30 +210,35 @@ ROCandAUCplot <- function(data, metadata,
     }
 
     # Position for AUC text
-    auc_values$FPR <- 0.2
-    auc_values$TPR <- 0.9
+    # auc_values$FPR <- 0.2
+    # auc_values$TPR <- 0.9
 
     # Determine plot title for ROC. If group_var is provided, include it; otherwise, indicate "All Samples".
-    final_title <- if (!is.null(title)) {
-      wrap_title(title, width = widthTitle)
-    } else {
-      if (group_var != "Group") paste("ROC Curves for Each Gene Across", group_var) else "ROC Curves for Each Gene Across All Samples"
-    }
+    final_title <-  "ROC curves"
+
+
+    legend_position <- if (length(unique(roc_df[[group_var]])) > 1 && group_var != "All") "bottom" else "none"
 
     roc_plot_local <- ggplot2::ggplot(roc_df, ggplot2::aes(x = FPR, y = TPR, color = Group, group = Group)) +
       ggplot2::geom_line(size = 1) +
       ggplot2::facet_wrap(~ Gene, scales = "free", ncol = roc_params_local$ncol, nrow = roc_params_local$nrow) +
       ggplot2::theme_minimal() +
-      ggplot2::labs(title = final_title,
-                    x = "False Positive Rate (1 - Specificity)",
-                    y = "True Positive Rate (Sensitivity)") +
-      ggplot2::theme(legend.position = "bottom",
-                     plot.title = ggplot2::element_text(hjust = 0.5, face = "bold")) +
+      ggplot2::labs(
+        title = final_title,
+        x = "False Positive Rate (1 - Specificity)",
+        y = "True Positive Rate (Sensitivity)",
+        color = group_var
+      ) +
+      ggplot2::theme(
+        legend.position = legend_position,
+        plot.title = ggplot2::element_text(hjust = 0.5, face = "bold")
+      ) +
       ggplot2::geom_abline(linetype = "dashed", color = "gray") +
-      ggplot2::scale_color_manual(values = roc_params_local$colors) +
-      ggplot2::labs(color = group_var)
+      ggplot2::scale_color_manual(values = roc_params_local$colors)
+
     return(roc_plot_local)
   }
+
 
   ### Function to generate the heatmap
   makeHeatmap <- function() {
@@ -243,14 +251,14 @@ ROCandAUCplot <- function(data, metadata,
     )
 
     # Validate user parameters
-    allowed_heatmap_params <- c("cluster_rows", "cluster_columns", "col", "name", "row_names_gp", "column_names_gp", "limits")
-    invalid_params <- base::setdiff(base::names(heatmap_params), allowed_heatmap_params)
+    allowed_heatmap_params <- c("cluster_rows", "cluster_columns", "colors", "name", "row_names_gp", "column_names_gp", "limits")
+    invalid_params <- base::setdiff(base::names(auc_params), allowed_heatmap_params)
     if (base::length(invalid_params) > 0) {
       stop(paste("Invalid heatmap parameter(s):", base::paste(invalid_params, collapse = ", ")))
     }
 
     # Merge user-provided heatmap params with defaults
-    heatmap_params_local <- utils::modifyList(heatmap_defaults, heatmap_params)
+    heatmap_params_local <- utils::modifyList(heatmap_defaults, auc_params)
 
     # Use user-provided limits or default ones
     if (is.null(heatmap_params_local$limits)) {
@@ -260,9 +268,10 @@ ROCandAUCplot <- function(data, metadata,
     }
 
     # Apply the colorRamp2 using the (possibly user-defined) color vector from heatmap_params_local$col.
-    heatmap_params_local$col <- circlize::colorRamp2(limits, heatmap_params_local$col)
+    heatmap_params_local$col <- circlize::colorRamp2(limits, heatmap_params_local$colors)
     heatmap_params_local$limits <- NULL  # Remove 'limits'
-
+    # keep only columns Gene, Group and AUC
+    #auc_values <- auc_values[, c("Gene", "Group", "AUC")]
     # Prepare AUC matrix for heatmap
     auc_matrix <- stats::reshape(auc_values, idvar = "Gene", timevar = "Group", direction = "wide")
     colnames(auc_matrix) <- base::gsub("AUC\\.", "", colnames(auc_matrix))  # Remove "AUC." prefix
@@ -276,11 +285,8 @@ ROCandAUCplot <- function(data, metadata,
                          dimnames = list(rownames(auc_matrix), colnames(auc_matrix)))
 
     # Determine plot title for heatmap
-    final_title <- if (!is.null(title)) {
-      wrap_title(title, width = widthTitle)
-    } else {
-      if (group_var != "Group") paste("AUC Heatmap for Each Gene Across", group_var) else "AUC Heatmap for Each Gene Across All Samples"
-    }
+    final_title <-  "AUC values"
+
 
     heatmap_obj_local <- ComplexHeatmap::Heatmap(
       auc_matrix,
@@ -299,32 +305,103 @@ ROCandAUCplot <- function(data, metadata,
     return(heatmap_obj_local)
   }
 
+
+  makeBarplot <- function() {
+    # Sort AUCs in descending order
+    auc_sorted <- auc_values[order(-auc_values$AUC), ]
+
+    # Determine title
+    final_title <-  "AUC values"
+
+
+    fillcolor <- ifelse(is.null(auc_params$colors), "#3B415B", auc_params$colors[1])
+
+    barplot <- ggplot2::ggplot(auc_sorted, ggplot2::aes(y = reorder(Gene, AUC), x = AUC)) +
+      ggplot2::geom_bar(stat = "identity", fill = fillcolor) +
+      #ggplot2::coord_flip()  +
+      coord_cartesian(xlim = c(0.5, 1))+
+      ggplot2::labs(y = "Gene", x = "AUC", title = final_title) +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(size = 14, face = "bold",hjust = 0.5),
+        axis.text = ggplot2::element_text(size = 10),
+      )
+
+    return(barplot)
+  }
+
+  plotAUC <- function() {
+    # Check the number of unique conditions
+    n_groups <- length(unique(auc_values[["Group"]]))
+
+    if (n_groups == 1) {
+      # For a single condition, use barplot
+      return(makeBarplot())
+    } else {
+      # Multiple groups — use heatmap
+      return(makeHeatmap())  # assumes makeHeatmap() is in the same environment and uses auc_values
+    }
+  }
+
+
+
+
   ### Generate the requested plot(s)
+  # create default title specifying the groups for the comparison, with the "class" as positive class
+  # condition_var = "Condition",
+  # class = "Senescent",
+
+  if (is.null(title)) title <- paste("ROC and AUC for variable", condition_var, "(", paste(class, collapse = ", "), " vs others)")
+
   if (plot_type == "roc") {
     roc_plot <- makeROCplot()
+
+    roc_plot <- ggpubr::annotate_figure(roc_plot, top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize)))
+
     print(roc_plot)
     return(invisible(list(roc_plot = roc_plot, auc_values = auc_values)))
-  } else if (plot_type == "heatmap") {
-    heatmap_obj <- makeHeatmap()
-    ComplexHeatmap::draw(heatmap_obj)
-    return(invisible(list(heatmap = heatmap_obj, auc_values = auc_values)))
+  } else if (plot_type == "auc") {
+
+    auc_obj <- plotAUC()
+
+    if (length(unique(auc_values[["Group"]])) > 1){
+
+      # add title to the heatmap
+      ComplexHeatmap::draw(auc_obj, column_title = title, column_title_gp = grid::gpar(fontsize = titlesize, fontface = "bold"))
+
+    } else {
+      auc_obj <- ggpubr::annotate_figure(auc_obj, top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize)))
+      print(auc_obj)
+    }
+
+    return(invisible(list(auc_plot = auc_obj, auc_values = auc_values)))
+
   } else if (plot_type == "all") {
     # Generate both plots
     roc_plot <- makeROCplot()
-    heatmap_obj <- makeHeatmap()
+    auc_obj <- plotAUC()
 
     # Convert the ROC plot to a grob
     roc_grob <- ggplot2::ggplotGrob(roc_plot)
+
+    if (length(unique(auc_values[["Group"]])) > 1){
+      a <- 1
+      auc_grob <- invisible(grid::grid.grabExpr(ComplexHeatmap::draw(auc_obj)))
+    } else {
+      auc_grob <- ggplot2::ggplotGrob(auc_obj)
+    }
+
     # Capture the heatmap as a grob
-    heatmap_grob <- invisible(grid::grid.grabExpr(ComplexHeatmap::draw(heatmap_obj)))
+
 
     # Arrange them side-by-side
-    combined <- gridExtra::grid.arrange(roc_grob, heatmap_grob, ncol = 2,
+    combined <- gridExtra::grid.arrange(roc_grob, auc_grob, ncol = 2,
                                         widths = commomplot_params$widths,
-                                        heights = commomplot_params$heights)
+                                        heights = commomplot_params$heights,
+                                        top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize)))
 
-    return(invisible(list(combined = combined, roc_plot = roc_plot, heatmap = heatmap_obj, auc_values = auc_values)))
+    return(invisible(list(combined = combined, roc_plot = roc_plot, auc_plot = auc_obj, auc_values = auc_values)))
   } else {
-    stop("Invalid plot_type. Use 'roc', 'heatmap', or 'all'.")
+    stop("Invalid plot_type. Use 'roc', 'auc', or 'all'.")
   }
 }

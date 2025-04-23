@@ -11,7 +11,10 @@
 #'   - `"B"` for gene sets with **no known direction** (vectors).
 #'   - `"t"` for **unidirectional** or **bidirectional** gene sets (data frames).
 #'   - If provided, this argument overrides the automatic selection.
-#' @param mode A character string specifying the contrast generation method for categorical variables. Options: `"simple"`, `"medium"`, `"extensive"`. Default is `"simple"`.
+#' @param modeA string specifying the level of detail for contrasts. Options are:
+#' - `"simple"`: Performs the minimal number of pairwise comparisons between individual group levels (e.g., A - B, A - C). Default.
+#' - `"medium"`: Includes comparisons between one group and the union of all other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
+#' - `"extensive"`: Allows for all possible algebraic combinations of group levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.
 #' @param gene_set A named list defining the gene sets for GSEA. **(Required)**
 #'   - If using **unidirectional** gene sets, provide a list where each element is a vector of gene names representing a signature.
 #'   - If using **bidirectional** gene sets, provide a list where each element is a data frame:
