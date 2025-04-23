@@ -1,6 +1,6 @@
-#' FDR Simulation Plot
+#' FPR Simulation Plot
 #'
-#' This function simulates false discovery rates (FDR) by generating simulated gene signatures and comparing
+#' This function simulates false positive rates (FPR) by generating simulated gene signatures and comparing
 #' the observed effect size values (Cohen's *d* or *f*) of the original signatures to those from simulated signatures.
 #' The effect size is computed using three scoring methods (`ssGSEA`, `logmedian`, and `ranking`), and the results
 #' are visualized as violin plots with overlaid observed values.
@@ -47,13 +47,13 @@
 #'
 #' @examples
 #' \dontrun{
-#' FDR_Simulation(
+#' FPR_Simulation(
 #'   data = expression_data,
 #'   metadata = sample_metadata,
 #'   original_signatures = my_signatures,
 #'   Variable = "condition",
 #'   number_of_sims = 100,
-#'   title_for_plot = "Simulation for FDR"
+#'   title_for_plot = "Simulation for FPR"
 #' )
 #' }
 #'
@@ -61,7 +61,7 @@
 #' @import ggpubr
 #' @export
 #'
-FDR_Simulation <- function(data, metadata, original_signatures, Variable, gene_list = NULL, number_of_sims=10, title=NULL,
+FPR_Simulation <- function(data, metadata, original_signatures, Variable, gene_list = NULL, number_of_sims=10, title=NULL,
                            widthTitle = 30, titlesize = 12,  pointSize = 2,
                            labsize = 10,mode = c( "none","simple","medium","extensive"), ColorValues=NULL, ncol=NULL, nrow=NULL) {
 
