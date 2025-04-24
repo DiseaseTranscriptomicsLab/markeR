@@ -22,16 +22,15 @@ along with tools to compute performance metrics and visualize results.
 ## Table of Contents
 
 - [Installation](#installation)
-- [Main Functions and Future
-  Modules](#main-functions-and-future-modules)
+- [Main Functions](#main-functions)
 - [Example](#example)
-- [Visualise Individual Genes from Senescence
-  Signature](#visualise-individual-genes-from-senescence-signature)
+- [Visualise Individual Gene
+  Behaviour](#visualise-individual-gene-behaviour)
   - [Expression Heatmap](#expression-heatmap)
   - [Expression Violins](#expression-violins)
   - [Correlation Heatmap](#correlation-heatmap)
   - [ROC and AUC](#roc-and-auc)
-  - [Cohen’s D](#cohens-d)
+  - [Cohen’s d](#cohens-d)
   - [PCA with Only Genes of Interest](#pca-with-only-genes-of-interest)
 - [Calculate Senescence Scores](#calculate-senescence-scores)
   - [logmedian Method](#logmedian-method)
@@ -40,16 +39,16 @@ along with tools to compute performance metrics and visualize results.
   - [All Methods](#all-methods)
   - [Classification Potential of Gene
     Signatures](#classification-potentia-of-gene-signatures)
-  - [False Discovery Rate (FDR)
-    Calculations](#false-discovery-rate-fdr-calculations)
-  - [Score association with Chosen
-    Variables](#score-association-with-chosen-variables)
+  - [False Positive Rate (FPR)
+    Calculations](#false-positive-rate-fpr-calculations)
+  - [Score association with Chosen Phenotypic
+    Variables](#score-association-with-chosen-phenotypic-variables)
 - [Enrichment-Based Methods](#enrichment-based-methods)
   - [Differentially Expressed Genes](#differentially-expressed-genes)
     - [Note on Continuous Variables](#note-on-continuous-variables)
   - [Gene Set Enrichment Analyses](#gene-set-enrichment-analyses)
-  - [GSEA Association with Chosen
-    Variables](#gsea-association-with-chosen-variables)
+  - [GSEA Association with Chosen Phenotypic
+    Variables](#gsea-association-with-chosen-phenotypic-variables)
 
 ## Installation
 
@@ -61,7 +60,7 @@ The user can install the development version of markeR from
 devtools::install_github("DiseaseTranscriptomicsLab/markeR")
 ```
 
-## Main Functions and Future Modules
+## Main Functions
 
 The current release of **`markeR`** includes four primary functions for
 **score-based analysis**:
