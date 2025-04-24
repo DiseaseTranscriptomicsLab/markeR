@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 
-![Development Status](https://img.shields.io/badge/status-development-yellowgreen)
+![](https://img.shields.io/badge/status-development-yellowgreen)
 
 <!-- badges: end -->
 

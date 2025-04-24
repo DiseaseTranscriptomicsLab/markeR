@@ -5,11 +5,7 @@
 
 <!-- badges: start -->
 
-<figure>
-<img src="https://img.shields.io/badge/status-development-yellowgreen"
-alt="Development Status" />
-<figcaption aria-hidden="true">Development Status</figcaption>
-</figure>
+![](https://img.shields.io/badge/status-development-yellowgreen)
 
 <!-- badges: end -->
 
