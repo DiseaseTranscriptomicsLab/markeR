@@ -8,7 +8,6 @@ calculateDE(
   data,
   metadata = NULL,
   variables = NULL,
-  lmexpression = NULL,
   modelmat = NULL,
   contrasts = NULL
 )
@@ -21,9 +20,6 @@ Data should \emph{not} be transformed (i.e., not log2 transformed).}
 
 \item{variables}{A character vector specifying the variable(s) from \code{metadata} to use in the default linear model.
 Ignored if \code{lmexpression} or \code{design} is provided.}
-
-\item{lmexpression}{(Optional) A model formula (e.g., \code{~0 + X} or \code{~X}) provided by the user to build the design matrix.
-If provided, this formula is used instead of constructing one from \code{variables}.}
 
 \item{modelmat}{(Optional) A user-supplied design matrix. If provided, this design is used directly and \code{lmexpression} and \code{variables}
 are ignored. The order of samples in the design matrix should match the order in data.}
@@ -47,7 +43,6 @@ they are applied using \code{limma::makeContrasts} and \code{limma::contrasts.fi
 The function fits a linear model with \code{limma::lmFit} and applies empirical Bayes moderation with \code{limma::eBayes}. Depending on the input:
 \itemize{
 \item If a design matrix is provided via \code{design}, that design is used directly.
-\item If \code{lmexpression} is provided (and no design is supplied), a design matrix is built using that formula.
 \item Otherwise, a design matrix is constructed using the \code{variables} argument (with no intercept).
 \item If contrasts are provided, they are applied using \code{limma::makeContrasts} and \code{limma::contrasts.fit}.
 \item If no contrasts are provided, the function returns all possible coefficients fitted in the linear model.
@@ -64,10 +59,7 @@ The function fits a linear model with \code{limma::lmFit} and applies empirical 
   # Example 1: Build design matrix from variables with a contrast:
   de_res <- calculateDE(data, metadata, variables = "X", contrasts = "A-B")
 
-  # Example 2: Use a custom model formula:
-  de_res2 <- calculateDE(data, metadata, variables = "X", lmexpression = "~X", coefs = c(2,3))
-
-  # Example 3: Supply a custom design matrix directly:
+  # Example 2: Supply a custom design matrix directly:
   design <- model.matrix(~0 + X, data = metadata)
   de_res3 <- calculateDE(data, metadata, variables = "X", design = design, contrasts = "A-B")
 }
