@@ -1,6 +1,8 @@
 url: https://diseasetranscriptomicslab.github.io/markeR/
 template:
   bootstrap: 5
+  light-switch: true
+  bootswatch: litera
 
 badges: true
 
