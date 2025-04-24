@@ -42,7 +42,7 @@ It automatically determines the appropriate ranking statistic based on the gene 
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">runGSEA</span><span class="op">(</span><span class="va">DEGList</span>, <span class="va">gene_sets</span>, stat <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">runGSEA</span><span class="op">(</span><span class="va">DEGList</span>, <span class="va">gene_sets</span>, stat <span class="op">=</span> <span class="cn">NULL</span>, ContrastCorrection <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -68,6 +68,13 @@ It automatically determines the appropriate ranking statistic based on the gene 
 <li><p><code>"t"</code> for <strong>unidirectional</strong> or <strong>bidirectional</strong> gene sets (data frames).</p></li>
 <li><p>If provided, this argument overrides the automatic selection.</p></li>
 </ul></dd>
+
+
+<dt id="arg-contrastcorrection">ContrastCorrection<a class="anchor" aria-label="anchor" href="#arg-contrastcorrection"></a></dt>
+<dd><p>Logical, default is <code>FALSE</code>. If <code>TRUE</code>, applies an additional multiple testing
+correction (Benjamini–Hochberg) across all contrasts returned in the <code>DEGList</code> results list.
+This accounts for the number of contrasts tested per signature and provides more stringent control of
+false discovery rate across multiple comparisons. If <code>FALSE</code>, the function only corrects for the number of gene sets.</p></dd>
 
 </dl></div>
     <div class="section level2">
