@@ -152,12 +152,16 @@ Each element should be a named vector where names correspond to factor levels. D
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list with:</p><ul><li><p><code>Overall</code>: Data frame with Cohen's F and p-values for overall associations.</p></li>
-<li><p><code>Contrasts</code>: Data frame with Cohen's D and p-values for contrasts (only for non numerical variables).</p></li>
-<li><p><code>plot</code>: Combined visualization of results.</p></li>
-<li><p><code>plot_contrasts</code>: Plot of contrast results (only for non numerical variables).</p></li>
-<li><p><code>plot_overall</code>: Plot of overall associations.</p></li>
-<li><p><code>plot_distributions</code>: List of variable distribution plots.</p></li>
+    <p>A list with:</p><ul><li><p><code>Overall</code>: Data frame of effect sizes and p-values for each contrasted phenotypic variable.</p></li>
+<li><p><code>Contrasts</code>: Data frame of Cohen’s d and adjusted p-values for contrasts between levels of categorical variables,
+with the resolution of contrasts determined by the mode parameter.</p></li>
+<li><p><code>plot</code>: A combined visualization with three main panels:
+(1) lollipop plots of Cohen’s f for each variable of interest,
+(2) distribution plots of the score by variable (density or scatter depending on variable type),
+and (3, if applicable) lollipop plots of Cohen’s d for contrasts in categorical variables.</p></li>
+<li><p><code>plot_contrasts</code>: Lollipop plots of Cohen’s d effect sizes for contrasts between levels of non numerical variables (if applicable), colored by adjusted p-value (BH).</p></li>
+<li><p><code>plot_overall</code>: Lollipop plot showing Cohen’s f effect sizes for each variable, colored by p-value.</p></li>
+<li><p><code>plot_distributions</code>: List of density or scatter plots of the score across variable levels, depending on variable type.</p></li>
 </ul></div>
 
     <div class="section level2">

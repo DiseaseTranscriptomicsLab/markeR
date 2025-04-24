@@ -86,10 +86,6 @@ It generates all possible contrasts for categorical variables and uses linear mo
 </ul></dd>
 
 
-<dt id="arg-mode">mode<a class="anchor" aria-label="anchor" href="#arg-mode"></a></dt>
-<dd><p>A character string specifying the contrast generation method for categorical variables. Options: <code>"simple"</code>, <code>"medium"</code>, <code>"extensive"</code>. Default is <code>"simple"</code>.</p></dd>
-
-
 <dt id="arg-gene-set">gene_set<a class="anchor" aria-label="anchor" href="#arg-gene-set"></a></dt>
 <dd><p>A named list defining the gene sets for GSEA. <strong>(Required)</strong></p><ul><li><p>If using <strong>unidirectional</strong> gene sets, provide a list where each element is a vector of gene names representing a signature.</p></li>
 <li><p>If using <strong>bidirectional</strong> gene sets, provide a list where each element is a data frame:</p></li>
@@ -129,6 +125,13 @@ value is above the sig_threshold; in that case, it is 0.001.</p></dd>
 
 <dt id="arg-pointsize">pointSize<a class="anchor" aria-label="anchor" href="#arg-pointsize"></a></dt>
 <dd><p>Numeric. The size of points in the lollipop plot (default is 5).</p></dd>
+
+
+<dt id="arg-modea">modeA<a class="anchor" aria-label="anchor" href="#arg-modea"></a></dt>
+<dd><p>string specifying the level of detail for contrasts. Options are:</p><ul><li><p><code>"simple"</code>: Performs the minimal number of pairwise comparisons between individual group levels (e.g., A - B, A - C). Default.</p></li>
+<li><p><code>"medium"</code>: Includes comparisons between one group and the union of all other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.</p></li>
+<li><p><code>"extensive"</code>: Allows for all possible algebraic combinations of group levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.</p></li>
+</ul></dd>
 
 </dl></div>
     <div class="section level2">

@@ -190,14 +190,14 @@ signature genes divided by the number of genes in the signature.</p></li>
 <li><p><strong>ranking</strong>: Computes gene signature scores for each sample by ranking the expression of signature genes
 in the dataset and normalizing the score based on the total number of genes.</p></li>
 <li><p><strong>all</strong>: Computes gene signature scores using all three methods (<code>ssGSEA</code>, <code>logmedian</code>, and <code>ranking</code>).
-Returns a heatmap summarizing Cohen's D for all metric combinations of the variables of interest.</p></li>
+Returns a heatmap summarizing Cohen's d for all metric combinations of the variables of interest.</p></li>
 </ul><p>Depending on the method and the type of variable (categorical, numeric, or <code>NULL</code>), the function produces different plots:</p><ul><li><p><strong>If <code>method = "all"</code></strong> and the variable is <strong>categorical</strong>, a heatmap of Cohen's d or F statistics and a volcano plot showing contrasts between all groups of that variable are produced.</p></li>
-<li><p><strong>If <code>method = "all"</code></strong> and the variable is <strong>numeric</strong>, a heatmap of Cohen's F and a volcano plot are produced.</p></li>
+<li><p><strong>If <code>method = "all"</code></strong> and the variable is <strong>numeric</strong>, a heatmap of Cohen's f and a volcano plot are produced.</p></li>
 <li><p><strong>If <code>method != "all"</code></strong> and the variable is <strong>categorical</strong>, a violin plot for each signature is generated.</p></li>
 <li><p><strong>If <code>method != "all"</code></strong> and the variable is <code>NULL</code>, a density plot of the score distribution is displayed.</p></li>
 <li><p><strong>If <code>method != "all"</code></strong> and the variable is <strong>numeric</strong>, a scatter plot is created to show the relationship between the scores and the numeric variable.</p></li>
 <li><p><strong>If <code>method = "all"</code></strong> and the variable is <strong>categorical</strong>, the function returns a heatmap of Cohen's d or F statistics and a volcano plot showing contrasts between all groups of that variable.</p></li>
-<li><p><strong>If <code>method = "all"</code></strong> and the variable is <strong>numeric</strong>, a heatmap of Cohen's F and a volcano plot will be produced.</p></li>
+<li><p><strong>If <code>method = "all"</code></strong> and the variable is <strong>numeric</strong>, a heatmap of Cohen's f and a volcano plot will be produced.</p></li>
 <li><p><strong>If <code>method != "all"</code></strong> and the variable is <strong>categorical</strong>, a violin plot for each signature will be displayed.</p></li>
 <li><p><strong>If <code>method != "all"</code></strong> and the variable is <code>NULL</code>, a density plot of the score distribution will be displayed.</p></li>
 <li><p><strong>If <code>method != "all"</code></strong> and the variable is <strong>numeric</strong>, a scatter plot will be generated to show the relationship between the scores and the numeric variable.</p></li>

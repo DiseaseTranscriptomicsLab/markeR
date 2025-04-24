@@ -56,8 +56,8 @@ visualized as a heatmap.</p>
 <span>  <span class="va">class</span>,</span>
 <span>  group_var <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  title <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  widthTitle <span class="op">=</span> <span class="fl">16</span>,</span>
-<span>  heatmap_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  titlesize <span class="op">=</span> <span class="fl">16</span>,</span>
+<span>  params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -98,18 +98,18 @@ If not provided (<code>NULL</code>), all samples are treated as a single group.<
 If not provided, a default title is generated.</p></dd>
 
 
-<dt id="arg-widthtitle">widthTitle<a class="anchor" aria-label="anchor" href="#arg-widthtitle"></a></dt>
-<dd><p>A numeric value used when wrapping the title. Default is <code>16</code>.</p></dd>
+<dt id="arg-titlesize">titlesize<a class="anchor" aria-label="anchor" href="#arg-titlesize"></a></dt>
+<dd><p>A numeric value specifying the size of the title. Default is <code>14</code>.</p></dd>
 
 
-<dt id="arg-heatmap-params">heatmap_params<a class="anchor" aria-label="anchor" href="#arg-heatmap-params"></a></dt>
+<dt id="arg-params">params<a class="anchor" aria-label="anchor" href="#arg-params"></a></dt>
 <dd><p>A list of additional parameters for customizing the heatmap. Possible elements include:</p><dl><dt><code>cluster_rows</code></dt>
 <dd><p>Logical; if <code>TRUE</code> (default), rows are clustered.</p></dd>
 
 <dt><code>cluster_columns</code></dt>
 <dd><p>Logical; if <code>TRUE</code> (default), columns are clustered.</p></dd>
 
-<dt><code>col</code></dt>
+<dt><code>colors</code></dt>
 <dd><p>A vector of length 2 of colors to be used for the minimum and maximum values of the color scale.
 Defaults to <code>c("#FFFFFF", "#21975C")</code>, but note that the default mapping for Cohen's d is set to a divergent scale.</p></dd>
 
@@ -157,7 +157,7 @@ If not provided, defaults to <code>c(-2, 2)</code>.</p></dd>
 <span class="r-in"><span>                          class <span class="op">=</span> <span class="st">"Mutant"</span>,</span></span>
 <span class="r-in"><span>                          group_var <span class="op">=</span> <span class="st">"CellType"</span>,</span></span>
 <span class="r-in"><span>                          title <span class="op">=</span> <span class="st">"Cohen's d Heatmap"</span>,</span></span>
-<span class="r-in"><span>                          heatmap_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>                          params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

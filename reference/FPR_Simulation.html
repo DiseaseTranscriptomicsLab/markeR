@@ -119,14 +119,6 @@ Default is all genes in <code>data</code>.</p></dd>
 <dd><p>Numeric. Font size for axis labels (default: 10).</p></dd>
 
 
-<dt id="arg-mode">mode<a class="anchor" aria-label="anchor" href="#arg-mode"></a></dt>
-<dd><p>Character. Type of contrast calculation if <code>Variable</code> is categorical. Options are:</p><ul><li><p><code>"simple"</code>: basic pairwise contrasts,</p></li>
-<li><p><code>"medium"</code>: pairwise + comparisons vs group mean,</p></li>
-<li><p><code>"extensive"</code>: all possible balanced contrasts,</p></li>
-<li><p><code>"none"</code>: Comparing all levels of <code>Variable</code> (default)</p></li>
-</ul></dd>
-
-
 <dt id="arg-colorvalues">ColorValues<a class="anchor" aria-label="anchor" href="#arg-colorvalues"></a></dt>
 <dd><p>Named vector of colors for plot points, typically <code>Original</code> and <code>Simulated</code>. If <code>NULL</code>, default colors are used.</p></dd>
 
@@ -137,6 +129,14 @@ Default is all genes in <code>data</code>.</p></dd>
 
 <dt id="arg-nrow">nrow<a class="anchor" aria-label="anchor" href="#arg-nrow"></a></dt>
 <dd><p>Integer. Number of rows for arranging signature plots in a grid layout. If <code>NULL</code>, layout is auto-calculated.</p></dd>
+
+
+<dt id="arg-modea">modeA<a class="anchor" aria-label="anchor" href="#arg-modea"></a></dt>
+<dd><p>string specifying the level of detail for contrasts. Options are:</p><ul><li><p><code>"simple"</code>: Performs the minimal number of pairwise comparisons between individual group levels (e.g., A - B, A - C). Default.</p></li>
+<li><p><code>"medium"</code>: Includes comparisons between one group and the union of all other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.</p></li>
+<li><p><code>"extensive"</code>: Allows for all possible algebraic combinations of group levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.</p></li>
+<li><p><code>"none"</code>: Comparing all levels of <code>Variable</code> (default)</p></li>
+</ul></dd>
 
 </dl></div>
     <div class="section level2">
