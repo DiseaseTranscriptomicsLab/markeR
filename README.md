@@ -5,51 +5,51 @@
 
 <!-- badges: start -->
 
-![Development
-Status](https://img.shields.io/badge/status-development-yellowgreen)
+<figure>
+<img src="https://img.shields.io/badge/status-development-yellowgreen"
+alt="Development Status" />
+<figcaption aria-hidden="true">Development Status</figcaption>
+</figure>
 
 <!-- badges: end -->
 
 **markeR** provides a suite of methods for using gene sets (signatures)
 to quantify and evaluate the extent to which a given gene signature
-marks a specific phenotype. The package implements various scoring,
-enrichment and classification approaches, along with tools to compute
-performance metrics and visualize results.
+marks a specific phenotype from gene expression data. The package
+implements various scoring, enrichment and classification approaches,
+along with tools to compute performance metrics and visualize results.
 
 ## Table of Contents
 
--   [Installation](#installation)
--   [Main Functions and Future
-    Modules](#main-functions-and-future-modules)
--   [Example](#example)
--   [Visualise Individual Genes from Senescence
-    Signature](#visualise-individual-genes-from-senescence-signature)
-    -   [Expression Heatmap](#expression-heatmap)
-    -   [Expression Violins](#expression-violins)
-    -   [Correlation Heatmap](#correlation-heatmap)
-    -   [ROC and AUC](#roc-and-auc)
-    -   [Cohen’s D](#cohens-d)
-    -   [PCA with Only Genes of
-        Interest](#pca-with-only-genes-of-interest)
--   [Calculate Senescence Scores](#calculate-senescence-scores)
-    -   [logmedian Method](#logmedian-method)
-    -   [ssGSEA Method](#ssgsea-method)
-    -   [Ranking Method](#ranking-method)
-    -   [All Methods](#all-methods)
-    -   [Classification Potential of Gene
-        Signatures](#classification-potentia-of-gene-signatures)
-    -   [False Discovery Rate (FDR)
-        Calculations](#false-discovery-rate-fdr-calculations)
-    -   [Score association with Chosen
-        Variables](#score-association-with-chosen-variables)
--   [Enrichment-Based Methods](#enrichment-based-methods)
-    -   [Differentially Expressed
-        Genes](#differentially-expressed-genes)
-        -   [Note on Continuous
-            Variables](#note-on-continuous-variables)
-    -   [Gene Set Enrichment Analyses](#gene-set-enrichment-analyses)
-    -   [GSEA Association with Chosen
-        Variables](#gsea-association-with-chosen-variables)
+- [Installation](#installation)
+- [Main Functions and Future
+  Modules](#main-functions-and-future-modules)
+- [Example](#example)
+- [Visualise Individual Genes from Senescence
+  Signature](#visualise-individual-genes-from-senescence-signature)
+  - [Expression Heatmap](#expression-heatmap)
+  - [Expression Violins](#expression-violins)
+  - [Correlation Heatmap](#correlation-heatmap)
+  - [ROC and AUC](#roc-and-auc)
+  - [Cohen’s D](#cohens-d)
+  - [PCA with Only Genes of Interest](#pca-with-only-genes-of-interest)
+- [Calculate Senescence Scores](#calculate-senescence-scores)
+  - [logmedian Method](#logmedian-method)
+  - [ssGSEA Method](#ssgsea-method)
+  - [Ranking Method](#ranking-method)
+  - [All Methods](#all-methods)
+  - [Classification Potential of Gene
+    Signatures](#classification-potentia-of-gene-signatures)
+  - [False Discovery Rate (FDR)
+    Calculations](#false-discovery-rate-fdr-calculations)
+  - [Score association with Chosen
+    Variables](#score-association-with-chosen-variables)
+- [Enrichment-Based Methods](#enrichment-based-methods)
+  - [Differentially Expressed Genes](#differentially-expressed-genes)
+    - [Note on Continuous Variables](#note-on-continuous-variables)
+  - [Gene Set Enrichment Analyses](#gene-set-enrichment-analyses)
+  - [GSEA Association with Chosen
+    Variables](#gsea-association-with-chosen-variables)
 
 ## Installation
 
@@ -66,77 +66,80 @@ devtools::install_github("DiseaseTranscriptomicsLab/markeR")
 The current release of **`markeR`** includes four primary functions for
 **score-based analysis**:
 
--   **`CalculateScores`:** Calculates gene signature scores for each
-    sample using either the ssGSEA, log2 median-centered or ranking
-    method.
--   **`PlotScores`:** Calculates and displays the calculated scores
-    across conditions using violin plots, density plots, heatmaps or
-    volcano-like plots, depending on the chosen parameters.
--   **`ROC_Scores`:** Generates ROC curves for different scoring methods
-    across contrasts, allowing users to visualize performance
-    differences.
--   **`AUC_Scores`:** Generates heatmaps for each gene signature, with
-    methods as columns and contrasts as rows, summarizing AUC values in
-    a heatmap format.
+- **`CalculateScores`:** Calculates gene signature scores for each
+  sample using either the ssGSEA, log2 median-centered or ranking
+  method.
+- **`PlotScores`:** Calculates and displays the calculated scores across
+  conditions using violin plots, density plots, heatmaps or volcano-like
+  plots, depending on the chosen parameters.
+- **`ROC_Scores`:** Generates ROC (receiver operating characteristic)
+  curves for different scoring methods across contrasts, allowing users
+  to visualize performance differences.
+- **`AUC_Scores`:** Generates heatmaps for each gene signature, with
+  methods as columns and contrasts as rows, summarizing AUC (i.e., area
+  under the ROC curve) values in a heatmap format.
 
-Additionally, it includes a function for FDR calculation based on random
-sets of genes for each signature:
+Additionally, it includes a function for false positive rate (FPR)
+calculation based on random sets of genes for each signature:
 
--   **`FDR_Simulation`:** Computes false discovery rates using random
-    gene sets.
+- **`FPR_Simulation`:** Computes false discovery rates using random gene
+  sets.
 
 Tthe package also includes several functions for **enrichment-based
 analysis**:
 
--   **`calculateDE`:** Performs differential expression analysis.
--   **`plotVolcano`:** Generates volcano plots to visualize
-    differentially expressed genes.
--   **`runGSEA`:** Performs GSEA using `fgsea` for each contrast in a
-    list of differential expression results.  
--   **`plotGSEAenrichment`:** Generates enrichment plots for gene sets
-    using the `fgsea::plotEnrichment()` function
--   **`plotNESlollipop`:** Generates a lollipop plot to visualize Gene
-    Set Enrichment Analysis (GSEA) results.
--   **`plotCombinedGSEA`:** Creates a scatter plot visualizing multiple
-    GSEA (Gene Set Enrichment Analysis) results across different
-    contrasts.
+- **`calculateDE`:** Performs differential gene expression (DGE)
+  analysis.
+- **`plotVolcano`:** Generates volcano plots to visualize DGE
+  statistics.
+- **`runGSEA`:** Uses`fgsea` to perform Gene Set Enrichment Analysis
+  (GSEA) of DGE results for each contrast.
+- **`plotGSEAenrichment`:** Generates enrichment plots for gene sets
+  using the `fgsea::plotEnrichment()` function.
+- **`plotNESlollipop`:** Generates a lollipop plot to visualize GSEA
+  results.
+- **`plotCombinedGSEA`:** Creates a scatter plot for visualization of
+  multiple GSEA results across different contrasts.
 
-When analyzing data, it is often **unclear whether a given variable is
-meaningfully associated with a target score**. To assist in this
-exploratory process, the package also provides **statistical tests and
-visualizations to assess relationships between variables of different
-types** (called the `Variable Association` module):
+When analyzing data, it is often **unclear whether a given phenotypic
+variable is meaningfully associated with a target score**. To assist in
+this exploratory process, the package also provides **statistical tests
+and visualizations to assess relationships between phenotypic variables
+of different types** (called the `Variable Association` module):
 
--   **`VariableAssociation_Scores`**: Assesses the relationship between
-    metadata variables and computed scores using effect size estimation,
-    statistical tests, and visualizations.
--   **`VariableAssociation_GSEA`**: Evaluates how metadata variables
-    influence gene set enrichment results, identifying significant
-    associations with enrichment scores.
+- **`VariableAssociation_Scores`**: Assesses the relationship between
+  metadata variables and computed scores using effect size estimation,
+  statistical tests, and visualizations.
+- **`VariableAssociation_GSEA`**: Evaluates how metadata variables
+  influence gene set enrichment results, identifying significant
+  associations with enrichment scores.
 
-`markeR` also includes some functions for visualising individual genes
-from a gene signature:
+`markeR` also includes some functions for visualising the behaviour of
+individual genes from a gene signature:
 
--   **`IndividualGenes_Violins`:** creates violin plots of gene
-    expression data with jittered points and optional faceting, allowing
-    for visualization of individual gene expression distributions across
-    sample groups.
--   **`CorrelationHeatmap`:** computes and visualizes a correlation
-    heatmap for a given set of genes. Optionally, the heatmap can be
-    generated separately for different conditions based on metadata.
--   **`ExpressionHeatmap`:** generates an expression heatmap with
-    customizable sample annotations for a given set of genes.
--   **`ROCandAUCplot`:** computes ROC curves and AUC values for each
-    gene based on gene expression data and sample metadata. It can
-    generate ROC plots, an AUC heatmap, or both arranged side‐by‐side.
--   **`CohenDH_IndividualGenes`:** computes Cohen’s d for each gene
-    based on gene expression data and sample metadata. The resulting
-    effect sizes are then visualized as a heatmap.
--   **`plotPCA`:** performs PCA on a given dataset and visualizes the
-    results using ggplot2. It allows users to specify genes of interest
-    (to understand if they are sufficient to explain the main variance
-    in the data), customize scaling and centering, and color points
-    based on a metadata variable.
+- **`ExpressionHeatmap`:** Generates an expression heatmap with
+  customizable sample annotations for a given set of genes.
+- **`IndividualGenes_Violins`:** Creates violin plots, with jittered
+  points and optional faceting, for visualization of individual gene
+  expression distributions across sample groups.
+- **`CorrelationHeatmap`:** Generates an expression correlation heatmap
+  for a given set of genes. Optionally, the heatmap can be generated
+  separately for different conditions based on metadata.
+- **`ROCandAUCplot`:** Computes ROC curves and AUC values for each gene
+  based on its expression and sample metadata used for contrast
+  definition. It can plot ROC curves, AUC heatmaps, or both arranged
+  side‐by‐side.
+- **`CohenD_IndividualGenes`:** Computes Cohen’s d for each gene based
+  on its expression and sample metadata used for contrast definition.
+  Results are visualized as a heatmap, with the option to split and
+  display effect sizes separately for different sample groups defined by
+  an additional metadata variable. If no grouping is specified, all
+  samples are treated as a single group.
+- **`plotPCA`:** Performs principal component analysis (PCA) on a given
+  dataset and generates the respective plots using `ggplot2`. It allows
+  users to specify genes of interest (to understand if they explain
+  sufficient variance in the data), customize scaling and centering, and
+  color points based on a metadata variable.
 
 ## Example
 
@@ -154,14 +157,14 @@ functionalities of the markeR package. In particular, it will be used to
 showcase the two primary modules designed for benchmarking gene
 signatures:
 
--   **Score**: calculates expression-based signature scores for each
-    sample, and
--   **Enrichment**: evaluates the over-representation of gene signatures
-    within ranked gene lists.
+- **Score**: calculates expression-based signature scores for each
+  sample, and
+- **Enrichment**: evaluates the over-representation of gene signatures
+  within ranked gene lists.
 
-To keep things simple and illustrative, we use a basic senescence gene
-signature consisting of a small set of well-established
-senescence-associated genes commonly reported in the literature.
+To the illustration of `markeR`’s usage, we use a signature consisting
+of a small set of well-established (i.e., commonly reported in the
+literature) senescence-associated genes.
 
 ``` r
 library(markeR)
@@ -185,18 +188,19 @@ counts_example[1:5,1:5]
 ```
 
 For illustration purposes of different variable types, let’s imagine we
-also had two more variables: one defining the number of days that passed
-between sample preparation and sequencing, and one defining the person
-that processed it. These variables are completely random, and not from
-the initial study.
+also had two additional variables: one indicating the number of days
+between sample preparation and sequencing (`DaysToSequencing`), and
+another identifying the person who processed each sample (`researcher`).
+These variables are hypothetical and not part of the original study
+design.
 
 ``` r
 data(metadata_example)
 
 set.seed("123456")
 
-metadata_example$person <- sample(c("John","Ana","Francisca"),39, replace = T)
-metadata_example$days <- sample(c(1:20),39, replace = T)
+metadata_example$Researcher <- sample(c("John","Ana","Francisca"),39, replace = T)
+metadata_example$DaysToSequencing <- sample(c(1:20),39, replace = T)
  
 head(metadata_example)
 #>       sampleID      DatasetID   CellType     Condition       SenescentType
@@ -206,16 +210,16 @@ head(metadata_example)
 #> 255 SRR1660537 Marthandan2016 Fibroblast Proliferative                none
 #> 256 SRR1660538 Marthandan2016 Fibroblast Proliferative                none
 #> 257 SRR1660539 Marthandan2016 Fibroblast Proliferative                none
-#>                         Treatment    person days
-#> 252 PD72 (Replicative senescence)       Ana    6
-#> 253 PD72 (Replicative senescence)       Ana   18
-#> 254 PD72 (Replicative senescence)      John   19
-#> 255                         young       Ana    2
-#> 256                         young Francisca    9
-#> 257                         young      John   10
+#>                         Treatment Researcher DaysToSequencing
+#> 252 PD72 (Replicative senescence)        Ana                6
+#> 253 PD72 (Replicative senescence)        Ana               18
+#> 254 PD72 (Replicative senescence)       John               19
+#> 255                         young        Ana                2
+#> 256                         young  Francisca                9
+#> 257                         young       John               10
 ```
 
-### Visualise Individual Genes from Senescence Signature
+### Visualise Individual Gene Behaviour
 
 `markeR` provides a suite of functions to explore the expression and
 behavior of individual genes within a signature. These tools are
@@ -232,6 +236,7 @@ customizable color palettes allow for flexible and informative
 visualization.
 
 ``` r
+
 annotation_colors <- list( 
   Condition = c(
     "Senescent"     = "#65AC7C",  # Example color: greenish
@@ -266,6 +271,7 @@ insight. Customization options include layout, point size, colors, and
 axis labeling.
 
 ``` r
+
 senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
   "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
@@ -304,6 +310,7 @@ for clustering, color scaling, and correlation method (e.g., Spearman or
 Pearson).
 
 ``` r
+
 CorrelationHeatmap(data=counts_example, 
                    metadata = metadata_example, 
                    genes=SimpleSenescenceSignature, 
@@ -324,64 +331,68 @@ CorrelationHeatmap(data=counts_example,
 
 #### ROC and AUC
 
-The `ROCandAUCplot` function evaluates the predictive power of
+The `ROCandAUCplot` function evaluates the discriminatory power of
 individual genes in the signature by computing ROC curves and AUC values
 based on a binary classification (e.g., senescent vs. proliferative). If
 the selected grouping variable has more than two levels, the user can
-specify the reference group using the class parameter — for example, if
-I am interested in a variable with levels `A`, `B`, `C` and `D`, setting
-`class = c("A", "B")` will compare group `A/B` versus the remaining
-groups (`C/D`). Additionally, the user can use the `group_var` parameter
-to split and display results separately for each level of another
-metadata variable — allowing for subgroup-specific ROC analyses. Outputs
-include individual ROC plots and an AUC heatmap, with customizable
-layout, color schemes, and clustering options—ideal for identifying
-genes with strong discriminative ability.
+specify the reference group using the class parameter. For example, if a
+variable has levels A, B, C, and D, setting `class = c("A", "B")` will
+group samples from A and B together as the positive class\*, while the
+remaining samples (C and D) are automatically grouped as the negative
+class. Additionally, the user can use the `group_var` parameter to split
+and display results separately for each level of another metadata
+variable — allowing for subgroup-specific ROC analyses. Outputs include
+individual ROC plots and an AUC heatmap, with customisable layout, color
+schemes, and clustering options—ideal for identifying genes with strong
+discriminatory ability. If `group_var`is not specified, the AUC values
+will be displayed in a barplot.
+
+- For ease of interpretation, the directionality of the comparison is
+  adjusted so that the AUC is always \>=0.5, showing only discriminatory
+  power rather than directionality.
 
 ``` r
-senescence_triggers_colors <- c(
-  "none" = "#E57373",  # Soft red   
-  "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
-)
-
+options(error=recover)
 ROCandAUCplot(counts_example, 
               metadata_example, 
               condition_var = "Condition", 
               class = "Senescent", 
               group_var=NULL,
+              title = NULL,
               genes=SimpleSenescenceSignature, 
               plot_type = "all",
-              heatmap_params = list(col = list( "#F9F4AE" ,"#B44141"),
-                                    limits = c(0.5,1),
-                                    cluster_rows=T),
+              auc_params =  list(colors =  "#3B415B",
+                                    limits = c(0.5,1) ),
               roc_params = list(nrow=3,
-                                ncol=3,
-                                colors=senescence_triggers_colors),
+                                ncol=3, 
+                                colors="#3B415B"),
               commomplot_params = list(widths=c(0.5,0.3)))
 ```
 
 <img src="man/figures/README-rocAUCexample-1.png" width="100%" />
 
-#### Cohen’s D
+#### Cohen’s d
 
 The `CohenD_IndividualGenes` function computes the effect size (Cohen’s
-d) for each gene, quantifying the magnitude of expression differences
-between two conditions, given by the variable `condition_var`. If the
-selected condition variable has more than two levels, the `class`
-parameter specifies which condition will be compared to the rest.
-Additionally, the user can use the `group_var` parameter to split and
-display results separately for each level of another metadata variable.
-Results are visualized as a heatmap, with customizable color scales and
-clustering options for easy interpretation of effect sizes across genes.
+d) of the difference in expression of each gene between two conditions,
+given by the variable `condition_var`. If the selected condition
+variable has more than two levels, the `class` parameter specifies which
+condition will be compared to the rest. Additionally, the user can use
+the `group_var` parameter to split and display results separately for
+each level of another metadata variable. Results are visualized as a
+heatmap, with customizable color scales and clustering options for easy
+interpretation of effect sizes across genes. If `group_var` is not
+specified, the function will return a barplot instead.
 
 ``` r
+ 
 CohenD_IndividualGenes(counts_example, 
                        metadata_example, 
                        genes=SimpleSenescenceSignature,
                        condition_var = "Condition", 
                        class = "Senescent", 
                        group_var = NULL,  
-                       heatmap_params = list(col = list( "#F9F4AE" ,"#B44141"),
+                       params = list(colors = "#3B415B",
                                              limits = NULL,
                                              cluster_rows=T))
 ```
@@ -390,18 +401,20 @@ CohenD_IndividualGenes(counts_example,
 
 #### PCA with only genes of interest
 
-The `plotPCA` function performs principal component analysis (PCA) on a
-selected set of genes to explore how they contribute to the variance in
-the dataset, allowing to test if the genes in the signature are
-sufficient to separate the groups of interest (given by the parameter
-`ColorVariable`). This function allows you to focus on specific genes
-(e.g., senescence signature genes) and visualize their impact on a
-specific set of principal components. The PCs parameter enables you to
-specify which principal component pairs to plot, and the results are
-customizable with color annotations, point sizes, and layout options for
-comparing conditions or groups.
+The `plotPCA` function performs a PCA on the expression of a selected
+set of genes to understand if they explain enough variance in the data,
+allowing you to test if the genes in the signature are sufficient to
+separate the group of interest (given by the \`ColourVariable’
+parameter). While previous metrics assess discriminatory power
+quantitatively (e.g., AUC), PCA provides a complementary, unsupervised
+visualization that can help assess whether the gene signature is
+sufficient to visually separate groups of interest. Users can customize
+which principal components to display using the PCs argument and adjust
+layout, point size, and colour annotations for comparison across
+conditions.
 
 ``` r
+
 annotation_colors <- c(  
   "Senescent"     = "#65AC7C",  # Example color: greenish
   "Proliferative" = "#5F90D4"  # Example color: blueish 
@@ -436,13 +449,13 @@ respective data frame of scores, allowing comparison between methods.
 The function allows users to select from three different scoring
 methods:
 
--   **ssGSEA**: Computes an enrichment score for each signature in each
-    sample.
--   **logmedian**: Calculates the score as the sum of the normalized
-    (log2-median-centered) expression values of the signature genes,
-    divided by the number of genes.
--   **ranking**: Determines the score by ranking the expression of
-    signature genes and normalizing the result.
+- **ssGSEA**: Computes an enrichment score for each signature in each
+  sample.
+- **logmedian**: Calculates the score as the sum of the normalized
+  (log2-median-centered) expression values of the signature genes,
+  divided by the number of genes.
+- **ranking**: Determines the score by ranking the expression of
+  signature genes and normalizing the result.
 
 These methods are very similar and, when applied to a robust gene
 signature, will yield similar results across all three methods.
@@ -457,29 +470,37 @@ allowing the user to select the most appropriate one for their analysis.
 The `PlotScores` function can be used to compute and visualize the
 scores in various ways, depending on the method and variable chosen.
 
--   If `method = "all"` and the variable is categorical, it will return
-    a heatmap of Cohen’s d or F statistics and a volcano plot showing
-    contrasts between all groups of that variable.
--   If `method = "all"` and the variable is numeric, a heatmap of
-    Cohen’s F and a volcano plot will be produced.
--   If `method != "all"` and the variable is categorical, it will
-    generate a violin plot for each signature.
--   If `method != "all"` and the variable is `NULL`, a density plot of
-    the score distribution will be displayed.
--   If `method != "all"` and the variable is numeric, a scatter plot
-    will be created to show the relationship between the scores and the
-    numeric variable.
+- If `method = "all"` and the variable is categorical, it will return a
+  heatmap of Cohen’s d or F statistics and a volcano plot showing
+  contrasts between all groups of that variable.
+- If `method = "all"` and the variable is numeric, a heatmap of Cohen’s
+  F and a volcano plot will be produced.
+- If `method != "all"` and the variable is categorical, it will generate
+  a violin plot for each signature.
+- If `method != "all"` and the variable is `NULL`, a density plot of the
+  score distribution will be displayed.
+- If `method != "all"` and the variable is numeric, a scatter plot will
+  be created to show the relationship between the scores and the numeric
+  variable.
 
 #### logmedian method
 
 The following example uses the **`logmedian`** method to calculate a
-gene signature score. This method computes a score for each sample by
-normalizing the expression values of the signature genes, summing them
-up, and then dividing by the number of genes in the signature. The
-result is a score that represents the overall expression of the
-signature genes in that sample. The user can chose to calculate the gene
-signature score for each sample based on one or more predefined gene
-sets (signatures).
+gene signature score. This method first applies a log2 transformation to
+the expression values, and then centers them by subtracting the median
+expression (across all samples) for each genes. The score for each
+sample is then computed by summing the normalised expression values of
+the signature genes, and dividing by the number of genes in the
+signature. This normalization makes each gene’s expression relative to
+its typical behavior across the dataset, allowing for meaningful
+comparisons between genes with different expression scales. By using
+log2 median-centering, the method ensures that both highly and lowly
+expressed genes contribute comparably to the score, as long as their
+variances are similar. This normalization emphasizes relative changes in
+expression rather than absolute values, allowing the score to reflect
+the coordinated behavior of the genes in a signature. Users can
+calculate the gene signature score for each sample based on one or more
+predefined gene sets (signatures).
 
 Here’s an example where we calculate the signature score using the
 “logmedian” method:
@@ -499,13 +520,13 @@ head(df_Scores$Senescence)
 #> 4 SRR1660537 -0.2198753 Marthandan2016 Fibroblast Proliferative
 #> 5 SRR1660538 -0.2672930 Marthandan2016 Fibroblast Proliferative
 #> 6 SRR1660539 -0.2623188 Marthandan2016 Fibroblast Proliferative
-#>         SenescentType                     Treatment    person days
-#> 1 Telomere shortening PD72 (Replicative senescence)       Ana    6
-#> 2 Telomere shortening PD72 (Replicative senescence)       Ana   18
-#> 3 Telomere shortening PD72 (Replicative senescence)      John   19
-#> 4                none                         young       Ana    2
-#> 5                none                         young Francisca    9
-#> 6                none                         young      John   10
+#>         SenescentType                     Treatment Researcher DaysToSequencing
+#> 1 Telomere shortening PD72 (Replicative senescence)        Ana                6
+#> 2 Telomere shortening PD72 (Replicative senescence)        Ana               18
+#> 3 Telomere shortening PD72 (Replicative senescence)       John               19
+#> 4                none                         young        Ana                2
+#> 5                none                         young  Francisca                9
+#> 6                none                         young       John               10
 ```
 
 The user can also chose to directly plot the scores.
@@ -515,10 +536,13 @@ Effect sizes can be computed using the `compute_cohen` parameter
 d is calculated by default. If there are more than two levels, Cohen’s f
 is used unless a specific pairwise comparison is defined via
 `cond_cohend`, in which case Cohen’s d is reported for that comparison.
-If `pvalcalc==TRUE` (default = `F`), then the associated p-value (not
-corrected for multiple testing) is reported.
+If `pvalcalc = TRUE` (default = `FALSE`), an associated p-value (not
+corrected for multiple testing) is also reported. The p-value is derived
+from a two-sample t-test for two-group comparisons or numeric variables,
+or from an ANOVA for multi-group comparisons.
 
 ``` r
+
 senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
   "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
@@ -557,36 +581,37 @@ of gene regulation (either up or down) is explicitly accounted for,
 offering more nuanced insights into gene expression changes in different
 conditions.
 
--   **Unidirectional gene sets**: These are gene sets where all genes
-    are assumed to have the same expected direction of regulation
-    (either all upregulated or all downregulated). To provide a
-    unidirectional signature, the user would submit a named list where
-    each element is a vector of gene names representing the gene set.
--   **Bidirectional gene sets**: In a bidirectional signature, genes may
-    be expected to be either upregulated or downregulated. For this, the
-    user provides a named list where each element is a data frame with
-    two columns:
-    1.  The first column contains the gene names.
-    2.  The second column indicates the expected direction of enrichment
-        for each gene (with 1 representing upregulated genes and -1
-        representing downregulated genes).
+- **Unidirectional gene sets**: These are sets of genes assumed to have
+  the same expected direction of regulation (either all upregulated or
+  all downregulated). To provide a unidirectional signature, the user
+  would submit a named list where each element is a vector of gene names
+  representing the gene set.
+- **Bidirectional gene sets**: In a bidirectional signature, genes may
+  be expected to be either upregulated or downregulated. For this, the
+  user provides a named list where each element is a data frame with two
+  columns:
+  1.  The first column contains the gene names.
+  2.  The second column indicates the expected direction of enrichment
+      for each gene (with 1 representing upregulated genes and -1
+      representing downregulated genes).
 
 For example, if the user provides a bidirectional signature and does not
-specify the direction of regulation, the results may differ
-significantly, given that, without specifying the direction, both
-upregulated and downregulated genes are treated as if they all
-contribute equally to the overall score. In the case of the current
-example, the senescent samples show a lower score than the proliferative
-ones, which could dramatically affect the interpretation of the results.
-If specifying the direction, the senescent samples show a higher score
-than proliferative ones.
+specify the direction of regulation, they will likely get a result that
+differs from when each gene’s putative direction of regulation is made
+explicit. Without specifying the direction, both upregulated and
+downregulated genes are treated as if their contribution to the overall
+score has the same sign. In the current example, senescent samples show
+a lower score than proliferative ones, which could dramatically affect
+their interpretation. If the direction is specified, senescent samples
+show an expected higher score than proliferative ones.
 
-Therefore, it is **strongly advised** that, whenever possible, the user
-state the direction of the genes in the signature (if that information
-is known). This helps ensure more accurate and meaningful
+Therefore, it is **strongly advised** that, whenever possible (i.e., if
+known), the user states the putative regulation “sign” of the genes in
+the signature. This helps ensure more accurate and meaningful
 interpretations of the data.
 
 ``` r
+
 SimpleSenescenceSignature_bidirectional <- data.frame(gene=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2", "LMNB1", "MKI67" ),
                                                       enrichment=c(1,1,1,1,1,-1,-1))
 
@@ -639,7 +664,7 @@ PlotScores(data = counts_example,
            metadata = metadata_example,
            gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
                             Senescence = SimpleSenescenceSignature),
-           Variable = "days",               
+           Variable = "DaysToSequencing",               
            method = "logmedian",            
            ColorValues = "#3B415B",             
            ConnectGroups = FALSE,          
@@ -659,15 +684,13 @@ PlotScores(data = counts_example,
 
 For users interested in viewing the overall distribution of scores
 across gene signatures, the `PlotScores` function can be used without
-specifying the `GroupingVariable` parameter. In this case, the function
-will automatically generate a grid of density plots, with each plot
+specifying the `GroupingVariable` parameter, i.e, without grouping
+scores by any metadata variable. In this case, the function will
+automatically generate a grid of density plots, with each plot
 representing the distribution of scores for a specific gene signature.
-This provides a quick way to visualize how each gene signature is
-distributed across all samples, allowing users to assess the overall
-spread of the scores without grouping them by any metadata variable.
 
 ``` r
- 
+ options(error=recover)
 PlotScores(data = counts_example, 
            metadata = metadata_example, 
            gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
@@ -680,27 +703,24 @@ PlotScores(data = counts_example,
            limits = NULL,  
            title="Marthandan et al. 2016",
            labsize=9, 
-           titlesize = 12)  
+           titlesize = 11)  
 ```
 
 <img src="man/figures/README-plotscores_density-1.png" width="80%" />
 
 #### ssGSEA method
 
-Likewise, the same approach can be applied for the **ssGSEA** method for
-score calculation, both for unidirectional and bidirectional signatures.
-The following example demonstrates how to calculate and visualize the
-scores using the ssGSEA method for both unidirectional and bidirectional
-signatures. The ssGSEA (single-sample Gene Set Enrichment Analysis)
-method (Barbie et al. (2009)) computes an enrichment score for each gene
-signature in each sample. It uses an adaptation of the `gsva()` function
-from the GSVA package to calculate these scores, representing the
-absolute enrichment of each gene set in individual samples. This method
-is useful for evaluating gene set enrichment when working with
+The same approach can be applied for **ssGSEA** (single-sample Gene Set
+Enrichment Analysis; Barbie et al. (2009)) for score calculation and
+visualization, both for unidirectional and bidirectional signatures.
+ssGSEA computes an enrichment score for each gene signature in each
+sample using an adaptation of the `gsva()` function from the `GSVA`
+package. This method is useful for evaluating gene set enrichment in
 individual samples rather than groups, as described in the sections
 below.
 
 ``` r
+
 senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
   "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
@@ -737,9 +757,7 @@ PlotScores(data = counts_example,
 
 The **ranking** method computes gene signature scores for each sample by
 ranking the expression of signature genes in the dataset and normalizing
-the score based on the total number of genes. This method evaluates the
-relative expression of genes within each signature, providing a score
-based on the rank of gene expression in each sample.
+the score based on the total number of genes.
 
 The following example demonstrates the use of the “ranking” method for
 both unidirectional and bidirectional signatures:
@@ -786,8 +804,9 @@ set`method = "all"` to generate a summary heatmap and volcano-like plot.
 The function will return one heatmap per gene set, with rows
 corresponding to all possible combinations of values in the
 `GroupingVariable`. In parenthesis is represented the p-value, adjusted
-using the `BH` method, and corrected by contrast and signature. It will
-also return a volcano-like plot (Cohen’s d effect sizes vs
+using the `BH` method (i.e., the Benjamini–Hochberg false discovery rate
+procedure), across all combinations of contrasts and gene signatures. It
+will also return a volcano-like plot (Cohen’s d effect sizes vs
 -log10(adjusted p-values)), where each dot represents a method-signature
 pair, faceted by contrast. The dashed lines represent user-defined
 thresholds for significance and effect size.
@@ -796,18 +815,17 @@ The `mode` parameter controls how contrasts are generated for
 categorical variables, allowing users to adjust the complexity of the
 analysis:
 
--   **“simple”**: Performs the minimal number of contrasts, typically
-    comparing each category to a baseline (e.g., for a factor with
-    levels A, B, C and D, it may generate A - B, A - C, A - D, B - C,
-    B - D, C - D).
--   **“medium”**: Expands on the simple mode by including additional
-    pairwise comparisons between groups (e.g., A - (B + C + D), B - (A +
-    C + D), etc).
--   **“extensive”**: Conducts all possible comparisons, including
-    complex interactions if applicable, providing the most comprehensive
-    analysis. (e.g., (A + B) - (C + D)).
+- **“simple”**: Performs the minimal number of pairwise comparisons
+  between group levels (e.g., for a factor with levels A, B, C and D, it
+  generates A - B, A - C, A - D, B - C, B - D, C - D).
+- **“medium”**: Includes comparisons between one group and the union of
+  other groups (e.g., A - (B + C + D); B - (A + C + D)), allowing for
+  broader contrasts beyond simple pairwise comparisons.
+- **“extensive”**: Allows for all possible algebraic combinations of
+  group levels (e.g., (A + B) - (C + D)).
 
 ``` r
+
 Overall_Scores <- PlotScores(data = counts_example, 
                              metadata = metadata_example,  
                              gene_sets=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
@@ -846,8 +864,8 @@ Overall_Scores$volcano
 #### Classification Potential of Gene Signatures
 
 The `ROC_Scores` and `AUC_Scores` functions allow users to evaluate the
-classification potential of gene set scores based on ROC curves and AUC
-values, respectively. These functions help assess how well a given score
+classification potential of gene set scores based on ROC curves and
+their AUC values. These functions help to assess how well a given score
 can differentiate between conditions, based on predefined contrasts.
 Besides `method="all"`, these functions can also be used for each method
 individually.
@@ -876,9 +894,8 @@ differences.
 
 <img src="man/figures/README-roc_scores-1.png" width="70%" />
 
-The `AUC_Scores` function generates heatmaps for each gene signature,
-with methods as columns and contrasts as rows, summarizing AUC values in
-a heatmap format.
+The `AUC_Scores` function generates heatmaps summarizing AUC values for
+each gene signature, with methods as columns and contrasts as rows.
 
 ``` r
 AUC_Scores(data = counts_example, 
@@ -899,22 +916,24 @@ AUC_Scores(data = counts_example,
 
 <img src="man/figures/README-auc_scores-1.png" width="80%" />
 
-#### False Discovery Rate (FDR) Calculations
+#### False Positive Rate (FPR) Calculations
 
 The user can assess the significance of gene signature scores by
-comparing observed effect sizes against those originated by random
-signatures. For each original gene signature, the function calculates
-the observed Cohen’s d (and p‑value) using (`GroupingVariable`). It then
-generates a number of simulated signatures (`number_of_sims`) by
-randomly sampling genes from a user provided gene list (`gene_list`) and
+comparing observed effect sizes against a distribution of those
+originated by random signatures with the same number of genes. For each
+original gene signature, the function calculates the observed Cohen’s d
+(and p‑value) using (`GroupingVariable`). It then generates a number of
+simulated signatures (`number_of_sims`) by randomly sampling the same
+number of genes from a user provided gene list (`gene_list`) and
 computes their Cohen’s d values. The simulation results are visualised
-as violin plots that display the distribution of Cohen’s d values for
-each method, overlaid with the observed values of the original
-signatures, and a 95th percentile threshold. Significance is indicated
-by distinct point shapes based on the associated p‑value.
+as violin plots of the distribution of Cohen’s d values for each method,
+overlaid with the observed values of the original signatures, and a 95th
+percentile threshold. Significance is indicated by distinct point shapes
+based on the associated p‑value.
 
 ``` r
-FDR_Simulation(data = counts_example,
+
+FPR_Simulation(data = counts_example,
                metadata = metadata_example,
                original_signatures = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
                                           Senescence  = SimpleSenescenceSignature),
@@ -934,83 +953,75 @@ FDR_Simulation(data = counts_example,
 
 <img src="man/figures/README-FDRSim-1.png" width="80%" />
 
-#### Score association with Chosen Variables
+#### Score association with Chosen Phenotypic Variables
 
-When analyzing data, it is often **unclear whether a given variable is
-meaningfully associated with a target score**. To assist in this
-exploratory process, the package provides **statistical tests and
-visualizations to assess relationships between variables of different
-types**.
+`markeR` provides statistical tests and visualizations to assess
+relationships between phenotypic variables of different types and gene
+signature scores.
 
--   **Overall effects:** Linear models estimate effect sizes (Cohen’s f)
-    for numeric and categorical variables.
--   **Pairwise contrasts:** Categorical variables are compared across
-    all possible contrasts using Cohen’s d with adjusted p-values. If
-    categorical variables have more than 10 unique values, a warning is
-    issued to ensure meaningful interpretation.
--   **Visual insights:** Lollipop plots highlight effect sizes, contrast
-    plots compare groups, and distribution plots reveal score patterns.
+- Linear models estimate effect sizes (Cohen’s f on signature scores)
+  associated with numeric and categorical variables.
+- Categorical variables are compared across all possible pairwise
+  contrasts using Cohen’s d with adjusted p-values.
+- Lollipop plots highlight effect sizes, contrast plots compare groups,
+  and distribution plots reveal score patterns.
 
 The function returns a structured list containing:
 
--   Overall: Effect sizes and p-values for each variable.
--   Contrasts: Pairwise comparisons for categorical variables.
--   plot: A combined visualization summarizing all results.
--   plot\_contrasts, plot\_overall, plot\_distributions: Individual
-    plots for further exploration.
+- Overall: Effect sizes and p-values for each contrasted phenotypic
+  variable.
+- Contrasts: Cohen’s d and adjusted p-values for contrasts between
+  levels of categorical variables, with the resolution of contrasts
+  determined by the `mode` parameter.
+- plot: A combined visualization with three main panels: (1) lollipop
+  plots of Cohen’s f for each variable of interest, (2) distribution
+  plots of the score by variable (density or scatter depending on
+  variable type), and (3, if applicable) lollipop plots of Cohen’s d for
+  contrasts in categorical variables.
+- plot_contrasts, plot_overall, plot_distributions: Individual panels
+  from the combined plot — lollipop plots of Cohen’s f (colored by
+  p-value), Cohen’s d for contrasts of non-numerical variables (colored
+  by BH-adjusted p-value), and density or scatter plots of the score by
+  variable type, respectively.
 
 This approach allows users to quickly **identify potential relationships
-between scores and predictor variables**, guiding further analysis.
+between scores and phenotypic variables**, guiding further analysis.
 
-This approach requires that the user is analysing a specific method for
+This approach requires that the user is exploring a specific method for
 score calculation and gene signature. For illustration purposes, we will
-go with the `logmedian` method and compare the two signatures for
-Senescence, using the `mode=extensive`.
+herein go with the `logmedian` method the Bidirectional Senescence
+Signature, using the `mode=extensive`.
 
-``` r
-options(error=recover)
-results_scoreassoc_bidirect <- Score_VariableAssociation(data = counts_example, 
-                          metadata = metadata_example, 
-                          cols = c("Condition","person","days"), 
-                          method="logmedian", 
-                          gene_set = list(Senescence = SimpleSenescenceSignature ),
-                          mode="extensive",
-                          nonsignif_color = "white", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05,
-                          widthlabels=30, labsize=10, title=NULL, titlesize=14, pointSize=5, discrete_colors=NULL,
-                          continuous_color = "#8C6D03", color_palette = "Set2")
-```
+We will use the made-up variables created at the beginning of the script
+to represent two additional types of variables: one categorical with
+more than two levels, and one numerical. Specifically, “Researcher”
+represents the person who processed the samples, and “DaysToSequencing”
+indicates the number of days between sample preparation and sequencing.
+Although these variables are synthetic, they mimic potential technical
+covariates that could introduce unwanted variation into the data. If
+they show an association with the senescence score, this could indicate
+a batch effect, where technical variation confounds the biological
+signal—requiring more careful interpretation of the results.
 
-<img src="man/figures/README-variableassoc_score_bidirectsen-1.png" width="100%" />
-
-``` r
-results_scoreassoc_bidirect$Overall
-#>    Variable    Cohen_f      P_Value
-#> 1 Condition 1.06180763 1.506777e-07
-#> 2    person 0.12648382 7.514973e-01
-#> 3      days 0.01324252 9.362331e-01
-results_scoreassoc_bidirect$Contrasts
-#>    Variable                  Contrast          Group1           Group2
-#> 1 Condition Proliferative - Senescent   Proliferative        Senescent
-#> 2    person                Ana - John             Ana             John
-#> 3    person           Ana - Francisca             Ana        Francisca
-#> 4    person          Francisca - John       Francisca             John
-#> 5    person  Ana - (Francisca + John)             Ana Francisca + John
-#> 6    person  (Ana + Francisca) - John Ana + Francisca             John
-#> 7    person  (Ana + John) - Francisca      Ana + John        Francisca
-#>        CohenD       PValue         padj
-#> 1  2.07459395 1.506777e-07 1.054744e-06
-#> 2  0.04500138 9.210884e-01 9.210884e-01
-#> 3 -0.23159722 5.182369e-01 8.332768e-01
-#> 4  0.26842164 5.641611e-01 8.332768e-01
-#> 5 -0.14831958 6.487018e-01 8.332768e-01
-#> 6  0.15396594 7.142373e-01 8.332768e-01
-#> 7 -0.25123032 4.501287e-01 8.332768e-01
-```
+<!-- ```{r variableassoc_score_bidirectsen, fig.width=10, fig.height=7, out.width="100%", warning=FALSE, message=FALSE} -->
+<!-- options(error=recover) -->
+<!-- results_scoreassoc_bidirect <- Score_VariableAssociation(data = counts_example,  -->
+<!--                           metadata = metadata_example,  -->
+<!--                           cols = c("Condition","person","days"),  -->
+<!--                           method="logmedian",  -->
+<!--                           gene_set = list(Senescence = SimpleSenescenceSignature ), -->
+<!--                           mode="extensive", -->
+<!--                           nonsignif_color = "white", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, -->
+<!--                           widthlabels=30, labsize=10, title=NULL, titlesize=14, pointSize=5, discrete_colors=NULL, -->
+<!--                           continuous_color = "#8C6D03", color_palette = "Set2") -->
+<!-- results_scoreassoc_bidirect$Overall -->
+<!-- results_scoreassoc_bidirect$Contrasts -->
+<!-- ``` -->
 
 ``` r
 results_scoreassoc_bidirect <- Score_VariableAssociation(data = counts_example, 
                           metadata = metadata_example, 
-                          cols = c("Condition","person","days"), 
+                          cols = c("Condition","Researcher","DaysToSequencing"), 
                           method="logmedian", 
                           gene_set = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional),
                           mode="extensive",
@@ -1022,20 +1033,21 @@ results_scoreassoc_bidirect <- Score_VariableAssociation(data = counts_example,
 <img src="man/figures/README-variableassoc_score_sen-1.png" width="100%" />
 
 ``` r
+
 results_scoreassoc_bidirect$Overall
-#>    Variable    Cohen_f      P_Value
-#> 1 Condition 1.52736028 3.278479e-11
-#> 2    person 0.17329879 5.870614e-01
-#> 3      days 0.04759144 7.738244e-01
+#>           Variable    Cohen_f      P_Value
+#> 1        Condition 1.52736028 3.278479e-11
+#> 2       Researcher 0.17329879 5.870614e-01
+#> 3 DaysToSequencing 0.04759144 7.738244e-01
 results_scoreassoc_bidirect$Contrasts
-#>    Variable                  Contrast          Group1           Group2
-#> 1 Condition Proliferative - Senescent   Proliferative        Senescent
-#> 2    person                Ana - John             Ana             John
-#> 3    person           Ana - Francisca             Ana        Francisca
-#> 4    person          Francisca - John       Francisca             John
-#> 5    person  Ana - (Francisca + John)             Ana Francisca + John
-#> 6    person  (Ana + Francisca) - John Ana + Francisca             John
-#> 7    person  (Ana + John) - Francisca      Ana + John        Francisca
+#>     Variable                  Contrast          Group1           Group2
+#> 1  Condition Proliferative - Senescent   Proliferative        Senescent
+#> 2 Researcher                Ana - John             Ana             John
+#> 3 Researcher           Ana - Francisca             Ana        Francisca
+#> 4 Researcher          Francisca - John       Francisca             John
+#> 5 Researcher  Ana - (Francisca + John)             Ana Francisca + John
+#> 6 Researcher  (Ana + Francisca) - John Ana + Francisca             John
+#> 7 Researcher  (Ana + John) - Francisca      Ana + John        Francisca
 #>        CohenD       PValue         padj
 #> 1 -2.98420572 3.278479e-11 2.294935e-10
 #> 2  0.19639043 6.661502e-01 8.626076e-01
@@ -1054,35 +1066,29 @@ The `calculateDE` function in the `markeR` package leverages the `limma`
 framework to compute differential gene expression statistics from raw
 count data. This function is highly flexible and supports several modes
 of operation depending on the user’s experimental design. In the
-examples below, we illustrate three common scenarios:
+examples below, we illustrate two common scenarios:
 
--   **Automatic Design Matrix with Contrasts:** In the first example,
-    the design matrix is built automatically from the metadata using a
-    specified variable (here, `"Condition"`). A contrast (in this case,
-    "`Senescent - Proliferative"`) is then applied to extract the
-    differential expression statistics between the two conditions. This
-    is ideal when you have a simple design and want to quickly compute
-    contrasts without manually creating the design matrix.
--   **Custom Model Formula with Coefficient Extraction:** The second
-    example demonstrates how to supply a custom model formula (e.g.,
-    `~Condition`) directly to the function. This allows you to have fine
-    control over the design, and you can specify which coefficients you
-    want to extract from the fitted model. This approach is particularly
-    useful for more complex designs or when you wish to extract multiple
-    statistics from a single model. You can leave the parameter
-    `"Contrast"` as `NULL`, and the function will return all
-    coefficients (i.e. not performing any contrasts).
--   **Providing an Externally Constructed Design Matrix:** In the third
-    example, you create the design matrix externally
-    using`model.matrix()` (for instance, with no intercept using
-    `~0 + Condition`). By supplying this design matrix directly to
-    `calculateDE`, you have full control over its construction. A
-    contrast is then applied to obtain the desired differential
-    expression results. This method is recommended when you require
-    complete customization of the design matrix or when you have
-    pre-processed your design externally. You can leave the parameter
-    `"Contrast"` as `NULL`, and the function will return all possible
-    coefficients based on your design matrix alone.
+- **Automatic Design Matrix with Contrasts:** In the first example, the
+  design matrix is built automatically from the metadata using a
+  specified variable (here, `"Condition"`). The user must explicitly
+  define the comparisons of interest based on the levels of this
+  variable (e.g., `Senescent - Proliferative`). Internally, this
+  approach fits a linear model without an intercept, enabling the user
+  to define contrasts between the levels. This is ideal for simpler
+  experimental designs, where quick comparison between predefined groups
+  is desired without manually specifying the full model matrix.
+- **Providing an Externally Constructed Design Matrix:** In the second
+  example, the user manually creates the design matrix (e.g., using
+  `model.matrix(~ 0 + Condition)` for a no-intercept model) and provides
+  it directly to `calculateDE`. This gives full control over how the
+  design is specified, including complex experimental setups or custom
+  encodings. Multiple contrasts can be defined later, based on this
+  matrix, to extract specific comparisons of interest, using the
+  `Contrast` parameter. If this parameter is left as `NULL`, the
+  function will return results for all conditions (i.e. columns) defined
+  in the design matrix. This approach is recommended when the user has a
+  complex design or has already constructed the design matrix as part of
+  a broader analysis pipeline.
 
 Below are the corresponding code snippets demonstrating each scenario,
 by answering the same question: **What are the genes differentially
@@ -1095,19 +1101,7 @@ DEGs <- calculateDE(data = counts_example,
                     metadata = metadata_example,
                     variables = "Condition",
                     contrasts = c("Senescent - Proliferative"))
-DEGs$`Senescent - Proliferative`[1:5,]
-#> NULL
-
-# Example 2: Use a custom model formula.
-# Here, a model formula is provided (as a string that will be converted to a formula).
-# Specific coefficients are extracted.
-# because we are using one of the conditions as the baseline, the other one will give the difference between the two
-DEGs2 <- calculateDE(data = counts_example,
-                     metadata = metadata_example,
-                     variables = NULL,
-                     lmexpression = "~Condition",
-                     contrasts = c("Senescent")) 
-DEGs2$`Senescent`[1:5,]
+DEGs$`Senescent-Proliferative`[1:5,]
 #>            logFC  AveExpr         t      P.Value    adj.P.Val        B
 #> CCND2   3.816674 4.406721 12.393130 2.747202e-15 2.435712e-12 24.70982
 #> MKI67  -3.581174 6.605339 -9.197510 2.007135e-11 4.992097e-10 15.96203
@@ -1115,17 +1109,22 @@ DEGs2$`Senescent`[1:5,]
 #> KIF20A -3.365481 5.934893 -9.728709 4.176398e-12 1.844336e-10 17.51106
 #> CDC20  -3.304602 6.104079 -9.801724 3.375212e-12 1.657492e-10 17.72110
 
-# Example 3: Supply a custom design matrix directly.
+# Example 2: Supply a custom design matrix directly.
 # Here, the design matrix is created externally (using no intercept, for instance).
 design <- model.matrix(~0 + Condition, data = metadata_example)
 colnames(design) <- c("Proliferative","Senescent")
-DEGs3 <- calculateDE(data = counts_example,
+DEGs2 <- calculateDE(data = counts_example,
                      metadata = NULL,
                      variables = NULL,
                      modelmat = design,
                      contrasts = c("Senescent - Proliferative"))
-DEGs3$`Senescent - Proliferative`[1:5,]
-#> NULL
+DEGs2$`Senescent-Proliferative`[1:5,]
+#>            logFC  AveExpr         t      P.Value    adj.P.Val        B
+#> CCND2   3.816674 4.406721 12.393130 2.747202e-15 2.435712e-12 24.70982
+#> MKI67  -3.581174 6.605339 -9.197510 2.007135e-11 4.992097e-10 15.96203
+#> PTCHD4  3.398914 3.556007 10.740867 2.318137e-13 3.002118e-11 20.35906
+#> KIF20A -3.365481 5.934893 -9.728709 4.176398e-12 1.844336e-10 17.51106
+#> CDC20  -3.304602 6.104079 -9.801724 3.375212e-12 1.657492e-10 17.72110
 ```
 
 After running your differential expression analysis (for example, using
@@ -1133,26 +1132,35 @@ the `calculateDE` function), you can visualize your results with the
 `plotVolcano` function. This function provides a flexible interface for
 exploring your data by allowing you to:
 
--   **Plot Differentially Expressed Genes:**  
-    Display a volcano plot with your chosen statistics (e.g., log
-    fold-change on the x-axis and –log₁₀ adjusted p-value on the
-    y-axis).
--   **Color Interesting Genes:**  
-    Highlight genes that pass user-specified thresholds by adjusting
-    `threshold_y` and/or `threshold_x`.
--   **Annotate Top and Bottom N Genes:**  
-    Optionally, label the top (and bottom) N genes based on the chosen
-    statistic to quickly identify the most significant genes.
--   **Highlight Gene Signatures:** If the user provide a list of gene
-    signatures using the `genes` argument, the function can highlight
-    these genes in the plot. The user can also specify distinct colors
-    for upregulated and downregulated if their direction is known, or a
-    color for genes that don’t have a defined direction.
+- **Plot Differential Gene Expression Statistics:**  
+  Display a volcano plot with your chosen statistics (e.g., log
+  fold-change on the x-axis and –log₁₀ adjusted p-value on the y-axis).
+- **Color Interesting Genes:**  
+  Highlight genes that pass user-specified thresholds by adjusting
+  `threshold_y` and `threshold_x`.
+- **Annotate Top and Bottom N Genes:**  
+  Optionally, label the top (and bottom) N genes based on the chosen
+  statistic to quickly identify the most significant genes.
+- **Highlight Gene Signatures:** If the user provides a list of gene
+  signatures using the `genes` argument, the function can highlight
+  these genes in the plot. The user can also specify distinct colors for
+  putativelyupregulated and downregulated if their direction is known,
+  or a color for genes that do not have a putative direction.
 
-Below is an example usage that simply plots the differential expression
-results (with default settings). In this example, no thresholds or gene
-signatures are specified, so the function produces a basic volcano plot
-based on the `DEResultsList`.
+Below is an example usage of `plotVolcano` that visualizes differential
+expression results from a `DEResultsList`. The first plot shows the
+default behavior, generating a basic volcano plot without thresholds or
+gene highlights. Subsequent examples demonstrate how to customize the
+plot:
+
+- Adding significance thresholds to highlight genes of interest,
+- Annotating the top and bottom N genes by effect size,
+- And using gene signatures to color genes across multiple plots
+  arranged by contrast and signature.
+
+These examples illustrate how users can customise the output plot to
+highlight biologically meaningful patterns or focus on specific gene
+sets.
 
 ``` r
 # Plot Differentially Expressed Genes:
@@ -1167,6 +1175,7 @@ plotVolcano(DEGs, genes = NULL, N = NULL,
 <img src="man/figures/README-volcanos_DEGs-1.png" width="40%" />
 
 ``` r
+
 # Color Interesting Genes:
 plotVolcano(DEGs, genes = NULL, N = NULL,
             x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
@@ -1179,6 +1188,7 @@ plotVolcano(DEGs, genes = NULL, N = NULL,
 <img src="man/figures/README-volcanos_DEGs-2.png" width="40%" />
 
 ``` r
+
 # Annotate Top and Bottom N Genes:
 plotVolcano(DEGs, genes = NULL, N = 5,
             x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
@@ -1191,6 +1201,7 @@ plotVolcano(DEGs, genes = NULL, N = 5,
 <img src="man/figures/README-volcanos_DEGs-3.png" width="40%" />
 
 ``` r
+
 # Change order: signatures in columns, contrast in rows
 plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
                                Senescence  = SimpleSenescenceSignature), 
@@ -1206,75 +1217,82 @@ plotVolcano(DEGs, genes = list(Senescence_Bidirectional = SimpleSenescenceSignat
 
 ##### Note on Continuous Variables
 
-If the user wants to analyze continuous variables (e.g., time points or
-dosage), they should use the `lmexpression` argument, instead of the
-`variables` argument. By using the `variables`argument:
+If the user wants to analyse continuous variables (e.g., time or
+dosage), they must provide a custom design matrix via the `modelmat`
+argument, instead of using the `variables` argument. This is because the
+`variables` argument is intended to be used for categorical variables
+only: internally, when using `variables` to specify a phenotypic
+variable of interest, the function constructs a design matrix without an
+intercept and treats each level of the variable as a discrete group.
+This is appropriate for defining explicit contrasts between categorical
+levels but is not suitable for continuous variables, where such
+discretization would distort the relationship.
 
--   It creates a **no-intercept model**, where each coefficient
-    represents the mean expression at each unique time point.
--   This structure is intended for categorical variables and requires
-    contrasts, making it unsuitable for continuous variables.
+For continuous variables, the user should instead build a design matrix
+manually (e.g., using `model.matrix(~ variable)`), ensuring that the
+variable of interest is numeric and has a corresponding column in the
+matrix with the same name. The `calculateDE()` function will then use
+this matrix directly for linear modelling.
 
-``` r
-# First example, using the variables argument.
-# NOT suitable for continuous variables
-DEGs_continuous <- calculateDE(data = counts_example,
-                               metadata = metadata_example,
-                               variables = "days")
-DEGs_continuous$days[1:3,]
-#>            logFC  AveExpr        t      P.Value    adj.P.Val        B
-#> FN1    1.0251594 13.21879 12.06817 1.182743e-15 1.802499e-14 25.49668
-#> EEF1A1 0.9953702 12.85091 12.02784 1.326991e-15 1.802499e-14 25.38357
-#> GAPDH  0.9711606 12.53188 12.03413 1.303370e-15 1.802499e-14 25.40122
-```
-
-By using the `lmexpression`, the user can treat continuous variables as
-such, and get meaningful gene expression changes with their variables of
-interest. By using the `lmexpression`argument: - It includes
-automatically an `intercept`, representing the baseline expression
-(i.e., the expected expression when days = 0). - The `days` coefficient
-reflects how much expression changes per unit increase in days.
+The interpretation of the differential expression results remains
+consistent: the statistics reflect always the expected change in
+expression associated with a 1-unit increase in the variable (e.g., one
+day, one unit of dosage, “Senescent” to “Proliferative”, etc).
 
 ``` r
-DEGs_continuous2 <- calculateDE(data = counts_example,
-                                metadata = metadata_example,
-                                lmexpression = "~days")
-DEGs_continuous2$`(Intercept)`[1:3,]
-#>           logFC  AveExpr         t      P.Value    adj.P.Val         B
-#> FN1    13.19342 13.21879  76.83545 9.957323e-45 3.444421e-44  92.16135
-#> EEF1A1 12.88033 12.85091 169.44074 2.735660e-58 1.885454e-56 120.69416
-#> GAPDH  12.53905 12.53188 103.11616 9.157787e-50 6.880877e-49 103.27738
-DEGs_continuous2$days[1:3,]
+ 
+design <- model.matrix(~1 + DaysToSequencing, data = metadata_example)
+
+DEGs_continuous1 <- calculateDE(data = counts_example,
+                                metadata = metadata_example, 
+                                modelmat = design,
+                                contrasts = c("DaysToSequencing"))
+#> Warning in limma::makeContrasts(contrasts = contrasts, levels = design_matrix):
+#> Renaming (Intercept) to Intercept
+DEGs_continuous1$DaysToSequencing[1:3,]
 #>                logFC  AveExpr         t   P.Value adj.P.Val         B
 #> RNA45SN2 -0.07628608 7.712585 -1.626674 0.1117361 0.9997685 -6.018805
 #> RNA18SN2  0.06743439 9.577467  1.554171 0.1280974 0.9997685 -6.129426
 #> RNA18SN3  0.06743439 9.577467  1.554171 0.1280974 0.9997685 -6.129426
 ```
 
-This usage of the `lmexpression` parameter also allows the user to
-combine categorical variables with numeric variables:
+This usage of the `modelmat` argument allows the user to combine
+categorical and numeric variables in a fully customized design matrix.
+In the example below:
 
--   `Intercept`: Baseline expression when days = 0 and Condition =
-    Control.
--   `days`: Change in expression per unit increase in days.
--   \`Senescent: Difference in expression between Senescent and Control
-    conditions.
+- `(Intercept)`: Baseline expression when days = 0 and Condition =
+  Control.
+- `DaysToSequencing`: Change in expression per unit of time (day)
+  increase.
+- `Senescent`: Average difference in expression between Senescent and
+  Control conditions.
+
+This approach is useful when modeling continuous effects alongside group
+comparisons, and it provides complete flexibility in specifying the
+design.
 
 ``` r
-DEGs_continuous3 <- calculateDE(data = counts_example,
-                                metadata = metadata_example,
-                                lmexpression = "~days + Condition")
-DEGs_continuous3$`(Intercept)`[1:3,]
+
+# Manually construct the design matrix
+model_matrix <- model.matrix(~ DaysToSequencing + Condition, data = metadata_example)
+colnames(model_matrix) <- c("(Intercept)", "DaysToSequencing", "Senescent")
+
+# Provide the custom design matrix to calculateDE using the `modelmat` argument
+DEGs_continuous2 <- calculateDE(data = counts_example,
+                                modelmat = model_matrix)
+
+# Access results for each coefficient
+DEGs_continuous2$`(Intercept)`[1:3, ]
 #>           logFC  AveExpr         t      P.Value    adj.P.Val         B
 #> FN1    13.23994 13.21879  74.04645 1.265799e-43 3.210740e-43  89.73456
 #> EEF1A1 12.94192 12.85091 179.29631 1.402180e-58 9.033979e-57 121.69861
 #> GAPDH  12.71139 12.53188 147.86006 2.586838e-55 5.583501e-54 115.21324
-DEGs_continuous3$days[1:3,]
+DEGs_continuous2$DaysToSequencing[1:3, ]
 #>                logFC  AveExpr         t    P.Value adj.P.Val         B
 #> RNA45SN2 -0.08056063 7.712585 -1.689209 0.09914647 0.9853746 -6.052523
 #> RNA18SN2  0.06598991 9.577467  1.490666 0.14407989 0.9853746 -6.355482
 #> RNA18SN3  0.06598991 9.577467  1.490666 0.14407989 0.9853746 -6.355482
-DEGs_continuous3$Senescent[1:3,]
+DEGs_continuous2$Senescent[1:3, ]
 #>            logFC  AveExpr         t      P.Value    adj.P.Val        B
 #> CCND2   3.863054 4.406721 12.344742 4.643461e-15 4.865503e-12 24.20437
 #> MKI67  -3.655159 6.605339 -9.296026 1.907736e-11 5.010329e-10 16.02834
@@ -1283,41 +1301,44 @@ DEGs_continuous3$Senescent[1:3,]
 
 #### Gene Set Enrichment Analyses
 
-To perform GSEA, use the `runGSEA()` function. This function takes a
-named list of differential expression results (one per contrast) and a
-set of gene signatures to compute enrichment scores.
+To perform GSEA, the user can use the `runGSEA()` function. This
+function takes a named list of differential expression statistics (one
+per contrast) and a set of gene signatures to compute enrichment scores.
 
--   `DEGList`: A list of differentially expressed genes (DEGs) for each
-    contrast.
+- `DEGList`: A list of differentially expressed genes (DEGs) for each
+  contrast.
 
--   `gene_sets`: A list of gene sets, where each entry can be:
+- `gene_sets`: A list of gene sets, where each entry can be:
 
-    -   A vector of genes (unidirectional analysis).
-    -   A data frame where the first column is the gene name and the
-        second column indicates the expected direction (+1 or -1,
-        bidirectional analysis).
+  - A vector of gene names (unidirectional analysis).
+  - A data frame where the first column is the gene name and the second
+    column indicates the expected direction (+1 or -1, bidirectional
+    analysis).
 
--   `stat`: The ranking statistic. If NULL, the ranking statistic is
-    automatically selected unless manually specified:
+- `stat`: The ranking statistic. If NULL, the ranking statistic is
+  automatically selected:
 
-    -   `"B"` for gene sets with **no known direction** (vectors).
-    -   `"t"` for **unidirectional** or **bidirectional** gene sets
-        (data frames).
-    -   If provided, this argument overrides the automatic selection.
+  - `"B"` for gene sets with **no known direction** (vectors).
+  - `"t"` for **unidirectional** or **bidirectional** gene sets (data
+    frames).
+  - If provided, this argument overrides the automatic selection.
 
-It is important to note that the column corresponding to the **adjusted
-p-value** (`padj`) reflects p-values corrected for multiple testing by
-the Benjamini & Hochberg (BH) method, considering **all contrasts** in
-the list of differentially expressed genes (`DEGs`in the example below).
-This means that the same contrast will have a different adjusted p-value
-if running with a different set of contrasts, given that the results
-represent different research questions.
+- `ContrastCorrection`: Logical, default is `FALSE`. If `TRUE`, applies
+  an additional multiple testing correction (Benjamini–Hochberg) across
+  all contrasts returned in the `DEGList` results list. This accounts
+  for the number of contrasts tested per signature and provides more
+  stringent control of false discovery rate across multiple comparisons
+  (similar to answering the question “Is there any signature that is
+  significant in any of the contrasts” instead of “For each contrast, is
+  there any signature that is significant”). If `FALSE`, the function
+  only corrects for the number of gene sets.
 
 ``` r
 GSEAresults <- runGSEA(DEGList = DEGs, 
                        gene_sets = list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional,
                                         Senescence  = SimpleSenescenceSignature),
-                       stat = NULL)
+                       stat = NULL,
+                        ContrastCorrection = FALSE)
 
 GSEAresults
 #> $`Senescent-Proliferative`
@@ -1325,42 +1346,39 @@ GSEAresults
 #>                      <char>      <num>      <num>      <num>     <num>    <num>
 #> 1: Senescence_Bidirectional 0.01838843 0.03677686 0.15267586 0.7068136 1.653726
 #> 2:               Senescence 0.14596611 0.14596611 0.04482895 0.5844505 1.338962
-#>     size                         leadingEdge stat_used
-#>    <int>                              <list>    <char>
-#> 1:     7 LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
-#> 2:     7                         LMNB1,MKI67         B
+#>     size  leadingEdge stat_used
+#>    <int>       <list>    <char>
+#> 1:     7 LMNB1, M....         t
+#> 2:     7 LMNB1, MKI67         B
 ```
 
 Depending on the statistic used, the interpretation of the plots
-changes: when using the B statistic (by default, when the direction is
-not specified), the interpretation of the plot differs from the T
-statistic. This is because the B statistic focuses on whether genes are
-altered or not altered, without considering whether they are enriched or
-depleted.
+changes:
 
-1.  **B Statistic vs. T Statistic:**
-    -   The B statistic does not specify the direction (enriched or
-        depleted) of the gene set. It only indicates whether genes are
-        altered or not altered.
-    -   The t statistic orders genes based on their enrichment or
-        depletion.
-2.  **Indication on the graphs:**
-    -   When using the B statistic, the plot will include “Altered
-        Pathways” to reflect this focus on whether genes are altered.
-    -   For the t statistic, the plot will include “Enriched/Depleted
-        Pathways”, indicating that the plot focuses on the enrichment or
-        depletion status of genes.
+1.  **B Statistic vs. t Statistic:**
+    - The B statistic does not specify the direction (enriched or
+      depleted) of the gene set’s alterations. It only indicates the
+      strength of evidence for any alterations.
+    - The t statistic orders genes from stronger evidence of
+      over-expression to stronger evidence for under-expression.
+2.  **Graph’s annotation:**
+    - When using the B statistic, the plot will include “Altered Gene
+      Set” beneath its title to reflect this focus on whether genes are
+      altered.
+    - For the t statistic, the plot will include “Enriched/Depleted Gene
+      Set” beneath its title, indicating its focus on the enrichment or
+      depletion of genes.
 
-After running GSEA, you can visualize enrichment plots using
-`plotGSEAenrichment()`. This function generates enrichment plots for
-each gene signature and contrast, displaying also the **Normalized
-Enrichment Scores (NES)** and **adjusted p-value** for each enrichment
-result.
+After running GSEA, the user can visualize enrichment plots using the
+`plotGSEAenrichment()` function. This function generates enrichment
+plots for each gene signature and contrast, displaying also the
+**Normalized Enrichment Scores (NES)** and **adjusted p-value** for each
+enrichment result. As `plotGSEAenrichment`’s relevant graphical
+parameters:
 
--   `grid = TRUE`: Arranges the plots in a grid for better
-    visualization.
--   `titlesize`: Adjusts title font size.
--   `nrow`/`ncol`: Specifies the grid layout for arranging plots.
+- `grid = TRUE`: Arranges the plots in a grid for better visualization.
+- `titlesize`: Adjusts title font size.
+- `nrow`/`ncol`: Specifies the grid layout for arranging plots.
 
 ``` r
 plotGSEAenrichment(GSEA_results=GSEAresults, 
@@ -1373,12 +1391,13 @@ plotGSEAenrichment(GSEA_results=GSEAresults,
 <img src="man/figures/README-GSEA_plotenrichment-1.png" width="90%" />
 
 The `plotNESlollipop()` function creates lollipop plots for visualizing
-Gene Set Enrichment Analysis (GSEA) results. Each plot displays pathways
-on the y-axis and Normalized Enrichment Scores (NES) on the x-axis, with
-color representing the adjusted p-value. The function supports multiple
-contrasts and includes options for customizing the color gradient,
-significance threshold, and plot layout. It can also arrange individual
-plots into a grid layout for comparative visualization.
+Gene Set Enrichment Analysis (GSEA) results. Each plot displays gene
+sets on the y-axis and Normalized Enrichment Scores (NES) on the x-axis,
+with a color gradient proportional to the adjusted p-value. The function
+supports multiple contrasts and includes options for customizing the
+color gradient, significance threshold, and plot layout. It can also
+arrange individual plots into a grid layout for comparative
+visualization.
 
 ``` r
 plotNESlollipop(GSEA_results=GSEAresults, 
@@ -1399,15 +1418,15 @@ The `plotCombinedGSEA()` function generates a scatter plot to visualize
 the results of Gene Set Enrichment Analysis (GSEA) across multiple
 contrasts. Each point represents a pathway, with:
 
--   X-axis: Normalized Enrichment Score (NES)
--   Y-axis: -log10 adjusted p-value (significance)
--   Color: Pathways
--   Shape: Different contrasts
--   Dashed line: Significance threshold
+- X-axis: Normalized Enrichment Score (NES)
+- Y-axis: -log10 adjusted p-value (significance)
+- Color: Gene sets
+- Shape: Contrasts
+- Dashed line: Significance threshold
 
 This function helps compare enrichment results when the number of
-contrasts and the number of pathways is high. For this example, might
-not be too representative.
+contrasts and the number of pathways is high, scenario of which the
+example herein is not too representative.
 
 ``` r
 plotCombinedGSEA(GSEAresults, sig_threshold = 0.05, PointSize=6, widthlegend = 26 )
@@ -1415,48 +1434,44 @@ plotCombinedGSEA(GSEAresults, sig_threshold = 0.05, PointSize=6, widthlegend = 2
 
 <img src="man/figures/README-GSEA_volcano-1.png" width="100%" />
 
-#### GSEA Association with Chosen Variables
+#### GSEA Association with Chosen Phenotypic Variables
 
 Following the same rational presented in [Score association with Chosen
-Variables](#score-association-with-chosen-variables), when analyzing
-data, it is often unclear whether a given variable is meaningfully
-associated with a target score. For the GSEA module, this can be
-particularly relevant when assessing whether gene expression patterns
-align with specific biological pathways or signatures.
-
-The `GSEA_VariableAssociation` function automates this process by
-performing differential expression (DE) analysis across all possible
+Variables](#score-association-with-chosen-variables), the
+`GSEA_VariableAssociation` function automates assessing whether gene
+expression patterns align with specific biological pathways or signature
+by performing differential expression (DE) analysis across all possible
 contrasts for categorical variables or using linear modeling for
 continuous variables. It then applies Gene Set Enrichment Analysis
-(GSEA) to evaluate the enrichment of predefined gene sets, returning
-both numerical results and an intuitive lollipop plot for visualization.
-This approach helps users quickly identify significant associations
-between metadata variables and gene expression patterns.
+(GSEA) to evaluate the enrichment of predefined gene sets amongst
+differentially expressed genes, returning both numerical results and an
+intuitive lollipop plot for visualization. This approach helps users
+quickly identify significant associations between metadata variables and
+gene expression patterns.
 
 Depending on the statistic used (B- or t-statistic):
 
 1.  **Negative NES:**
-    -   t Statistic: A negative NES with the T statistic indicates that
-        the gene set is depleted (i.e., the genes are under-expressed).
-    -   B Statistic: A negative NES using the B statistic (with
-        significant results) means that the genes are not altered,
-        implying no significant change in their expression.
+    - t Statistic: A negative NES with the t statistic indicates that
+      the gene set is depleted amongst over-expressed genes (i.e., genes
+      in the set are under-expressed).
+    - B Statistic: A negative NES using the B statistic means that the
+      gene set is depleted amongst the most altered genes, i.e. that
+      their expression changes less than most genes’.
 2.  **Dashed Lines:**
-    -   The dashed lines in the plot represent B statistic results with
-        negative NES, meaning gene sets putatively not altered.
+    - The dashed lines in the plot represent B statistic results with
+      negative NES, meaning gene sets putatively not altered.
 3.  **Subtitle Differences:**
-    -   When using the B statistic, the subtitle of the plot will read
-        “Altered Contrasts” to reflect this focus on whether genes are
-        altered.
-    -   For the t statistic, the subtitle will read “Enriched/Depleted
-        Contrasts”, indicating that the plot focuses on the enrichment
-        or depletion status of genes.
+    - When using the B statistic, the subtitle of the plot will read
+      “Altered Contrasts”.
+    - For the t statistic, the subtitle will read “Enriched/Depleted
+      Contrasts”.
 
 ``` r
-options(error=recover)
+ 
 GSEA_VariableAssociation(data=counts_example, 
                          metadata=metadata_example, 
-                         cols=c("Condition","person","days"), 
+                         cols=c("Condition","Researcher","DaysToSequencing"), 
                          mode="simple", 
                          gene_set=list(Senescence  = SimpleSenescenceSignature), 
                          saturation_value=NULL, nonsignif_color = "white", signif_color = "red",
@@ -1464,149 +1479,55 @@ GSEA_VariableAssociation(data=counts_example,
 #> $plot
 ```
 
-<img src="man/figures/README-GSEA_varassoc_1-1.png" width="60%" />
+<img src="man/figures/README-GSEA_varassoc-1.png" width="60%" />
 
     #> 
     #> $data
-    #>       pathway       pval      padj    log2err         ES        NES  size
-    #>        <char>      <num>     <num>      <num>      <num>      <num> <int>
-    #> 1: Senescence 0.14596611 0.4378983 0.04482895  0.5844505  1.3389622     7
-    #> 2: Senescence 0.81534874 0.8596054 0.01825162  0.2197875  0.7218660     7
-    #> 3: Senescence 0.12206168 0.7323701 0.05892753  0.4198163  1.3797736     7
-    #> 4: Senescence 0.85960544 0.8596054 0.01599026 -0.2113031 -0.6810595     7
-    #> 5: Senescence 0.06299541 0.4378983 0.11671125 -0.4779552 -1.5523084     7
-    #> 6: Senescence 0.54673591 0.8201039 0.02231638 -0.2849369 -0.9161661     7
-    #>                                leadingEdge stat_used                  Contrast
-    #>                                     <list>    <char>                    <char>
-    #> 1:                             LMNB1,MKI67         B Proliferative - Senescent
-    #> 2:                        GLB1,TP53,CDKN1A         B                Ana - John
-    #> 3:          LMNB1,CDKN1A,GLB1,CDKN2A,MKI67         B           Ana - Francisca
-    #> 4: CCL2,CDKN1A,MKI67,GLB1,LMNB1,CDKN2A,...         B          Francisca - John
-    #> 5:     LMNB1,MKI67,CCL2,CDKN2A,TP53,CDKN1A         B            intercept_days
-    #> 6:     LMNB1,MKI67,CDKN2A,TP53,CCL2,CDKN1A         B                      days
+    #>       pathway      pval      padj    log2err         ES        NES  size
+    #>        <char>     <num>     <num>      <num>      <num>      <num> <int>
+    #> 1: Senescence 0.1459661 0.3649153 0.04482895  0.5844505  1.3389622     7
+    #> 2: Senescence 0.8153487 0.8596054 0.01825162  0.2197875  0.7218660     7
+    #> 3: Senescence 0.1220617 0.3649153 0.05892753  0.4198163  1.3797736     7
+    #> 4: Senescence 0.8596054 0.8596054 0.01599026 -0.2113031 -0.6810595     7
+    #> 5: Senescence 0.5467359 0.8596054 0.02231638 -0.2849369 -0.9161661     7
+    #>     leadingEdge stat_used                  Contrast
+    #>          <list>    <char>                    <char>
+    #> 1: LMNB1, MKI67         B Proliferative - Senescent
+    #> 2: GLB1, TP....         B                Ana - John
+    #> 3: LMNB1, C....         B           Ana - Francisca
+    #> 4: CCL2, CD....         B          Francisca - John
+    #> 5: LMNB1, M....         B          DaysToSequencing
 
-    GSEA_VariableAssociation(data=counts_example, 
-                             metadata=metadata_example, 
-                             cols=c("Condition","person","days"), 
-                             mode="simple", 
-                             gene_set=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional), 
-                             saturation_value=NULL, nonsignif_color = "white", signif_color = "red",
-                             sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
-    #> $plot
+``` r
 
-<img src="man/figures/README-GSEA_varassoc_1-2.png" width="60%" />
+GSEA_VariableAssociation(data=counts_example, 
+                         metadata=metadata_example, 
+                         cols=c("Condition","Researcher","DaysToSequencing"), 
+                         mode="simple", 
+                         gene_set=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional), 
+                         saturation_value=NULL, nonsignif_color = "white", signif_color = "red",
+                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
+#> $plot
+```
+
+<img src="man/figures/README-GSEA_varassoc2-1.png" width="60%" />
 
     #> 
     #> $data
     #>                     pathway        pval       padj    log2err         ES
     #>                      <char>       <num>      <num>      <num>      <num>
-    #> 1: Senescence_Bidirectional 0.023760331 0.07128099 0.13405093 -0.7068136
-    #> 2: Senescence_Bidirectional 0.077863457 0.23359037 0.06946518  0.6399995
-    #> 3: Senescence_Bidirectional 0.006124402 0.07128099 0.25663502  0.7274186
+    #> 1: Senescence_Bidirectional 0.023760331 0.05940083 0.13405093 -0.7068136
+    #> 2: Senescence_Bidirectional 0.077863457 0.12977243 0.06946518  0.6399995
+    #> 3: Senescence_Bidirectional 0.006124402 0.03062201 0.25663502  0.7274186
     #> 4: Senescence_Bidirectional 0.949172812 0.94917281 0.01513268 -0.2471009
-    #> 5: Senescence_Bidirectional 0.173793103 0.38632616 0.08982029 -0.4165066
-    #> 6: Senescence_Bidirectional 0.321938468 0.38632616 0.03305031  0.4899121
-    #>           NES  size                         leadingEdge stat_used
-    #>         <num> <int>                              <list>    <char>
-    #> 1: -1.6491022     7 LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
-    #> 2:  1.4615936     7                    GLB1,TP53,CDKN1A         t
-    #> 3:  1.7675900     7      LMNB1,CDKN1A,GLB1,CDKN2A,MKI67         t
-    #> 4: -0.5727763     7                  CDKN2A,LMNB1,MKI67         t
-    #> 5: -1.2553035     7 MKI67,LMNB1,CCL2,CDKN2A,TP53,CDKN1A         t
-    #> 6:  1.1260283     7 GLB1,CDKN1A,CCL2,CDKN2A,MKI67,LMNB1         t
-    #>                     Contrast
-    #>                       <char>
-    #> 1: Proliferative - Senescent
-    #> 2:                Ana - John
-    #> 3:           Ana - Francisca
-    #> 4:          Francisca - John
-    #> 5:            intercept_days
-    #> 6:                      days
-
-``` r
-GSEA_VariableAssociation(data=counts_example, 
-                         metadata=metadata_example, 
-                         cols=c("Condition","person","days"), 
-                         mode="extensive", 
-                         gene_set=list(Senescence  = SimpleSenescenceSignature), 
-                       saturation_value=NULL, nonsignif_color = "white", signif_color = "red",
-                         sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
-#> $plot
-```
-
-<img src="man/figures/README-GSEA_varassoc_2-1.png" width="60%" />
-
-    #> 
-    #> $data
-    #>       pathway       pval      padj    log2err         ES        NES  size
-    #>        <char>      <num>     <num>      <num>      <num>      <num> <int>
-    #> 1: Senescence 0.14596611 0.6568475 0.04482895  0.5844505  1.3389622     7
-    #> 2: Senescence 0.81534874 0.9002970 0.01825162  0.2197875  0.7218660     7
-    #> 3: Senescence 0.12206168 0.9002970 0.05892753  0.4198163  1.3797736     7
-    #> 4: Senescence 0.85960544 0.9002970 0.01599026 -0.2113031 -0.6810595     7
-    #> 5: Senescence 0.13754081 0.9002970 0.05556785  0.4091501  1.3460917     7
-    #> 6: Senescence 0.72727273 0.9002970 0.01830571 -0.2423185 -0.7803526     7
-    #> 7: Senescence 0.90029699 0.9002970 0.01680350  0.1962844  0.6451577     7
-    #> 8: Senescence 0.06299541 0.6568475 0.11671125 -0.4779552 -1.5523084     7
-    #> 9: Senescence 0.54673591 0.9002970 0.02231638 -0.2849369 -0.9161661     7
-    #>                                leadingEdge stat_used                   Contrast
-    #>                                     <list>    <char>                     <char>
-    #> 1:                             LMNB1,MKI67         B  Proliferative - Senescent
-    #> 2:                        GLB1,TP53,CDKN1A         B                 Ana - John
-    #> 3:          LMNB1,CDKN1A,GLB1,CDKN2A,MKI67         B            Ana - Francisca
-    #> 4: CCL2,CDKN1A,MKI67,GLB1,LMNB1,CDKN2A,...         B           Francisca - John
-    #> 5:   GLB1,CDKN1A,LMNB1,MKI67,TP53,CCL2,...         B Ana - (Francisca + John)/2
-    #> 6:                        MKI67,LMNB1,CCL2         B (Ana + Francisca)/2 - John
-    #> 7: CDKN2A,LMNB1,MKI67,TP53,CDKN1A,CCL2,...         B (Ana + John)/2 - Francisca
-    #> 8:     LMNB1,MKI67,CCL2,CDKN2A,TP53,CDKN1A         B             intercept_days
-    #> 9:     LMNB1,MKI67,CDKN2A,TP53,CCL2,CDKN1A         B                       days
-
-    GSEA_VariableAssociation(data=counts_example, 
-                             metadata=metadata_example, 
-                             cols=c("Condition","person","days"), 
-                             mode="extensive", 
-                             gene_set=list(Senescence_Bidirectional = SimpleSenescenceSignature_bidirectional), 
-                             saturation_value=NULL, nonsignif_color = "white", signif_color = "red",
-                             sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5) 
-    #> $plot
-
-<img src="man/figures/README-GSEA_varassoc_2-2.png" width="60%" />
-
-    #> 
-    #> $data
-    #>                     pathway        pval      padj    log2err         ES
-    #>                      <char>       <num>     <num>      <num>      <num>
-    #> 1: Senescence_Bidirectional 0.023760331 0.1653589 0.13405093 -0.7068136
-    #> 2: Senescence_Bidirectional 0.077863457 0.3503856 0.06946518  0.6399995
-    #> 3: Senescence_Bidirectional 0.006124402 0.1653589 0.25663502  0.7274186
-    #> 4: Senescence_Bidirectional 0.949172812 0.9491728 0.01513268 -0.2471009
-    #> 5: Senescence_Bidirectional 0.018775817 0.1689824 0.14390962  0.6955465
-    #> 6: Senescence_Bidirectional 0.218617227 0.3784606 0.04038999  0.5527943
-    #> 7: Senescence_Bidirectional 0.280341218 0.3784606 0.03509657  0.4842608
-    #> 8: Senescence_Bidirectional 0.173793103 0.3784606 0.08982029 -0.4165066
-    #> 9: Senescence_Bidirectional 0.321938468 0.3784606 0.03305031  0.4899121
-    #>           NES  size                           leadingEdge stat_used
-    #>         <num> <int>                                <list>    <char>
-    #> 1: -1.6491022     7   LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
-    #> 2:  1.4615936     7                      GLB1,TP53,CDKN1A         t
-    #> 3:  1.7675900     7        LMNB1,CDKN1A,GLB1,CDKN2A,MKI67         t
-    #> 4: -0.5727763     7                    CDKN2A,LMNB1,MKI67         t
-    #> 5:  1.6475408     7 GLB1,CDKN1A,LMNB1,MKI67,TP53,CCL2,...         t
-    #> 6:  1.2409060     7                      TP53,GLB1,CDKN1A         t
-    #> 7:  1.1683551     7        CDKN2A,LMNB1,MKI67,CDKN1A,CCL2         t
-    #> 8: -1.2553035     7   MKI67,LMNB1,CCL2,CDKN2A,TP53,CDKN1A         t
-    #> 9:  1.1260283     7   GLB1,CDKN1A,CCL2,CDKN2A,MKI67,LMNB1         t
-    #>                      Contrast
-    #>                        <char>
-    #> 1:  Proliferative - Senescent
-    #> 2:                 Ana - John
-    #> 3:            Ana - Francisca
-    #> 4:           Francisca - John
-    #> 5: Ana - (Francisca + John)/2
-    #> 6: (Ana + Francisca)/2 - John
-    #> 7: (Ana + John)/2 - Francisca
-    #> 8:             intercept_days
-    #> 9:                       days
+    #> 5: Senescence_Bidirectional 0.321938468 0.40242308 0.03305031  0.4899121
+    #>           NES  size  leadingEdge stat_used                  Contrast
+    #>         <num> <int>       <list>    <char>                    <char>
+    #> 1: -1.6491022     7 LMNB1, M....         t Proliferative - Senescent
+    #> 2:  1.4615936     7 GLB1, TP....         t                Ana - John
+    #> 3:  1.7675900     7 LMNB1, C....         t           Ana - Francisca
+    #> 4: -0.5727763     7 CDKN2A, ....         t          Francisca - John
+    #> 5:  1.1260283     7 GLB1, CD....         t          DaysToSequencing
 
 ------------------------------------------------------------------------
 

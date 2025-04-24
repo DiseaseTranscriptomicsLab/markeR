@@ -127,12 +127,16 @@ create_contrast_column <- function(metadata, variable_name, contrast) {
 #' @param color_palette A string specifying the color palette for discrete variables. Default: `"Set2"`.
 #'
 #' @return A list with:
-#'   - `Overall`: Data frame with Cohen's F and p-values for overall associations.
-#'   - `Contrasts`: Data frame with Cohen's D and p-values for contrasts (only for non numerical variables).
-#'   - `plot`: Combined visualization of results.
-#'   - `plot_contrasts`: Plot of contrast results (only for non numerical variables).
-#'   - `plot_overall`: Plot of overall associations.
-#'   - `plot_distributions`: List of variable distribution plots.
+#'   - `Overall`: Data frame of effect sizes and p-values for each contrasted phenotypic variable.
+#'   - `Contrasts`: Data frame of Cohen’s d and adjusted p-values for contrasts between levels of categorical variables,
+#'   with the resolution of contrasts determined by the mode parameter.
+#'   - `plot`: A combined visualization with three main panels:
+#'   (1) lollipop plots of Cohen’s f for each variable of interest,
+#'   (2) distribution plots of the score by variable (density or scatter depending on variable type),
+#'   and (3, if applicable) lollipop plots of Cohen’s d for contrasts in categorical variables.
+#'   - `plot_contrasts`: Lollipop plots of Cohen’s d effect sizes for contrasts between levels of non numerical variables (if applicable), colored by adjusted p-value (BH).
+#'   - `plot_overall`: Lollipop plot showing Cohen’s f effect sizes for each variable, colored by p-value.
+#'   - `plot_distributions`: List of density or scatter plots of the score across variable levels, depending on variable type.
 #'
 #' @examples
 #' data <- as.data.frame(abs(matrix(rnorm(1000), ncol = 10)))
@@ -282,8 +286,8 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
       ggplot2::scale_linetype_identity() +
       ggplot2::scale_color_identity() +
       ggplot2::labs(
-        x = "Cohen's D",
-        y = "Pairwise Contrasts",
+        x = "Cohen's d",
+        y = "Contrasts",
         color = "-log10(adj. p-value)",
         fill = "-log10(adj. p-value)"
       ) +
@@ -335,7 +339,7 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
     ggplot2::scale_linetype_identity() +
     ggplot2::scale_color_identity() +
     ggplot2::labs(
-      x = "Cohen's F",
+      x = "Cohen's f",
       y = "Variable",
       color = "-log10(p-value)",
       fill = "-log10(p-value)"
@@ -366,7 +370,7 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
     # Adding p-value in parenthesis next to the metric
     if (variable_types[var] == "Numeric") {
 
-      list_plts_var_distribution[[var]] <- ggplot2::ggplot(df_ranking, ggplot2::aes_string(x = var, y = "score")) +
+      list_plts_var_distribution[[var]] <- ggplot2::ggplot(df_ranking, ggplot2::aes_string(x = paste0("`", var, "`"), y = "score")) +
         ggplot2::geom_point(alpha = 0.6, size=4, color = continuous_color) +  # Use continuous_color
         ggplot2::geom_smooth(method = "lm", col = "black", se = FALSE, size=2) +
         ggplot2::coord_cartesian(clip = "off") +  # Allow text outside the plot area
@@ -396,7 +400,7 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
       # Define a proportion of space below 0
       y_margin <- 0.1 * max_density  # Adjust this factor as needed
 
-      list_plts_var_distribution[[var]] <- ggplot2::ggplot(df_ranking, ggplot2::aes_string(x = "score", fill = var)) +
+      list_plts_var_distribution[[var]] <- ggplot2::ggplot(df_ranking, ggplot2::aes_string(x = "score", fill = paste0("`", var, "`"))) +
         ggplot2::geom_density(alpha = 0.6) +
         ggplot2::geom_rug(ggplot2::aes_string(x = "score", color=var), sides = "b",  alpha = 0.8, size = .5, length = grid::unit(0.08, "npc")) + # add lines at the bottom
         #(sides = "b", alpha = 0.6, size = 1.5, length = grid::unit(0.1, "npc"))

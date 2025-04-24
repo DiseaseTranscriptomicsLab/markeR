@@ -74,12 +74,16 @@ Each element should be a named vector where names correspond to factor levels. D
 \value{
 A list with:
 \itemize{
-\item \code{Overall}: Data frame with Cohen's F and p-values for overall associations.
-\item \code{Contrasts}: Data frame with Cohen's D and p-values for contrasts (only for non numerical variables).
-\item \code{plot}: Combined visualization of results.
-\item \code{plot_contrasts}: Plot of contrast results (only for non numerical variables).
-\item \code{plot_overall}: Plot of overall associations.
-\item \code{plot_distributions}: List of variable distribution plots.
+\item \code{Overall}: Data frame of effect sizes and p-values for each contrasted phenotypic variable.
+\item \code{Contrasts}: Data frame of Cohen’s d and adjusted p-values for contrasts between levels of categorical variables,
+with the resolution of contrasts determined by the mode parameter.
+\item \code{plot}: A combined visualization with three main panels:
+(1) lollipop plots of Cohen’s f for each variable of interest,
+(2) distribution plots of the score by variable (density or scatter depending on variable type),
+and (3, if applicable) lollipop plots of Cohen’s d for contrasts in categorical variables.
+\item \code{plot_contrasts}: Lollipop plots of Cohen’s d effect sizes for contrasts between levels of non numerical variables (if applicable), colored by adjusted p-value (BH).
+\item \code{plot_overall}: Lollipop plot showing Cohen’s f effect sizes for each variable, colored by p-value.
+\item \code{plot_distributions}: List of density or scatter plots of the score across variable levels, depending on variable type.
 }
 }
 \description{

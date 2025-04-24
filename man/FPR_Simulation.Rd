@@ -51,19 +51,19 @@ Default is all genes in \code{data}.}
 
 \item{labsize}{Numeric. Font size for axis labels (default: 10).}
 
-\item{mode}{Character. Type of contrast calculation if \code{Variable} is categorical. Options are:
-\itemize{
-\item \code{"simple"}: basic pairwise contrasts,
-\item \code{"medium"}: pairwise + comparisons vs group mean,
-\item \code{"extensive"}: all possible balanced contrasts,
-\item \code{"none"}: Comparing all levels of \code{Variable} (default)
-}}
-
 \item{ColorValues}{Named vector of colors for plot points, typically \code{Original} and \code{Simulated}. If \code{NULL}, default colors are used.}
 
 \item{ncol}{Integer. Number of columns for arranging signature plots in a grid layout. If \code{NULL}, layout is auto-calculated.}
 
 \item{nrow}{Integer. Number of rows for arranging signature plots in a grid layout. If \code{NULL}, layout is auto-calculated.}
+
+\item{modeA}{string specifying the level of detail for contrasts. Options are:
+\itemize{
+\item \code{"simple"}: Performs the minimal number of pairwise comparisons between individual group levels (e.g., A - B, A - C). Default.
+\item \code{"medium"}: Includes comparisons between one group and the union of all other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
+\item \code{"extensive"}: Allows for all possible algebraic combinations of group levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.
+\item \code{"none"}: Comparing all levels of \code{Variable} (default)
+}}
 }
 \value{
 Invisibly returns the combined \code{ggplot} object showing observed vs simulated effect sizes.

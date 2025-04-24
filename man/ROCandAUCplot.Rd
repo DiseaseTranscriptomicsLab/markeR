@@ -13,9 +13,9 @@ ROCandAUCplot(
   group_var = NULL,
   plot_type = "roc",
   title = NULL,
-  widthTitle = 16,
+  titlesize = 14,
   roc_params = list(),
-  heatmap_params = list(),
+  auc_params = list(),
   commomplot_params = list()
 )
 }
@@ -34,15 +34,15 @@ A warning is issued if more than 30 genes are selected.}
 (Mandatory; no default.)}
 
 \item{group_var}{An optional character string specifying the column name in \code{metadata} used for grouping samples (e.g., cell types).
-If not provided (\code{NULL}), all samples are treated as a single group.}
+If not provided (\code{NULL}), all samples are treated as a single group. Should be a categorical variable.}
 
 \item{plot_type}{A character string indicating which plot(s) to generate.
-Accepted values are \code{"roc"} (only ROC curves), \code{"heatmap"} (only the AUC heatmap), or \code{"all"} (both arranged side-by-side).
+Accepted values are \code{"roc"} (only ROC curves), \code{"auc"} (only the AUC heatmap/barplot), or \code{"all"} (both arranged side-by-side).
 Default is \code{"roc"}.}
 
-\item{title}{An optional character string specifying a custom title for the plot(s). If not provided, default titles are generated.}
+\item{title}{An optional character string specifying the main title of the plot.}
 
-\item{widthTitle}{A numeric value used when wrapping the title. Default is \code{16}.}
+\item{titlesize}{A numeric value specifying the size of the title. Default is \code{14}.}
 
 \item{roc_params}{A list of additional parameters for customizing the ROC plot. Possible elements include:
 \describe{
@@ -51,11 +51,12 @@ Default is \code{"roc"}.}
 \item{\code{colors}}{A named vector of colors for the different groups. If \code{NULL} (default), a default color palette is generated.}
 }}
 
-\item{heatmap_params}{A list of additional parameters for customizing the AUC heatmap. Possible elements include:
+\item{auc_params}{A list of additional parameters for customizing the AUC heatmap or AUC barplot. Possible elements include:
 \describe{
 \item{\code{cluster_rows}}{Logical; if \code{TRUE} (default), rows are clustered.}
 \item{\code{cluster_columns}}{Logical; if \code{TRUE} (default), columns are clustered.}
-\item{\code{col}}{A vector of length 2 of colors to be used for the minimum and maximum values of the color scale. Defaults to \code{c("#FFFFFF", "#21975C")}.}
+\item{\code{colors}}{If \code{group_var} is used, should be a vector of length 2 of colors to be used for the minimum and maximum values of the color scale. Defaults to \code{c("#FFFFFF", "#21975C")}.
+If \code{group_var} is \code{NULL}, then should be a single color to fill the barplot. If \code{NULL}, defaults to \code{"#3B415B"}. If a vector is provided, only the first color will be used.}
 \item{\code{limits}}{A numeric vector of length 2 specifying the minimum and maximum values for the color scale.
 If not provided, defaults to \code{c(0.5, 1)}.}
 \item{\code{name}}{A character string for the legend title of the color scale. Default is \code{"AUC"}.}
@@ -81,12 +82,12 @@ Invisibly returns a list containing:
 }
 \description{
 This function computes ROC curves and AUC values for each gene based on gene expression data and sample metadata.
-It can generate ROC plots, an AUC heatmap, or both arranged side‐by‐side.
+It can generate ROC plots, an AUC heatmap / barplot, or both arranged side‐by‐side.
 }
 \details{
 The function processes gene expression data and metadata to compute ROC curves and AUC values for each gene.
-Depending on the value of \code{plot_type}, it produces ROC plots (using \pkg{ggplot2}), an AUC heatmap (using \pkg{ComplexHeatmap}),
-or both arranged side-by-side (using \pkg{gridExtra}). When \code{group_var} is not provided, all samples are treated as a single group.
+Depending on the value of \code{plot_type}, it produces ROC plots (using \pkg{ggplot2}), an AUC heatmap (using \pkg{ComplexHeatmap})
+or AUC barplot (if \code{group_var} is \code{NULL}), or both arranged side-by-side (using \pkg{gridExtra}).
 }
 \examples{
 \dontrun{
@@ -100,7 +101,7 @@ or both arranged side-by-side (using \pkg{gridExtra}). When \code{group_var} is 
                           plot_type = "all",
                           title = "My Custom Title",
                           roc_params = list(ncol = 3),
-                          heatmap_params = list(limits = c(0.4, 1)),
+                          auc_params= list(limits = c(0.4, 1)),
                           commomplot_params = list(widths = c(1, 1)))
 }
 

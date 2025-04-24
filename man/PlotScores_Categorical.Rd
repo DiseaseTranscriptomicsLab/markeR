@@ -107,18 +107,18 @@ signature genes divided by the number of genes in the signature.
 \item \strong{ranking}: Computes gene signature scores for each sample by ranking the expression of signature genes
 in the dataset and normalizing the score based on the total number of genes.
 \item \strong{all}: Computes gene signature scores using all three methods (\code{ssGSEA}, \code{logmedian}, and \code{ranking}).
-Returns a heatmap summarizing Cohen's D for all metric combinations of the variables of interest.
+Returns a heatmap summarizing Cohen's d for all metric combinations of the variables of interest.
 }
 
 Depending on the method and the type of variable (categorical, numeric, or \code{NULL}), the function produces different plots:
 \itemize{
 \item \strong{If \code{method = "all"}} and the variable is \strong{categorical}, a heatmap of Cohen's d or F statistics and a volcano plot showing contrasts between all groups of that variable are produced.
-\item \strong{If \code{method = "all"}} and the variable is \strong{numeric}, a heatmap of Cohen's F and a volcano plot are produced.
+\item \strong{If \code{method = "all"}} and the variable is \strong{numeric}, a heatmap of Cohen's f and a volcano plot are produced.
 \item \strong{If \code{method != "all"}} and the variable is \strong{categorical}, a violin plot for each signature is generated.
 \item \strong{If \code{method != "all"}} and the variable is \code{NULL}, a density plot of the score distribution is displayed.
 \item \strong{If \code{method != "all"}} and the variable is \strong{numeric}, a scatter plot is created to show the relationship between the scores and the numeric variable.
 \item \strong{If \code{method = "all"}} and the variable is \strong{categorical}, the function returns a heatmap of Cohen's d or F statistics and a volcano plot showing contrasts between all groups of that variable.
-\item \strong{If \code{method = "all"}} and the variable is \strong{numeric}, a heatmap of Cohen's F and a volcano plot will be produced.
+\item \strong{If \code{method = "all"}} and the variable is \strong{numeric}, a heatmap of Cohen's f and a volcano plot will be produced.
 \item \strong{If \code{method != "all"}} and the variable is \strong{categorical}, a violin plot for each signature will be displayed.
 \item \strong{If \code{method != "all"}} and the variable is \code{NULL}, a density plot of the score distribution will be displayed.
 \item \strong{If \code{method != "all"}} and the variable is \strong{numeric}, a scatter plot will be generated to show the relationship between the scores and the numeric variable.

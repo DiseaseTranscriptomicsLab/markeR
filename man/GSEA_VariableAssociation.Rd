@@ -35,8 +35,6 @@ GSEA_VariableAssociation(
 \item If provided, this argument overrides the automatic selection.
 }}
 
-\item{mode}{A character string specifying the contrast generation method for categorical variables. Options: \code{"simple"}, \code{"medium"}, \code{"extensive"}. Default is \code{"simple"}.}
-
 \item{gene_set}{A named list defining the gene sets for GSEA. \strong{(Required)}
 \itemize{
 \item If using \strong{unidirectional} gene sets, provide a list where each element is a vector of gene names representing a signature.
@@ -61,6 +59,13 @@ value is above the sig_threshold; in that case, it is 0.001.}
 \item{titlesize}{An integer specifying the plot title size. Default: \code{14}.}
 
 \item{pointSize}{Numeric. The size of points in the lollipop plot (default is 5).}
+
+\item{modeA}{string specifying the level of detail for contrasts. Options are:
+\itemize{
+\item \code{"simple"}: Performs the minimal number of pairwise comparisons between individual group levels (e.g., A - B, A - C). Default.
+\item \code{"medium"}: Includes comparisons between one group and the union of all other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
+\item \code{"extensive"}: Allows for all possible algebraic combinations of group levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.
+}}
 }
 \value{
 A list with two elements:

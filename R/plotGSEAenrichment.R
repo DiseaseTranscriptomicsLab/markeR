@@ -83,17 +83,17 @@ plotGSEAenrichment <- function(GSEA_results, DEGList, gene_sets, widthTitle = 24
       padj_value <- signif(gsea_row$padj, 3)
       if(stat_used=="B"){
         if (adjustpval){
-          subtitle_text <- paste0("Altered Pathway\nNES: ", nes_value, " | adj. p-value: ", padj_value)
+          subtitle_text <- paste0("Altered Gene Set\nNES: ", nes_value, " | adj. p-value: ", padj_value)
         } else {
-          subtitle_text <- paste0("Altered Pathway\nNES: ", nes_value, " | p-value: ", padj_value)
+          subtitle_text <- paste0("Altered Gene Set\nNES: ", nes_value, " | p-value: ", padj_value)
         }
 
       } else {
 
         if (adjustpval){
-          subtitle_text <- paste0("Enriched/Depleted Pathway\nNES: ", nes_value, " | adj. p-value: ", padj_value)
+          subtitle_text <- paste0("Enriched/Depleted Gene Set\nNES: ", nes_value, " | adj. p-value: ", padj_value)
         } else {
-          subtitle_text <- paste0("Enriched/Depleted Pathway\nNES: ", nes_value, " | p-value: ", padj_value)
+          subtitle_text <- paste0("Enriched/Depleted Gene Set\nNES: ", nes_value, " | p-value: ", padj_value)
         }
 
       }

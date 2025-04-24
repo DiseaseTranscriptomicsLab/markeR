@@ -81,9 +81,14 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
 
     # Handle based on variable type
     if (variable_types[var] == "Numeric") {
-      # Use a linear model expression for continuous variables
-      DEGs_var <- calculateDE(data = data, metadata = metadata, lmexpression = paste0("~", var))
-      cont_vec <- c(cont_vec,c(paste0("intercept_",var),var))
+
+      # Use a model matrix for continuous variables
+      design <- model.matrix(as.formula(paste("~1+", var)), data = metadata_example)
+
+      DEGs_var <- calculateDE(data = data, metadata = metadata, modelmat =  design, contrasts = c(var))
+      #cont_vec <- c(cont_vec,c(paste0("intercept_",var),var))
+      cont_vec <- c(cont_vec, var)
+
     } else {
       # For categorical variables, generate contrasts
       uniquevalues_var <- unique(metadata[, var])
@@ -166,7 +171,7 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
     ggplot2::scale_color_identity() +
     ggplot2::labs(
       title = unique(combined_results$pathway),
-      subtitle = ifelse(any(combined_results$stat_used == "B"), "Altered Contrasts", "Enriched/Depleted Contrasts"),
+      subtitle = ifelse(any(combined_results$stat_used == "B"), "Altered", "Enriched/Depleted"),
       x = "Normalized Enrichment Score (NES)",
       y = "Contrast",
       color = "-log10(Adj. p-value)",

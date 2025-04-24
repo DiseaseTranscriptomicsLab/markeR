@@ -133,12 +133,13 @@ including when \code{method = "all"}.}
 
 \item{pvalcalc}{Logical. If \code{TRUE}, computes p-values between groups.}
 
-\item{mode}{A string specifying the level of detail for contrasts, if \code{method = "all"}.
+\item{mode}{A string specifying the contrast mode when \code{method = "all"}.
+Determines the complexity and breadth of comparisons performed between group levels.
 Options are:
 \itemize{
-\item \code{"simple"}: Pairwise comparisons (e.g., A - B).
-\item \code{"medium"}: Pairwise comparisons plus comparisons against the mean of other groups.
-\item \code{"extensive"}: All possible groupwise contrasts, ensuring balance in the number of terms on each side.
+\item \code{"simple"}: Performs the minimal number of pairwise comparisons between individual group levels (e.g., A - B, A - C). Default.
+\item \code{"medium"}: Includes comparisons between one group and the union of all other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
+\item \code{"extensive"}: Allows for all possible algebraic combinations of group levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.
 }}
 
 \item{widthlegend}{Width of the legend in \strong{volcano plots} (used only if \code{method = "all"}) and violin score plots.}

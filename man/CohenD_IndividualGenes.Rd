@@ -12,8 +12,8 @@ CohenD_IndividualGenes(
   class,
   group_var = NULL,
   title = NULL,
-  widthTitle = 16,
-  heatmap_params = list()
+  titlesize = 16,
+  params = list()
 )
 }
 \arguments{
@@ -36,13 +36,13 @@ If not provided (\code{NULL}), all samples are treated as a single group.}
 \item{title}{An optional character string specifying a custom title for the heatmap.
 If not provided, a default title is generated.}
 
-\item{widthTitle}{A numeric value used when wrapping the title. Default is \code{16}.}
+\item{titlesize}{A numeric value specifying the size of the title. Default is \code{14}.}
 
-\item{heatmap_params}{A list of additional parameters for customizing the heatmap. Possible elements include:
+\item{params}{A list of additional parameters for customizing the heatmap. Possible elements include:
 \describe{
 \item{\code{cluster_rows}}{Logical; if \code{TRUE} (default), rows are clustered.}
 \item{\code{cluster_columns}}{Logical; if \code{TRUE} (default), columns are clustered.}
-\item{\code{col}}{A vector of length 2 of colors to be used for the minimum and maximum values of the color scale.
+\item{\code{colors}}{A vector of length 2 of colors to be used for the minimum and maximum values of the color scale.
 Defaults to \code{c("#FFFFFF", "#21975C")}, but note that the default mapping for Cohen's d is set to a divergent scale.}
 \item{\code{limits}}{A numeric vector of length 2 specifying the minimum and maximum values for the color scale.
 If not provided, defaults to \code{c(-2, 2)}.}
@@ -78,7 +78,7 @@ This function computes Cohen's d for each gene by comparing the expression value
                           class = "Mutant",
                           group_var = "CellType",
                           title = "Cohen's d Heatmap",
-                          heatmap_params = list(limits = c(-2, 2)))
+                          params = list(limits = c(-2, 2)))
 }
 
 }
