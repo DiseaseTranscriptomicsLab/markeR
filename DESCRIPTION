@@ -1,8 +1,18 @@
 Package: markeR
-Title: A Toolkit for Evaluating Gene Signatures as Phenotype Markers in R
-Version: 0.0.0.9000
+Title: An R Toolkit for Evaluating Gene Signatures as Phenotypic Markers
+Version: 0.9.0
 Authors@R: 
-    person("Rita", "Martins-Silva", email = "rita.silva@medicina.ulisboa.pt", role = c("aut", "cre"))
+    c(
+      person("Rita", "Martins-Silva", 
+             email = "rita.silva@gimm.pt", 
+             role = c("aut", "cre"),
+             comment = c(ORCID = "0000-0002-1067-7993")), 
+            person("Alexandre", "Kaizeler",  
+             role = c("aut", "ctb"),
+             comment = c(ORCID = "0000-0002-9117-6073")),
+        person(c("Nuno", "Luís"), "Barbosa-Morais", role=c("aut", "led", "ths"),
+               comment=c(ORCID="0000-0002-1215-0538"))
+    )
 Description: 
     markeR provides a suite of methods for using gene sets (signatures) to quantify and evaluate the 
     extent to which a given gene signature marks a specific phenotype. The package implements various 
@@ -10,12 +20,12 @@ Description:
     performance metrics and visualize results, making it a valuable resource for transcriptomics research (bulk RNA-seq).
 License: MIT + file LICENSE
 Encoding: UTF-8
+Language: en-GB
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Additional_repositories: https://bioconductor.org/packages/release/bioc
 Imports:
-    BiocManager,
     circlize,
     edgeR,
     ComplexHeatmap,
@@ -24,16 +34,12 @@ Imports:
     ggpubr,
     grid,
     gridExtra,
-    knitr,
     pROC,
     RColorBrewer,
     reshape2,
-    rmarkdown,
-    roxygen2,
     rstatix,
     scales,
-    stats,
-    testthat,
+    stats, 
     utils,
     fgsea,
     limma,
@@ -43,7 +49,15 @@ Imports:
 Suggests: 
     devtools,
     markdown,
-    renv
+    renv,
+    testthat,
+    BiocManager,
+    knitr,
+    rmarkdown, 
+    roxygen2
 Config/testthat/edition: 3
 Depends: 
-    R (>= 3.5)
+    R (>= 3.5.0)
+URL: https://diseasetranscriptomicslab.github.io/markeR/,
+     https://github.com/DiseaseTranscriptomicsLab/markeR
+BugReports: https://github.com/DiseaseTranscriptomicsLab/markeR/issues

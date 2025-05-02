@@ -6,12 +6,15 @@
 #'
 #' @param data A matrix or data frame containing gene expression data, where rows represent genes and columns represent samples.
 #' @param metadata A data frame containing sample metadata with at least one column corresponding to the variables of interest.
-#' @param cols A character vector specifying the metadata columns (variables) to analyze.
+#' @param cols A character vector specifying the metadata columns (variables) to analyse.
 #' @param stat Optional. The statistic to use for ranking genes before GSEA. If `NULL`, it is automatically determined based on the gene set:
 #'   - `"B"` for gene sets with **no known direction** (vectors).
 #'   - `"t"` for **unidirectional** or **bidirectional** gene sets (data frames).
 #'   - If provided, this argument overrides the automatic selection.
-#' @param mode A character string specifying the contrast generation method for categorical variables. Options: `"simple"`, `"medium"`, `"extensive"`. Default is `"simple"`.
+#' @param modeA string specifying the level of detail for contrasts. Options are:
+#' - `"simple"`: Performs the minimal number of pairwise comparisons between individual group levels (e.g., A - B, A - C). Default.
+#' - `"medium"`: Includes comparisons between one group and the union of all other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
+#' - `"extensive"`: Allows for all possible algebraic combinations of group levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.
 #' @param gene_set A named list defining the gene sets for GSEA. **(Required)**
 #'   - If using **unidirectional** gene sets, provide a list where each element is a vector of gene names representing a signature.
 #'   - If using **bidirectional** gene sets, provide a list where each element is a data frame:
@@ -33,9 +36,21 @@
 #'
 #' @examples
 #' # Example usage with random data
+#' set.seed(42)  # For reproducibility
+#'
+#' # Create random gene expression data
 #' data <- matrix(rnorm(1000), ncol = 10)
+#'
+#' # Assign gene identifiers as row names (e.g., Gene1, Gene2, ...)
+#' rownames(data) <- paste0("Gene", 1:nrow(data))
+#'
+#' # Create metadata (e.g., group variable)
 #' metadata <- data.frame(group = rep(c("A", "B"), each = 5))
+#'
+#' # Define a gene set
 #' gene_set <- list(SampleSet = c("Gene1", "Gene2", "Gene3"))
+#'
+#' # Call the GSEA_VariableAssociation function
 #' results <- GSEA_VariableAssociation(data, metadata, cols = "group", gene_set = gene_set)
 #'
 #' # View results
@@ -66,9 +81,14 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
 
     # Handle based on variable type
     if (variable_types[var] == "Numeric") {
-      # Use a linear model expression for continuous variables
-      DEGs_var <- calculateDE(data = data, metadata = metadata, lmexpression = paste0("~", var))
-      cont_vec <- c(cont_vec,c(paste0("intercept_",var),var))
+
+      # Use a model matrix for continuous variables
+      design <- model.matrix(as.formula(paste("~1+", var)), data = metadata_example)
+
+      DEGs_var <- calculateDE(data = data, metadata = metadata, modelmat =  design, contrasts = c(var))
+      #cont_vec <- c(cont_vec,c(paste0("intercept_",var),var))
+      cont_vec <- c(cont_vec, var)
+
     } else {
       # For categorical variables, generate contrasts
       uniquevalues_var <- unique(metadata[, var])
@@ -151,7 +171,7 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
     ggplot2::scale_color_identity() +
     ggplot2::labs(
       title = unique(combined_results$pathway),
-      subtitle = ifelse(any(combined_results$stat_used == "B"), "Altered Contrasts", "Enriched/Depleted Contrasts"),
+      subtitle = ifelse(any(combined_results$stat_used == "B"), "Altered", "Enriched/Depleted"),
       x = "Normalized Enrichment Score (NES)",
       y = "Contrast",
       color = "-log10(Adj. p-value)",
@@ -185,11 +205,13 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
 #'
 #' @return A character vector of unique contrast expressions.
 #' @examples
+#' \dontrun{
 #' levels <- c("A", "B", "C", "D")
 #' generate_all_contrasts(levels, mode = "simple")    # Pairwise only
 #' generate_all_contrasts(levels, mode = "medium")    # Pairwise + mean comparisons
 #' generate_all_contrasts(levels, mode = "extensive") # All balanced contrasts
-#' @export
+#' }
+#' @keywords internal
 generate_all_contrasts <- function(levels, mode = "simple") {
   levels <- unique(levels)  # Ensure unique levels
   n <- length(levels)       # Total number of levels

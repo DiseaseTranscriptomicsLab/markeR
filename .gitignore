@@ -7,3 +7,6 @@
 /renv/
 /tests/debug/
 .Rprofile
+docs
+renv.lock
+.obsidian/

@@ -45,14 +45,6 @@ If \code{NULL}, there will be as many columns as contrasts. If this number is 1,
 \item{nrow}{Optional numeric value specifying the number of rows in the grid layout.
 If \code{NULL}, there will be as many columns as gene sets. If this number is 1, then a near-square grid is computed.}
 
-\item{mode}{A string specifying the level of detail for contrasts.
-Options are:
-\itemize{
-\item \code{"simple"}: Pairwise comparisons (e.g., A - B).
-\item \code{"medium"}: Pairwise comparisons plus comparisons against the mean of other groups.
-\item \code{"extensive"}: All possible groupwise contrasts, ensuring balance in the number of terms on each side.
-}}
-
 \item{widthTitle}{Optional integer specifying the maximum width of the title before inserting line breaks.
 Titles break at \verb{_}, \code{-}, or \code{:} where possible, or at the exact width if no such character is found.
 Default is \code{18}.}
@@ -60,6 +52,13 @@ Default is \code{18}.}
 \item{title}{Title for the grid of plots.}
 
 \item{titlesize}{An integer specifying the text size for each of the heatmap titles. Default is 12.}
+
+\item{modeA}{string specifying the level of detail for contrasts. Options are:
+\itemize{
+\item \code{"simple"}: Performs the minimal number of pairwise comparisons between individual group levels (e.g., A - B, A - C). Default.
+\item \code{"medium"}: Includes comparisons between one group and the union of all other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
+\item \code{"extensive"}: Allows for all possible algebraic combinations of group levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.
+}}
 }
 \value{
 A \code{ggplot2} or \code{ggarrange} object containing the ROC curve plots.
@@ -68,5 +67,21 @@ A \code{ggplot2} or \code{ggarrange} object containing the ROC curve plots.
 This function generates ROC curve plots for different gene signatures across multiple scoring methods.
 }
 \examples{
+# Example data
+data <- as.data.frame(abs(matrix(rnorm(1000), ncol = 10)))
+rownames(data) <- paste0("Gene", 1:100)  # Name columns as Gene1, Gene2, ..., Gene10
+colnames(data) <- paste0("Sample", 1:10)  # Name rows as Sample1, Sample2, ..., Sample100
+
+# Metadata with sample ID and condition
+metadata <- data.frame(
+  SampleID = colnames(data),  # Sample ID matches the colnames of the data
+  Condition = rep(c("A", "B"), each = 5)  # Two conditions (A and B)
+)
+
+# Example gene set
+gene_sets <- list(Signature1 = c("Gene1", "Gene2", "Gene3"))  # Example gene set
+
+# Call ROC_Scores function
 ROC_Scores(data, metadata, gene_sets, method = "ssGSEA", variable = "Condition")
+
 }

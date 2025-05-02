@@ -143,6 +143,7 @@ PlotScores(ResultsList = df_ranking, ColorVariable = "CellType", GroupingVariabl
 ```
 
 
+
 ```{r fig.width=12, fig.height=8}
 
 plotlist <- list()
@@ -313,6 +314,47 @@ PlotScores(ResultsList = df_ranking, ColorVariable = "CellType", GroupingVariabl
 
 
 
+Testing numeric variables
+
+```{r}
+metadata_merge_corr_2 <- metadata_merge_corr
+metadata_merge_corr_2$numeric_condition <- as.numeric(unclass(factor(metadata_merge_corr_2$Condition)))
+```
+
+
+```{r fig.width=8, fig.height=6} 
+options(error=recover)
+PlotScores(data = corrcounts_merge, 
+           metadata = metadata_merge_corr_2, 
+           method = "all", 
+           gene_sets = bidirectsigs,  
+           ColorVariable = NULL, 
+           Variable="numeric_condition",   
+           ColorValues = NULL, 
+           ConnectGroups = T, 
+           ncol = NULL, 
+           nrow = NULL, 
+           title = NULL,
+           widthTitle = 20, 
+           titlesize = 10, 
+           limits = NULL, 
+           legend_nrow = NULL, 
+           pointSize = 2,
+           xlab = "teste", 
+           labsize = 9, 
+           compute_cohen=TRUE, 
+           cond_cohend = NULL, 
+           pvalcalc = FALSE, 
+           mode = "simple",
+           widthlegend=22, 
+           sig_threshold=0.05, 
+           cohen_threshold=0.2,
+           PointSize=6,
+           colorPalette="Set3", 
+           cor="pearson")
+```
+
+
 ## Heatmap and Volcano for Cohen's D
 
 ```{r fig.width=15, fig.height=6}
@@ -320,7 +362,7 @@ PlotScores(ResultsList = df_ranking, ColorVariable = "CellType", GroupingVariabl
 Scores_Overview_All <- PlotScores(data = corrcounts_merge, 
            metadata = metadata_merge,  
            gene_sets=bidirectsigs, 
-           GroupingVariable="Condition",  
+           Variable="Condition",  
            method ="all",   
            ncol = NULL, 
            nrow = NULL, 
@@ -483,6 +525,30 @@ Score_VariableAssociation(data=corrcounts_merge, metadata=metadata_merge_corr, c
 options(error=recover)
 Score_VariableAssociation(data=corrcounts_merge, metadata=metadata_merge_corr, cols = c( "random_numeric"), method="ranking", gene_set = list(HernandezSegura=bidirectsigs$HernandezSegura), mode = "extensive", nonsignif_color = "white", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, widthlabels=29, labsize=10, titlesize=14, pointSize=5)
 
+```
+
+
+## FDR
+
+```{r  fig.width=12, fig.height=18}
+options(error=recover)
+plt <- FDR_Simulation(data = corrcounts_merge,
+               metadata = metadata_merge_corr,
+               original_signatures = bidirectsigs,
+               gene_list = row.names(counts_example),
+               number_of_sims = 10,
+               title = "Marthandan et al. 2016",
+               widthTitle = 28,
+               Variable = "Condition",
+               titlesize = 12,
+               pointSize = 5,
+               labsize = 10,
+               mode = "simple",
+                ColorValues=NULL,
+               ncol=NULL, 
+               nrow=NULL ) 
+
+plt
 ```
 
 # Individual Genes

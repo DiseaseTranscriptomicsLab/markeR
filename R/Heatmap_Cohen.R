@@ -31,61 +31,65 @@
 #'
 #' The heatmaps are then adjusted to display axis text and ticks only for the left-most column and bottom row, and combined into a grid layout. If neither \code{nrow} nor \code{ncol} are specified, the layout is automatically determined to best approximate a square grid.
 #'
-#' @examples
-#' \dontrun{
-#'   # Assuming gene_data, sample_metadata, and gene_sets are defined:
-#'   result <- Heatmap_CohenD_ggplot(
-#'     data = gene_data,
-#'     metadata = sample_metadata,
-#'     gene_sets = gene_sets,
-#'     variable = "Condition",
-#'     nrow = 2,
-#'     ncol = 3,
-#'     limits = c(-1, 1),
-#'     widthTitle = 30,
-#'     titlesize = 14,
-#'     ColorValues = c("#F9F4AE", "#B44141")
-#'   )
-#'   print(result$plt)
-#' }
-#'
-#' @seealso \code{\link{CohenD_allConditions}}, \code{\link{wrap_title}}
+#' @seealso \code{\link{CohenD_allConditions}}, \code{\link{CohenF_allConditions}}
 #'
 #' @importFrom ggplot2 ggplot geom_tile geom_text labs scale_fill_gradientn theme_minimal element_text element_blank element_line margin
 #' @importFrom ggpubr ggarrange
 #'
-#' @export
-Heatmap_CohenD <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, widthTitle = 22, titlesize = 12, ColorValues = NULL,title=NULL ) {
+#' @keywords internal
+Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, widthTitle = 22, titlesize = 12, ColorValues = NULL,title=NULL ) {
+
+  cohentype <- ifelse("CohenD" %in% names(cohenlist[[1]]), "d", ifelse("CohenF" %in% names(cohenlist[[1]]), "f", NULL))
 
   heatmaps <- list()
 
+  if(!is.null(ColorValues)) {
+    if (!is.null(ColorValues[["heatmap"]])) {
+      ColorValues <- ColorValues[["heatmap"]]
+    } else {
+      ColorValues <- ColorValues[[1]]
+      }
+  }
+
   if (is.null(ColorValues)) ColorValues <- c("#F9F4AE", "#B44141")
 
+
+
   for (signature in names(cohenlist)) {
-    cohen_d_mat <- t(as.matrix(cohenlist[[signature]]$CohenD))
-    p_value_mat <- t(as.matrix(cohenlist[[signature]]$padj))
+
+    if (cohentype=="d"){
+      cohen_mat <- t(as.matrix(cohenlist[[signature]]$CohenD))
+    } else if (cohentype=="f"){
+      cohen_mat <- t(as.matrix(cohenlist[[signature]]$CohenF))
+    } else {
+      stop("Error: cohenlist format not valid.")
+    }
+
+    p_value_mat <- t(as.matrix(cohenlist[[signature]]$padj)) # adjusted p-value
 
     # Convert to long format manually
     long_data <- data.frame(
-      Var1 = rep(rownames(cohen_d_mat), times = ncol(cohen_d_mat)),
-      Var2 = rep(colnames(cohen_d_mat), each = nrow(cohen_d_mat)),
-      CohenD = abs(as.vector(cohen_d_mat)), # absolute value
+      Var1 = rep(rownames(cohen_mat), times = ncol(cohen_mat)),
+      Var2 = rep(colnames(cohen_mat), each = nrow(cohen_mat)),
+      Cohen = abs(as.vector(cohen_mat)), # absolute value
       PValue = as.vector(p_value_mat),
       stringsAsFactors = FALSE
     )
 
     # Generate text labels
-    long_data$label <- paste0(sprintf("%.2f", long_data$CohenD), "\n(", format.pval(long_data$PValue, digits = 1), ")")
+    long_data$label <- paste0(sprintf("%.2f", long_data$Cohen), "\n(", format.pval(long_data$PValue, digits = 1), ")")
 
     # Wrap the signature title using an internal helper function
     signature_title <- wrap_title(signature, widthTitle)
 
+    limits <- if (is.null(limits)) c(0 , max(long_data$Cohen, na.rm = TRUE)) else limits
+
     # Create heatmap using ggplot2
-    p <- ggplot2::ggplot(long_data, ggplot2::aes(x = Var2, y = Var1, fill = CohenD)) +
+    p <- ggplot2::ggplot(long_data, ggplot2::aes(x = Var2, y = Var1, fill = Cohen)) +
       ggplot2::geom_tile() +
       ggplot2::geom_text(aes(label = label), color = "black", size = 3) +
       ggplot2::scale_fill_gradientn(colors = ColorValues, limits = limits) +
-      ggplot2::labs(title = signature_title, x = NULL, y = NULL, fill = "|Cohen\'s D|") +
+      ggplot2::labs(title = signature_title, x = NULL, y = NULL, fill = ifelse(cohentype=="d", "|Cohen\'s d|", "|Cohen\'s f|")) +
       ggplot2::theme_bw() +
       ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
                      plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize) )
@@ -176,12 +180,12 @@ Heatmap_CohenD <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, w
 #'   # Assume gene_data is your gene expression data frame, sample_metadata is your metadata, and
 #'   # gene_sets is a named list of gene sets.
 #'   results <- CohenD_allConditions(data = gene_data, metadata = sample_metadata,
-#'                                    gene_sets = gene_sets, variable = \"Condition\")
-#'   # Access Cohen\'s d for a specific signature:
+#'                                   gene_sets = gene_sets, variable = "Condition")
+#'   # Access Cohen's d for a specific signature:
 #'   results$Signature_A$CohenD
 #' }
 #'
-#' @export
+#' @keywords internal
 CohenD_allConditions <- function(data, metadata, gene_sets, variable, mode = c("simple","medium","extensive")) {
 
   # Step 1: Check if variable exists in metadata
@@ -277,7 +281,6 @@ CohenD_allConditions <- function(data, metadata, gene_sets, variable, mode = c("
 }
 
 
-
 #' Compute Cohen\'s d Effect Size
 #'
 #' Computes the absolute Cohen\'s d effect size between two numeric vectors. This function returns
@@ -368,6 +371,7 @@ compute_cohen_d <- function(dfScore, variable, quantitative_var="score", mode = 
 }
 
 
+
 #' Flatten a Nested List of Results into a Data Frame
 #'
 #' Converts a nested list (where the first level is a method, the second level is a gene signature,
@@ -407,6 +411,134 @@ flatten_results <- function(nested_list) {
   rownames(final_df) <- NULL
 
   return(final_df)
+}
+
+
+
+
+
+
+#' Compute Cohen's f for All Gene Signatures Across a Categorical Variable
+#'
+#' Computes Cohen's f effect sizes and corresponding p-values for all gene signatures using scores calculated
+#' by multiple methods. The function first computes gene signature scores using \code{CalculateScores} with the "all"
+#' option, flattens the results, and fits linear models using the specified variable to estimate effect sizes.
+#'
+#' This function is designed for use with categorical variables, where the goal is to evaluate the overall group effect
+#' (e.g., using ANOVA) across multiple levels.
+#'
+#' @param data A data frame of gene expression data, with genes as rows and samples as columns.
+#' @param metadata A data frame containing sample metadata. The first column should contain sample identifiers matching
+#'   the column names of \code{data}.
+#' @param gene_sets A named list of gene sets. For unidirectional gene sets, each element is a vector of gene names;
+#'   for bidirectional gene sets, each element is a data frame where the first column contains gene names and the second
+#'   column indicates the expected direction (1 for upregulated, -1 for downregulated).
+#' @param variable A string specifying the categorical variable in \code{metadata} used to model the gene signature scores.
+#' @return A named list where each element corresponds to a gene signature. Each signature element is a list with three components:
+#' \describe{
+#'   \item{CohenF}{A data frame where rows are scoring methods and columns are the variable used in the linear model (usually one column),
+#'   containing the computed Cohen's f effect size.}
+#'   \item{PValue}{A data frame of the corresponding raw p-values from the linear model for each method.}
+#'   \item{padj}{A data frame of adjusted p-values (Benjamini-Hochberg method) across signatures and contrasts, per method.}
+#' }
+#'
+#' @keywords internal
+CohenF_allConditions <- function(data, metadata, gene_sets, variable ) {
+
+  # Step 1: Check if variable exists in metadata
+  if (!variable %in% colnames(metadata)) {
+    stop(paste("Error: Variable", variable, "not found in metadata."))
+  }
+
+  # Define variable type (numeric or non numeric)
+  type <- identify_variable_type(metadata, variable)[variable]
+
+  # Step 2: Compute scores for all methods and signatures
+  listScores <- CalculateScores(data = data, metadata = metadata, gene_sets = gene_sets, method = "all")
+
+  # Step 3: Flatten into a data frame with method & signature columns
+  dfScores <- flatten_results(listScores)
+
+  # Step 4: Initialize result list
+  result_list <- list()
+
+  # Step 5: Loop through each signature
+  for (signature in unique(dfScores$signature)) {
+
+    # Filter for the specific signature
+    df_subset <- dfScores[dfScores$signature == signature, ]
+
+    # Initialize storage for this signature
+    cohen_f_results <- list()
+    p_value_results <- list()
+
+    # Step 6: Loop through each method
+    for (method in unique(df_subset$method)) {
+
+      # Subset data for this method
+      df_method <- df_subset[df_subset$method == method, ]
+
+      # for each variable, fit a linear model between the score and that variable
+
+      #Without scaling, the coefficient represents the change in score per unit increase in the variable (if numeric, the unit of the variable. Makes sense to not scale...)
+      model <- lm(score ~ get(variable), data = df_method)
+      results_var <- compute_cohens_f_pval(model, type)
+
+      # Convert to named vectors (column names = comparisons)
+      cohen_f_results[[method]] <- setNames(results_var["Cohen_f"], variable)
+      p_value_results[[method]] <- setNames(results_var["P_Value"], variable)
+    }
+
+    # Convert lists to data frames
+    cohen_f_df <- as.data.frame(do.call(rbind, cohen_f_results))
+    p_value_df <- as.data.frame(do.call(rbind, p_value_results))
+
+    # Store results in the named list
+    result_list[[signature]] <- list(CohenF = cohen_f_df, PValue = p_value_df)
+  }
+
+  # Step 7: Correct for multiple testing across all signatures and contrasts (but NOT methods)
+  # Initialize storage for adjusted p-values
+  all_pvalues <- list()
+
+  # Step 1: Extract all p-values grouped by method
+  for (signature in names(result_list)) {
+    for (method in rownames(result_list[[signature]]$PValue)) {
+      if (!method %in% names(all_pvalues)) {
+        all_pvalues[[method]] <- c()
+      }
+      all_pvalues[[method]] <- c(all_pvalues[[method]], as.vector(result_list[[signature]]$PValue[method, ]))
+    }
+  }
+
+  # Step 2: Apply BH correction within each method
+  all_padj <- lapply(all_pvalues, function(pvals) p.adjust(pvals, method = "BH"))
+
+  # Step 3: Store corrected p-values back into result_list
+  index_tracker <- list()  # Track index position for each method
+  for (signature in names(result_list)) {
+    padj_matrix <- matrix(nrow = nrow(result_list[[signature]]$PValue),
+                          ncol = ncol(result_list[[signature]]$PValue),
+                          dimnames = dimnames(result_list[[signature]]$PValue))
+
+    for (method in rownames(result_list[[signature]]$PValue)) {
+      # Initialize index tracker for the method
+      if (is.null(index_tracker[[method]])) index_tracker[[method]] <- 1
+
+      # Assign adjusted p-values in order
+      num_vals <- length(result_list[[signature]]$PValue[method, ])
+      padj_matrix[method, ] <- all_padj[[method]][index_tracker[[method]]:(index_tracker[[method]] + num_vals - 1)]
+
+      # Update index tracker
+      index_tracker[[method]] <- index_tracker[[method]] + num_vals
+    }
+
+    # Store in result_list under padj
+    result_list[[signature]]$padj <- as.data.frame(padj_matrix)
+  }
+
+  # Step 8: Return the list
+  return(result_list)
 }
 
 

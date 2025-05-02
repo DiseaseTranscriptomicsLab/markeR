@@ -4,7 +4,7 @@
 \alias{runGSEA}
 \title{Run Gene Set Enrichment Analysis (GSEA) for Multiple Contrasts}
 \usage{
-runGSEA(DEGList, gene_sets, stat = NULL)
+runGSEA(DEGList, gene_sets, stat = NULL, ContrastCorrection = FALSE)
 }
 \arguments{
 \item{DEGList}{A named list where each element represents a contrast and contains a data frame of differential expression results.
@@ -29,6 +29,11 @@ runGSEA(DEGList, gene_sets, stat = NULL)
 \item \code{"t"} for \strong{unidirectional} or \strong{bidirectional} gene sets (data frames).
 \item If provided, this argument overrides the automatic selection.
 }}
+
+\item{ContrastCorrection}{Logical, default is \code{FALSE}. If \code{TRUE}, applies an additional multiple testing
+correction (Benjamini–Hochberg) across all contrasts returned in the \code{DEGList} results list.
+This accounts for the number of contrasts tested per signature and provides more stringent control of
+false discovery rate across multiple comparisons. If \code{FALSE}, the function only corrects for the number of gene sets.}
 }
 \value{
 A named list where each element corresponds to a contrast. Each contrast contains a \strong{single data frame} with GSEA results for all gene sets.

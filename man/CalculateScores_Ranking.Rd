@@ -47,6 +47,7 @@ relative comparisons between samples when using the same gene set.
 }
 }
 \examples{
+\dontrun{
 # Example dataset with 5 genes (rows) and 3 samples (columns)
 set.seed(123)
 data <- as.data.frame(matrix(runif(15, 1, 100), nrow = 5, ncol = 3))
@@ -59,5 +60,6 @@ gene_sets <- list(Signature1 = c("Gene_1", "Gene_3", "Gene_5"))
 # Compute scores
 scores <- CalculateScores_Ranking(data, gene_sets = gene_sets)
 print(scores)
-
 }
+}
+\keyword{internal}

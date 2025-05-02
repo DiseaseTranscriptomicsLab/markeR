@@ -26,7 +26,7 @@ GSEA_VariableAssociation(
 
 \item{metadata}{A data frame containing sample metadata with at least one column corresponding to the variables of interest.}
 
-\item{cols}{A character vector specifying the metadata columns (variables) to analyze.}
+\item{cols}{A character vector specifying the metadata columns (variables) to analyse.}
 
 \item{stat}{Optional. The statistic to use for ranking genes before GSEA. If \code{NULL}, it is automatically determined based on the gene set:
 \itemize{
@@ -34,8 +34,6 @@ GSEA_VariableAssociation(
 \item \code{"t"} for \strong{unidirectional} or \strong{bidirectional} gene sets (data frames).
 \item If provided, this argument overrides the automatic selection.
 }}
-
-\item{mode}{A character string specifying the contrast generation method for categorical variables. Options: \code{"simple"}, \code{"medium"}, \code{"extensive"}. Default is \code{"simple"}.}
 
 \item{gene_set}{A named list defining the gene sets for GSEA. \strong{(Required)}
 \itemize{
@@ -61,6 +59,13 @@ value is above the sig_threshold; in that case, it is 0.001.}
 \item{titlesize}{An integer specifying the plot title size. Default: \code{14}.}
 
 \item{pointSize}{Numeric. The size of points in the lollipop plot (default is 5).}
+
+\item{modeA}{string specifying the level of detail for contrasts. Options are:
+\itemize{
+\item \code{"simple"}: Performs the minimal number of pairwise comparisons between individual group levels (e.g., A - B, A - C). Default.
+\item \code{"medium"}: Includes comparisons between one group and the union of all other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
+\item \code{"extensive"}: Allows for all possible algebraic combinations of group levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.
+}}
 }
 \value{
 A list with two elements:
@@ -76,9 +81,21 @@ It generates all possible contrasts for categorical variables and uses linear mo
 }
 \examples{
 # Example usage with random data
+set.seed(42)  # For reproducibility
+
+# Create random gene expression data
 data <- matrix(rnorm(1000), ncol = 10)
+
+# Assign gene identifiers as row names (e.g., Gene1, Gene2, ...)
+rownames(data) <- paste0("Gene", 1:nrow(data))
+
+# Create metadata (e.g., group variable)
 metadata <- data.frame(group = rep(c("A", "B"), each = 5))
+
+# Define a gene set
 gene_set <- list(SampleSet = c("Gene1", "Gene2", "Gene3"))
+
+# Call the GSEA_VariableAssociation function
 results <- GSEA_VariableAssociation(data, metadata, cols = "group", gene_set = gene_set)
 
 # View results

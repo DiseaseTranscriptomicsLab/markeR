@@ -17,12 +17,12 @@
 #'   If not provided (\code{NULL}), all samples are treated as a single group.
 #' @param title An optional character string specifying a custom title for the heatmap.
 #'   If not provided, a default title is generated.
-#' @param widthTitle A numeric value used when wrapping the title. Default is \code{16}.
-#' @param heatmap_params A list of additional parameters for customizing the heatmap. Possible elements include:
+#' @param titlesize A numeric value specifying the size of the title. Default is \code{14}.
+#' @param params A list of additional parameters for customizing the heatmap. Possible elements include:
 #'   \describe{
 #'     \item{\code{cluster_rows}}{Logical; if \code{TRUE} (default), rows are clustered.}
 #'     \item{\code{cluster_columns}}{Logical; if \code{TRUE} (default), columns are clustered.}
-#'     \item{\code{col}}{A vector of length 2 of colors to be used for the minimum and maximum values of the color scale.
+#'     \item{\code{colors}}{A vector of length 2 of colors to be used for the minimum and maximum values of the color scale.
 #'       Defaults to \code{c("#FFFFFF", "#21975C")}, but note that the default mapping for Cohen's d is set to a divergent scale.}
 #'     \item{\code{limits}}{A numeric vector of length 2 specifying the minimum and maximum values for the color scale.
 #'       If not provided, defaults to \code{c(-2, 2)}.}
@@ -51,7 +51,7 @@
 #'                           class = "Mutant",
 #'                           group_var = "CellType",
 #'                           title = "Cohen's d Heatmap",
-#'                           heatmap_params = list(limits = c(-2, 2)))
+#'                           params = list(limits = c(-2, 2)))
 #' }
 #'
 #' @importFrom grid gpar
@@ -67,8 +67,8 @@ CohenD_IndividualGenes <- function(data, metadata,
                           class,
                           group_var = NULL,
                           title = NULL,
-                          widthTitle = 16,
-                          heatmap_params = list()) {
+                          titlesize = 16,
+                          params = list()) {
 
   # If genes are not specified, use all available genes
   if (is.null(genes)) {
@@ -144,59 +144,89 @@ CohenD_IndividualGenes <- function(data, metadata,
     warning("Some Cohen's d values are NA. Check if there are enough samples in each group.")
   }
 
-  # Prepare matrix for heatmap
-  effect_matrix <- reshape(effect_values, idvar = "Gene", timevar = "Group", direction = "wide")
-  colnames(effect_matrix) <- gsub("CohensD\\.", "", colnames(effect_matrix))
-  rownames(effect_matrix) <- effect_matrix$Gene
-  effect_matrix <- effect_matrix[, -1, drop = FALSE]
-  effect_matrix <- as.matrix(effect_matrix)
-  effect_matrix <- matrix(as.numeric(effect_matrix),
-                          nrow = nrow(effect_matrix),
-                          dimnames = list(rownames(effect_matrix), colnames(effect_matrix)))
+  # do barplot only if there's only one unique value in group and that equals "All". otherwise, do heatmap
 
-  # Determine heatmap title
-  final_title <- if (!is.null(title)) {
-    wrap_title(title, width = widthTitle)
+  if(length(unique(effect_values$Group)) == 1 && unique(effect_values$Group) == "All") {
+
+    fillcolor <- ifelse(is.null(params$colors), "#3B415B", params$colors[1])
+
+    if (is.null(title)) title <- paste("Cohen's d for variable", condition_var, "(", paste(class, collapse = ", "), " vs others)")
+
+    barplot <- ggplot2::ggplot(effect_values, ggplot2::aes(y = reorder(Gene, CohensD), x = CohensD)) +
+      ggplot2::geom_bar(stat = "identity", fill = fillcolor) +
+      #ggplot2::coord_flip()  +
+      coord_cartesian(xlim = c(0, max(effect_values$CohensD) + 0.1))+
+      ggplot2::labs(y = "Gene", x = "Cohen's d", title = title) +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(size = 14, face = "bold",hjust = 0.5),
+        axis.text = ggplot2::element_text(size = 10),
+      )
+
+    print(barplot)
+
+    return(invisible(list(plot = barplot, data = effect_values)))
+
   } else {
-    if (group_var != "Group") paste("Cohen's d Heatmap for Each Gene Across", group_var) else "Cohen's d Heatmap for Each Gene Across All Samples"
-  }
 
-  # Set default heatmap parameters if missing
-  heatmap_defaults <- list(
-    cluster_rows = TRUE,
-    cluster_columns = TRUE,
-    col = c("#F9F4AE" ,"#B44141"),
-    name = "Cohen's d"
-  )
-  heatmap_params_local <- modifyList(heatmap_defaults, heatmap_params)
+    # Prepare matrix for heatmap
+    effect_matrix <- reshape(effect_values, idvar = "Gene", timevar = "Group", direction = "wide")
+    colnames(effect_matrix) <- gsub("CohensD\\.", "", colnames(effect_matrix))
+    rownames(effect_matrix) <- effect_matrix$Gene
+    effect_matrix <- effect_matrix[, -1, drop = FALSE]
+    effect_matrix <- as.matrix(effect_matrix)
+    effect_matrix <- matrix(as.numeric(effect_matrix),
+                            nrow = nrow(effect_matrix),
+                            dimnames = list(rownames(effect_matrix), colnames(effect_matrix)))
 
-  # Use user-provided limits or default ones
-  if (is.null(heatmap_params_local$limits)) {
-    limits <- c(min(effect_matrix), max(effect_matrix))
-  } else {
-    limits <- heatmap_params_local$limits
-  }
+    # Determine heatmap title
+    if (is.null(title)) title <- paste("Cohen's d for variable", condition_var, "(", paste(class, collapse = ", "), " vs others)")
 
-  # Apply the colorRamp2 using the (possibly user-defined) color vector from heatmap_params_local$col.
-  heatmap_params_local$col <- circlize::colorRamp2(limits, heatmap_params_local$col)
-  heatmap_params_local$limits <- NULL  # Remove 'limits'
 
-  heatmap_obj_local <- ComplexHeatmap::Heatmap(
-    effect_matrix,
-    show_row_names = TRUE,
-    col = heatmap_params_local$col,
-    name = heatmap_params_local$name,
-    cluster_rows = heatmap_params_local$cluster_rows,
-    cluster_columns = heatmap_params_local$cluster_columns,
-    column_title = final_title,
-    column_title_gp = grid::gpar(fontsize = 13, fontface = "bold"),
-    cell_fun = function(j, i, x, y, width, height, fill) {
-      grid::grid.text(sprintf("%.2f", effect_matrix[i, j]), x, y,
-                      gp = grid::gpar(fontsize = 10, col = "black"))
+    # Set default heatmap parameters if missing
+    heatmap_defaults <- list(
+      cluster_rows = TRUE,
+      cluster_columns = TRUE,
+      colors = c("#F9F4AE" ,"#B44141"),
+      name = "Cohen's d"
+    )
+    heatmap_params_local <- modifyList(heatmap_defaults, params)
+
+    # Use user-provided limits or default ones
+    if (is.null(heatmap_params_local$limits)) {
+      limits <- c(min(effect_matrix), max(effect_matrix))
+    } else {
+      limits <- heatmap_params_local$limits
     }
-  )
 
-  ComplexHeatmap::draw(heatmap_obj_local)
+    # Apply the colorRamp2 using the (possibly user-defined) color vector from heatmap_params_local$colors.
+    heatmap_params_local$colors <- circlize::colorRamp2(limits, heatmap_params_local$colors)
+    heatmap_params_local$limits <- NULL  # Remove 'limits'
 
-  return(invisible(list(plot = heatmap_obj_local, data = effect_values)))
+    heatmap_obj_local <- ComplexHeatmap::Heatmap(
+      effect_matrix,
+      show_row_names = TRUE,
+      col = heatmap_params_local$colors,
+      name = heatmap_params_local$name,
+      cluster_rows = heatmap_params_local$cluster_rows,
+      cluster_columns = heatmap_params_local$cluster_columns,
+      column_title = title,
+      column_title_gp = grid::gpar(fontsize = 13, fontface = "bold"),
+      cell_fun = function(j, i, x, y, width, height, fill) {
+        grid::grid.text(sprintf("%.2f", effect_matrix[i, j]), x, y,
+                        gp = grid::gpar(fontsize = 10, col = "black"))
+      }
+    )
+
+    ComplexHeatmap::draw(heatmap_obj_local)
+
+    return(invisible(list(plot = heatmap_obj_local, data = effect_values)))
+
+
+
+  }
+
+
+
+
 }

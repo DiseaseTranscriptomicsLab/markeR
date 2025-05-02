@@ -53,3 +53,4 @@ gene_sets <- list(
 scores <- CalculateScores_logmedian(data, gene_sets = gene_sets)
 }
 }
+\keyword{internal}

@@ -73,6 +73,7 @@ CalculateScores_ssGSEA <- function(data, metadata = NULL, gene_sets) {
 #'
 #'
 #' @examples
+#' \dontrun{
 #' # Example dataset with 5 genes (rows) and 3 samples (columns)
 #' set.seed(123)
 #' data <- matrix(runif(15, 1, 100), nrow = 5, ncol = 3)
@@ -85,8 +86,8 @@ CalculateScores_ssGSEA <- function(data, metadata = NULL, gene_sets) {
 #' # Compute scores
 #' scores <- CalculateScores_ssGSEA_unidirectional(data, signature = signature)
 #' print(scores)
-#'
-#' @export
+#'}
+#' @keywords internal
 CalculateScores_ssGSEA_unidirectional <- function(data, signature) {
   ResultsList <- list()
 
@@ -132,6 +133,7 @@ CalculateScores_ssGSEA_unidirectional <- function(data, signature) {
 #' - The results are reshaped into a long-format data frame with one score per sample.
 #'
 #' @examples
+#' \dontrun{
 #' # Example dataset with 5 genes (rows) and 3 samples (columns)
 #' set.seed(123)
 #' data <- matrix(runif(15, 1, 100), nrow = 5, ncol = 3)
@@ -145,8 +147,8 @@ CalculateScores_ssGSEA_unidirectional <- function(data, signature) {
 #' # Compute scores
 #' scores <- CalculateScores_ssGSEA_bidirectional(data, signature = signature)
 #' print(scores)
-#'
-#' @export
+#'}
+#' @keywords internal
 CalculateScores_ssGSEA_bidirectional <- function(data, signature) {
   ResultsList <- list()
 

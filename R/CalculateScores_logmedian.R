@@ -33,7 +33,7 @@
 #' )
 #' scores <- CalculateScores_logmedian(data, gene_sets = gene_sets)
 #' }
-#' @export
+#' @keywords internal
 CalculateScores_logmedian <- function(data, metadata = NULL, gene_sets) {
   ResultsList <- list()
 

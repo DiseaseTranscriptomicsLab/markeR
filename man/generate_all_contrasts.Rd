@@ -25,8 +25,11 @@ Users can choose the level of complexity:
 }
 }
 \examples{
+\dontrun{
 levels <- c("A", "B", "C", "D")
 generate_all_contrasts(levels, mode = "simple")    # Pairwise only
 generate_all_contrasts(levels, mode = "medium")    # Pairwise + mean comparisons
 generate_all_contrasts(levels, mode = "extensive") # All balanced contrasts
 }
+}
+\keyword{internal}

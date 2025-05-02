@@ -24,12 +24,22 @@
 #'
 #' @examples
 #' # Example GSEA results (mock data, missing columns if running by runGSEA)
+#'
 #' GSEA_results <- list(
-#'   "Contrast1" = data.frame(NES = rnorm(10), padj = runif(10),
-#'   pathway = paste("Pathway", 1:10)),
-#'   "Contrast2" = data.frame(NES = rnorm(10), padj = runif(10),
-#'   pathway = paste("Pathway", 11:20))
+#' "Contrast1" = data.frame(
+#' NES = rnorm(3),
+#'   padj = runif(3),
+#'   pathway = paste("Pathway", 1:3),
+#'   stat_used = c("t", "B", "B")
+#' ),
+#' "Contrast2" = data.frame(
+#'   NES = rnorm(3),
+#'   padj = runif(3),
+#'   pathway = paste("Pathway", 4:6),
+#'   stat_used = c("t", "B", "B")
 #' )
+#' )
+#'
 #'
 #' # Generate the plot
 #' plot <- plotCombinedGSEA(GSEA_results, sig_threshold = 0.05, PointSize = 4)
@@ -73,17 +83,17 @@ plotGSEAenrichment <- function(GSEA_results, DEGList, gene_sets, widthTitle = 24
       padj_value <- signif(gsea_row$padj, 3)
       if(stat_used=="B"){
         if (adjustpval){
-          subtitle_text <- paste0("Altered Pathway\nNES: ", nes_value, " | adj. p-value: ", padj_value)
+          subtitle_text <- paste0("Altered Gene Set\nNES: ", nes_value, " | adj. p-value: ", padj_value)
         } else {
-          subtitle_text <- paste0("Altered Pathway\nNES: ", nes_value, " | p-value: ", padj_value)
+          subtitle_text <- paste0("Altered Gene Set\nNES: ", nes_value, " | p-value: ", padj_value)
         }
 
       } else {
 
         if (adjustpval){
-          subtitle_text <- paste0("Enriched/Depleted Pathway\nNES: ", nes_value, " | adj. p-value: ", padj_value)
+          subtitle_text <- paste0("Enriched/Depleted Gene Set\nNES: ", nes_value, " | adj. p-value: ", padj_value)
         } else {
-          subtitle_text <- paste0("Enriched/Depleted Pathway\nNES: ", nes_value, " | p-value: ", padj_value)
+          subtitle_text <- paste0("Enriched/Depleted Gene Set\nNES: ", nes_value, " | p-value: ", padj_value)
         }
 
       }
