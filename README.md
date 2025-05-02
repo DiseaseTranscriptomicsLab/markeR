@@ -1586,6 +1586,74 @@ GSEA_VariableAssociation(data=counts_example,
     #> 8:             intercept_days
     #> 9:                       days
 
+## Similarities with Other Signatures
+
+Even if a user-defined gene signature demonstrates strong discriminatory
+power between conditions, it may reflect known biological pathways
+rather than novel mechanisms. To address this, the
+`signature_similarity()` function computes pairwise **Jaccard indices**
+between user-provided gene signatures and a reference set, quantifying
+their overlap as a percentage of shared genes.
+
+Users can compare their signatures to: - **Custom gene sets**, defined
+manually, or - **MSigDB collections**, via the
+[`msigdbr`](https://cran.r-project.org/package=msigdbr) package.
+
+The function provides options to: - Filter by **Jaccard index
+threshold**, using `jaccard_threshold` (e.g., only show sets with
+Jaccard ≥ 0.05), or - Limit the number of top-matching reference
+signatures shown, using `num_sigs_toplot`.
+
+### Example 1: Compare against user-defined and MSigDB gene sets
+
+``` r
+# Example data (you'd replace these with your actual signatures)
+signature1 <- c("TP53", "BRCA1", "MYC", "EGFR", "CDK2")
+signature2 <- c("ATXN2", "FUS", "MTOR", "CASP3")
+
+signature_list <- list(
+  "User_Apoptosis" = c("TP53", "CASP3", "BAX"),
+  "User_CellCycle" = c("CDK2", "CDK4", "CCNB1", "MYC"),
+  "User_DNARepair" = c("BRCA1", "RAD51", "ATM"),
+  "User_MTOR" = c("MTOR", "AKT1", "RPS6KB1")
+)
+
+signature_similarity(
+  signatures = list(SG1 = signature1, SG2 = signature2),
+  other_user_signatures = signature_list,
+  collection = "C2",
+  subcollection = "CP:KEGG",
+  num_sigs_toplot = NULL,
+  jaccard_threshold = 0.05,
+  msig_subset = NULL
+)
+```
+
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
+
+### Example 2: Restrict comparison to a custom subset of MSigDB
+
+You can also specify exactly which MSigDB pathways to compare against
+using the `msig_subset` argument. This is helpful if you’re only
+interested in a specific set of pathways. If this argument is supplied,
+filters will only apply to this subset.
+
+``` r
+signature_similarity(
+  signatures = list(SG1 = signature1, SG2 = signature2),
+  other_user_signatures = signature_list,
+  collection = "C2",
+  subcollection = "CP:KEGG",
+  num_sigs_toplot = NULL,
+  jaccard_threshold = 0,
+  msig_subset = c("KEGG_MTOR_SIGNALING_PATHWAY", "KEGG_APOPTOSIS", "NON_EXISTENT_PATHWAY")
+)
+#> The following pathways from msig_subset were not found in the MSigDB collection:
+#> NON_EXISTENT_PATHWAY
+```
+
+<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
+
 ------------------------------------------------------------------------
 
 📩 For any questions or concerns, feel free to reach out:
