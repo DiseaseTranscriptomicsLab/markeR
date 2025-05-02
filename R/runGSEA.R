@@ -18,6 +18,11 @@
 #'   - `"t"` for **unidirectional** or **bidirectional** gene sets (data frames).
 #'   - If provided, this argument overrides the automatic selection.
 #'
+#' @param ContrastCorrection Logical, default is `FALSE`. If `TRUE`, applies an additional multiple testing
+#' correction (Benjamini–Hochberg) across all contrasts returned in the `DEGList` results list.
+#' This accounts for the number of contrasts tested per signature and provides more stringent control of
+#' false discovery rate across multiple comparisons. If `FALSE`, the function only corrects for the number of gene sets.
+#'
 #' @return A named list where each element corresponds to a contrast. Each contrast contains a **single data frame** with GSEA results for all gene sets.
 #' P-values are corrected for multiple testing based on all contrasts.
 #'   The result includes the standard `fgsea` output plus two additional columns:
@@ -40,7 +45,7 @@
 #'
 #' @importFrom fgsea fgsea
 #' @export
-runGSEA <- function(DEGList, gene_sets, stat = NULL) {
+runGSEA <- function(DEGList, gene_sets, stat = NULL, ContrastCorrection=FALSE) {
 
   # Initialize storage for results across contrasts
   results_by_contrast <- list()
@@ -127,18 +132,32 @@ runGSEA <- function(DEGList, gene_sets, stat = NULL) {
 
   ### Correcting for multiple testing ###
 
-  # Step 1: Combine all data frames into one
-  combined_df <- do.call(rbind, Map(cbind, results_by_contrast, df_name = names(results_by_contrast)))
+  if (ContrastCorrection){
 
-  # Step 2: Adjust p-values across all data
-  combined_df$padj <- p.adjust(combined_df$pval, method = "BH")
+    # Step 1: Combine all data frames into one
+    combined_df <- do.call(rbind, Map(cbind, results_by_contrast, df_name = names(results_by_contrast)))
 
-  # Step 3: Split back into the original list structure
-  list_of_dfs <- split(combined_df, combined_df$df_name)
+    # Step 2: Adjust p-values across all data
+    combined_df$padj <- p.adjust(combined_df$pval, method = "BH")
 
-  # Step 4: Remove the helper column
-  list_of_dfs <- lapply(list_of_dfs, function(df) df[, !names(df) %in% "df_name"])
-  results_by_contrast <- list_of_dfs[names(results_by_contrast)]
+    # Step 3: Split back into the original list structure
+    list_of_dfs <- split(combined_df, combined_df$df_name)
+
+    # Step 4: Remove the helper column
+    list_of_dfs <- lapply(list_of_dfs, function(df) df[, !names(df) %in% "df_name"])
+    results_by_contrast <- list_of_dfs[names(results_by_contrast)]
+
+  } else {
+
+    # Step 1: Adjust p-values for each data frame individually
+    results_by_contrast <- lapply(results_by_contrast, function(df) {
+      df$padj <- p.adjust(df$pval, method = "BH")  # Adjust p-values per data frame
+      return(df)
+    })
+
+
+  }
+
 
 
   return(results_by_contrast)

@@ -59,7 +59,7 @@
 #'
 #' The function returns a list of plots. If `method = "all"`, all available visualizations are included.
 #'
-#' @export
+#' @keywords internal
 VisualiseIndividualGenes <- function(data,
                                      metadata,
                                      genes,

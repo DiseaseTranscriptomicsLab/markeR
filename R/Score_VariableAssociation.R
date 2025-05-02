@@ -17,14 +17,11 @@
 #'   \item \code{P_Value}: The p-value from the statistical test.
 #' }
 #'
-#' @examples
-#' model <- lm(Sepal.Length ~ Petal.Width, data = iris)
-#' compute_cohens_f_pval(model, "Petal.Width", type = "Numeric")
 #'
 #' @importFrom effectsize eta_squared
 #' @importFrom stats anova lm
 #'
-#' @export
+#' @keywords internal
 compute_cohens_f_pval <- function(model, type) {
   eta_sq_value <- effectsize::eta_squared(model, partial = FALSE)$Eta2
   cohen_f <- sqrt(eta_sq_value / (1 - eta_sq_value))  # Convert η² to Cohen's f
@@ -57,7 +54,7 @@ compute_cohens_f_pval <- function(model, type) {
 #'
 #' @param contrasts A character vector containing contrast labels.
 #' @return A character vector with division notation removed.
-#' @export
+#' @keywords internal
 remove_division <- function(contrasts) {
   gsub("\\)/[0-9]+", ")", contrasts)  # Removes "/2", "/3", etc. after parentheses
 }
@@ -71,7 +68,7 @@ remove_division <- function(contrasts) {
 #' @param variable_name A character string specifying the column name in `metadata` that represents the variable of interest.
 #' @param contrast A character string representing the contrast in the form "(A + B) - (C + D)" (e.g.).
 #' @return A subset of `metadata` with an added `cohentest` column, indicating group membership based on the contrast.
-#' @export
+#' @keywords internal
 create_contrast_column <- function(metadata, variable_name, contrast) {
   # Extract left and right sides of the contrast
   sides <- strsplit(contrast, " - ")[[1]]
@@ -103,7 +100,7 @@ create_contrast_column <- function(metadata, variable_name, contrast) {
 #'
 #' @param data A data frame or matrix containing gene expression data.
 #' @param metadata A data frame containing sample metadata with at least one column corresponding to the variables of interest.
-#' @param cols A character vector specifying metadata columns to analyze.
+#' @param cols A character vector specifying metadata columns to analyse.
 #' @param method A character string specifying the scoring method (`"logmedian"`, `"ssGSEA"`, or `"ranking"`).
 #' @param gene_set A named list containing one gene set for scoring.
 #' @param mode A character string specifying the contrast generation method (`"simple"`, `"medium"`, `"extensive"`). Four methods are available:
@@ -130,18 +127,28 @@ create_contrast_column <- function(metadata, variable_name, contrast) {
 #' @param color_palette A string specifying the color palette for discrete variables. Default: `"Set2"`.
 #'
 #' @return A list with:
-#'   - `Overall`: Data frame with Cohen's F and p-values for overall associations.
-#'   - `Contrasts`: Data frame with Cohen's D and p-values for contrasts (only for non numerical variables).
-#'   - `plot`: Combined visualization of results.
-#'   - `plot_contrasts`: Plot of contrast results (only for non numerical variables).
-#'   - `plot_overall`: Plot of overall associations.
-#'   - `plot_distributions`: List of variable distribution plots.
+#'   - `Overall`: Data frame of effect sizes and p-values for each contrasted phenotypic variable.
+#'   - `Contrasts`: Data frame of Cohen’s d and adjusted p-values for contrasts between levels of categorical variables,
+#'   with the resolution of contrasts determined by the mode parameter.
+#'   - `plot`: A combined visualization with three main panels:
+#'   (1) lollipop plots of Cohen’s f for each variable of interest,
+#'   (2) distribution plots of the score by variable (density or scatter depending on variable type),
+#'   and (3, if applicable) lollipop plots of Cohen’s d for contrasts in categorical variables.
+#'   - `plot_contrasts`: Lollipop plots of Cohen’s d effect sizes for contrasts between levels of non numerical variables (if applicable), colored by adjusted p-value (BH).
+#'   - `plot_overall`: Lollipop plot showing Cohen’s f effect sizes for each variable, colored by p-value.
+#'   - `plot_distributions`: List of density or scatter plots of the score across variable levels, depending on variable type.
 #'
 #' @examples
-#' data <- matrix(rnorm(1000), ncol = 10)
-#' metadata <- data.frame(group = rep(c("A", "B"), each = 5))
+#' data <- as.data.frame(abs(matrix(rnorm(1000), ncol = 10)))
+#' rownames(data) <- paste0("Gene", 1:100)  # Name columns as Gene1, Gene2, ..., Gene10
+#' colnames(data) <- paste0("Sample", 1:10)  # Name rows as Sample1, Sample2, ..., Sample100
+#'
+#' metadata <- data.frame(
+#'   sample = colnames(data),  # Sample ID matches the rownames of the data
+#'   Condition = rep(c("A", "B"), each = 50)  # Two conditions (A and B)
+#' )
 #' gene_set <- list(SampleSet = c("Gene1", "Gene2", "Gene3"))
-#' results <- Score_VariableAssociation(data, metadata, cols = "group", gene_set = gene_set)
+#' results <- Score_VariableAssociation(data, metadata, cols = "Condition", gene_set = gene_set)
 #' print(results$plot)
 #'
 #' @importFrom ggpubr ggarrange
@@ -158,7 +165,8 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
                                       nonsignif_color = "grey", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05,
                                       widthlabels=18, labsize=10, title=NULL, titlesize=14, pointSize=5, discrete_colors=NULL,
                                       continuous_color = "#8C6D03", color_palette = "Set2"){
-
+  method <- match.arg(method)  # Validate method input
+  mode <- match.arg(mode)
   # calculate scores for a given metric
   df_ranking <- CalculateScores(data = data, metadata = metadata, method = method, gene_sets = gene_set)[[1]] # if more than one gene set is provided, only results for the first one will be returned
 
@@ -278,8 +286,8 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
       ggplot2::scale_linetype_identity() +
       ggplot2::scale_color_identity() +
       ggplot2::labs(
-        x = "Cohen's D",
-        y = "Pairwise Contrasts",
+        x = "Cohen's d",
+        y = "Contrasts",
         color = "-log10(adj. p-value)",
         fill = "-log10(adj. p-value)"
       ) +
@@ -331,7 +339,7 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
     ggplot2::scale_linetype_identity() +
     ggplot2::scale_color_identity() +
     ggplot2::labs(
-      x = "Cohen's F",
+      x = "Cohen's f",
       y = "Variable",
       color = "-log10(p-value)",
       fill = "-log10(p-value)"
@@ -362,7 +370,7 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
     # Adding p-value in parenthesis next to the metric
     if (variable_types[var] == "Numeric") {
 
-      list_plts_var_distribution[[var]] <- ggplot2::ggplot(df_ranking, ggplot2::aes_string(x = var, y = "score")) +
+      list_plts_var_distribution[[var]] <- ggplot2::ggplot(df_ranking, ggplot2::aes_string(x = paste0("`", var, "`"), y = "score")) +
         ggplot2::geom_point(alpha = 0.6, size=4, color = continuous_color) +  # Use continuous_color
         ggplot2::geom_smooth(method = "lm", col = "black", se = FALSE, size=2) +
         ggplot2::coord_cartesian(clip = "off") +  # Allow text outside the plot area
@@ -392,7 +400,7 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
       # Define a proportion of space below 0
       y_margin <- 0.1 * max_density  # Adjust this factor as needed
 
-      list_plts_var_distribution[[var]] <- ggplot2::ggplot(df_ranking, ggplot2::aes_string(x = "score", fill = var)) +
+      list_plts_var_distribution[[var]] <- ggplot2::ggplot(df_ranking, ggplot2::aes_string(x = "score", fill = paste0("`", var, "`"))) +
         ggplot2::geom_density(alpha = 0.6) +
         ggplot2::geom_rug(ggplot2::aes_string(x = "score", color=var), sides = "b",  alpha = 0.8, size = .5, length = grid::unit(0.08, "npc")) + # add lines at the bottom
         #(sides = "b", alpha = 0.6, size = 1.5, length = grid::unit(0.1, "npc"))

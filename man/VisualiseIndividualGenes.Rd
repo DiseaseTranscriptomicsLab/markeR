@@ -107,3 +107,4 @@ This function calls multiple sub-functions based on the selected visualization m
 
 The function returns a list of plots. If \code{method = "all"}, all available visualizations are included.
 }
+\keyword{internal}

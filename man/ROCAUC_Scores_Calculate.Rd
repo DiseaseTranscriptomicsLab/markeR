@@ -40,3 +40,4 @@ This function calculates Receiver Operating Characteristic (ROC) curves and
 Area Under the Curve (AUC) values for gene signature scores across different
 contrasts of a given categorical variable.
 }
+\keyword{internal}

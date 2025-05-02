@@ -27,6 +27,7 @@ Computes the rank sum of a given gene set within a sample based on its expressio
 }
 }
 \examples{
+\dontrun{
 # Example dataset with 5 genes and 3 samples
 set.seed(123)
 data <- as.data.frame(matrix(runif(15, 1, 100), nrow = 5, ncol = 3))
@@ -39,5 +40,6 @@ geneset <- c("Gene_1", "Gene_3", "Gene_5")
 # Compute ranking for Sample_1
 rank_score <- getRanking(data, "Sample_1", geneset)
 print(rank_score)
-
 }
+}
+\keyword{internal}

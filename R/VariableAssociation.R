@@ -6,23 +6,28 @@
 #' categorical variables have more than 10 unique values.
 #'
 #' @param df A data frame containing the variables to classify.
-#' @param cols Optional. A character vector of column names to consider. If NULL, all columns in `df` are used.
+#' @param cols A character vector of column names to consider.
 #'
 #' @return A named character vector where names correspond to column names
 #' and values indicate the variable type: "Numeric", "Categorical Bin", or "Categorical Multi".
 #'
 #' @examples
+#' \dontrun{
 #' df <- data.frame(
 #'   age = c(25, 30, 35, 40),
 #'   gender = c("Male", "Female", "Female", "Male"),
 #'   score = c(80, 85, 90, 95)
 #' )
 #' identify_variable_type(df)
-#'
-#' @export
+#'}
+#' @keywords internal
 identify_variable_type <- function(df, cols = NULL) {
 
   # Define only cols of interest
+  #if (!is.null(cols)) df <- df[, cols, drop = FALSE]
+
+  if (is.null(cols)) return("Unknown")
+
   if (!is.null(cols)) df <- df[, cols, drop = FALSE]
 
   variable_types <- sapply(names(df), function(col_name) {
@@ -31,13 +36,13 @@ identify_variable_type <- function(df, cols = NULL) {
     unique_vals <- length(unique(col))
 
     if (is.numeric(col) | is.integer(col)) {
-      if (unique_vals > 10) {
+ #     if (unique_vals > 10) {
         return("Numeric")
-      } else if (unique_vals == 2) {
-        return("Categorical Bin")
-      } else {
-        return("Categorical Multi")
-      }
+      # } else if (unique_vals == 2) {
+      #   return("Categorical Bin")
+      # } else {
+      #   return("Categorical Multi")
+      # }
     } else if (is.character(col) || is.factor(col)) {
       if (unique_vals == 2) {
         return("Categorical Bin")
@@ -97,6 +102,7 @@ identify_variable_type <- function(df, cols = NULL) {
 #' If an invalid statistical test is requested, the function stops with an error message.
 #'
 #' @examples
+#' \dontrun{
 #' df <- data.frame(
 #'   score = c(80, 85, 90, 95, 100),
 #'   age = c(25, 30, 35, 40, 45),
@@ -106,10 +112,10 @@ identify_variable_type <- function(df, cols = NULL) {
 #'
 #' results <- compute_stat_tests(df, target_var = "score")
 #' print(results)
-#'
+#'}
 #' @importFrom stats cor.test t.test wilcox.test aov TukeyHSD
 #'
-#' @export
+#' @keywords internal
 compute_stat_tests <- function(df, target_var, cols = NULL,
                                numeric = "pearson",
                                categorical_bin = "t.test",
@@ -259,19 +265,11 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
 #' - If `discrete_colors` is provided, it overrides `color_palette` for the specified variables.
 #' - If `ncol` and `nrow` are `NULL`, the function automatically determines an optimal grid layout.
 #'
-#' @examples
-#' df <- data.frame(
-#'   score = c(80, 85, 90, 95),
-#'   age = c(25, 30, 35, 40),
-#'   gender = c("Male", "Female", "Female", "Male")
-#' )
-#' plot_stat_tests(df, cols = c("age", "gender"), target_var = "score")
-#'
 #' @import ggplot2 patchwork
 #' @importFrom ggpubr ggarrange annotate_figure
 #' @importFrom RColorBrewer brewer.pal
 #'
-#' @export
+#' @keywords internal
 VariableAssociation <- function(df, cols, target_var, targetvar_lab="Score",
                                 discrete_colors = NULL, continuous_color = "#8C6D03",
                                 color_palette = "Set2",

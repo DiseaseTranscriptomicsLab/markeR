@@ -9,7 +9,7 @@ CorrelationHeatmap(
   metadata = NULL,
   genes,
   separate.by = NULL,
-  method = "pearson",
+  method = c("pearson", "spearman", "kendall"),
   colorlist = list(low = "blue", mid = "white", high = "red"),
   limits_colorscale = NULL,
   widthTitle = 16,

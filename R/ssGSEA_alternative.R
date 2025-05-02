@@ -46,7 +46,7 @@
 #'   print(es)
 #' }
 #'
-#' @export
+#' @keywords internal
 ssGSEA_alternative <- function(X, gene_sets, alpha = 0.25, scale = T, norm = F, single = T) {
   row_names = rownames(X)
   num_genes = nrow(X)
@@ -110,7 +110,7 @@ ssGSEA_alternative <- function(X, gene_sets, alpha = 0.25, scale = T, norm = F, 
 #'
 #' @return A numeric matrix of the same dimensions as \code{x} where each column contains the ranks of the corresponding column's elements.
 #'
-#' @export
+#' @keywords internal
 colRanking <- function(x, ties.method = "average") {
   apply(x, 2, rank, ties.method = ties.method)
 }

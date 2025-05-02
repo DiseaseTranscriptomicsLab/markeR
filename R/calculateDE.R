@@ -11,8 +11,6 @@
 #' @param metadata A data frame containing sample metadata used to build the design matrix (unless a design is provided directly).
 #' @param variables A character vector specifying the variable(s) from \code{metadata} to use in the default linear model.
 #'                  Ignored if \code{lmexpression} or \code{design} is provided.
-#' @param lmexpression (Optional) A model formula (e.g., \code{~0 + X} or \code{~X}) provided by the user to build the design matrix.
-#'                     If provided, this formula is used instead of constructing one from \code{variables}.
 #' @param modelmat (Optional) A user-supplied design matrix. If provided, this design is used directly and \code{lmexpression} and \code{variables}
 #'               are ignored. The order of samples in the design matrix should match the order in data.
 #' @param contrasts A character vector specifying contrasts to be applied (e.g., \code{c("A-B")}).
@@ -26,7 +24,6 @@
 #' The function fits a linear model with \code{limma::lmFit} and applies empirical Bayes moderation with \code{limma::eBayes}. Depending on the input:
 #' \itemize{
 #'   \item If a design matrix is provided via \code{design}, that design is used directly.
-#'   \item If \code{lmexpression} is provided (and no design is supplied), a design matrix is built using that formula.
 #'   \item Otherwise, a design matrix is constructed using the \code{variables} argument (with no intercept).
 #'   \item If contrasts are provided, they are applied using \code{limma::makeContrasts} and \code{limma::contrasts.fit}.
 #'   \item If no contrasts are provided, the function returns all possible coefficients fitted in the linear model.
@@ -43,17 +40,14 @@
 #'   # Example 1: Build design matrix from variables with a contrast:
 #'   de_res <- calculateDE(data, metadata, variables = "X", contrasts = "A-B")
 #'
-#'   # Example 2: Use a custom model formula:
-#'   de_res2 <- calculateDE(data, metadata, variables = "X", lmexpression = "~X", coefs = c(2,3))
-#'
-#'   # Example 3: Supply a custom design matrix directly:
+#'   # Example 2: Supply a custom design matrix directly:
 #'   design <- model.matrix(~0 + X, data = metadata)
 #'   de_res3 <- calculateDE(data, metadata, variables = "X", design = design, contrasts = "A-B")
 #' }
 #'
 #' @importFrom limma lmFit eBayes makeContrasts contrasts.fit topTable
 #' @export
-calculateDE <- function(data, metadata=NULL, variables=NULL, lmexpression = NULL, modelmat = NULL, contrasts = NULL) {
+calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL, contrasts = NULL) {
 
 
   remove_prefix <- function(colnames_vector, prefixes) {
@@ -100,16 +94,16 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, lmexpression = NULL
       if (!is.matrix(modelmat)) stop("Error: 'modelmat' must be a matrix.")
       if (nrow(modelmat) != ncol(data)) stop("Error: Rows in 'modelmat' must match the number of samples in 'data'.")
       modelmat
-    } else if (!is.null(lmexpression)) {
-      lmexpression <- as.formula(lmexpression, env = parent.frame())
-      design_matrix <- model.matrix(lmexpression, data = metadata)
-      vars <- extract_variables(lmexpression)
-      #colnames(design_matrix) <- gsub("^Condition","",colnames(design_matrix))
-
-      colnames(design_matrix) <-  remove_prefix(colnames(design_matrix), vars)
-      colnames(design_matrix) <- gsub(" ", "", colnames(design_matrix))
-      #colnames(design_matrix) <- sub("^[^.]*\\.", "", colnames(design_matrix))
-      design_matrix
+    # } else if (!is.null(lmexpression)) {
+    #   lmexpression <- as.formula(lmexpression, env = parent.frame())
+    #   design_matrix <- model.matrix(lmexpression, data = metadata)
+    #   vars <- extract_variables(lmexpression)
+    #   #colnames(design_matrix) <- gsub("^Condition","",colnames(design_matrix))
+    #
+    #   colnames(design_matrix) <-  remove_prefix(colnames(design_matrix), vars)
+    #   colnames(design_matrix) <- gsub(" ", "", colnames(design_matrix))
+    #   #colnames(design_matrix) <- sub("^[^.]*\\.", "", colnames(design_matrix))
+    #   design_matrix
     } else {
       design_formula <- as.formula(paste("~0+", paste(variables, collapse = " + ")))
       design_matrix <- model.matrix(design_formula, data = metadata)

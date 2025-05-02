@@ -20,3 +20,4 @@ A subset of \code{metadata} with an added \code{cohentest} column, indicating gr
 This function extracts and processes contrast groups from a given contrast string,
 then assigns contrast labels to a metadata subset based on the variable of interest.
 }
+\keyword{internal}
