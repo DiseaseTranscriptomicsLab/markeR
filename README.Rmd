@@ -48,6 +48,7 @@ knitr::opts_chunk$set(
         -   [Note on Continuous Variables](#note-on-continuous-variables)
     -   [Gene Set Enrichment Analyses](#gene-set-enrichment-analyses)
     -   [GSEA Association with Chosen Phenotypic Variables](#gsea-association-with-chosen-phenotypic-variables)
+-   [Similarities with Other Signatures](#similarities-with-other-signatures)
 
 ## Installation 
 
@@ -959,16 +960,20 @@ GSEA_VariableAssociation(data=counts_example,
 Even if a user-defined gene signature demonstrates strong discriminatory power between conditions, it may reflect known biological pathways rather than novel mechanisms. To address this, the `signature_similarity()` function computes pairwise **Jaccard indices** between user-provided gene signatures and a reference set, quantifying their overlap as a percentage of shared genes.
 
 Users can compare their signatures to:
-- **Custom gene sets**, defined manually, or
-- **MSigDB collections**, via the [`msigdbr`](https://cran.r-project.org/package=msigdbr) package.
+
+* **Custom gene sets**, defined manually, or
+
+* **MSigDB collections**, via the [`msigdbr`](https://cran.r-project.org/package=msigdbr) package.
 
 The function provides options to:
-- Filter by **Jaccard index threshold**, using `jaccard_threshold` (e.g., only show sets with Jaccard ≥ 0.05), or
-- Limit the number of top-matching reference signatures shown, using `num_sigs_toplot`.
+
+* Filter by **Jaccard index threshold**, using `jaccard_threshold` (e.g., only show sets with Jaccard ≥ 0.05), or
+
+* Limit the number of top-matching reference signatures shown, using `num_sigs_toplot`.
 
 ### Example 1: Compare against user-defined and MSigDB gene sets
 
-```{r}
+```{r, fig.width=6, fig.height=6, out.width="60%", warning=FALSE, message=FALSE}
 # Example data (you'd replace these with your actual signatures)
 signature1 <- c("TP53", "BRCA1", "MYC", "EGFR", "CDK2")
 signature2 <- c("ATXN2", "FUS", "MTOR", "CASP3")
@@ -996,7 +1001,7 @@ signature_similarity(
 
 You can also specify exactly which MSigDB pathways to compare against using the `msig_subset` argument. This is helpful if you're only interested in a specific set of pathways. If this argument is supplied, filters will only apply to this subset. 
 
-```{r}
+```{r, fig.width=6, fig.height=6, out.width="60%"}
 
 signature_similarity(
   signatures = list(SG1 = signature1, SG2 = signature2),

@@ -20,8 +20,6 @@
 #' @return A `ggplot` object showing a heatmap of Jaccard similarities between reference and comparison signatures.
 #'
 #' @import ggplot2
-#' @import dplyr
-#' @importFrom purrr map_dfr
 #' @importFrom tibble tibble
 #' @importFrom msigdbr msigdbr
 #' @importFrom scales squish
@@ -44,7 +42,6 @@
 #'
 #' @export
 
-
 signature_similarity <- function(
   signatures,
   other_user_signatures = NULL,
@@ -58,17 +55,15 @@ signature_similarity <- function(
   jaccard_threshold = 0,
   msig_subset = NULL
 ) {
-
-  # Convert gene names to uppercase for consistency
+  # Convert gene names to uppercase
   signatures <- lapply(signatures, toupper)
   if (!is.null(other_user_signatures)) {
     other_user_signatures <- lapply(other_user_signatures, toupper)
   }
 
-  # Initialize MSigDB sets
   gsets_filtered <- list()
 
-  # If MSigDB collection is specified
+  # Load MSigDB gene sets if requested
   if (!is.null(collection)) {
     gs <- msigdbr::msigdbr(
       species = "Homo sapiens",
@@ -76,95 +71,78 @@ signature_similarity <- function(
       subcategory = subcollection
     )
 
-    gsets <- base::split(gs$gene_symbol, gs$gs_name)
-    gsets <- lapply(gsets, toupper)
+    gsets <- split(toupper(gs$gene_symbol), gs$gs_name)
 
-    # Warn if msig_subset has pathways not in MSigDB
     if (!is.null(msig_subset)) {
-      missing <- base::setdiff(msig_subset, base::names(gsets))
-      if (base::length(missing) > 0) {
-        base::message("The following pathways from msig_subset were not found in the MSigDB collection:\n", base::paste(missing, collapse = ", "))
+      missing <- setdiff(msig_subset, names(gsets))
+      if (length(missing) > 0) {
+        message("The following pathways from msig_subset were not found in the MSigDB collection:\n", paste(missing, collapse = ", "))
       }
-      # Keep only valid subset pathways
-      gsets <- gsets[base::names(gsets) %in% msig_subset]
+      gsets <- gsets[names(gsets) %in% msig_subset]
     }
 
-    # Compute Jaccard indices
-    jaccard_msigdb <- purrr::map_dfr(
-      base::names(signatures),
-      function(ref_name) {
-        purrr::map_dfr(
-          base::names(gsets),
-          function(comp_name) {
-            sig1 <- signatures[[ref_name]]
-            sig2 <- gsets[[comp_name]]
-            jaccard <- base::length(base::intersect(sig1, sig2)) / base::length(base::union(sig1, sig2))
-            tibble::tibble(
-              Reference_Signature = ref_name,
-              Compared_Signature = comp_name,
-              Jaccard = jaccard
-            )
-          }
+    jaccard_msigdb <- do.call(rbind, lapply(names(signatures), function(ref_name) {
+      do.call(rbind, lapply(names(gsets), function(comp_name) {
+        sig1 <- signatures[[ref_name]]
+        sig2 <- gsets[[comp_name]]
+        jaccard <- length(intersect(sig1, sig2)) / length(union(sig1, sig2))
+        data.frame(
+          Reference_Signature = ref_name,
+          Compared_Signature = comp_name,
+          Jaccard = jaccard,
+          stringsAsFactors = FALSE
         )
-      }
+      }))
+    }))
+
+    # Aggregate max Jaccard for each MSigDB signature
+    max_jaccard <- tapply(jaccard_msigdb$Jaccard, jaccard_msigdb$Compared_Signature, max)
+    msigdb_ranks <- data.frame(
+      Compared_Signature = names(max_jaccard),
+      Max_Jaccard = as.numeric(max_jaccard),
+      stringsAsFactors = FALSE
     )
-
-    # Rank by max Jaccard
-    msigdb_ranks <- jaccard_msigdb %>%
-      dplyr::group_by(Compared_Signature) %>%
-      dplyr::summarise(Max_Jaccard = max(Jaccard)) %>%
-      dplyr::arrange(dplyr::desc(Max_Jaccard))
-
-    # Filter by threshold
-    msigdb_ranks <- msigdb_ranks %>%
-      dplyr::filter(Max_Jaccard >= jaccard_threshold)
+    msigdb_ranks <- msigdb_ranks[msigdb_ranks$Max_Jaccard >= jaccard_threshold, ]
+    msigdb_ranks <- msigdb_ranks[order(-msigdb_ranks$Max_Jaccard), , drop = FALSE]
 
     if (nrow(msigdb_ranks) == 0) {
-      base::message("No MSigDB pathways passed the Jaccard threshold of ", jaccard_threshold, ". Only user-defined signatures will be plotted.")
+      message("No MSigDB pathways passed the Jaccard threshold of ", jaccard_threshold, ". Only user-defined signatures will be plotted.")
     } else {
-      # Determine number to plot
-      num_custom <- if (!is.null(other_user_signatures)) base::length(other_user_signatures) else 0
-      num_remaining <- if (!is.null(num_sigs_toplot)) base::max(num_sigs_toplot - num_custom, 0) else nrow(msigdb_ranks)
-      top_msigdb_names <- utils::head(msigdb_ranks$Compared_Signature, num_remaining)
+      num_custom <- if (!is.null(other_user_signatures)) length(other_user_signatures) else 0
+      num_remaining <- if (!is.null(num_sigs_toplot)) max(num_sigs_toplot - num_custom, 0) else nrow(msigdb_ranks)
+      top_msigdb_names <- head(msigdb_ranks$Compared_Signature, num_remaining)
       gsets_filtered <- gsets[top_msigdb_names]
     }
   }
 
-  # Combine user-defined and MSigDB-filtered
+  # Combine custom and filtered MSigDB
   if (is.null(other_user_signatures)) {
     other_user_signatures <- gsets_filtered
   } else {
-    other_user_signatures <- base::c(other_user_signatures, gsets_filtered)
+    other_user_signatures <- c(other_user_signatures, gsets_filtered)
   }
 
-  # Compute Jaccard for plot
-  jaccard_df <- purrr::map_dfr(
-    base::names(signatures),
-    function(ref_name) {
-      purrr::map_dfr(
-        base::names(other_user_signatures),
-        function(comp_name) {
-          sig1 <- signatures[[ref_name]]
-          sig2 <- other_user_signatures[[comp_name]]
-          jaccard <- base::length(base::intersect(sig1, sig2)) / base::length(base::union(sig1, sig2))
-          tibble::tibble(
-            Reference_Signature = ref_name,
-            Compared_Signature = comp_name,
-            Jaccard = jaccard
-          )
-        }
+  # Final Jaccard data
+  jaccard_df <- do.call(rbind, lapply(names(signatures), function(ref_name) {
+    do.call(rbind, lapply(names(other_user_signatures), function(comp_name) {
+      sig1 <- signatures[[ref_name]]
+      sig2 <- other_user_signatures[[comp_name]]
+      jaccard <- length(intersect(sig1, sig2)) / length(union(sig1, sig2))
+      data.frame(
+        Reference_Signature = ref_name,
+        Compared_Signature = comp_name,
+        Jaccard = jaccard,
+        stringsAsFactors = FALSE
       )
-    }
-  )
+    }))
+  }))
 
-  # Fallback title
   plot_title <- if (is.null(title)) "Signature Overlap" else title
 
-  # Plot
   ggplot2::ggplot(jaccard_df, ggplot2::aes(x = Reference_Signature, y = Compared_Signature, fill = Jaccard)) +
     ggplot2::geom_tile(color = "white") +
-    ggplot2::geom_text(ggplot2::aes(label = base::sprintf("%.2f", Jaccard)), color = "black") +
-    ggplot2::scale_fill_gradientn(colors = color_values, limits = c(0, 1), oob = scales::squish) +
+    ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", Jaccard)), color = "black") +
+    ggplot2::scale_fill_gradientn(colors = color_values, limits = limits, oob = scales::squish) +
     ggplot2::labs(
       x = "",
       y = "Compared Signature",
