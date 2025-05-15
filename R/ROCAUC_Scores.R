@@ -174,8 +174,8 @@ ROC_Scores <- function(data, metadata, gene_sets, method = c("logmedian","ssGSEA
         ggplot2::theme_classic() +
         ggplot2::theme(legend.position = "none") + # Remove the default legend
         ggplot2::geom_abline(linetype = "dashed", color = "gray") +
-        ggplot2::theme( plot.title = ggplot2::element_text(hjust = 0.5 ),
-                        plot.subtitle = ggplot2::element_text(hjust = 0.5 ))
+        ggplot2::theme( plot.title = ggplot2::element_text(hjust = 0.5, size=titlesize ),
+                        plot.subtitle = ggplot2::element_text(hjust = 0.5, size=titlesize-1.5 ))
 
       # Add AUC text labels to the bottom-right corner
       auc_texts <- data.frame(Method = names(auc_values),
