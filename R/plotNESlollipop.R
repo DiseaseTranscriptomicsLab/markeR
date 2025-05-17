@@ -149,7 +149,7 @@ plotNESlollipop <- function(GSEA_results,
       # Minimal theme and legend position
       ggplot2::theme_bw() +
       ggplot2::theme(
-        plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"),
+        plot.title = ggplot2::element_text(hjust = 0.5, face = "bold", size=titlesize-1.5),
         legend.position = "right"
       ) +
       ggplot2::scale_linetype_identity() + # to remove aes for linetype and color
