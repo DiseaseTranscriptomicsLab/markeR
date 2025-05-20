@@ -16,7 +16,9 @@ ExpressionHeatmap(
   title = NULL,
   titlesize = 20,
   scale_position = c("right", "top", "bottom"),
-  legend_position = c("top", "right", "bottom")
+  legend_position = c("top", "right", "bottom"),
+  show_row_names = TRUE,
+  show_column_names = FALSE
 )
 }
 \arguments{
@@ -51,6 +53,10 @@ orientation if on the right and horizontal if on top or bottom.}
 
 \item{legend_position}{A character string specifying the position of the annotation legend.
 Options are \code{"top"} (default), \code{"right"}, or \code{"bottom"}.}
+
+\item{show_row_names}{A character string specifying whether row names (genes) should be displayed.}
+
+\item{show_column_names}{A character string specifying whether column names (samples) should be displayed.}
 }
 \value{
 A list containing:

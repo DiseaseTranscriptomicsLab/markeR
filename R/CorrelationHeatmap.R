@@ -33,6 +33,8 @@
 #' @param legend_position Character; position of the legend (`"right"` - default -
 #' or `"top"`).
 #' @param titlesize Numeric; font size of the heatmap title (default = `20`).
+#' @param show_row_names A character string specifying whether row names (genes) should be displayed.
+#' @param show_column_names A character string specifying whether column names (samples) should be displayed.
 #'
 #' @return A list containing:
 #'   \describe{
@@ -94,7 +96,9 @@ CorrelationHeatmap <- function(data, metadata = NULL, genes, separate.by = NULL,
                                 method = c("pearson","spearman","kendall"), colorlist = list(low = "blue", mid = "white", high = "red"),
                                 limits_colorscale = NULL, widthTitle = 16, title = NULL,
                                 cluster_rows = TRUE, cluster_columns = TRUE,
-                                detailedresults = FALSE, legend_position = c("right", "top"), titlesize=20) {
+                                detailedresults = FALSE, legend_position = c("right", "top"), titlesize=20,
+                               show_row_names=TRUE,
+                               show_column_names=TRUE) {
 
 
   # Choose legend position: "side" (vertical) or "top" (horizontal)
@@ -123,7 +127,8 @@ CorrelationHeatmap <- function(data, metadata = NULL, genes, separate.by = NULL,
   resultsList[["aux"]] <- list()
 
   # Subset data to selected genes
-  data <- data[rownames(data) %in% genes, , drop = FALSE]
+  #data <- data[rownames(data) %in% genes, , drop = FALSE]
+  data <- na.omit(as.data.frame(data[genes,])) # to keep input order
 
   if (!is.null(separate.by) && is.null(metadata)) {
     stop("separate.by is not NULL but metadata is missing. Please specify metadata.")
@@ -141,8 +146,8 @@ CorrelationHeatmap <- function(data, metadata = NULL, genes, separate.by = NULL,
       col = col_fun,
       cluster_rows = cluster_rows,
       cluster_columns = cluster_columns,
-      show_row_names = TRUE,
-      show_column_names = TRUE,
+      show_row_names = show_row_names,
+      show_column_names = show_column_names,
       heatmap_legend_param = list(
         title = titleleg,
         direction = direct,
