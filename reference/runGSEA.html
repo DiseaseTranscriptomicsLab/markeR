@@ -48,7 +48,13 @@ It automatically determines the appropriate ranking statistic based on the gene 
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">runGSEA</span><span class="op">(</span><span class="va">DEGList</span>, <span class="va">gene_sets</span>, stat <span class="op">=</span> <span class="cn">NULL</span>, ContrastCorrection <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">runGSEA</span><span class="op">(</span></span>
+<span>  <span class="va">DEGList</span>,</span>
+<span>  <span class="va">gene_sets</span>,</span>
+<span>  stat <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ContrastCorrection <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  nPermSimple <span class="op">=</span> <span class="fl">10000</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -81,6 +87,10 @@ It automatically determines the appropriate ranking statistic based on the gene 
 correction (Benjamini–Hochberg) across all contrasts returned in the <code>DEGList</code> results list.
 This accounts for the number of contrasts tested per signature and provides more stringent control of
 false discovery rate across multiple comparisons. If <code>FALSE</code>, the function only corrects for the number of gene sets.</p></dd>
+
+
+<dt id="arg-npermsimple">nPermSimple<a class="anchor" aria-label="anchor" href="#arg-npermsimple"></a></dt>
+<dd><p>Number of permutations in the simple fgsea implementation for preliminary estimation of P-values. Parameter from fgsea.</p></dd>
 
 </dl></div>
     <div class="section level2">
