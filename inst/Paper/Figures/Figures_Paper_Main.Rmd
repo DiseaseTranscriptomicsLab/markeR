@@ -1881,7 +1881,7 @@ ggplot2::ggsave("Figures/Figs/Figure5_ComparisonSigs.png",
 
 ## Significance
 
-(Run in local job, takes ~8h)
+(Run in local job, takes ~24h)
 
 ```{r}
 # Expression data: genes (rows) × samples (columns)
@@ -1998,8 +1998,10 @@ for (sig_name in names(gene_sets)) {
 ```
 
 ```{r}
-(results <- readRDS("data/Tradeoffs_v1.rds"))
-(results_nopvalcorrection <- readRDS("data/Tradeoffs_v2.rds"))
+#(results <- readRDS("data/Tradeoffs_v1.rds"))
+(results <- readRDS("data/Tradeoffs_v3.rds"))
+results$p_score <- p.adjust(results$p_score, method = "BH")
+results$p_enrich <- p.adjust(results$p_enrich, method = "BH")
 ```
 
  
@@ -2105,55 +2107,8 @@ plt_genepct <- ggplot(results_long %>% filter(sample_pct == 100),
 
  
 
-
  
-```{r}
-results_long_pval_correction <- results_long %>%
-  group_by(signature, method, gene_pct) %>%
-  mutate(p_adj_gene = p.adjust(if_else(method == "Score", p_score, p_enrich), method = "BH")) %>%
-  ungroup() %>%
-  group_by(signature, method, sample_pct) %>%
-  mutate(p_adj_sample = p.adjust(if_else(method == "Score", p_score, p_enrich), method = "BH")) %>%
-  ungroup()
-```
-
-```{r fig.width=12, fig.height=4}
-
-plt_samplepct_coorect <- ggplot(results_long_pval_correction %>% filter(gene_pct == 100),
-       aes(x = sample_pct, y = logp, color = signature)) +
-  geom_line(size = 1) +
-  geom_point(size = 2) +
-  facet_wrap(~method, scales = "free") +
-  geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "gray40") +
-  scale_color_manual(values = Signature_colors) +
-  labs(
-   # title = "Effect of Sample Size on Significance",
-    x = "Sample Subset (% of Total Samples)",
-    y = expression("-log"[10]*"(p-value)"),
-    color = "Signature"
-  ) +
-  theme_classic(base_size = 13) +
-  theme(plot.title = element_text(hjust = 0.5))
-
-plt_genepct_coorect <- ggplot(results_long_pval_correction %>% filter(sample_pct == 100),
-       aes(x = gene_pct, y = logp, color = signature)) +
-  geom_line(size = 1) +
-  geom_point(size = 2) +
-  facet_wrap(~method, scales = "free") +
-  geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "gray40") +
-  scale_color_manual(values = Signature_colors) +
-  labs(
-    #title = "Effect of Gene Set Size on Significance",
-    x = "Gene Subset (% of Signature Genes)",
-    y = expression("-log"[10]*"(p-value)"),
-    color = "Signature"
-  ) +
-  theme_classic(base_size = 13) +
-  theme(plot.title = element_text(hjust = 0.5))
-
-
- ggarrange(plt_samplepct_coorect,plt_genepct_coorect, common.legend = T, nrow=1, legend="top", labels="AUTO") 
-```
+ 
  
  
 ## Scores: Not coordinated acrivation of gene set
@@ -2458,13 +2413,13 @@ GSEAresults_radiation
  
 ## All
 
-```{r fig.width=16, fig.height=10}
-(fig5_tradeoffs <- ggarrange(plt_tradeoffs,plt_impact_score_cellage, plt_impact_enrichment, ncol=1, heights=c(0.25,0.3,0.45), labels=c("","C","D")))
+```{r fig.width=14, fig.height=10}
+(fig5_tradeoffs <- ggarrange(plt_tradeoffs,plt_impact_score_cellage, plt_impact_enrichment, ncol=1, heights=c(0.3,0.3,0.45), labels=c("","C","D")))
 ```
 ```{r}
 ggplot2::ggsave("Figures/Figs/Figure5_tradeoffs.png",
                 fig5_tradeoffs,
-                width = 16, height=10, bg = 'white')
+                width = 14, height=10, bg = 'white')
 ```
 
 
