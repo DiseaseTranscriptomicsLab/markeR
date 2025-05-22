@@ -1116,7 +1116,7 @@ plt2 <- ggarrange(PCA23_celltype_afterbatch_CellType,PCA23_celltype_afterbatch_C
 (plt_fig1 <- ggarrange(plt_genesets,plt_PC12, ncol=1, heights=c(0.55,0.45), labels=c("A","") ))
 ```
 ```{r}
-ggplot2::ggsave("Figures/Figs/Figure1_GeneSets_Datasets.png",
+ggplot2::ggsave("Figs/Figure1_GeneSets_Datasets.png",
                 plt_fig1,
                 width = 13, height=12, bg = 'white')
 ```
@@ -1396,14 +1396,14 @@ fig_cellage
 ```
 
 ```{r}
-ggplot2::ggsave("Figures/Figs/Figure2_Scores.png",
+ggplot2::ggsave("Figs/Figure2_Scores.png",
                 plt_fig2,
                 width = 20, height=20, bg = 'white')
 ```
 
 
 
-# Figure 4 - Enrichment-based methods
+## Figure 4 - Enrichment-based methods
 
 ```{r}
  
@@ -1486,12 +1486,12 @@ fig3
 
 
 ```{r}
-ggplot2::ggsave("Figures/Figs/Figure3_Enrichment.png",
+ggplot2::ggsave("Figs/Figure3_Enrichment.png",
                 fig3,
                 width = 20, height=10, bg = 'white')
 ```
 
-## Alternative 1
+### Alternative 1
 
 ```{r}
 GSEAresults_SQ <- GSEAresults$`Senescent-Quiescent`
@@ -1613,12 +1613,12 @@ plt_right <- ggarrange(plotNESlollipop_new,plt_scatter_gsea, ncol=1, labels=c("B
 ```
 
 ```{r}
-ggplot2::ggsave("Figures/Figs/Figure4_Enrichment_alternative.png",
+ggplot2::ggsave("Figs/Figure4_Enrichment_alternative.png",
                 plt_final,
                 width = 12, height=14, bg = 'white')
 ```
 
-# Figure 5 - Comparative Performance of Senescence Signatures
+## Figure 5 - Comparative Performance of Senescence Signatures
 
 ```{r fig.width=12, fig.height=4}
 
@@ -1709,7 +1709,7 @@ plt_scatter_REACTOME <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) +
 
 
 ```{r}
-ggplot2::ggsave("Figures/Figs/Figure5_SeneQuest.png",
+ggplot2::ggsave("Figs/Figure5_SeneQuest.png",
                 plt_fig5_senequest,
                 width = 12, height=6, bg = 'white')
 ```
@@ -1871,15 +1871,15 @@ plt_senequest <- ggarrange(plt_tstats,plot_logmedian_SeneQuest, ncol=1, heights=
  
  
 ```{r}
-ggplot2::ggsave("Figures/Figs/Figure5_ComparisonSigs.png",
+ggplot2::ggsave("Figs/Figure5_ComparisonSigs.png",
                 plt_fig5_alternative,
                 width = 14, height=16, bg = 'white')
 ```
  
   
-# Figure 6 - Tradeoffs between number of genes and number of samples
+## Figure 6 - Tradeoffs between number of genes and number of samples
 
-## Significance
+### Significance
 
 (Run in local job, takes ~24h)
 
@@ -2111,7 +2111,7 @@ plt_genepct <- ggplot(results_long %>% filter(sample_pct == 100),
  
  
  
-## Scores: Not coordinated acrivation of gene set
+### Scores: Not coordinated acrivation of gene set
 
 A senescence signature with both upregulated and downregulated genes — and a sample where only the upregulated genes are expressed highly.
 
@@ -2339,7 +2339,7 @@ GSEAresults_CellAgetests
 
 
 
-## Enrichment: Enrichment of only a subset of the samples
+### Enrichment: Enrichment of only a subset of the samples
 
 To check if there is any signature that is not significant with all data, but becomes significant when looking at one stressor in specific. proliferative and quiescent are the baseline.
 
@@ -2411,13 +2411,13 @@ GSEAresults_radiation
 
 ```
  
-## All
+### All
 
 ```{r fig.width=14, fig.height=10}
 (fig5_tradeoffs <- ggarrange(plt_tradeoffs,plt_impact_score_cellage, plt_impact_enrichment, ncol=1, heights=c(0.3,0.3,0.45), labels=c("","C","D")))
 ```
 ```{r}
-ggplot2::ggsave("Figures/Figs/Figure5_tradeoffs.png",
+ggplot2::ggsave("Figs/Figure5_tradeoffs.png",
                 fig5_tradeoffs,
                 width = 14, height=10, bg = 'white')
 ```
@@ -2444,9 +2444,9 @@ ggplot2::ggsave("Figures/Figs/Figure5_tradeoffs.png",
 
 
 
-# Interesting plots
+## Interesting plots
 
-## Good and bad signatures
+### Good and bad signatures
 
 ```{r}
 library(ggplot2)
@@ -2521,7 +2521,7 @@ ggplot(mock_long, aes(x = Condition, y = Score, fill = Condition)) +
 
 ```
 
-## Cell type specificity of HS scores
+### Cell type specificity of HS scores
 
 ```{r}
       df_Scores_hs <- CalculateScores(data = corrcounts,
@@ -2545,7 +2545,4 @@ ggplot(df_Scores_hs, aes(x = score, color = CellType)) +
   labs(color="")  
 ```
 
-
-## 
-
-
+ 

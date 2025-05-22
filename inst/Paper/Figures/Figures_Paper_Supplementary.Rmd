@@ -8,6 +8,7 @@ output: html_document
 #  {.tabset .tabset-pills}
 
 ## Set up {.tabset}
+ 
 
 ### Libraries
 
@@ -69,10 +70,11 @@ wrap_title <- function(title, width = 30) {
 ### Load relevant data
 
 ```{r}
-metadata <- readRDS("data/metadata.rds")
-filtered_counts <- readRDS("data/filtered_counts.rds")
-normalised_counts <- readRDS("data/normalised_counts.rds")
-corrcounts <- readRDS("data/corrcounts.rds")
+metadata <- readRDS("../data/metadata.rds")
+filtered_counts <- readRDS("../data/filtered_counts.rds")
+normalised_counts <- readRDS("../data/normalised_counts.rds")
+corrcounts <- readRDS("../data/corrcounts.rds")
+signatures_bidirectional <- readRDS("../data/SenescenceSigntures_Bidirectional.rds")
 ``` 
 
 ### Colors
@@ -417,13 +419,13 @@ vars <- c("DatasetID","Condition","CellType")
 ```
 
 ```{r}
-ggplot2::ggsave("Figures/Figs/Sup1_Preprocessing.png",
+ggplot2::ggsave("Figs/Sup1_Preprocessing.png",
                 plt_sup1,
                 width = 19, height=16, bg = 'white')
 ```
 
 
-# Supplementary Figure 2 - Function of Gene Sets
+## Supplementary Figure 2 - Function of Gene Sets
 
 ```{r}
 # transform list into a list of vectors
@@ -659,12 +661,12 @@ print(final_plot_function)
 ```
 
 ```{r}
-ggplot2::ggsave("Figures/Figs/Sup2_GeneSets_Function_Localisation.png",
+ggplot2::ggsave("Figs/Sup2_GeneSets_Function_Localisation.png",
                 supfig2,
                 width = 20, height=24, bg = 'white')
 ```
 
-# Supplementary Figure 3 - Score Distribution on Different Senescence-Inducing Factors
+## Supplementary Figure 3 - Score Distribution on Different Senescence-Inducing Factors
 
 
 
@@ -725,13 +727,13 @@ ggplot2::ggsave("Figures/Figs/Sup2_GeneSets_Function_Localisation.png",
 ```
 
 ```{r}
-ggplot2::ggsave("Figures/Figs/Sup3_Scores_SenescenceStressors.png",
+ggplot2::ggsave("Figs/Sup3_Scores_SenescenceStressors.png",
                 supfigure_3,
                 width = 20, height=30, bg = 'white')
 ```
 
 
-# Supplementary Figure 4 - FPR for all signatures
+## Supplementary Figure 4 - FPR for all signatures
 
  
 ```{r fig.width=12, fig.height=18}
@@ -757,7 +759,7 @@ plt_fdrsim_allsignatures_v2
 ```
 
 ```{r}
-ggplot2::ggsave("Figures/Figs/Sup4_FPRsimulations.png",
+ggplot2::ggsave("Figs/Sup4_FPRsimulations.png",
                 plt_fdrsim_allsignatures_v2,
                 width = 12, height=18, bg = 'white')
 ```
