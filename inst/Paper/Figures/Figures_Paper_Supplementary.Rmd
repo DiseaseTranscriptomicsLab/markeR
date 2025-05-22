@@ -1,0 +1,763 @@
+---
+title: "Supplementary Paper Figures"
+author: "Rita Martins-Silva"
+date: "05/05/2025"
+output: html_document
+---
+
+#  {.tabset .tabset-pills}
+
+## Set up {.tabset}
+
+### Libraries
+
+```{r}
+library("ggplot2")
+library("colorspace")
+library("scales")
+library("scater") 
+library("reshape2")
+```
+
+
+### Functions
+
+```{r}
+wrap_title <- function(title, width = 30) {
+  if (nchar(title) <= width) {
+    return(title)  # No need to wrap if it fits
+  }
+
+  wrapped_title <- ""
+  while (nchar(title) > width) {
+    # Find positions of capital letters and symbols near the wrap point
+    capital_pos <- gregexpr("[A-Z]", title)[[1]]
+    symbol_pos <- gregexpr("(_|-|:|\\+|\\\\|/|\\*|\\.|,|;|\\?|!)", title)[[1]]
+
+    # Check for symbol breaks within the last few characters (width - 5 to width)
+    valid_symbol_breaks <- symbol_pos[symbol_pos >= (width - 5) & symbol_pos <= width]
+
+    if (length(valid_symbol_breaks) > 0) {
+      # If a suitable symbol is found, break at the first valid symbol
+      break_at <- valid_symbol_breaks[1]
+    } else {
+      # If no suitable symbol, look for capital letters within the same range
+      valid_capital_breaks <- capital_pos[capital_pos >= (width - 5) & capital_pos <= width]
+
+      if (length(valid_capital_breaks) > 0) {
+        # If a capital letter is found, break just before the capital letter
+        break_at <- valid_capital_breaks[1] - 1
+      } else {
+        # If no suitable symbol or capital letter, break at width
+        break_at <- width
+      }
+    }
+
+    # Append the wrapped line
+    wrapped_title <- paste0(wrapped_title, substr(title, 1, break_at), "\n")
+
+    # Update title with the remaining text after the break
+    title <- substr(title, break_at + 1, nchar(title))
+  }
+
+  # Add the remaining part of the title
+  wrapped_title <- paste0(wrapped_title, title)
+
+  return(wrapped_title)
+}
+```
+### Load relevant data
+
+```{r}
+metadata <- readRDS("data/metadata.rds")
+filtered_counts <- readRDS("data/filtered_counts.rds")
+normalised_counts <- readRDS("data/normalised_counts.rds")
+corrcounts <- readRDS("data/corrcounts.rds")
+``` 
+
+### Colors
+
+```{r}
+Condition_colors <- c(
+  "Senescent"     = "#F4A261",  # Soft orange (not goldenrod)
+  "Proliferative" = "#A1C298",  # Desaturated sage green
+  "Quiescent"     = "#9DB4C0"   # Dusty teal-gray
+)
+
+CellTypecols <- c(
+  "Fibroblast"   = "#E69F00",  # Orange
+  "Keratinocyte" = "#56B4E9",  # Sky Blue
+  "Melanocyte"   = "#009E73",  # Bluish Green
+  "Endothelial"  = "#F0E442",  # Yellow
+  "Neuronal"     = "#0072B2",  # Blue
+  "Mesenchymal"  = "#D55E00"   # Vermilion
+)
+
+dataset_colors <- c(
+  "HernandezSegura" = "#8DD3C7",
+  "Mangelinck"      = "#FFFFB3",
+  "Chan"            = "#BEBADA",
+  "Purcell"         = "#FB8072",
+  "Marthandan2016"  = "#80B1D3",
+  "Marthandan2015"  = "#FDB462",
+  "Wang"            = "#B3DE69",
+  "Suda"            = "#FCCDE5",
+  "McHugh"          = "#D9D9D9",
+  "Savic"           = "#BC80BD",
+  "Skea"            = "#CCEBC5",
+  "Laurent"         = "#FFED6F",
+  "Tasdemir"        = "#D0B7E1",
+  "Lenain"          = "#FFB3BA",
+  "Aarts"           = "#C2C2F0",
+  "Casella"         = "#FFDAC1",
+  "Numa"            = "#C6E2FF",
+  "Admasu"          = "#F5CBA7",
+  "Urata"           = "#C7CEEA",
+  "Wang2023"        = "#E6B0AA",
+  "Fu"              = "#A9DFBF",
+  "Tanke"           = "#F9E79F",
+  "Bawens"          = "#AED6F1"
+)
+
+
+```
+
+```{r}
+show_col(Condition_colors, ncol=3)
+show_col(CellTypecols)
+show_col(dataset_colors)
+```
+ 
+## Supplementary Figure 1 - Senescence Datasets Processing
+
+Filtering lowly expressed genes
+
+ 
+```{r fig.width=4, fig.height=4}
+# Average expression per gene per condition
+avg_expr_quiesc <- log10(rowMeans(counts[, metadata$Condition == "Quiescent"] + 1))
+avg_expr_prol   <- log10(rowMeans(counts[, metadata$Condition == "Proliferative"] + 1))
+avg_expr_sen    <- log10(rowMeans(counts[, metadata$Condition == "Senescent"] + 1))
+
+# Combine into dataframe
+df_avg_expr <- data.frame(expression = c(avg_expr_quiesc, avg_expr_prol, avg_expr_sen),
+                          Condition = rep(c("Quiescent", "Proliferative", "Senescent"),
+                                          each = nrow(counts)))
+
+# Plot
+(plt_beforefilt <- ggplot(df_avg_expr, aes(x = expression, fill = Condition)) +
+  geom_density(alpha = 0.7) +
+  theme_bw() +
+  xlab("Mean log10(count + 1) per gene") +
+  ylab("Density") +
+  geom_vline(xintercept = log10(70), linetype = "dotted", color = "black", size = 1) +
+  scale_fill_manual(values = Condition_colors) +
+  theme(legend.position="bottom", legend.title = element_blank()))
+ 
+# Average expression per gene per condition
+avg_expr_quiesc <- log10(rowMeans(filtered_counts[, metadata$Condition == "Quiescent"] + 1))
+avg_expr_prol   <- log10(rowMeans(filtered_counts[, metadata$Condition == "Proliferative"] + 1))
+avg_expr_sen    <- log10(rowMeans(filtered_counts[, metadata$Condition == "Senescent"] + 1))
+
+# Combine into dataframe
+df_avg_expr <- data.frame(expression = c(avg_expr_quiesc, avg_expr_prol, avg_expr_sen),
+                          Condition = rep(c("Quiescent", "Proliferative", "Senescent"),
+                                          each = nrow(filtered_counts)))
+
+# Plot
+(plt_afterfilt <- ggplot(df_avg_expr, aes(x = expression, fill = Condition)) +
+  geom_density(alpha = 0.7) +
+  theme_bw() +
+  xlab("Mean log10(count + 1) per gene") +
+  ylab("Density") +
+  geom_vline(xintercept = log10(70), linetype = "dotted", color = "black", size = 1) +
+  scale_fill_manual(values = Condition_colors) +
+  theme(legend.position="bottom", legend.title = element_blank()))
+
+```
+
+
+```{r fig.width=4, fig.height=6}
+# (filtplot <- ggarrange(plt_beforefilt,plt_afterfilt, ncol=1, common.legend = T))
+```
+
+Normalisation
+ 
+```{r fig.width=10, fig.height=4}
+samples_ordered <- colnames(filtered_counts)[order(colSums(filtered_counts))]
+N <- 30
+
+filtcounts_ggplot <- stack(log2(filtered_counts[,c(samples_ordered[1:N], samples_ordered[(length(samples_ordered)-N +1):length(samples_ordered)])]))
+colnames(filtcounts_ggplot) <- c("expression", "sampleID")
+filtcounts_ggplot <- merge(filtcounts_ggplot,metadata, by="sampleID")
+  
+
+(plt_beforenorm <- ggplot(filtcounts_ggplot, aes(sampleID,expression)) + 
+    geom_boxplot(aes(fill=DatasetID))+ 
+    xlab("Samples") + 
+    ylab("Gene Expression (log2(CPM))")    +  
+    theme(axis.text.x = element_text(angle = 45, hjust=1))+
+  theme_bw()+ 
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(), legend.title = element_blank())  + 
+    scale_fill_manual(values = dataset_colors))
+ 
+
+normcounts_ggplot <- stack(log2(normalised_counts[,c(samples_ordered[1:N], samples_ordered[(length(samples_ordered)-N +1):length(samples_ordered)])]))
+colnames(normcounts_ggplot) <- c("expression", "sampleID")
+normcounts_ggplot <- merge(normcounts_ggplot,metadata, by="sampleID")
+  
+
+(plt_afternorm <- ggplot(normcounts_ggplot, aes(sampleID,expression)) + 
+    geom_boxplot(aes(fill=DatasetID))+ 
+    xlab("Samples") + 
+    ylab("Gene Expression (log2(CPM))")   +  
+    theme(axis.text.x = element_text(angle = 45, hjust=1))+
+  theme_bw()+ 
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(), legend.title = element_blank()) + 
+    scale_fill_manual(values = dataset_colors))
+
+```
+
+
+```{r fig.width=8, fig.height=5}
+#(normplot <- ggarrange(plt_beforenorm,plt_afternorm,ncol=1, common.legend = T, legend="top"))
+```
+
+
+Batch effect correction
+
+(before)
+
+
+```{r fig.width=6, fig.height=5}
+y <- DGEList(log2(normalised_counts+1), samples= metadata)
+PCA_beforeBC  <- prcomp(t(y$counts), scale=FALSE, center=TRUE)
+PCACounts_beforeBC  <- PCA_beforeBC$x
+PCACounts_beforeBC  <- as.data.frame(PCACounts_beforeBC )
+PCAData_beforeBC <-  cbind(PCACounts_beforeBC[1:10],y$samples) 
+
+ev = PCA_beforeBC$sdev^2 
+pc1= round(100*ev[1]/sum(ev),2) 
+pc2 = round(100*ev[2]/sum(ev),2)  
+
+(PCA_beforeBEC_Dataset <- ggplot(PCAData_beforeBC, aes(PC1,PC2))+
+  geom_point(aes(fill=DatasetID), size=5, alpha=0.6, shape=21)+ 
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted") + 
+    scale_fill_manual(values = dataset_colors) +
+  theme( legend.title = element_blank())+ guides(fill=guide_legend(nrow=7,byrow=TRUE)))
+
+(PCA_beforeBEC_Conditon <- ggplot(PCAData_beforeBC, aes(PC1,PC2))+
+  geom_point(aes(fill=Condition), size=5, alpha=0.6, shape=21)+ 
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted") + 
+    scale_fill_manual(values = Condition_colors) +
+  theme( legend.title = element_blank()))
+
+(PCA_beforeBEC_CellType <- ggplot(PCAData_beforeBC, aes(PC1,PC2))+
+  geom_point(aes(fill=CellType), size=5, alpha=0.6, shape=21)+ 
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted") + 
+    scale_fill_manual(values = CellTypecols) +
+  theme( legend.title = element_blank()))
+ 
+ 
+```
+
+Batch effect correction
+
+(after)
+
+
+
+```{r fig.width=6, fig.height=5}
+y <- DGEList(log2(corrcounts + 1), samples= metadata)
+PCA_afterBC  <- prcomp(t(y$counts), scale=FALSE, center=TRUE)
+PCACounts_afterBC  <- PCA_afterBC$x
+PCACounts_afterBC  <- as.data.frame(PCACounts_afterBC )
+PCAData_afterBC <-  cbind(PCACounts_afterBC[1:10],y$samples) 
+
+ev = PCA_afterBC$sdev^2 
+pc1= round(100*ev[1]/sum(ev),2) 
+pc2 = round(100*ev[2]/sum(ev),2)  
+
+(PCA_afterBEC_Dataset <- ggplot(PCAData_afterBC, aes(PC1,PC2))+
+  geom_point(aes(fill=DatasetID), size=5, alpha=0.6, shape=21)+ 
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted") + 
+    scale_fill_manual(values = dataset_colors) +
+  theme( legend.title = element_blank())+ guides(fill=guide_legend(nrow=7,byrow=TRUE)))
+
+(PCA_afterBEC_Conditon <- ggplot(PCAData_afterBC, aes(PC1,PC2))+
+  geom_point(aes(fill=Condition), size=5, alpha=0.6, shape=21)+ 
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted") + 
+    scale_fill_manual(values = Condition_colors) +
+  theme( legend.title = element_blank()))
+
+(PCA_afterBEC_CellType <- ggplot(PCAData_afterBC, aes(PC1,PC2))+
+  geom_point(aes(fill=CellType), size=5, alpha=0.6, shape=21)+ 
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted") + 
+    scale_fill_manual(values = CellTypecols) +
+  theme( legend.title = element_blank()))
+ 
+ 
+```
+
+
+```{r}
+
+corrcounts_ggplot <- stack(log2(corrcounts[,c(samples_ordered[1:N], samples_ordered[(length(samples_ordered)-N +1):length(samples_ordered)])]))
+colnames(corrcounts_ggplot) <- c("expression", "sampleID")
+corrcounts_ggplot <- merge(corrcounts_ggplot,metadata, by="sampleID")
+  
+
+(plt_afterBEC <- ggplot(corrcounts_ggplot, aes(sampleID,expression)) + 
+    geom_boxplot(aes(fill=DatasetID))+ 
+    xlab("Samples") + 
+    ylab("Gene Expression (log2(CPM))")   +  
+    theme(axis.text.x = element_text(angle = 45, hjust=1))+
+  theme_bw()+ 
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(), legend.title = element_blank(),
+        legend.position = "bottom") + 
+    scale_fill_manual(values = dataset_colors))
+```
+
+
+
+```{r fig.width=4, fig.height=4}
+
+df_variance_corrcounts <- readRDS("/mnt/scratch/home/rsilva/VersionControl/markeR/markeR/inst/Paper/data/df_variance_corrcounts.rds")
+df_variance_normcounts <- readRDS("/mnt/scratch/home/rsilva/VersionControl/markeR/markeR/inst/Paper/data/df_variance_normcounts.rds")
+vars <- c("DatasetID","Condition","CellType")
+
+(var_beforeBEC <- ggplot(df_variance_normcounts, aes(x = reorder(Variable, -VarianceExplained), y = VarianceExplained, fill = Variable)) +
+    geom_bar(stat = "identity") +
+    ylab("Mean Variance Explained (%)") +
+    xlab("") +
+    theme_minimal(base_size = 12) +
+    theme(plot.title = element_text(hjust = 0.5),
+          legend.position="bottom",
+          legend.title=element_blank()) +
+    scale_fill_manual(values = c("#ECD963", "#EC6363", "#63B8EC")[1:length(vars)]) +
+    guides(fill = guide_legend(title = "Variable"))+
+    ylim(c(0,100)))
+
+
+(var_afterBEC <- ggplot(df_variance_corrcounts, aes(x = reorder(Variable, -VarianceExplained), y = VarianceExplained, fill = Variable)) +
+    geom_bar(stat = "identity") + 
+    ylab("Mean Variance Explained (%)") +
+    xlab("") +
+    theme_minimal(base_size = 12) +
+    theme(plot.title = element_text(hjust = 0.5),
+          legend.position="bottom",
+          legend.title=element_blank()) +
+    scale_fill_manual(values = c("#ECD963", "#EC6363", "#63B8EC")[1:length(vars)]) +
+    guides(fill = guide_legend(title = "Variable"))+
+    ylim(c(0,100)))
+
+
+
+```
+
+
+
+
+```{r fig.width=16, fig.height=16}
+# filtering
+(panelA <- ggarrange(plt_beforefilt,plt_afterfilt, ncol=1, common.legend = T, legend="bottom"))
+# normalisation
+(panelB <- ggarrange(plt_beforenorm,plt_afternorm,ncol=1, common.legend = T, legend="bottom"))
+(panelAB <- ggarrange(panelA,panelB,nrow=1, widths=c(0.3,0.7), labels = c("A","B")))
+# before BEC
+(panelC_left <- ggarrange(PCA_beforeBEC_Dataset,PCA_beforeBEC_Conditon, ncol = 1, heights=c(0.6,0.4) ))
+(panelC_right <- ggarrange(PCA_beforeBEC_CellType,var_beforeBEC, ncol=1, heights=c(0.45,0.55) ))
+(panelC <- ggarrange(panelC_left,panelC_right, ncol=2  ))
+
+# after BEC
+(panelD_bottom <- ggarrange(PCA_afterBEC_Dataset,var_afterBEC, nrow=1, widths=c(0.6,0.4)))
+(panelD <- ggarrange(plt_afterBEC,panelD_bottom,ncol=1, heights = c(0.4,0.6)))
+(panelCD <- ggarrange(panelC,panelD, labels = c("C","D")))
+  
+(plt_sup1 <- ggarrange(panelAB,panelCD, ncol=1, heights=c(0.45,0.65)))
+```
+
+```{r}
+ggplot2::ggsave("Figures/Figs/Sup1_Preprocessing.png",
+                plt_sup1,
+                width = 19, height=16, bg = 'white')
+```
+
+
+# Supplementary Figure 2 - Function of Gene Sets
+
+```{r}
+# transform list into a list of vectors
+gene_sets <- lapply(signatures_bidirectional, function(x) {
+  if (is.data.frame(x)) unique(x[[1]])
+  else if (is.vector(x)) unique(x)
+  else NULL
+})
+
+ 
+```
+
+
+Crossing information from BioMart (gene characterisation) and COMPARTMENTS (protein localisation)
+
+COMPARTMENTS: https://academic.oup.com/database/article/doi/10.1093/database/bau012/2633793#47519723
+Human Protein Atlas: https://www.proteinatlas.org/about/assays+annotation#ih_reliability
+
+```{r}
+gene_annotations <- as.data.frame(fread("data/BioMart_Gene_Characterisation_March2024.txt"))
+gene_annotations <- subset(gene_annotations, gene_annotations$`Protein stable ID`!="")
+
+
+protein_localisation <- as.data.frame(fread("data/human_compartment_knowledge_full.tsv"))
+protein_localisation <- subset(protein_localisation, V5 == "UniProtKB")
+protein_localisation <- subset(protein_localisation, V6 %in% c("CURATED")) #c("CURATED", "IDA", "TAS", "NAS")  
+
+protein_localisation_HumanAtlas_all <- as.data.frame(fread("data/HumanAtlas_subcellular_location.tsv"))
+protein_localisation_HumanAtlas <- subset(protein_localisation_HumanAtlas_all, Reliability != "Uncertain")
+```
+
+COMPARTMENTS + BioMart
+
+```{r}
+gene_annotation_and_localisation <- merge(gene_annotations,protein_localisation, by.x="Protein stable ID", by.y="V1", all.x = TRUE)
+colnames(gene_annotation_and_localisation) <- c("ProteinID","GeneName","GeneDescription","GOTermName","GOTermAccession","GOTermDefinition","GODomain","GeneName2","GOTermAccession_Localisation","GOTermName_Localisation","DataBase_Localisation","Evidence","Evidence_Score")
+gene_annotation_and_localisation <- subset(gene_annotation_and_localisation, !is.na(GeneName2))
+```
+
+
+```{r}
+gene_annotation_and_localisation
+protein_localisation_HumanAtlas
+```
+
+```{r fig.width=18, fig.height=12}
+ 
+# Assume:
+# - `gene_sets`: named list of gene vectors
+# - `protein_localisation_HumanAtlas_all`: your dataframe
+ 
+
+# # Rename columns just in case
+# gene_data <- protein_localisation_HumanAtlas_all[, c("Gene name", "Main location", "Extracellular location")]
+# colnames(gene_data) <- c("Gene", "Location", "Secretion")
+# 
+# # Assign extracellular label as either "Predicted to be secreted" or "not reported"
+# gene_data$SecretionStatus <- ifelse(grepl("Predicted to be secreted", gene_data$Secretion),
+#                                     "Predicted to be secreted", "not reported")
+#  
+plot_list <- list()
+
+for (sig_name in names(gene_sets)) {
+  genes <- gene_sets[[sig_name]]
+  
+  # Subset the Human Atlas data based on the gene set
+  sub_data <- protein_localisation_HumanAtlas_all[protein_localisation_HumanAtlas_all$`Gene name` %in% genes, ]
+  
+  # Remove duplicates based on the 'Gene name' and 'Main location' columns
+  sub_data <- sub_data[!duplicated(sub_data[c("Gene name", "Main location")]), ]
+
+  # Assign secretion status
+  sub_data$SecretionStatus <- ifelse(grepl("Predicted to be secreted", sub_data$`Extracellular location`),
+                                     "Predicted to be secreted", "Not reported")
+
+  # Initialize empty result data frame
+  counts <- data.frame(Location = character(),
+                       SecretionStatus = character(),
+                       Count = numeric(),
+                       stringsAsFactors = FALSE)
+
+  # Count occurrences
+  for (i in seq_len(nrow(sub_data))) {
+    locs <- unlist(strsplit(sub_data$`Main location`[i], ";"))
+    locs <- trimws(locs)
+    locs <- locs[locs != ""]
+    if (length(locs) == 0) locs <- "Unspecified"
+    secretion <- sub_data$SecretionStatus[i]
+
+    for (loc in locs) {
+      match_row <- which(counts$Location == loc & counts$SecretionStatus == secretion)
+      if (length(match_row) == 0) {
+        counts <- rbind(counts, data.frame(Location = loc, SecretionStatus = secretion, Count = 1))
+      } else {
+        counts$Count[match_row] <- counts$Count[match_row] + 1
+      }
+    }
+  }
+
+  # Reorder Location by total gene count
+  total_counts <- tapply(counts$Count, counts$Location, sum)
+  counts$Location <- factor(counts$Location, levels = names(sort(total_counts)))
+
+  # Order secretion status so "Predicted" appears on top
+  counts$SecretionStatus <- factor(counts$SecretionStatus, levels = c("Predicted to be secreted","Not reported"))
+
+  sig_name <- wrap_title(sig_name,28)
+  
+  # Plot
+  p <- ggplot(counts, aes(x = Count, y = Location)) +
+    geom_bar(stat = "identity", aes(fill = SecretionStatus)) +
+    labs(title = sig_name, x = "Frequency", y = "Cellular localisation\n") +
+    scale_fill_manual(values = c("Predicted to be secreted" = "#3D5D56", 
+                                 "Not reported" = "#899C98"),
+                      labels = c("Predicted to be secreted", "not reported")) +
+    theme_classic() +
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.y = element_text(size = 9),
+          legend.title = element_blank())
+
+  plot_list[[sig_name]] <- p
+}
+
+# Combine all plots in a grid, with a common legend
+final_plot_localisation <- ggarrange(plotlist = plot_list, common.legend = TRUE, heights = c(0.4, 0.3, 0.3))
+final_plot_localisation
+```
+
+
+```{r fig.width=18, fig.height=12}
+# Load libraries
+library(msigdbr)
+library(ggplot2)
+library(reshape2)
+library(ggpubr)
+
+# 1. Load MSigDB Hallmark pathways
+pathways_H <- msigdbr(species = "Homo sapiens", category = "H")
+pathwaysHset <- split(toupper(pathways_H$gene_symbol), pathways_H$gs_name)
+
+# 2. Create the universe of genes from the Human Protein Atlas
+universe_genes <- unique(toupper(protein_localisation_HumanAtlas_all$`Gene name`))
+
+# 3. Initialize result matrices
+df_OR <- matrix(nrow = length(pathwaysHset), ncol = length(gene_sets))
+df_pval <- matrix(nrow = length(pathwaysHset), ncol = length(gene_sets))
+
+# 4. Fisher's exact test for each pathway × signature
+for (i in seq_along(pathwaysHset)) {
+  pathway_genes <- pathwaysHset[[i]]
+  pathway_name <- names(pathwaysHset)[i]
+
+  for (j in seq_along(gene_sets)) {
+    signature_genes <- toupper(gene_sets[[j]])
+    signature_name <- names(gene_sets)[j]
+
+    # Define contingency table
+    a <- length(intersect(signature_genes, pathway_genes))                           # In both
+    b <- length(setdiff(signature_genes, pathway_genes))                             # In signature only
+    c <- length(setdiff(pathway_genes, signature_genes))                             # In pathway only
+    d <- length(setdiff(universe_genes, union(signature_genes, pathway_genes)))      # In neither
+
+    contingency_table <- matrix(c(a, b, c, d), nrow = 2)
+
+    # Perform Fisher's exact test
+    fisher_result <- fisher.test(contingency_table)
+    df_OR[i, j] <- fisher_result$estimate
+    df_pval[i, j] <- fisher_result$p.value
+  }
+}
+
+# 5. Set row and column names
+rownames(df_pval) <- names(pathwaysHset)
+colnames(df_pval) <- names(gene_sets)
+rownames(df_OR) <- names(pathwaysHset)
+colnames(df_OR) <- names(gene_sets)
+
+# 6. Convert to long format
+df_pval_melt <- melt(df_pval)
+colnames(df_pval_melt) <- c("Pathway", "Signature", "pval")
+
+df_OR_melt <- melt(df_OR)
+colnames(df_OR_melt) <- c("Pathway", "Signature", "OR")
+
+# 7. Adjust p-values
+df_pval_melt$padj <- p.adjust(df_pval_melt$pval, method = "BH")
+
+# 8. Merge OR and adjusted p-values
+enrichment_results <- merge(df_OR_melt,
+                            df_pval_melt[, c("Pathway", "Signature", "padj")],
+                            by = c("Pathway", "Signature"))
+
+# 9. Filter significant results (padj ≤ 0.05)
+enrichment_results <- enrichment_results[!is.na(enrichment_results$padj) & enrichment_results$padj <= 0.05, ]
+
+# 10. Plot per signature
+plot_list <- list()
+for (sig in unique(enrichment_results$Signature)) {
+  data_sig <- enrichment_results[enrichment_results$Signature == sig, ]
+  
+    sig <- wrap_title(sig,28)
+    
+  p <- ggplot(data_sig, aes(x = log10(OR), y = reorder(Pathway, log10(OR)))) +
+    geom_bar(stat = "identity", fill = "#3D5D56") +
+    labs(title = sig, x = "log10(Fisher's OR)", y = "Enriched Hallmark \nPathways") +
+    theme_bw() +
+    geom_vline(xintercept = 0, linetype = "dashed") +
+    theme(plot.title = element_text(hjust = 0.5, size = 12),
+          axis.text.y = element_text(size = 9))
+  
+  plot_list[[sig]] <- p
+}
+
+# 11. Arrange plots in a 3x3 grid with common legend
+final_plot_function <- ggarrange(plotlist = plot_list,
+                        ncol = 3, nrow = 3,
+                        common.legend = TRUE, legend = "bottom", 
+                        heights=c(0.45,0.35,0.2))
+
+# 12. Display final plot
+print(final_plot_function)
+
+# 13. Optionally save it
+# ggsave("GeneSets_HallmarkPathways_Enrichment.png", plot = final_plot,
+#        width = 15, height = 18, bg = 'white')
+
+
+```
+
+
+```{r fig.width=18, fig.height=24}
+(supfig2 <- ggarrange(final_plot_localisation,final_plot_function, labels="AUTO", ncol=1,font.label = list(size = 22)))
+```
+
+```{r}
+ggplot2::ggsave("Figures/Figs/Sup2_GeneSets_Function_Localisation.png",
+                supfig2,
+                width = 20, height=24, bg = 'white')
+```
+
+# Supplementary Figure 3 - Score Distribution on Different Senescence-Inducing Factors
+
+
+
+```{r fig.width=14, fig.height=12}
+(plt_logmedian_stressors <-  PlotScores(data = corrcounts, 
+           metadata = metadata, 
+           method = "logmedian", 
+           gene_sets = signatures_bidirectional,  
+           ColorVariable = "CellType", 
+           Variable="SenescentType", 
+           ColorValues = CellTypecols, 
+           ConnectGroups=F,  
+           ncol = 3, 
+           widthTitle=30, 
+           limits = NULL, 
+           legend_nrow = 2, 
+           compute_cohen=F,
+           pointSize=2,
+           titlesize=14, xlab = "Senescence Stressor"))
+
+(plt_ssGSEA_stressors <-  PlotScores_adapted(data = corrcounts, 
+           metadata = metadata, 
+           method = "ssGSEA", 
+           gene_sets = signatures_bidirectional,  
+           ColorVariable = "CellType", 
+           Variable="SenescentType", 
+           ColorValues = CellTypecols, 
+           ConnectGroups=F,  
+           ncol = 3, 
+           widthTitle=30, 
+           limits = NULL, 
+           legend_nrow = 2, 
+           compute_cohen=F,
+           pointSize=2,
+           titlesize=14, xlab = "Senescence Stressor"))
+
+(plt_ranking_stressors <-  PlotScores_adapted(data = corrcounts, 
+           metadata = metadata, 
+           method = "ranking", 
+           gene_sets = signatures_bidirectional,  
+           ColorVariable = "CellType", 
+           Variable="SenescentType", 
+           ColorValues = CellTypecols, 
+           ConnectGroups=F,  
+           ncol = 3, 
+           widthTitle=30, 
+           limits = NULL, 
+           legend_nrow = 2, 
+           compute_cohen=F,
+           pointSize=2,
+           titlesize=14, xlab = "Senescence Stressor"))
+```
+
+```{r fig.width=18, fig.height=30}
+(supfigure_3 <- ggarrange(plt_logmedian_stressors,
+          plt_ssGSEA_stressors,
+          plt_ranking_stressors, ncol=1, heights=c(0.35,0.3,0.3), labels = "AUTO",font.label = list(size = 26)))
+```
+
+```{r}
+ggplot2::ggsave("Figures/Figs/Sup3_Scores_SenescenceStressors.png",
+                supfigure_3,
+                width = 20, height=30, bg = 'white')
+```
+
+
+# Supplementary Figure 4 - FPR for all signatures
+
+ 
+```{r fig.width=12, fig.height=18}
+ 
+# Local job
+# plt_fdrsim_allsignatures_v2 <- FPR_Simulation(data = corrcounts,
+#                               metadata = metadata,
+#                               original_signatures = signatures_bidirectional,
+#                               gene_list = row.names(corrcounts),
+#                               number_of_sims = 100,
+#                               widthTitle = 30,
+#                               Variable = "Condition",
+#                               titlesize = 12,
+#                               pointSize = 4,
+#                               labsize = 10,
+#                               mode = "simple",
+#                               ColorValues=NULL,
+#                               ncol=NULL,
+#                               nrow=3 )
+
+
+plt_fdrsim_allsignatures_v2
+```
+
+```{r}
+ggplot2::ggsave("Figures/Figs/Sup4_FPRsimulations.png",
+                plt_fdrsim_allsignatures_v2,
+                width = 12, height=18, bg = 'white')
+```

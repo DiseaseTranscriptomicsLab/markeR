@@ -322,14 +322,14 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable, gene_l
 
     # Build the plot for the current signature
     p <- ggplot2::ggplot() +
-      geom_violin(data = final_df, aes(y = cohen, x = method),
-                  fill = "#F0F0F0", color = "black", alpha = 0.5) +
       geom_jitter(data = final_df[final_df$type == "Simulated",],
                   aes(y = cohen, x = method, color = type),
-                  width = 0.2, size = pointSize, alpha = 0.5) +
+                  width = 0.3, size = pointSize, alpha = 0.5) +
+      geom_violin(data = final_df, aes(y = cohen, x = method),
+                  fill = "#F0F0F0", color = "black", alpha = 0.5) +
       geom_jitter(data = final_df[final_df$type == "Original",],
                   aes(y = cohen, x = method, color = type),
-                  width = 0.2, size = pointSize, alpha = 1) +
+                  width = 0.3, size = pointSize, alpha = 1) +
       geom_text(data = all_max,
                 aes(x = method, y = y, label = label),
                 size = 3,
@@ -338,8 +338,8 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable, gene_l
                    aes(x = xmin, xend = xmax, y = q_high, yend = q_high),
                    linetype = "dashed", color = "red", inherit.aes = FALSE) +
       labs(title = wrap_title(sig, widthTitle),
-           x = ifelse(cohentype == "d", "|Cohen's d|", "|Cohen's f|"),
-           y = "Metric",
+           y = ifelse(cohentype == "d", "|Cohen's d|", "|Cohen's f|"),
+           x = "Method",
            color = "") +
       theme_classic() +
       theme(plot.title = element_text(hjust = 0.5, size = titlesize),
