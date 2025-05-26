@@ -83,7 +83,7 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
     if (variable_types[var] == "Numeric") {
 
       # Use a model matrix for continuous variables
-      design <- model.matrix(as.formula(paste("~1+", var)), data = metadata_example)
+      design <- model.matrix(as.formula(paste("~1+", var)), data = metadata)
 
       DEGs_var <- calculateDE(data = data, metadata = metadata, modelmat =  design, contrasts = c(var))
       #cont_vec <- c(cont_vec,c(paste0("intercept_",var),var))
