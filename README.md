@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# markeR <a href="https://diseasetranscriptomicslab.github.io/markeR/"><img src="man/figures/logo.png" align="right" height="90" alt="markeR website" /></a>
+# markeR <a href="https://diseasetranscriptomicslab.github.io/markeR/"><img src="man/figures/logo.png" align="right" height="180" alt="markeR website" /></a>
 
 <!-- badges: start -->
 
