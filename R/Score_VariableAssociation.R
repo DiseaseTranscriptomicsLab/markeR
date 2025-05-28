@@ -125,6 +125,7 @@ create_contrast_column <- function(metadata, variable_name, contrast) {
 #' Each element should be a named vector where names correspond to factor levels. Default: `NULL`.
 #' @param continuous_color A string specifying the color for continuous variables. Default: `"#8C6D03"`.
 #' @param color_palette A string specifying the color palette for discrete variables. Default: `"Set2"`.
+#' @param printplt Boolean specifying if plot is to be printed. Default: `TRUE`.
 #'
 #' @return A list with:
 #'   - `Overall`: Data frame of effect sizes and p-values for each contrasted phenotypic variable.
@@ -164,7 +165,7 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
                                       mode=c("simple","medium","extensive"),
                                       nonsignif_color = "grey", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05,
                                       widthlabels=18, labsize=10, title=NULL, titlesize=14, pointSize=5, discrete_colors=NULL,
-                                      continuous_color = "#8C6D03", color_palette = "Set2"){
+                                      continuous_color = "#8C6D03", color_palette = "Set2", printplt =TRUE){
   method <- match.arg(method)  # Validate method input
   mode <- match.arg(mode)
   # calculate scores for a given metric
@@ -432,7 +433,7 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
       gp = grid::gpar(cex = 1.3, fontsize = titlesize, fontface = "bold")
     )
   )
-  print(plotfinal)
+  if (printplt) print(plotfinal)
 
   invisible(list(Overall=df_results_overall,
                  Contrasts = df_results_contrast,
@@ -453,7 +454,7 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
        )
      )
 
-     print(plotfinal)
+     if (printplt) print(plotfinal)
 
      invisible(list(Overall=df_results_overall,
                     Contrasts = NULL,

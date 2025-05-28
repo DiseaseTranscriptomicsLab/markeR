@@ -4,9 +4,9 @@ author: "Rita Martins-Silva"
 date: "05/05/2025"
 output: html_document
 ---
- 
 
-#  {.tabset .tabset-pills}
+
+# Main Figures {.tabset .tabset-pills}
 
 ## Set up {.tabset}
 
@@ -49,23 +49,23 @@ wrap_title <- function(title, width = 30) {
   if (nchar(title) <= width) {
     return(title)  # No need to wrap if it fits
   }
-
+  
   wrapped_title <- ""
   while (nchar(title) > width) {
     # Find positions of capital letters and symbols near the wrap point
     capital_pos <- gregexpr("[A-Z]", title)[[1]]
     symbol_pos <- gregexpr("(_|-|:|\\+|\\\\|/|\\*|\\.|,|;|\\?|!)", title)[[1]]
-
+    
     # Check for symbol breaks within the last few characters (width - 5 to width)
     valid_symbol_breaks <- symbol_pos[symbol_pos >= (width - 5) & symbol_pos <= width]
-
+    
     if (length(valid_symbol_breaks) > 0) {
       # If a suitable symbol is found, break at the first valid symbol
       break_at <- valid_symbol_breaks[1]
     } else {
       # If no suitable symbol, look for capital letters within the same range
       valid_capital_breaks <- capital_pos[capital_pos >= (width - 5) & capital_pos <= width]
-
+      
       if (length(valid_capital_breaks) > 0) {
         # If a capital letter is found, break just before the capital letter
         break_at <- valid_capital_breaks[1] - 1
@@ -74,17 +74,17 @@ wrap_title <- function(title, width = 30) {
         break_at <- width
       }
     }
-
+    
     # Append the wrapped line
     wrapped_title <- paste0(wrapped_title, substr(title, 1, break_at), "\n")
-
+    
     # Update title with the remaining text after the break
     title <- substr(title, break_at + 1, nchar(title))
   }
-
+  
   # Add the remaining part of the title
   wrapped_title <- paste0(wrapped_title, title)
-
+  
   return(wrapped_title)
 }
 ```
@@ -94,43 +94,43 @@ wrap_title <- function(title, width = 30) {
 
 ROC_Scores <- function(data, metadata, gene_sets, method = c("logmedian","ssGSEA","ranking","all"), variable,
                        colors = c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52"), grid = TRUE, spacing_annotation=0.3, ncol=NULL, nrow=NULL, mode=c("simple","medium","extensive"), widthTitle = 18, title=NULL, titlesize=12) {
-
+  
   data_ROCAUC <- ROCAUC_Scores_Calculate(data = data, metadata = metadata, gene_sets = gene_sets, method = method, variable = variable, mode = mode)
-
+  
   plot_list <- list()
-
+  
   for (signature in names(data_ROCAUC[[1]])) {  # Iterate over signatures
     for (contrast in names(data_ROCAUC[[1]][[signature]])) {  # Iterate over contrasts
-
+      
       # Initialize an empty data frame to store all methods
       combined_df <- data.frame()
       auc_values <- list()
-
+      
       for (method_name in names(data_ROCAUC)) {  # Iterate over methods
-
+        
         if (length(names(data_ROCAUC)) == 1){
           if (is.na(colors[method_name])) names(colors) <- method_name #if the user changed the color to only one, not named
         }
-
-
+        
+        
         roc_data <- data_ROCAUC[[method_name]][[signature]][[contrast]]
-
+        
         # Create a data frame with FPR, TPR, and Method
         temp_df <- data.frame(
           FPR = rev(1 - roc_data$ROC$specificities),
           TPR = rev(roc_data$ROC$sensitivities),
           Method = method_name
         )
-
+        
         # Combine into one large data frame
         combined_df <- rbind(combined_df, temp_df)
-
+        
         # Calculate AUC for this method and contrast
         auc_value <- roc_data$AUC
         auc_values[[method_name]] <- auc_value
-
+        
       }
-
+      
       # Create the ROC plot with all methods on the same plot
       p <- ggplot2::ggplot(combined_df, ggplot2::aes(x = FPR, y = TPR, color = Method)) +
         ggplot2::geom_line(size = 1) +  # Plot all ROC curves on the same plot
@@ -141,40 +141,40 @@ ROC_Scores <- function(data, metadata, gene_sets, method = c("logmedian","ssGSEA
         ggplot2::geom_abline(linetype = "dashed", color = "gray") +
         ggplot2::theme( plot.title = ggplot2::element_text(hjust = 0.5, size=titlesize ),
                         plot.subtitle = ggplot2::element_text(hjust = 0.5, size=titlesize-1.5))
-
+      
       # Add AUC text labels to the bottom-right corner
       auc_texts <- data.frame(Method = names(auc_values),
                               AUC = unlist(auc_values),
                               x = rep(1, length(auc_values)),  # Place all text at x = 1 (right edge)
                               y = seq(0.05, spacing_annotation, length.out = length(auc_values)))  # Adjust the vertical positions
-
+      
       p <- p + ggplot2::geom_label(data = auc_texts,
-                                  ggplot2::aes(x = x, y = y, label = paste0("AUC ", Method, " = ", round(AUC, 2), ""), color = Method),
-                                  size = 3,
-                                  vjust = 0,  # Adjust vertical position
-                                  hjust = 1,  # Adjust horizontal position to align to the right
-                                  inherit.aes = FALSE,
-                                  fill = "white")  # Prevent inheritance of global aes from the main plot
-
-
+                                   ggplot2::aes(x = x, y = y, label = paste0("AUC ", Method, " = ", round(AUC, 2), ""), color = Method),
+                                   size = 3,
+                                   vjust = 0,  # Adjust vertical position
+                                   hjust = 1,  # Adjust horizontal position to align to the right
+                                   inherit.aes = FALSE,
+                                   fill = "white")  # Prevent inheritance of global aes from the main plot
+      
+      
       # Store plot
       plot_list[[paste(signature, contrast)]] <- p
     }
   }
-
-
-
+  
+  
+  
   if (grid) {
-
+    
     # Get number of signatures and contrasts
     n_signatures <- length(names(data_ROCAUC[[1]]))
     n_contrasts <- length(names(data_ROCAUC[[1]][[names(data_ROCAUC[[1]])[1]]]))
-
+    
     # Case 1: If both nrow and ncol are provided, use them as is
     if (!is.null(nrow) && !is.null(ncol)) {
       # Use the provided nrow and ncol values as is
       combined_plot <- ggpubr::ggarrange(plotlist = plot_list, ncol = ncol, nrow = nrow, align = "h")
-
+      
       # Case 2: If only one of nrow or ncol is provided, adjust the other for a square-like grid
     } else if (!is.null(nrow) || !is.null(ncol)) {
       if (is.null(nrow)) {
@@ -184,12 +184,12 @@ ROC_Scores <- function(data, metadata, gene_sets, method = c("logmedian","ssGSEA
         ncol <- ceiling(length(plot_list) / nrow)  # Calculate ncol to make the grid more square-like
       }
       combined_plot <- ggpubr::ggarrange(plotlist = plot_list, ncol = ncol, nrow = nrow, align = "h")
-
+      
       # Case 3: If neither nrow nor ncol are provided, use the number of signatures and contrasts
     } else {
       nrow <- n_signatures
       ncol <- n_contrasts
-
+      
       # If either nrow or ncol is 1, adjust the grid to make it more square
       if (nrow == 1 || ncol == 1) {
         nrow <- ceiling(sqrt(length(plot_list)))
@@ -201,50 +201,50 @@ ROC_Scores <- function(data, metadata, gene_sets, method = c("logmedian","ssGSEA
     if (!is.null(title)) {
       combined_plot <- ggpubr::annotate_figure(combined_plot, top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize + 2)))
     }
-
-     return(combined_plot)
-
+    
+    return(combined_plot)
+    
   } else {
-     return(plot_list)
+    return(plot_list)
   }
 }
 ```
 
 ```{r}
 PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
-                                   method = c("ssGSEA", "logmedian", "ranking"),
-                                   ColorVariable = NULL, GroupingVariable = NULL,
-                                   ColorValues = NULL, ConnectGroups = FALSE, ncol = NULL, nrow = NULL, title = NULL,
-                                   widthTitle = 10, titlesize = 12, limits = NULL, legend_nrow = NULL, pointSize = 2,
-                                   xlab = NULL, labsize = 10, compute_cohen=TRUE, cond_cohend = NULL, pvalcalc = FALSE, mode = c("simple","medium","extensive"),
-                                   widthlegend=22, cohen_threshold=0.6, colorPalette="Set3") {
-
+                                           method = c("ssGSEA", "logmedian", "ranking"),
+                                           ColorVariable = NULL, GroupingVariable = NULL,
+                                           ColorValues = NULL, ConnectGroups = FALSE, ncol = NULL, nrow = NULL, title = NULL,
+                                           widthTitle = 10, titlesize = 12, limits = NULL, legend_nrow = NULL, pointSize = 2,
+                                           xlab = NULL, labsize = 10, compute_cohen=TRUE, cond_cohend = NULL, pvalcalc = FALSE, mode = c("simple","medium","extensive"),
+                                           widthlegend=22, cohen_threshold=0.6, colorPalette="Set3") {
+  
   method <- match.arg(method)
-
+  
   ResultsList <- CalculateScores(data = data,
                                  metadata = metadata,
                                  gene_sets = gene_sets,
                                  method = method)
-
+  
   # if grouping variable is NULL, then the function displays a density / distribution of scores
   if (is.null(GroupingVariable) | is.null(metadata)) {
-
+    
     plot_list <- list()
-
+    
     for (signature in names(ResultsList)) {
-
+      
       df <- ResultsList[[signature]]
       # Wrap the signature name using the helper function
       wrapped_title <- wrap_title(signature, width = widthTitle)
-
+      
       ColorValues <- if (is.null(ColorValues)) "#ECBD78" else ColorValues
-
+      
       p <- ggplot2::ggplot(df, ggplot2::aes(x = score)) +
         ggplot2::geom_density(fill = ColorValues, alpha = 0.5) +
         ggplot2::labs(title = "Density Plot of Score", x = xlab, y = "Density") +
         # add points below density
         ggplot2::geom_rug(ggplot2::aes(x = score), color=ColorValues, sides = "b",  alpha = 0.8, size = .5, length = grid::unit(0.035, "npc"))
-
+      
       # Customize the plot appearance.
       p <- p + ggplot2::theme_classic() +
         ggplot2::labs(title = wrapped_title, color = "", x = "", y = "") +
@@ -253,18 +253,18 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
                        plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize-1),
                        plot.subtitle = ggplot2::element_text(hjust = 0.5, size = titlesize - 1.5, face = "italic"),
                        legend.position="none")
-
+      
       # If limits is specified, crop the plot without adjusting the data (violins).
       if (!is.null(limits)) {
         p <- p + ggplot2::coord_cartesian(xlim = limits)
       }
-
+      
       plot_list[[signature]] <- p
-
+      
     }
-
+    
     n <- length(plot_list)
-
+    
     # Determine grid layout
     if (is.null(ncol) && is.null(nrow)) {
       ncol <- ceiling(sqrt(n))
@@ -274,7 +274,7 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
     } else if (is.null(nrow)) {
       nrow <- ceiling(n / ncol)
     }
-
+    
     # create label for y axis
     if (method == "ssGSEA") {
       xlab <- "ssGSEA Enrichment Score"
@@ -283,7 +283,7 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
     } else if (method == "ranking") {
       xlab <- "Signature Genes' Ranking"
     }
-
+    
     combined_plot <- ggpubr::ggarrange(plotlist = plot_list, ncol = ncol, nrow = nrow,  align = "h")
     combined_plot <- ggpubr::annotate_figure(combined_plot,
                                              left = grid::textGrob("Density",
@@ -292,28 +292,28 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
                                              top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize + 2)))
     return(combined_plot)
   }
-
+  
   if (!(GroupingVariable %in% colnames(metadata)))
     stop(paste0(GroupingVariable, " not in metadata columns. Please check metadata."))
-
+  
   # Initialize an empty list to store individual ggplot objects.
   plot_list <- list()
-
+  
   # Loop over each gene signature in the ResultsList.
   for (signature in names(ResultsList)) {
     # Extract the data frame for the current signature.
     df <- ResultsList[[signature]]
-
+    
     # Using factors so we can retrieve the first condition for Cohen's d if none is specified.
     df[, GroupingVariable] <- factor(df[, GroupingVariable],
                                      levels = sort(unique(as.character(df[, GroupingVariable]))))
-
+    
     # Wrap the signature name using the helper function.
     wrapped_title <- wrap_title(signature, width = widthTitle)
-
+    
     # Create a base ggplot object with the specified grouping on the x-axis and score on the y-axis.
     p <- ggplot2::ggplot(df, ggplot2::aes_string(x = GroupingVariable, y = "score"))
-
+    
     # Add jittered points, optionally colored by ColorVariable.
     if (!is.null(ColorVariable)) {
       p <- p + ggplot2::geom_jitter(ggplot2::aes_string(color = ColorVariable), size = pointSize, alpha = 0.5)
@@ -321,33 +321,33 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
       p <- p + ggplot2::geom_jitter(size = pointSize, alpha = 0.5) +
         ggplot2::scale_color_brewer(palette = colorPalette)
     }
-
+    
     # Overlay violin plots.
     p <- p + ggplot2::geom_violin(alpha = 0.5, scale = "width")
-
+    
     # Add median summary crossbar.
     p <- p + ggplot2::stat_summary(fun = median, fun.min = median, fun.max = median,
                                    geom = "crossbar", width = 0.25,
                                    position = ggplot2::position_dodge(width = 0.13))
-
+    
     # Add stats: Compute Cohen's d (and optionally p‑value)
     if(compute_cohen){
       if (!is.null(cond_cohend)){
         # can be of the following form:
         # cond_cohend <- list(A=c("Senescent"),
         #                     B=c("Proliferative","Quiescent"))
-
+        
         if (sum(unlist(cond_cohend) %in% unique(df[, GroupingVariable])) != length(unique(df[, GroupingVariable])))
           warning("Warning: Not all conditions of GroupingVariable were specified for Cohen's d calculation")
-
+        
         x <- df[df[[GroupingVariable]] %in% cond_cohend[[1]], "score", drop = TRUE]
         y <- df[df[[GroupingVariable]]  %in% cond_cohend[[2]], "score", drop = TRUE]
-
+        
         cohen_d_results <- cohen_d(x, y)
-
+        
         # df$cohen <- ifelse(df[, GroupingVariable] %in% cond_cohend[[1]], names(cond_cohend)[1], names(cond_cohend)[2])
         # cohen_d_results <- rstatix::cohens_d(df, formula = score ~ cohen)
-
+        
         if (pvalcalc) {
           df$cohen <- ifelse(df[, GroupingVariable] %in% cond_cohend[[1]], names(cond_cohend)[1], names(cond_cohend)[2])
           ttest_results <- rstatix::t_test(df, formula = score ~ cohen)
@@ -358,25 +358,25 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
         } else {
           subtitle <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results, 3)), width = widthTitle)
         }
-
-
+        
+        
       } else {
-
+        
         if(length(unique(df[, GroupingVariable])) < 2){
-
+          
           warning("Not enough conditions available to report Cohen's d.")
-
+          
         } else if(length(unique(df[, GroupingVariable])) == 2) {
-
+          
           # Calculate Cohen's d based on ordering of the x axis
           group1 <- levels(df[, GroupingVariable])[1]
           group2 <- levels(df[, GroupingVariable])[2]
-
+          
           x <- df[df[[GroupingVariable]] == group1, "score", drop = TRUE]
           y <- df[df[[GroupingVariable]] == group2, "score", drop = TRUE]
-
+          
           cohen_d_results <- cohen_d(x, y)
-
+          
           if (pvalcalc) {
             ttest_results <- rstatix::t_test(df, formula = score ~ GroupingVariable)
             p_val <- ttest_results$p[1]
@@ -386,18 +386,18 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
           } else {
             subtitle <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results$effsize, 3)), width = widthTitle)
           }
-
-
-
+          
+          
+          
         } else if(length(unique(df[, GroupingVariable])) > 2){
-
+          
           # Calculate Cohen's f
           type <- identify_variable_type(df, GroupingVariable)[GroupingVariable]
           #Without scaling, the coefficient represents the change in score per unit increase in the variable (if numeric, the unit of the variable. Makes sense to not scale...)
           model <- lm(score ~ get(GroupingVariable), data = df)
           results_var <- compute_cohens_f_pval(model, type)
-
-
+          
+          
           if (pvalcalc) {
             line1 <- wrap_title(paste0("Cohen's f = ", round(results_var["Cohen_f"], 3)), width = widthTitle)
             line2 <- wrap_title(paste0("p = ", round(results_var["P_Value"], 3)), width = widthTitle)
@@ -405,16 +405,16 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
           } else {
             subtitle <- wrap_title(paste0("Cohen's f = ", round(results_var["Cohen_f"], 3)), width = widthTitle)
           }
-
+          
         }
-
-
+        
+        
       }
-
+      
     } else {
-
+      
       subtitle <- NULL
-
+      
     }
     # If ConnectGroups is TRUE, add a line connecting medians across groups.
     if (ConnectGroups && !is.null(ColorVariable)) {
@@ -422,7 +422,7 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
                                      fun.y = median, geom = "line", size = 1.5, alpha = 0.75,
                                      show.legend = FALSE)
     }
-
+    
     # Customize the plot appearance.
     p <- p + ggplot2::theme_bw() +
       ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = labsize),
@@ -430,7 +430,7 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
                      plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize-1),
                      plot.subtitle = ggplot2::element_text(hjust = 0.5, size = titlesize - 1.5, face = "italic")) +
       ggplot2::labs(title = wrapped_title, subtitle = subtitle, color = "", x = "", y = "")
-
+    
     # If ColorValues is provided, use a manual color scale; otherwise, if ColorVariable is provided,
     # use a default brewer palette.
     if (!is.null(ColorValues)) {
@@ -438,23 +438,23 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
     } else if (!is.null(ColorVariable)) {
       p <- p + ggplot2::scale_color_brewer(palette = colorPalette)
     }
-
+    
     # If limits is specified, crop the plot without adjusting the data (violins).
     if (!is.null(limits)) {
       p <- p + ggplot2::coord_cartesian(ylim = limits)
     }
-
+    
     # Adjust legend rows if legend_nrow is specified.
     if (!is.null(legend_nrow)) {
       p <- p + ggplot2::guides(color = ggplot2::guide_legend(nrow = legend_nrow))
     }
-
+    
     # Store the plot in the list.
     plot_list[[signature]] <- p + theme(legend.position = "none")
   }
-
+  
   n <- length(plot_list)
-
+  
   # Determine grid layout.
   if (is.null(ncol) && is.null(nrow)) {
     ncol <- ceiling(sqrt(n))
@@ -464,17 +464,17 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
   } else if (is.null(nrow)) {
     nrow <- ceiling(n / ncol)
   }
-
+  
   # Combine plots.
   combined_plot <- ggpubr::ggarrange(plotlist = plot_list, ncol = ncol, nrow = nrow , align = "h") #, common.legend = TRUE
-
+  
   # Annotate with axis labels.
   if (is.null(xlab)) {
     xlab <- GroupingVariable
   }
-
+  
   if (!is.null(title)) title <- wrap_title(title, width = widthTitle)
-
+  
   # Create label for y axis based on method.
   if (method == "ssGSEA") {
     ylab <- "ssGSEA Enrichment Score"
@@ -483,7 +483,7 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
   } else if (method == "ranking") {
     ylab <- "Signature Genes' Ranking"
   }
-
+  
   combined_plot <- ggpubr::annotate_figure(combined_plot,
                                            left = grid::textGrob(ylab,
                                                                  rot = 90, vjust = 1, gp = grid::gpar(cex = 1.3, fontsize = labsize)),
@@ -497,29 +497,29 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
 # adapted to not have the color legend
 
 PlotScores_adapted <- function(data, metadata, gene_sets,
-                       method = c("ssGSEA", "logmedian", "ranking", "all"),
-                       ColorVariable = NULL, Variable = NULL,
-                       ColorValues = NULL, ConnectGroups = FALSE, ncol = NULL, nrow = NULL, title = NULL,
-                       widthTitle = 20, titlesize = 12, limits = NULL, legend_nrow = NULL, pointSize = 4,
-                       xlab = NULL, labsize = 10, compute_cohen=TRUE, cond_cohend = NULL, pvalcalc = FALSE, mode = c("simple","medium","extensive"),
-                       widthlegend=22, sig_threshold=0.05, cohen_threshold=0.5, colorPalette="Set3", cor=c("pearson","spearman","kendall")) {
-
+                               method = c("ssGSEA", "logmedian", "ranking", "all"),
+                               ColorVariable = NULL, Variable = NULL,
+                               ColorValues = NULL, ConnectGroups = FALSE, ncol = NULL, nrow = NULL, title = NULL,
+                               widthTitle = 20, titlesize = 12, limits = NULL, legend_nrow = NULL, pointSize = 4,
+                               xlab = NULL, labsize = 10, compute_cohen=TRUE, cond_cohend = NULL, pvalcalc = FALSE, mode = c("simple","medium","extensive"),
+                               widthlegend=22, sig_threshold=0.05, cohen_threshold=0.5, colorPalette="Set3", cor=c("pearson","spearman","kendall")) {
+  
   method <- match.arg(method)
-
+  
   type <- identify_variable_type(metadata, Variable)#[Variable]
-
+  
   if (method == "all") { # returns heatmap
-
+    
     if (type =="Numeric"){
-
+      
       cohenlist <- CohenF_allConditions(data = data, metadata = metadata, gene_sets = gene_sets, variable = Variable )
-
+      
     } else {
-
+      
       cohenlist <- CohenD_allConditions(data = data, metadata = metadata, gene_sets = gene_sets, variable = Variable, mode = mode)
-
+      
     }
-
+    
     # if user wants "all" methods, a heatmap of Cohen's d's is returned, for all combination of variables in GroupingVariable
     Heatmap_Final <- Heatmap_Cohen(cohenlist = cohenlist,
                                    nrow = nrow,
@@ -529,7 +529,7 @@ PlotScores_adapted <- function(data, metadata, gene_sets,
                                    titlesize = titlesize,
                                    ColorValues = ColorValues,
                                    title = title )
-
+    
     Volcano_Cohen <- Volcano_Cohen(cohenlist = cohenlist,
                                    titlesize = 12,
                                    ColorValues = ColorValues,
@@ -541,32 +541,32 @@ PlotScores_adapted <- function(data, metadata, gene_sets,
                                    colorPalette =colorPalette,
                                    ncol = ncol,
                                    nrow = nrow)
-
+    
     return(list(heatmap=Heatmap_Final$plt,
                 volcano=Volcano_Cohen$plt))
-
+    
   } else {
-
-
-
+    
+    
+    
     if (type!="Numeric"){
-
+      
       return(
-
+        
         PlotScores_Categorical_adapted(data=data, metadata=metadata, gene_sets=gene_sets,
-                               method = method,
-                               ColorVariable = ColorVariable, GroupingVariable = Variable,
-                               ColorValues = ColorValues, ConnectGroups = ConnectGroups, ncol = ncol, nrow = nrow, title = title,
-                               widthTitle = widthTitle, titlesize = titlesize, limits = limits, legend_nrow = legend_nrow, pointSize = pointSize,
-                               xlab = xlab, labsize = labsize, compute_cohen=compute_cohen, cond_cohend = cond_cohend, pvalcalc = pvalcalc, mode = mode,
-                               widthlegend=widthlegend, cohen_threshold=cohen_threshold, colorPalette=colorPalette)
-
+                                       method = method,
+                                       ColorVariable = ColorVariable, GroupingVariable = Variable,
+                                       ColorValues = ColorValues, ConnectGroups = ConnectGroups, ncol = ncol, nrow = nrow, title = title,
+                                       widthTitle = widthTitle, titlesize = titlesize, limits = limits, legend_nrow = legend_nrow, pointSize = pointSize,
+                                       xlab = xlab, labsize = labsize, compute_cohen=compute_cohen, cond_cohend = cond_cohend, pvalcalc = pvalcalc, mode = mode,
+                                       widthlegend=widthlegend, cohen_threshold=cohen_threshold, colorPalette=colorPalette)
+        
       )
-
+      
     } else {
-
+      
       return(
-
+        
         PlotScores_Numeric(data=data,
                            metadata=metadata,
                            gene_sets=gene_sets,
@@ -586,32 +586,248 @@ PlotScores_adapted <- function(data, metadata, gene_sets,
                            pvalcalc = pvalcalc,
                            colorPalette = colorPalette,
                            cor=cor)
-
+        
       )
-
+      
     }
-
-
+    
+    
   }
-
-
+  
+  
 }
 ```
 
+```{r}
+PlotScores_Numeric_adapted <- function(data,
+                                       metadata,
+                                       gene_sets,
+                                       method = c("ssGSEA", "logmedian", "ranking"),
+                                       Variable = NULL,
+                                       ColorValues = NULL,
+                                       ncol = NULL,
+                                       nrow = NULL,
+                                       title = NULL,
+                                       widthTitle = 10,
+                                       titlesize = 12,
+                                       limits = NULL,
+                                       pointSize = 2,
+                                       xlab = NULL,
+                                       labsize = 10,
+                                       compute_cohen = TRUE,
+                                       pvalcalc = FALSE,
+                                       colorPalette = "Set3",
+                                       cor = c("pearson","spearman","kendall")) {
+  
+  method <- match.arg(method)
+  
+  
+  ResultsList <- CalculateScores(data = data,
+                                 metadata = metadata,
+                                 gene_sets = gene_sets,
+                                 method = method)
+  
+  
+  # if grouping variable is NULL, then the function displays a density / distribution of scores
+  if (is.null(Variable) | is.null(metadata)) {
+    
+    plot_list <- list()
+    
+    for (signature in names(ResultsList)) {
+      
+      df <- ResultsList[[signature]]
+      # Wrap the signature name using the helper function
+      wrapped_title <- wrap_title(signature, width = widthTitle)
+      
+      ColorValues <- if (is.null(ColorValues)) "#ECBD78" else ColorValues
+      
+      p <- ggplot2::ggplot(df, ggplot2::aes(x = score)) +
+        ggplot2::geom_density(fill = ColorValues, alpha = 0.5) +
+        ggplot2::labs(title = "Density Plot of Score", x = xlab, y = "Density")
+      
+      # Customize the plot appearance.
+      p <- p + ggplot2::theme_classic() +
+        ggplot2::labs( color = "", x = "", y = "") +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = labsize - .5),
+                       axis.text.y = ggplot2::element_text(  size = labsize - .5),
+                       plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize-1),
+                       plot.subtitle = ggplot2::element_text(hjust = 0.5, size = titlesize - 1.5, face = "italic"))
+      
+      
+      
+      # If limits is specified, crop the plot without adjusting the data (violins).
+      if (!is.null(limits)) {
+        p <- p + ggplot2::coord_cartesian(xlim = limits)
+      }
+      
+      plot_list[[signature]] <- p
+      
+    }
+    
+    n <- length(plot_list)
+    
+    # Determine grid layout
+    if (is.null(ncol) && is.null(nrow)) {
+      ncol <- ceiling(sqrt(n))
+      nrow <- ceiling(n / ncol)
+    } else if (is.null(ncol)) {
+      ncol <- ceiling(n / nrow)
+    } else if (is.null(nrow)) {
+      nrow <- ceiling(n / ncol)
+    }
+    
+    # create label for y axis
+    if (method == "ssGSEA") {
+      xlab <- "ssGSEA Enrichment Score"
+    } else if (method == "logmedian") {
+      xlab <- "Normalized Signature Score"
+    } else if (method == "ranking") {
+      xlab <- "Signature Genes' Ranking"
+    }
+    
+    combined_plot <- ggpubr::ggarrange(plotlist = plot_list, ncol = ncol, nrow = nrow, common.legend = TRUE, align = "h")
+    combined_plot <- ggpubr::annotate_figure(combined_plot,
+                                             left = grid::textGrob("Density",
+                                                                   rot = 90, vjust = 1, gp = grid::gpar(cex = 1.3, fontsize = labsize)),
+                                             bottom = grid::textGrob(xlab, gp = grid::gpar(cex = 1.3, fontsize = labsize)),
+                                             top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize + 2)))
+    return(combined_plot)
+  }
+  
+  if (!(Variable %in% colnames(metadata)))
+    stop(paste0(Variable, " not in metadata columns. Please check metadata."))
+  
+  # Initialize an empty list to store individual ggplot objects.
+  plot_list <- list()
+  
+  # Loop over each gene signature in the ResultsList.
+  for (signature in names(ResultsList)) {
+    # Extract the data frame for the current signature.
+    df <- ResultsList[[signature]]
+    #
+    #       # Using factors so we can retrieve the first condition for Cohen's d if none is specified.
+    #       df[, Variable] <- factor(df[, Variable],
+    #                                        levels = sort(unique(as.character(df[, Variable]))))
+    
+    # Wrap the signature name using the helper function.
+    wrapped_title <- wrap_title(signature, width = widthTitle)
+    
+    # Create a base ggplot object with the specified grouping on the x-axis and score on the y-axis.
+    p <- ggplot2::ggplot(df, ggplot2::aes_string(x = Variable, y = "score"))
+    
+    #add points
+    # If ColorValues is provided, use a manual color scale;
+    # use a default brewer palette.
+    ColorValues <- if (is.null(ColorValues)) "#5264B6" else ColorValues
+    p <- p + ggplot2::geom_point(size = pointSize, alpha = 0.5, color=ColorValues[1])+
+      # add density lines
+      geom_density2d( colour="white")
+    
+    # Add  line
+    p <- p + ggplot2::geom_smooth(method = "lm", col = "black", se = FALSE, size=2) + ggpubr::stat_cor(method=cor) # cor in "pearson" (default), "kendall", or "spearman".
+    
+    # Add stats: Compute Cohen's f (and optionally p‑value)
+    if(compute_cohen){
+      
+      # Calculate Cohen's f
+      type <- identify_variable_type(df, Variable)[Variable]
+      #Without scaling, the coefficient represents the change in score per unit increase in the variable (if numeric, the unit of the variable. Makes sense to not scale...)
+      model <- lm(score ~ get(Variable), data = df)
+      results_var <- compute_cohens_f_pval(model, type)
+      
+      if (pvalcalc) {
+        line1 <- wrap_title(paste0("Cohen's f = ", round(results_var["Cohen_f"], 3)), width = widthTitle)
+        line2 <- wrap_title(paste0("p = ", round(results_var["P_Value"], 3)), width = widthTitle)
+        subtitle <- paste(line1, line2, sep = "; ")
+        
+      } else {
+        subtitle <- wrap_title(paste0("Cohen's f = ", round(results_var["Cohen_f"], 3)), width = widthTitle)
+      }
+      
+    } else {
+      subtitle <- NULL
+    }
+    
+    
+    # Customize the plot appearance.
+    p <- p + ggplot2::theme_bw() +
+      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = labsize),
+                     axis.text.y = ggplot2::element_text(  size = labsize),
+                     plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize-1),
+                     plot.subtitle = ggplot2::element_text(hjust = 0.5, size = titlesize - 1.5, face = "italic")) +
+      ggplot2::labs(title =  subtitle, color = "", x = "", y = "") 
+    
+    
+    
+    # If limits is specified, crop the plot without adjusting the data (violins).
+    if (!is.null(limits)) {
+      p <- p + ggplot2::coord_cartesian(ylim = limits)
+    }
+    
+    # Store the plot in the list.
+    plot_list[[signature]] <- p
+  }
+  
+  n <- length(plot_list)
+  
+  # Determine grid layout.
+  if (is.null(ncol) && is.null(nrow)) {
+    ncol <- ceiling(sqrt(n))
+    nrow <- ceiling(n / ncol)
+  } else if (is.null(ncol)) {
+    ncol <- ceiling(n / nrow)
+  } else if (is.null(nrow)) {
+    nrow <- ceiling(n / ncol)
+  }
+  
+  # Combine plots.
+  combined_plot <- ggpubr::ggarrange(plotlist = plot_list, ncol = ncol, nrow = nrow, common.legend = TRUE, align = "h")
+  
+  # Annotate with axis labels.
+  if (is.null(xlab)) {
+    xlab <- Variable
+  }
+  
+  if (!is.null(title)) title <- wrap_title(title, width = widthTitle)
+  
+  # Create label for y axis based on method.
+  if (method == "ssGSEA") {
+    ylab <- "Score"
+  } else if (method == "logmedian") {
+    ylab <- "Score"
+  } else if (method == "ranking") {
+    ylab <- "Score"
+  }
+  
+  combined_plot <- ggpubr::annotate_figure(combined_plot,
+                                           left = grid::textGrob(ylab,
+                                                                 rot = 90, vjust = 2 , gp = grid::gpar(cex = 1.3, fontsize = labsize)),
+                                           bottom = grid::textGrob(xlab, gp = grid::gpar(cex = 1.3, fontsize = labsize),vjust = -2 ),
+                                           top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize)))
+  return(combined_plot)
+  
+}
+```
 
 
 
 ### Load relevant data
 
 ```{r}
-metadata <- readRDS("data/metadata.rds")
-filtered_counts <- readRDS("data/filtered_counts.rds")
-normalised_counts <- readRDS("data/normalised_counts.rds")
-corrcounts <- readRDS("data/corrcounts.rds")
-signatures <- readRDS("data/SenescenceSignatures.rds") # Divided by direction
-signatures_bidirectional <- readRDS("data/SenescenceSigntures_Bidirectional.rds") # Divided by direction
+metadata <- readRDS("../data/metadata.rds")
+filtered_counts <- readRDS("../data/filtered_counts.rds")
+normalised_counts <- readRDS("../data/normalised_counts.rds")
+corrcounts <- readRDS("../data/corrcounts.rds")
+signatures <- readRDS("../data/SenescenceSignatures.rds") 
+signatures_bidirectional <- readRDS("../data/SenescenceSigntures_Bidirectional.rds") # Divided by direction
+
+GTEx_alltissues <- readRDS("../../../../data/GTExV8_voyagercorrected.rds") # https://github.com/DiseaseTranscriptomicsLab/voyAGEr/tree/main/Corrected_Counts
+metadata_GTEx_alltissues <- readRDS("../../../../data/GTExV8_metadata.rds") # Restricted access
+
+GTEx_Skin <- readRDS("../../../../data/GTExV8_voyagercorrected_SKIN.rds") # https://github.com/DiseaseTranscriptomicsLab/voyAGEr/tree/main/Corrected_Counts
+metadata_GTEx_Skin <- readRDS("../../../../data/GTExV8_metadata_SKIN.rds") # Restricted access
 ```
- 
+
 
 ### Colors
 
@@ -665,7 +881,7 @@ show_col(Condition_colors, ncol=3)
 show_col(CellTypecols)
 show_col(dataset_colors)
 ```
- 
+
 ## Figure 2 - Overview of Senescence Dataset and Gene Sets
 
 ### Senescence Signatures
@@ -703,7 +919,7 @@ gene_count_df <- data.frame(
   NumGenes = as.integer(gene_counts),
   stringsAsFactors = FALSE
 )
- 
+
 gene_count_df <- gene_count_df[order(gene_count_df$NumGenes),]
 gene_count_df$Signature <- factor(gene_count_df$Signature, levels = gene_count_df$Signature)
 
@@ -712,7 +928,7 @@ order_signatures <- gene_count_df$Signature
 gene_count_df$Signature <- sapply(X=as.character(gene_count_df$Signature), function(x) wrap_title(x,20))
 gene_count_df <- gene_count_df[order(gene_count_df$NumGenes),]
 gene_count_df$Signature <- factor(gene_count_df$Signature, levels = gene_count_df$Signature)
- 
+
 order_signatures_split <- gene_count_df$Signature
 
 #Barplot
@@ -741,7 +957,7 @@ plt_nb_genes
 
 
 ```{r fig.width=7, fig.height=7}
- 
+
 # Initialize result storage
 summary_list <- list()
 
@@ -770,7 +986,7 @@ for (name in names(signatures_bidirectional)) {
 
 # Combine all into a single data frame
 summary_df <- do.call(rbind, summary_list)
- 
+
 
 
 summary_df$signature_plt <- sapply(X=as.character(summary_df$signature_plt), function(x) wrap_title(x,20))
@@ -809,7 +1025,7 @@ plt_nb_genes2
 
 
 ```{r fig.width=8, fig.height=6}
- # 1. Extract gene sets from list
+# 1. Extract gene sets from list
 gene_sets <- lapply(signatures_bidirectional, function(x) {
   if (is.data.frame(x)) unique(x[[1]])
   else if (is.vector(x)) unique(x)
@@ -861,7 +1077,7 @@ heatmap_data$dataset_i <- sapply(X=as.character(heatmap_data$dataset_i), functio
 heatmap_data$dataset_j <- sapply(X=as.character(heatmap_data$dataset_j), function(x) wrap_title(x,20))
 heatmap_data$dataset_i <- factor(heatmap_data$dataset_i,levels=(order_signatures_split))
 heatmap_data$dataset_j <- factor(heatmap_data$dataset_j,levels=(order_signatures_split))
-  
+
 # 6. Plot
 plt_heatmap <- ggplot(heatmap_data, aes(x = dataset_j, y = dataset_i, fill = percentage)) +
   geom_tile(aes(fill = ifelse(dataset_i == dataset_j, NA, percentage)), color = "black") +
@@ -875,7 +1091,7 @@ plt_heatmap <- ggplot(heatmap_data, aes(x = dataset_j, y = dataset_i, fill = per
 
 plt_heatmap
 ```
- 
+
 ```{r}
 
 DF_genesets_poster <- data.frame(signature=c("SAUL_SEN_MAYO","GOBP_NEGATIVE_REGULATION_\nOF_CELLULAR_SENESCENCE","GOBP_POSITIVE_REGULATION_\nOF_CELLULAR_SENESCENCE", # unidirectional
@@ -911,17 +1127,17 @@ plt_table_genesets_summary
 
 ```{r fig.width=12, fig.height=7}
 plt_genesets <- ggarrange(plt_table_genesets_summary,
-          plt_heatmap + theme(legend.position = "top", axis.text.y=element_blank()),
-          plt_nb_genes + theme_void() + theme(legend.position = "top") , nrow=1, align = "h",
-          widths=c(0.25,0.4,0.2))
+                          plt_heatmap + theme(legend.position = "top", axis.text.y=element_blank()),
+                          plt_nb_genes + theme_void() + theme(legend.position = "top") , nrow=1, align = "h",
+                          widths=c(0.25,0.4,0.2))
 plt_genesets
 ```
- 
+
 
 ```{r fig.width=12, fig.height=7}
 plt_genesets2 <- ggarrange( plt_heatmap + theme(legend.position = "top"),
-          plt_nb_genes2 + theme(legend.position = "top",axis.text.y=element_blank()) , nrow=1, align = "h",
-          widths=c(0.7,0.3))
+                            plt_nb_genes2 + theme(legend.position = "top",axis.text.y=element_blank()) , nrow=1, align = "h",
+                            widths=c(0.7,0.3))
 plt_genesets2
 ```
 
@@ -930,7 +1146,7 @@ plt_genesets2
 
 
 ```{r}
- 
+
 
 Condition_colors <- c(
   "Senescent"     = "#F4A261",  # Soft orange (not goldenrod)
@@ -968,29 +1184,29 @@ for (ct in unique(metadata$CellType)) {
   PCAData <- cbind(PCACounts[, 1:3], meta_sub) 
   
   plt_12 <- ggplot(PCAData, aes(PC1,PC2))+
-  geom_point(aes(fill=Condition), size=4, alpha=0.6, shape=21)+
-  ggtitle(label =ct)+
-  xlab(paste0("PC1: ",pc1,"% variance")) +
-  ylab(paste0("PC2: ",pc2,"% variance")) + 
-  theme_bw()+
-  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin(), legend.title=element_blank())  + 
-  geom_vline(xintercept=0, linetype="dotted") + 
-  geom_hline(yintercept=0, linetype="dotted") +
-  theme(plot.title = element_text(hjust = 0.5),
-        plot.subtitle = element_text(hjust = 0.5)) +
+    geom_point(aes(fill=Condition), size=4, alpha=0.6, shape=21)+
+    ggtitle(label =ct)+
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    theme(legend.position="bottom", legend.box="vertical", legend.margin=margin(), legend.title=element_blank())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    geom_hline(yintercept=0, linetype="dotted") +
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5)) +
     scale_fill_manual(values=Condition_colors)
   
   plt_23 <- ggplot(PCAData, aes(PC2,PC3))+
-  geom_point(aes(fill=Condition), size=4, alpha=0.6, shape=21)+
-  ggtitle(label =ct)+
-  xlab(paste0("PC2: ",pc2,"% variance")) +
-  ylab(paste0("PC3: ",pc3,"% variance")) + 
-  theme_bw()+
-  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin(), legend.title=element_blank())  + 
-  geom_vline(xintercept=0, linetype="dotted") + 
-  geom_hline(yintercept=0, linetype="dotted") +
-  theme(plot.title = element_text(hjust = 0.5),
-        plot.subtitle = element_text(hjust = 0.5)) +
+    geom_point(aes(fill=Condition), size=4, alpha=0.6, shape=21)+
+    ggtitle(label =ct)+
+    xlab(paste0("PC2: ",pc2,"% variance")) +
+    ylab(paste0("PC3: ",pc3,"% variance")) + 
+    theme_bw()+
+    theme(legend.position="bottom", legend.box="vertical", legend.margin=margin(), legend.title=element_blank())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    geom_hline(yintercept=0, linetype="dotted") +
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5)) +
     scale_fill_manual(values=Condition_colors)
   
   
@@ -1042,69 +1258,69 @@ pc3 = round(100*ev[3]/sum(ev),2)
 
 
 (PCA_celltype_afterbatch_CellType <- ggplot(PCAData, aes(PC1,PC2))+
-  geom_point(aes(fill=CellType), size=5, alpha=0.8, shape=21)+
-  xlab(paste0("PC1: ",pc1,"% variance")) +
-  ylab(paste0("PC2: ",pc2,"% variance")) + 
-  theme_bw()+
-  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
-  geom_vline(xintercept=0, linetype="dotted") + 
-  geom_hline(yintercept=0, linetype="dotted")+
-  theme(plot.title = element_text(hjust = 0.5),
-        plot.subtitle = element_text(hjust = 0.5),
-        legend.title = element_blank()) +
+    geom_point(aes(fill=CellType), size=5, alpha=0.8, shape=21)+
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    geom_hline(yintercept=0, linetype="dotted")+
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          legend.title = element_blank()) +
     scale_fill_manual(values=CellTypecols))
 
 (PCA_celltype_afterbatch_Condition <- ggplot(PCAData, aes(PC1,PC2))+
-  geom_point(aes(fill=Condition), size=5, alpha=0.8, shape=21)+
-  xlab(paste0("PC1: ",pc1,"% variance")) +
-  ylab(paste0("PC2: ",pc2,"% variance")) + 
-  theme_bw()+
-  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
-  geom_vline(xintercept=0, linetype="dotted") + 
-  geom_hline(yintercept=0, linetype="dotted")+
-  theme(plot.title = element_text(hjust = 0.5),
-        plot.subtitle = element_text(hjust = 0.5),
-        legend.title = element_blank()) +
+    geom_point(aes(fill=Condition), size=5, alpha=0.8, shape=21)+
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    geom_hline(yintercept=0, linetype="dotted")+
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          legend.title = element_blank()) +
     scale_fill_manual(values=Condition_colors))
 
 
 (PCA23_celltype_afterbatch_CellType <- ggplot(PCAData, aes(PC2,PC3))+
-  geom_point(aes(fill=CellType), size=5, alpha=0.8, shape=21)+
-  xlab(paste0("PC2: ",pc2,"% variance")) +
-  ylab(paste0("PC3: ",pc3,"% variance")) + 
-  theme_bw()+
-  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
-  geom_vline(xintercept=0, linetype="dotted") + 
-  geom_hline(yintercept=0, linetype="dotted")+
-  theme(plot.title = element_text(hjust = 0.5),
-        plot.subtitle = element_text(hjust = 0.5),
-        legend.title = element_blank()) +
+    geom_point(aes(fill=CellType), size=5, alpha=0.8, shape=21)+
+    xlab(paste0("PC2: ",pc2,"% variance")) +
+    ylab(paste0("PC3: ",pc3,"% variance")) + 
+    theme_bw()+
+    theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    geom_hline(yintercept=0, linetype="dotted")+
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          legend.title = element_blank()) +
     scale_fill_manual(values=CellTypecols))
 
 (PCA23_celltype_afterbatch_Condition <- ggplot(PCAData, aes(PC2,PC3))+
-  geom_point(aes(fill=Condition), size=5, alpha=0.8, shape=21)+
-  xlab(paste0("PC2: ",pc2,"% variance")) +
-  ylab(paste0("PC3: ",pc3,"% variance")) + 
-  theme_bw()+
-  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
-  geom_vline(xintercept=0, linetype="dotted") + 
-  geom_hline(yintercept=0, linetype="dotted")+
-  theme(plot.title = element_text(hjust = 0.5),
-        plot.subtitle = element_text(hjust = 0.5),
-        legend.title = element_blank()) +
+    geom_point(aes(fill=Condition), size=5, alpha=0.8, shape=21)+
+    xlab(paste0("PC2: ",pc2,"% variance")) +
+    ylab(paste0("PC3: ",pc3,"% variance")) + 
+    theme_bw()+
+    theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    geom_hline(yintercept=0, linetype="dotted")+
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          legend.title = element_blank()) +
     scale_fill_manual(values=Condition_colors))
 
 
 ```
 
 
- 
+
 ```{r fig.width=12, fig.height=6}
 
 plt1 <- ggarrange(PCA_celltype_afterbatch_CellType,PCA_celltype_afterbatch_Condition, ncol=1)
 (plt_PC12 <- ggarrange(plt1 +
-  theme(plot.margin=unit(c(.5,.5,.5,.5), 'cm')) , pca_PC12_divided+
-  theme(plot.margin=unit(c(.5,.5,.5,.5), 'cm')), widths=c(0.3,0.7), labels=c("B","C")))
+                         theme(plot.margin=unit(c(.5,.5,.5,.5), 'cm')) , pca_PC12_divided+
+                         theme(plot.margin=unit(c(.5,.5,.5,.5), 'cm')), widths=c(0.3,0.7), labels=c("B","C")))
 
 plt2 <- ggarrange(PCA23_celltype_afterbatch_CellType,PCA23_celltype_afterbatch_Condition, ncol=1)
 (plt_PC23 <- ggarrange(plt2, pca_PC23_divided, widths=c(0.3,0.7)))
@@ -1133,98 +1349,98 @@ ggplot2::ggsave("Figs/Figure1_GeneSets_Datasets.png",
 
 
 ```{r fig.width=20, fig.height=4}
-  
+
 (plot_logmedian <- PlotScores(data = corrcounts, 
-           metadata = metadata, 
-           method = "logmedian", 
-           gene_sets = signatures_bidirectional,  
-           ColorVariable = "CellType", 
-           Variable="Condition", 
-           ColorValues = CellTypecols, 
-           ConnectGroups=TRUE,  
-           nrow = 1, 
-           widthTitle=20, 
-           limits = NULL, 
-           legend_nrow = 2, 
-           compute_cohen=F,
-           pointSize=2,
-           titlesize=10))
+                              metadata = metadata, 
+                              method = "logmedian", 
+                              gene_sets = signatures_bidirectional,  
+                              ColorVariable = "CellType", 
+                              Variable="Condition", 
+                              ColorValues = CellTypecols, 
+                              ConnectGroups=TRUE,  
+                              nrow = 1, 
+                              widthTitle=20, 
+                              limits = NULL, 
+                              legend_nrow = 2, 
+                              compute_cohen=F,
+                              pointSize=2,
+                              titlesize=10))
 
 (plot_ranking <- PlotScores_adapted(data = corrcounts, 
-           metadata = metadata, 
-           method = "ranking", 
-           gene_sets = signatures_bidirectional,  
-           ColorVariable = "CellType", 
-           Variable="Condition", 
-           ColorValues = CellTypecols, 
-           ConnectGroups=TRUE,  
-           nrow = 1, 
-           widthTitle=20, 
-           limits = NULL, 
-           legend_nrow = 2, 
-           compute_cohen=F,
-           pointSize=2,
-           titlesize=10))
+                                    metadata = metadata, 
+                                    method = "ranking", 
+                                    gene_sets = signatures_bidirectional,  
+                                    ColorVariable = "CellType", 
+                                    Variable="Condition", 
+                                    ColorValues = CellTypecols, 
+                                    ConnectGroups=TRUE,  
+                                    nrow = 1, 
+                                    widthTitle=20, 
+                                    limits = NULL, 
+                                    legend_nrow = 2, 
+                                    compute_cohen=F,
+                                    pointSize=2,
+                                    titlesize=10))
 
 (plot_ssGSEA <- PlotScores_adapted(data = corrcounts, 
-           metadata = metadata, 
-           method = "ssGSEA", 
-           gene_sets = signatures_bidirectional,  
-           ColorVariable = "CellType", 
-           Variable="Condition", 
-           ColorValues = CellTypecols, 
-           ConnectGroups=TRUE,  
-           nrow = 1, 
-           widthTitle=20, 
-           limits = NULL, 
-           legend_nrow = 2, 
-           compute_cohen=F,
-           pointSize=2,
-           titlesize=10))
+                                   metadata = metadata, 
+                                   method = "ssGSEA", 
+                                   gene_sets = signatures_bidirectional,  
+                                   ColorVariable = "CellType", 
+                                   Variable="Condition", 
+                                   ColorValues = CellTypecols, 
+                                   ConnectGroups=TRUE,  
+                                   nrow = 1, 
+                                   widthTitle=20, 
+                                   limits = NULL, 
+                                   legend_nrow = 2, 
+                                   compute_cohen=F,
+                                   pointSize=2,
+                                   titlesize=10))
 
 ```
 
 
 ```{r fig.width=18, fig.height=4}
- 
+
 
 Scores_Overview_All <- PlotScores(data = corrcounts, 
-           metadata = metadata,  
-           gene_sets=signatures_bidirectional, 
-           Variable="Condition",  
-           method ="all",   
-           ncol = NULL, 
-           nrow = 1, 
-           widthTitle=20, 
-           limits = c(0,2),   
-           title=NULL, 
-           titlesize = 10,
-           #ColorValues = list(heatmap=c("#F9F4AE", "#B44141") ),
-           mode="simple"#,
-           #widthlegend=30, 
-           #sig_threshold=0.05, 
-           #cohen_threshold=0.6,
-           #pointSize=6,
-           #colorPalette="Paired"
-           )
+                                  metadata = metadata,  
+                                  gene_sets=signatures_bidirectional, 
+                                  Variable="Condition",  
+                                  method ="all",   
+                                  ncol = NULL, 
+                                  nrow = 1, 
+                                  widthTitle=20, 
+                                  limits = c(0,2),   
+                                  title=NULL, 
+                                  titlesize = 10,
+                                  #ColorValues = list(heatmap=c("#F9F4AE", "#B44141") ),
+                                  mode="simple"#,
+                                  #widthlegend=30, 
+                                  #sig_threshold=0.05, 
+                                  #cohen_threshold=0.6,
+                                  #pointSize=6,
+                                  #colorPalette="Paired"
+)
 
 plt_cohenheatmap <- Scores_Overview_All$heatmap
- plt_cohenheatmap
+plt_cohenheatmap
 ```
 
 ```{r fig.width=18, fig.height=3}
 plt_auc_heatmap <- AUC_Scores(data = corrcounts, 
-           metadata = metadata, 
-           gene_sets=signatures_bidirectional, 
-           method = "all", 
-           mode = "simple", 
-           variable="Condition", 
-           nrow = 1, 
-           ncol = NULL, 
-           limits = c(0.5,1), 
-           widthTitle = 20, 
-           titlesize = 10, 
-           ColorValues = c("#F9F4AE", "#B44141") ) 
+                              metadata = metadata, 
+                              gene_sets=signatures_bidirectional, 
+                              method = "all", 
+                              mode = "simple", 
+                              variable="Condition", 
+                              nrow = 1, 
+                              ncol = NULL, 
+                              limits = c(0.5,1), 
+                              widthTitle = 20, 
+                              titlesize = 10, 
+                              ColorValues = c("#F9F4AE", "#B44141") ) 
 plt_auc_heatmap
 
 ```
@@ -1248,54 +1464,54 @@ signatures_nodir <- lapply(signatures_bidirectional, function(entry) {
 
 
 ```{r fig.width=18, fig.height=4}
-  
+
 (plot_logmedian_nodir <- PlotScores(data = corrcounts, 
-           metadata = metadata, 
-           method = "logmedian", 
-           gene_sets = signatures_nodir,  
-           ColorVariable = "CellType", 
-           Variable="Condition", 
-           ColorValues = CellTypecols, 
-           ConnectGroups=TRUE,  
-           nrow = 1, 
-           widthTitle=20, 
-           limits = NULL, 
-           legend_nrow = 2, 
-           compute_cohen=F,
-           pointSize=2,
-           titlesize=9))
+                                    metadata = metadata, 
+                                    method = "logmedian", 
+                                    gene_sets = signatures_nodir,  
+                                    ColorVariable = "CellType", 
+                                    Variable="Condition", 
+                                    ColorValues = CellTypecols, 
+                                    ConnectGroups=TRUE,  
+                                    nrow = 1, 
+                                    widthTitle=20, 
+                                    limits = NULL, 
+                                    legend_nrow = 2, 
+                                    compute_cohen=F,
+                                    pointSize=2,
+                                    titlesize=9))
 
 (plot_ranking_nodir <- PlotScores(data = corrcounts, 
-           metadata = metadata, 
-           method = "ranking", 
-           gene_sets = signatures_nodir,  
-           ColorVariable = "CellType", 
-           Variable="Condition", 
-           ColorValues = CellTypecols, 
-           ConnectGroups=TRUE,  
-           nrow = 1, 
-           widthTitle=20, 
-           limits = NULL, 
-           legend_nrow = 2, 
-           compute_cohen=F,
-           pointSize=2,
-           titlesize=9))
+                                  metadata = metadata, 
+                                  method = "ranking", 
+                                  gene_sets = signatures_nodir,  
+                                  ColorVariable = "CellType", 
+                                  Variable="Condition", 
+                                  ColorValues = CellTypecols, 
+                                  ConnectGroups=TRUE,  
+                                  nrow = 1, 
+                                  widthTitle=20, 
+                                  limits = NULL, 
+                                  legend_nrow = 2, 
+                                  compute_cohen=F,
+                                  pointSize=2,
+                                  titlesize=9))
 
 (plot_ssGSEA_nodir <- PlotScores(data = corrcounts, 
-           metadata = metadata, 
-           method = "ssGSEA", 
-           gene_sets = signatures_nodir,  
-           ColorVariable = "CellType", 
-           Variable="Condition", 
-           ColorValues = CellTypecols, 
-           ConnectGroups=TRUE,  
-           nrow = 1, 
-           widthTitle=20, 
-           limits = NULL, 
-           legend_nrow = 2, 
-           compute_cohen=F,
-           pointSize=2,
-           titlesize=9))
+                                 metadata = metadata, 
+                                 method = "ssGSEA", 
+                                 gene_sets = signatures_nodir,  
+                                 ColorVariable = "CellType", 
+                                 Variable="Condition", 
+                                 ColorValues = CellTypecols, 
+                                 ConnectGroups=TRUE,  
+                                 nrow = 1, 
+                                 widthTitle=20, 
+                                 limits = NULL, 
+                                 legend_nrow = 2, 
+                                 compute_cohen=F,
+                                 pointSize=2,
+                                 titlesize=9))
 
 ```
 
@@ -1307,65 +1523,65 @@ CellAge interpretation changes drastically...
 ```{r}
 
 (plot_ranking_direct_cellage <- PlotScores_adapted(data = corrcounts, 
-           metadata = metadata, 
-           method = "ranking", 
-           gene_sets = list(CellAge=signatures_bidirectional[["CellAge"]]),  
-           ColorVariable = "CellType", 
-           Variable="Condition", 
-           ColorValues = CellTypecols, 
-           ConnectGroups=TRUE,  
-           nrow = 1, 
-           widthTitle=20, 
-           limits = NULL, 
-           legend_nrow = 2, 
-           compute_cohen=F,
-           pointSize=4,
-           titlesize=12))
+                                                   metadata = metadata, 
+                                                   method = "ranking", 
+                                                   gene_sets = list(CellAge=signatures_bidirectional[["CellAge"]]),  
+                                                   ColorVariable = "CellType", 
+                                                   Variable="Condition", 
+                                                   ColorValues = CellTypecols, 
+                                                   ConnectGroups=TRUE,  
+                                                   nrow = 1, 
+                                                   widthTitle=20, 
+                                                   limits = NULL, 
+                                                   legend_nrow = 2, 
+                                                   compute_cohen=F,
+                                                   pointSize=4,
+                                                   titlesize=12))
 
 (plot_roc_direct_cellage <-  ROC_Scores(data = corrcounts, 
-           metadata = metadata, 
-           gene_sets=list(CellAge=signatures_bidirectional[["CellAge"]]), 
-           method = "all", 
-           variable ="Condition",
-           colors = c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52"), 
-           grid = TRUE, 
-           spacing_annotation=0.3, 
-           ncol=NULL, 
-           nrow=1,
-            mode = "simple",
-            widthTitle = 28,
-           titlesize = 9 ) )
+                                        metadata = metadata, 
+                                        gene_sets=list(CellAge=signatures_bidirectional[["CellAge"]]), 
+                                        method = "all", 
+                                        variable ="Condition",
+                                        colors = c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52"), 
+                                        grid = TRUE, 
+                                        spacing_annotation=0.3, 
+                                        ncol=NULL, 
+                                        nrow=1,
+                                        mode = "simple",
+                                        widthTitle = 28,
+                                        titlesize = 9 ) )
 
 (plot_ranking_nodir_cellage <- PlotScores_adapted(data = corrcounts, 
-           metadata = metadata, 
-           method = "ranking", 
-           gene_sets = list(CellAge=signatures_nodir[["CellAge"]]),  
-           ColorVariable = "CellType", 
-           Variable="Condition", 
-           ColorValues = CellTypecols, 
-           ConnectGroups=TRUE,  
-           nrow = 1, 
-           widthTitle=20, 
-           limits = NULL, 
-           legend_nrow = 2, 
-           compute_cohen=F,
-           pointSize=4,
-           titlesize=12))
+                                                  metadata = metadata, 
+                                                  method = "ranking", 
+                                                  gene_sets = list(CellAge=signatures_nodir[["CellAge"]]),  
+                                                  ColorVariable = "CellType", 
+                                                  Variable="Condition", 
+                                                  ColorValues = CellTypecols, 
+                                                  ConnectGroups=TRUE,  
+                                                  nrow = 1, 
+                                                  widthTitle=20, 
+                                                  limits = NULL, 
+                                                  legend_nrow = 2, 
+                                                  compute_cohen=F,
+                                                  pointSize=4,
+                                                  titlesize=12))
 
 
 (plot_roc_nodir_cellage <-  ROC_Scores(data = corrcounts, 
-           metadata = metadata, 
-           gene_sets=list(CellAge=signatures_nodir[["CellAge"]]), 
-           method = "all", 
-           variable ="Condition",
-           colors = c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52"), 
-           grid = TRUE, 
-           spacing_annotation=0.3, 
-           ncol=NULL, 
-           nrow=1,
-            mode = "simple",
-            widthTitle = 28,
-           titlesize = 9 ) )
+                                       metadata = metadata, 
+                                       gene_sets=list(CellAge=signatures_nodir[["CellAge"]]), 
+                                       method = "all", 
+                                       variable ="Condition",
+                                       colors = c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52"), 
+                                       grid = TRUE, 
+                                       spacing_annotation=0.3, 
+                                       ncol=NULL, 
+                                       nrow=1,
+                                       mode = "simple",
+                                       widthTitle = 28,
+                                       titlesize = 9 ) )
 
 ```
 
@@ -1388,11 +1604,11 @@ fig_cellage
 
 ```{r fig.width=20, fig.height=18}
 (plt_fig2 <- ggarrange(plot_logmedian,
-          plot_ranking,
-          plot_ssGSEA,
-          plt_cohenheatmap,
-          plt_auc_heatmap,
-          fig_cellage, labels=c("A","B","C","D","E",""), ncol=1, heights=c(0.2,0.15,0.15,0.15,0.12,0.15),font.label = list(size = 20)))
+                       plot_ranking,
+                       plot_ssGSEA,
+                       plt_cohenheatmap,
+                       plt_auc_heatmap,
+                       fig_cellage, labels=c("A","B","C","D","E",""), ncol=1, heights=c(0.2,0.15,0.15,0.15,0.12,0.15),font.label = list(size = 20)))
 ```
 
 ```{r}
@@ -1406,7 +1622,7 @@ ggplot2::ggsave("Figs/Figure2_Scores.png",
 ## Figure 4 - Enrichment-based methods
 
 ```{r}
- 
+
 degenes <- calculateDE(data=corrcounts, 
                        metadata=metadata, 
                        variables="Condition",   
@@ -1414,34 +1630,34 @@ degenes <- calculateDE(data=corrcounts,
                        contrasts = c("Senescent - Proliferative",
                                      "Senescent - Quiescent"#,
                                      #"Proliferative - Quiescent"
-                                     )) 
+                       )) 
 
 degenes
 ```
 
 ```{r fig.width=21, fig.height=4}
- 
+
 (plotvolcano <- plotVolcano(DEResultsList=degenes, 
-            genes=signatures_bidirectional, 
-            N=NULL, 
-            x="logFC",
-            y="-log10(adj.P.Val)", 
-            pointSize=2, 
-            color="pink", 
-            highlightcolor="darkblue", 
-            highlightcolor_upreg = "#038C65", 
-            highlightcolor_downreg = "#8C0303", 
-            nointerestcolor="grey",
-            threshold_y=NULL, 
-            threshold_x=NULL, 
-            xlab=NULL, 
-            ylab=NULL, 
-            ncol=NULL, 
-            nrow=NULL, 
-            title=NULL,
-            labsize=7,
-            widthlabs=28, 
-            invert=T))
+                            genes=signatures_bidirectional, 
+                            N=NULL, 
+                            x="logFC",
+                            y="-log10(adj.P.Val)", 
+                            pointSize=2, 
+                            color="pink", 
+                            highlightcolor="darkblue", 
+                            highlightcolor_upreg = "#038C65", 
+                            highlightcolor_downreg = "#8C0303", 
+                            nointerestcolor="grey",
+                            threshold_y=NULL, 
+                            threshold_x=NULL, 
+                            xlab=NULL, 
+                            ylab=NULL, 
+                            ncol=NULL, 
+                            nrow=NULL, 
+                            title=NULL,
+                            labsize=7,
+                            widthlabs=28, 
+                            invert=T))
 
 ```
 
@@ -1458,9 +1674,9 @@ GSEAresults
 ```
 
 ```{r fig.width=11, fig.height=4.5}
- 
+
 (plotNESlollipop <- plotNESlollipop(GSEA_results=GSEAresults, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
-                grid = T, nrow = 1, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
+                                    grid = T, nrow = 1, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
 
 ```
 
@@ -1508,100 +1724,100 @@ df_ggplot  <- GSEAresults_merge[,c("pathway","contrast","NES","padj")]
 df_ggplot <- merge(subset(df_ggplot, contrast=="Sen_vs_Prol"),subset(df_ggplot, contrast=="Sen_vs_Quiesc"), by="pathway")
 colnames(df_ggplot) <- c("pathway","contrast.x","NES_Sen_vs_Prol","padj_Sen_vs_Prol","contrast.y","NES_Sen_vs_Quiesc","padj_Sen_vs_Quiesc")
 df_ggplot$significance <- df_ggplot$padj_Sen_vs_Prol <= 0.05 & df_ggplot$padj_Sen_vs_Quiesc <= 0.05
- 
+
 (plt_scatter_gsea <- ggplot(df_ggplot, aes(x=NES_Sen_vs_Prol, y=NES_Sen_vs_Quiesc)) +
-  geom_point(alpha=0.6, size=8, shape=21, aes(fill=significance)) +
-  theme_bw() +
-  geom_label_repel(aes(label=pathway), size=3, force_pull = 1, fill=NA, max.overlaps = 10000, min.segment.length = 0, force = 5, box.padding = .5) +
-  geom_vline(xintercept = 0, size=0.6, linetype="dashed")+
-  geom_hline(yintercept = 0, size=0.6, linetype="dashed") +
-  xlab("NES Senescence vs Proliferation")+
-  ylab("NES Senescence vs Quiescence")+ 
-  scale_fill_manual(values = c("#BA3B46","#53A2BE"), name = "Adj. p-value <= 0.05")  +
-  theme(legend.position = "top") + 
+    geom_point(alpha=0.6, size=8, shape=21, aes(fill=significance)) +
+    theme_bw() +
+    geom_label_repel(aes(label=pathway), size=3, force_pull = 1, fill=NA, max.overlaps = 10000, min.segment.length = 0, force = 5, box.padding = .5) +
+    geom_vline(xintercept = 0, size=0.6, linetype="dashed")+
+    geom_hline(yintercept = 0, size=0.6, linetype="dashed") +
+    xlab("NES Senescence vs Proliferation")+
+    ylab("NES Senescence vs Quiescence")+ 
+    scale_fill_manual(values = c("#BA3B46","#53A2BE"), name = "Adj. p-value <= 0.05")  +
+    theme(legend.position = "top") + 
     theme( plot.title = element_text(hjust = 0.5 ) ) )
 ```
 
 
 ```{r fig.width=8, fig.height=12}
- 
+
 plotvolcano_1 <- plotVolcano(DEResultsList=degenes, 
-            genes=signatures_bidirectional[1:3], 
-            N=NULL, 
-            x="logFC",
-            y="-log10(adj.P.Val)", 
-            pointSize=2, 
-            color="pink", 
-            highlightcolor="darkblue", 
-            highlightcolor_upreg = "#038C65", 
-            highlightcolor_downreg = "#8C0303", 
-            nointerestcolor="grey",
-            threshold_y=NULL, 
-            threshold_x=NULL, 
-            xlab=NULL, 
-            ylab=NULL, 
-            ncol=NULL, 
-            nrow=2, 
-            title=NULL,
-            labsize=7,
-            widthlabs=28, 
-            invert=T)
+                             genes=signatures_bidirectional[1:3], 
+                             N=NULL, 
+                             x="logFC",
+                             y="-log10(adj.P.Val)", 
+                             pointSize=2, 
+                             color="pink", 
+                             highlightcolor="darkblue", 
+                             highlightcolor_upreg = "#038C65", 
+                             highlightcolor_downreg = "#8C0303", 
+                             nointerestcolor="grey",
+                             threshold_y=NULL, 
+                             threshold_x=NULL, 
+                             xlab=NULL, 
+                             ylab=NULL, 
+                             ncol=NULL, 
+                             nrow=2, 
+                             title=NULL,
+                             labsize=7,
+                             widthlabs=28, 
+                             invert=T)
 
 plotvolcano_2 <- plotVolcano(DEResultsList=degenes, 
-            genes=signatures_bidirectional[4:6], 
-            N=NULL, 
-            x="logFC",
-            y="-log10(adj.P.Val)", 
-            pointSize=2, 
-            color="pink", 
-            highlightcolor="darkblue", 
-            highlightcolor_upreg = "#038C65", 
-            highlightcolor_downreg = "#8C0303", 
-            nointerestcolor="grey",
-            threshold_y=NULL, 
-            threshold_x=NULL, 
-            xlab=NULL, 
-            ylab=NULL, 
-            ncol=NULL, 
-            nrow=2, 
-            title=NULL,
-            labsize=7,
-            widthlabs=28, 
-            invert=T)
+                             genes=signatures_bidirectional[4:6], 
+                             N=NULL, 
+                             x="logFC",
+                             y="-log10(adj.P.Val)", 
+                             pointSize=2, 
+                             color="pink", 
+                             highlightcolor="darkblue", 
+                             highlightcolor_upreg = "#038C65", 
+                             highlightcolor_downreg = "#8C0303", 
+                             nointerestcolor="grey",
+                             threshold_y=NULL, 
+                             threshold_x=NULL, 
+                             xlab=NULL, 
+                             ylab=NULL, 
+                             ncol=NULL, 
+                             nrow=2, 
+                             title=NULL,
+                             labsize=7,
+                             widthlabs=28, 
+                             invert=T)
 
 plotvolcano_3 <- plotVolcano(DEResultsList=degenes, 
-            genes=signatures_bidirectional[7:9], 
-            N=NULL, 
-            x="logFC",
-            y="-log10(adj.P.Val)", 
-            pointSize=2, 
-            color="pink", 
-            highlightcolor="darkblue", 
-            highlightcolor_upreg = "#038C65", 
-            highlightcolor_downreg = "#8C0303", 
-            nointerestcolor="grey",
-            threshold_y=NULL, 
-            threshold_x=NULL, 
-            xlab=NULL, 
-            ylab=NULL, 
-            ncol=NULL, 
-            nrow=2, 
-            title=NULL,
-            labsize=7,
-            widthlabs=28, 
-            invert=T) 
+                             genes=signatures_bidirectional[7:9], 
+                             N=NULL, 
+                             x="logFC",
+                             y="-log10(adj.P.Val)", 
+                             pointSize=2, 
+                             color="pink", 
+                             highlightcolor="darkblue", 
+                             highlightcolor_upreg = "#038C65", 
+                             highlightcolor_downreg = "#8C0303", 
+                             nointerestcolor="grey",
+                             threshold_y=NULL, 
+                             threshold_x=NULL, 
+                             xlab=NULL, 
+                             ylab=NULL, 
+                             ncol=NULL, 
+                             nrow=2, 
+                             title=NULL,
+                             labsize=7,
+                             widthlabs=28, 
+                             invert=T) 
 
 
 (plt_volcano_new <- ggarrange(plotvolcano_1,plotvolcano_2,plotvolcano_3, ncol=1))
 ```
 
 ```{r fig.width=5, fig.height=10}
- 
+
 (plotNESlollipop_1 <- plotNESlollipop(GSEA_results=list("Senescent-Proliferative"=GSEAresults$`Senescent-Proliferative`), sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
-                grid = T, nrow = 1, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
+                                      grid = T, nrow = 1, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
 
 (plotNESlollipop_2 <- plotNESlollipop(GSEA_results=list("Senescent-Quiescent"=GSEAresults$`Senescent-Quiescent`), sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
-                grid = T, nrow = 1, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
+                                      grid = T, nrow = 1, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
 
 (plotNESlollipop_new <- ggarrange(plotNESlollipop_1$`Senescent-Proliferative`,plotNESlollipop_2$`Senescent-Quiescent`,ncol=1, common.legend = T))
 ```
@@ -1626,7 +1842,7 @@ degenes_SP <- degenes$`Senescent-Proliferative`
 degenes_SP$gene <- row.names(degenes_SP)
 degenes_SQ <- degenes$`Senescent-Quiescent`
 degenes_SQ$gene <- row.names(degenes_SQ)
- 
+
 degenes_SP_SQ <- merge(degenes_SP,degenes_SQ, by="gene")
 degenes_SP_SQ <- degenes_SP_SQ[,c("gene","t.x","t.y")]
 colnames(degenes_SP_SQ) <- c("gene","t_SP","t_SQ")
@@ -1643,8 +1859,8 @@ plt_scatter_SeneQuest <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) +
   theme(plot.title = element_text(hjust = 0.5, size=12),
         plot.subtitle = element_text(hjust = 0.5),
         text = element_text(size=12) ) + geom_point(data= degenes_SP_SQ[degenes_SP_SQ$gene %in% signatures_bidirectional$SeneQuest$gene,], fill="#96C29B", size=3, alpha=0.8, shape=21) + ggtitle("SeneQuest") +
-    geom_vline(xintercept = 0, color="black", size=0.8, linetype="dashed")+
-    geom_hline(yintercept = 0, color="black", size=0.8, linetype="dashed")
+  geom_vline(xintercept = 0, color="black", size=0.8, linetype="dashed")+
+  geom_hline(yintercept = 0, color="black", size=0.8, linetype="dashed")
 
 plt_scatter_HernandezSegura <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) + 
   geom_point(size=3, alpha=0.6, color="#C2C2C2") +
@@ -1656,8 +1872,8 @@ plt_scatter_HernandezSegura <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) +
   theme(plot.title = element_text(hjust = 0.5, size=12),
         plot.subtitle = element_text(hjust = 0.5),
         text = element_text(size=12) ) + geom_point(data= degenes_SP_SQ[degenes_SP_SQ$gene %in% signatures_bidirectional$HernandezSegura$gene,], fill="#96C29B", size=3, alpha=0.8, shape=21) + ggtitle("HernandezSegura") +
-    geom_vline(xintercept = 0, color="black", size=0.8, linetype="dashed")+
-    geom_hline(yintercept = 0, color="black", size=0.8, linetype="dashed")
+  geom_vline(xintercept = 0, color="black", size=0.8, linetype="dashed")+
+  geom_hline(yintercept = 0, color="black", size=0.8, linetype="dashed")
 
 plt_scatter_REACTOME <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) + 
   geom_point(size=3, alpha=0.6, color="#C2C2C2") +
@@ -1669,36 +1885,36 @@ plt_scatter_REACTOME <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) +
   theme(plot.title = element_text(hjust = 0.5, size=12),
         plot.subtitle = element_text(hjust = 0.5),
         text = element_text(size=12)) + geom_point(data= degenes_SP_SQ[degenes_SP_SQ$gene %in% signatures_bidirectional$REACTOME_CELLULAR_SENESCENCE,], fill="#96C29B", size=3, alpha=0.8, shape=21) + ggtitle("REACTOME_CELLULAR_SENESCENCE") +
-    geom_vline(xintercept = 0, color="black", size=0.8, linetype="dashed")+
-    geom_hline(yintercept = 0, color="black", size=0.8, linetype="dashed")
+  geom_vline(xintercept = 0, color="black", size=0.8, linetype="dashed")+
+  geom_hline(yintercept = 0, color="black", size=0.8, linetype="dashed")
 
 (plt_tstats <- ggarrange(plt_scatter_SeneQuest,plt_scatter_HernandezSegura,plt_scatter_REACTOME, nrow=1))
 
- 
+
 ```
 
 
-  
-  
+
+
 ```{r}
 
 (plot_logmedian_SeneQuest <- PlotScores_adapted(data = corrcounts, 
-                                           metadata = metadata, 
-                                           method = "logmedian", 
-                                           gene_sets = list(SeneQuest =  signatures_bidirectional$SeneQuest ,
-                                                            UP_SeneQuest= subset(signatures_bidirectional$SeneQuest, enrichment==1),
-                                                            DOWN_SeneQuest = subset(signatures_bidirectional$SeneQuest, enrichment==-1)),   
-                                           Variable="Condition",  
-                                           ConnectGroups=F,  
-                                           nrow = 1, 
-                                           widthTitle=20, 
-                                           limits = NULL, 
-                                           legend_nrow = 2, 
-                                           compute_cohen=F,
-                                           pointSize=2,
-                                           titlesize=12,
-                                           cond_cohend = list(A="Senescent",B="Quiescent"),
-                                           pvalcalc = F, ColorValues = "pink"))
+                                                metadata = metadata, 
+                                                method = "logmedian", 
+                                                gene_sets = list(SeneQuest =  signatures_bidirectional$SeneQuest ,
+                                                                 UP_SeneQuest= subset(signatures_bidirectional$SeneQuest, enrichment==1),
+                                                                 DOWN_SeneQuest = subset(signatures_bidirectional$SeneQuest, enrichment==-1)),   
+                                                Variable="Condition",  
+                                                ConnectGroups=F,  
+                                                nrow = 1, 
+                                                widthTitle=20, 
+                                                limits = NULL, 
+                                                legend_nrow = 2, 
+                                                compute_cohen=F,
+                                                pointSize=2,
+                                                titlesize=12,
+                                                cond_cohend = list(A="Senescent",B="Quiescent"),
+                                                pvalcalc = F, ColorValues = "pink"))
 
 ```
 
@@ -1713,15 +1929,15 @@ ggplot2::ggsave("Figs/Figure5_SeneQuest.png",
                 plt_fig5_senequest,
                 width = 12, height=6, bg = 'white')
 ```
- 
- 
- 
- 
+
+
+
+
 what to expect from scores and GSEA
 
 
 ```{r}
- 
+
 set.seed(123)
 
 # Sample size per condition
@@ -1733,11 +1949,11 @@ n <- 300
 mock_scores <- data.frame(
   sampleID = paste0("Sample_", 1:(n * 3)),
   Condition = rep(c("Senescent", "Proliferative", "Quiescent"), each = n),
-
+  
   # GOOD signatures
   Sig_Good1 = c(rnorm(n, 8, 1), rnorm(n, 3.5, 1), rnorm(n, 3, 1)),
   Sig_Good2 = c(rnorm(n, 2, 1), rnorm(n, 6, 1), rnorm(n, 6.5, 1)),
-
+  
   # BAD signatures
   Sig_Bad1 = c(rnorm(n, 5, 1), rnorm(n, 5.1, 1), rnorm(n, 5.2, 1)),  # All similar
   Sig_Bad2 = c(rnorm(n, 5, 1), rnorm(n, 8, 1), rnorm(n, 5.1, 1))    # Sen ≈ Quiesc, Prol different
@@ -1757,42 +1973,42 @@ mock_long <- mock_scores %>%
 
 ```{r fig.width=6, fig.height=4}
 (plt_expectation_scores <- ggplot(mock_long, aes(x = Condition, y = Score, fill = Condition)) +
-  #geom_jitter(width = 0.3, size = 2, alpha = 0.5, color = "grey") +
-  geom_violin(trim = FALSE, alpha = 0.4, size = 1) + 
-  facet_wrap(
-    ~Signature, ncol = 2,
-    labeller = labeller(Signature = c(
-      "Good Signature A" = "Good Signature",
-      "Good Signature B" = "Good Signature",
-      "Bad Signature A" = "Bad Signature",
-      "Bad Signature B" = "Bad Signature"
-    ))
-  ) +
-  theme_classic(base_size = 13) +
-  scale_fill_manual(values = c(
-    "Senescent"     = "#F4A261",
-    "Proliferative" = "#A1C298",
-    "Quiescent"     = "#9DB4C0"
-  )) +
-  labs(x = NULL, y = "Signature Score") +
-  theme(
-    legend.position = "none",
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    strip.text = element_text(face = "bold")
-  ) +
-  stat_summary(
-    fun.y = median, fun.ymin = median, fun.ymax = median,
-    geom = "crossbar", width = 0.25,
-    position = position_dodge(width = .13)
-  ))
+   #geom_jitter(width = 0.3, size = 2, alpha = 0.5, color = "grey") +
+   geom_violin(trim = FALSE, alpha = 0.4, size = 1) + 
+   facet_wrap(
+     ~Signature, ncol = 2,
+     labeller = labeller(Signature = c(
+       "Good Signature A" = "Good Signature",
+       "Good Signature B" = "Good Signature",
+       "Bad Signature A" = "Bad Signature",
+       "Bad Signature B" = "Bad Signature"
+     ))
+   ) +
+   theme_classic(base_size = 13) +
+   scale_fill_manual(values = c(
+     "Senescent"     = "#F4A261",
+     "Proliferative" = "#A1C298",
+     "Quiescent"     = "#9DB4C0"
+   )) +
+   labs(x = NULL, y = "Signature Score") +
+   theme(
+     legend.position = "none",
+     axis.text.y = element_blank(),
+     axis.ticks.y = element_blank(),
+     strip.text = element_text(face = "bold")
+   ) +
+   stat_summary(
+     fun.y = median, fun.ymin = median, fun.ymax = median,
+     geom = "crossbar", width = 0.25,
+     position = position_dodge(width = .13)
+   ))
 
 
 ```
- 
- 
+
+
 ```{r fig.width=4, fig.height=4}
- 
+
 # Create mock NES values manually for clarity
 df_signatures <- data.frame(
   Signature = paste0("Sig", 1:10),
@@ -1805,33 +2021,33 @@ df_signatures$Quality <- ifelse(
   abs(df_signatures$NES_Sen_vs_Prol) > 1.5 & abs(df_signatures$NES_Sen_vs_Quiesc) > 1.5,
   "Good", "Bad"
 )
- 
+
 (plt_expectation_gsea <- ggplot(df_signatures, aes(x = NES_Sen_vs_Prol, y = NES_Sen_vs_Quiesc)) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "gray70") +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "gray70") +
-  geom_point(aes(fill = Quality), shape = 21, size = 7, alpha = 0.85, color = "black") +
-  scale_fill_manual(values = c("Good" = "#3E7CB1", "Bad" = "#D1495B")) +
-  labs(
-    x = "NES (Senescent vs Proliferative)",
-    y = "NES (Senescent vs Quiescent)",
-    fill = "Signature Quality  "
-  ) +
-  coord_fixed() +
-  theme_classic(base_size = 12) +
-  theme(legend.position = "top"))
+    geom_hline(yintercept = 0, linetype = "dashed", color = "gray70") +
+    geom_vline(xintercept = 0, linetype = "dashed", color = "gray70") +
+    geom_point(aes(fill = Quality), shape = 21, size = 7, alpha = 0.85, color = "black") +
+    scale_fill_manual(values = c("Good" = "#3E7CB1", "Bad" = "#D1495B")) +
+    labs(
+      x = "NES (Senescent vs Proliferative)",
+      y = "NES (Senescent vs Quiescent)",
+      fill = "Signature Quality  "
+    ) +
+    coord_fixed() +
+    theme_classic(base_size = 12) +
+    theme(legend.position = "top"))
 
 ```
 
- 
- 
+
+
 ```{r fig.width=12, fig.height=4}
 (plt_expectations <- ggarrange(plt_expectation_scores,plt_expectation_gsea, labels=c("A","B"), widths=c(0.6,0.4)))
 ```
- 
- 
- 
+
+
+
 ```{r fig.width=12, fig.height=6}
- 
+
 
 # Local job
 # plt_fdrsim_subset_v2 <- FPR_Simulation(data = corrcounts,
@@ -1856,27 +2072,27 @@ df_signatures$Quality <- ifelse(
 plt_fdrsim_subset_v2
 ```
 
- 
+
 ```{r fig.width=14, fig.height=16}
 
 plt_senequest <- ggarrange(plt_tstats,plot_logmedian_SeneQuest, ncol=1, heights=c(0.45,0.6), labels=c("C","D"))
 
 (plt_fig5_alternative <- ggarrange(plt_expectations,
-          plt_senequest,
-          plt_fdrsim_subset_v2,
-          labels=c("","","E"),
-          ncol=1,
-          heights=c(0.2,0.35,0.35)))
+                                   plt_senequest,
+                                   plt_fdrsim_subset_v2,
+                                   labels=c("","","E"),
+                                   ncol=1,
+                                   heights=c(0.2,0.35,0.35)))
 ```
- 
- 
+
+
 ```{r}
 ggplot2::ggsave("Figs/Figure5_ComparisonSigs.png",
                 plt_fig5_alternative,
                 width = 14, height=16, bg = 'white')
 ```
- 
-  
+
+
 ## Figure 6 - Tradeoffs between number of genes and number of samples
 
 ### Significance
@@ -1907,76 +2123,76 @@ results <- data.frame()
 
 # Loop through gene sets
 for (sig_name in names(gene_sets)) {
-
+  
   siggenes_original <- gene_sets[[sig_name]]
-
+  
   if (is.data.frame(siggenes_original)){
     full_genes <- siggenes_original[siggenes_original[,1] %in% row.names(df_expr),]
   } else {
     full_genes <- intersect(siggenes_original, rownames(df_expr))
   }
-
+  
   for (g_pct in gene_pcts) {
-
-
+    
+    
     if (is.data.frame(siggenes_original)){
       ngenes_to_sample <-  max(1, round(nrow(full_genes) * g_pct / 100))
       set.seed("12345")
-       sel_genes <- full_genes[sample(1:nrow(full_genes), ngenes_to_sample),]
+      sel_genes <- full_genes[sample(1:nrow(full_genes), ngenes_to_sample),]
     } else {
       ngenes_to_sample <-  max(1, round(length(full_genes) * g_pct / 100))
       set.seed("12345")
-       sel_genes <- full_genes[sample(1:length(full_genes), ngenes_to_sample)]
+      sel_genes <- full_genes[sample(1:length(full_genes), ngenes_to_sample)]
     }
-   sigs_list <- list(sel_genes)
-  names(sigs_list) <- sig_name
-
+    sigs_list <- list(sel_genes)
+    names(sigs_list) <- sig_name
+    
     for (s_pct in sample_pcts) {
-
-       print(paste0("Percentage Samples: ", s_pct,"% | Percentage Genes: ", g_pct, "%"))
-
+      
+      print(paste0("Percentage Samples: ", s_pct,"% | Percentage Genes: ", g_pct, "%"))
+      
       # Subset samples
       group1 <- names(group_vec[group_vec == "Senescent"])
       group2 <- names(group_vec[group_vec == "Proliferative"])
-
+      
       set.seed("12345")
       sel_group1 <- sample(group1, max(2, round(length(group1) * s_pct / 100)))
       set.seed("12345")
       sel_group2 <- sample(group2, max(2, round(length(group2) * s_pct / 100)))
-
+      
       sel_samples <- c(sel_group1, sel_group2)
       #sel_expr <- expr_mat[sel_genes, sel_samples]
-
+      
       df_subset <- df_expr[,sel_samples]
       metadata_subset <- metadata[metadata$sampleID %in% sel_samples,c("sampleID","Condition")]
-
+      
       # SCORE approach: mean expression score per sample
       df_Scores <- CalculateScores(data = df_subset[,metadata_subset$sampleID],
-                             metadata = metadata_subset,
-                             method = "logmedian",
-                             gene_sets =  sigs_list)
+                                   metadata = metadata_subset,
+                                   method = "logmedian",
+                                   gene_sets =  sigs_list)
       df_Scores <- as.data.frame(df_Scores[[sig_name]])
       cohen_d_score <- compute_cohens_d(df_Scores[df_Scores$Condition == "Senescent","score"], df_Scores[df_Scores$Condition == "Proliferative","score"])
-
+      
       # Score p-value (t-test)
       p_score <- tryCatch({
         t.test(df_Scores$score ~ df_Scores$Condition)$p.value
       }, error = function(e) NA)
-
+      
       # ENRICHMENT approach: gene ranking for fgsea
-     DEGs <- calculateDE(data = df_subset[,metadata_subset$sampleID],
-                    metadata = metadata_subset,
-                    variables = "Condition",
-                    contrasts = c("Senescent - Proliferative"))
+      DEGs <- calculateDE(data = df_subset[,metadata_subset$sampleID],
+                          metadata = metadata_subset,
+                          variables = "Condition",
+                          contrasts = c("Senescent - Proliferative"))
       #DEGs <- DEGs$`Senescent-Proliferative`
-
+      
       res <- runGSEA(DEGList = DEGs,
-                       gene_sets = sigs_list )
+                     gene_sets = sigs_list )
       res <- res$`Senescent-Proliferative`
-
+      
       NES <-  res$NES
       p_enrich <-res$pval
-
+      
       # Save
       results <- rbind(results, data.frame(
         signature = sig_name,
@@ -2004,7 +2220,7 @@ results$p_score <- p.adjust(results$p_score, method = "BH")
 results$p_enrich <- p.adjust(results$p_enrich, method = "BH")
 ```
 
- 
+
 ```{r fig.width=10, fig.height=4} 
 # Transform p-values for plotting
 results$log10_p_score <- -log10(results$p_score)
@@ -2014,7 +2230,7 @@ results$log10_p_enrich <- -log10(results$p_enrich)
 results$log10_p_score <- pmin(results$log10_p_score, 10)
 results$log10_p_enrich <- pmin(results$log10_p_enrich, 10)
 
- 
+
 plt_scoresig <- ggplot(results, aes(x = factor(gene_pct), y = factor(sample_pct), fill = log10_p_score)) +
   geom_tile( ) +
   scale_fill_gradient(low = "white", high = "blue", name = "-log10 p (Score)") +
@@ -2023,7 +2239,7 @@ plt_scoresig <- ggplot(results, aes(x = factor(gene_pct), y = factor(sample_pct)
   ggtitle("Score method significance") +
   theme_minimal() +
   scale_x_discrete(breaks = seq(0, 100, by = 10))+
-scale_y_discrete(breaks = seq(0, 100, by = 10))+
+  scale_y_discrete(breaks = seq(0, 100, by = 10))+
   theme(legend.position="bottom") +
   theme(plot.title = element_text(hjust = 0.5))
 
@@ -2037,7 +2253,7 @@ plt_enrichmentsig <- ggplot(results, aes(x = factor(gene_pct), y = factor(sample
   ggtitle("Enrichment method significance") +
   theme_minimal() +
   scale_x_discrete(breaks = seq(0, 100, by = 10))+
-scale_y_discrete(breaks = seq(0, 100, by = 10)) +
+  scale_y_discrete(breaks = seq(0, 100, by = 10)) +
   theme(legend.position="bottom") +
   theme(plot.title = element_text(hjust = 0.5))
 
@@ -2048,7 +2264,7 @@ ggarrange(plt_scoresig,plt_enrichmentsig, nrow=1)
 
 
 ```{r fig.width=12, fig.height=4}
-  
+
 # Clean & reshape
 results_long <- results %>%
   mutate(
@@ -2068,16 +2284,16 @@ Signature_colors <- c(
   "HernandezSegura" = "#6CA0DC"  # Light cornflower blue
 )
 
- 
+
 plt_samplepct <- ggplot(results_long %>% filter(gene_pct == 100),
-       aes(x = sample_pct, y = logp, color = signature)) +
+                        aes(x = sample_pct, y = logp, color = signature)) +
   geom_line(size = 1) +
   geom_point(size = 2) +
   facet_wrap(~method, scales = "free") +
   geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "gray40") +
   scale_color_manual(values = Signature_colors) +
   labs(
-   # title = "Effect of Sample Size on Significance",
+    # title = "Effect of Sample Size on Significance",
     x = "Sample Subset (% of Total Samples)",
     y = expression("-log"[10]*"(p-value)"),
     color = "Signature"
@@ -2086,7 +2302,7 @@ plt_samplepct <- ggplot(results_long %>% filter(gene_pct == 100),
   theme(plot.title = element_text(hjust = 0.5))
 
 plt_genepct <- ggplot(results_long %>% filter(sample_pct == 100),
-       aes(x = gene_pct, y = logp, color = signature)) +
+                      aes(x = gene_pct, y = logp, color = signature)) +
   geom_line(size = 1) +
   geom_point(size = 2) +
   facet_wrap(~method, scales = "free") +
@@ -2105,12 +2321,12 @@ plt_genepct <- ggplot(results_long %>% filter(sample_pct == 100),
 (plt_tradeoffs <- ggarrange(plt_samplepct,plt_genepct, common.legend = T, nrow=1, legend="top", labels="AUTO"))
 ```
 
- 
 
- 
- 
- 
- 
+
+
+
+
+
 ### Scores: Not coordinated acrivation of gene set
 
 A senescence signature with both upregulated and downregulated genes — and a sample where only the upregulated genes are expressed highly.
@@ -2131,26 +2347,26 @@ signatures_SeneQuest <- list(UP_SeneQuest = subset(signatures_bidirectional$Sene
 
 ```{r}
 (plot_logmedian <- PlotScores_adapted(data = corrcounts, 
-           metadata = metadata, 
-           method = "ranking", 
-           gene_sets = signatures_SeneQuest,  
-           ColorVariable = "Condition", 
-           Variable="Condition", 
-           ColorValues = Condition_colors, 
-           ConnectGroups=TRUE,  
-           nrow = 1, 
-           widthTitle=20, 
-           legend_nrow = 1, 
-           pointSize=2,
-           titlesize=10, compute_cohen=T,
-           cond_cohend = list(A=c("Senescent"),B="Proliferative"),
- limits=c(-20,50)))
+                                      metadata = metadata, 
+                                      method = "ranking", 
+                                      gene_sets = signatures_SeneQuest,  
+                                      ColorVariable = "Condition", 
+                                      Variable="Condition", 
+                                      ColorValues = Condition_colors, 
+                                      ConnectGroups=TRUE,  
+                                      nrow = 1, 
+                                      widthTitle=20, 
+                                      legend_nrow = 1, 
+                                      pointSize=2,
+                                      titlesize=10, compute_cohen=T,
+                                      cond_cohend = list(A=c("Senescent"),B="Proliferative"),
+                                      limits=c(-20,50)))
 ```
- 
- Second idea: use the genes of hernandez segura with the highest power to discriminate senescence from proliferative, and do plots of those genes vs all of the genes; to illustrate how easy it would be to reach significance and a similar result if we only used a set of genes, which is not good if we want to have an idea of the overall activity of the pathway; whereas in GSEA this wouldn't happen
- 
+
+Second idea: use the genes of hernandez segura with the highest power to discriminate senescence from proliferative, and do plots of those genes vs all of the genes; to illustrate how easy it would be to reach significance and a similar result if we only used a set of genes, which is not good if we want to have an idea of the overall activity of the pathway; whereas in GSEA this wouldn't happen
+
 ```{r fig.width=20, fig.height=20}
- 
+
 IndividualGenes_Violins(data = corrcounts, 
                         metadata = metadata, 
                         genes = signatures_bidirectional$HernandezSegura$gene, 
@@ -2170,10 +2386,10 @@ IndividualGenes_Violins(data = corrcounts,
                         xlab="Condition",
                         colorlab="") 
 ```
- 
- 
+
+
 ```{r fig.width=6, fig.height=12}
- 
+
 CohenD_IndividualGenes(corrcounts[,subset(metadata, Condition!="Proliferative")$sampleID], 
                        subset(metadata, Condition!="Proliferative"), 
                        genes=signatures_bidirectional$HernandezSegura$gene,
@@ -2196,7 +2412,7 @@ topgenes_5 <- c("CDCD5","PCIF1","PDLIM4","FAM214B","CREBBP" )
 topgenes_10 <- c("CDCD5","PCIF1","PDLIM4","FAM214B","CREBBP","CCND1","PATZ1","CNTLN","TRDMT1","DDA1") 
 
 ```
- 
+
 ```{r fig.width=10, fig.height=10}
 
 signatures_HS <- list(HernandezSegura=signatures_bidirectional$HernandezSegura,
@@ -2205,49 +2421,49 @@ signatures_HS <- list(HernandezSegura=signatures_bidirectional$HernandezSegura,
                       HernandezSegura_top10 = subset(signatures_bidirectional$HernandezSegura, gene %in% topgenes_10))
 
 (plot_ranking <- PlotScores_adapted(data = corrcounts, 
-           metadata = metadata, 
-           method = "ranking", 
-           gene_sets = signatures_HS,  
-           ColorVariable = "Condition", 
-           Variable="Condition", 
-           ColorValues = Condition_colors, 
-           ConnectGroups=TRUE,  
-           nrow = 1, 
-           widthTitle=24, 
-           legend_nrow = 1, 
-           pointSize=2,
-           titlesize=10, compute_cohen=T,
-           cond_cohend = list(A=c("Senescent"),B="Quiescent")))
+                                    metadata = metadata, 
+                                    method = "ranking", 
+                                    gene_sets = signatures_HS,  
+                                    ColorVariable = "Condition", 
+                                    Variable="Condition", 
+                                    ColorValues = Condition_colors, 
+                                    ConnectGroups=TRUE,  
+                                    nrow = 1, 
+                                    widthTitle=24, 
+                                    legend_nrow = 1, 
+                                    pointSize=2,
+                                    titlesize=10, compute_cohen=T,
+                                    cond_cohend = list(A=c("Senescent"),B="Quiescent")))
 
 (plot_logmedian <- PlotScores_adapted(data = corrcounts, 
-           metadata = metadata, 
-           method = "logmedian", 
-           gene_sets = signatures_HS,  
-           ColorVariable = "Condition", 
-           Variable="Condition", 
-           ColorValues = Condition_colors, 
-           ConnectGroups=TRUE,  
-           nrow = 1, 
-           widthTitle=24, 
-           legend_nrow = 1, 
-           pointSize=2,
-           titlesize=10, compute_cohen=T,
-           cond_cohend = list(A=c("Senescent"),B="Quiescent")))
+                                      metadata = metadata, 
+                                      method = "logmedian", 
+                                      gene_sets = signatures_HS,  
+                                      ColorVariable = "Condition", 
+                                      Variable="Condition", 
+                                      ColorValues = Condition_colors, 
+                                      ConnectGroups=TRUE,  
+                                      nrow = 1, 
+                                      widthTitle=24, 
+                                      legend_nrow = 1, 
+                                      pointSize=2,
+                                      titlesize=10, compute_cohen=T,
+                                      cond_cohend = list(A=c("Senescent"),B="Quiescent")))
 
 (plot_ssGSEA <- PlotScores_adapted(data = corrcounts, 
-           metadata = metadata, 
-           method = "ssGSEA", 
-           gene_sets = signatures_HS,  
-           ColorVariable = "Condition", 
-           Variable="Condition", 
-           ColorValues = Condition_colors, 
-           ConnectGroups=TRUE,  
-           nrow = 1, 
-           widthTitle=24, 
-           legend_nrow = 1, 
-           pointSize=2,
-           titlesize=10, compute_cohen=T,
-           cond_cohend = list(A=c("Senescent"),B="Quiescent")))
+                                   metadata = metadata, 
+                                   method = "ssGSEA", 
+                                   gene_sets = signatures_HS,  
+                                   ColorVariable = "Condition", 
+                                   Variable="Condition", 
+                                   ColorValues = Condition_colors, 
+                                   ConnectGroups=TRUE,  
+                                   nrow = 1, 
+                                   widthTitle=24, 
+                                   legend_nrow = 1, 
+                                   pointSize=2,
+                                   titlesize=10, compute_cohen=T,
+                                   cond_cohend = list(A=c("Senescent"),B="Quiescent")))
 
 ggarrange(plot_logmedian,plot_ranking,plot_ssGSEA,ncol=1)
 ```
@@ -2260,10 +2476,10 @@ plot_ranking
 ```{r}
 options(error=recover)
 GSEAresults_HStests <- runGSEA(list(`Senescent-Quiescent`=degenes$`Senescent-Quiescent`), list(HernandezSegura=signatures_bidirectional$HernandezSegura, 
-                      HernandezSegura_top5 = subset(signatures_bidirectional$HernandezSegura, gene %in% topgenes_5),
-                      HernandezSegura_top10 = subset(signatures_bidirectional$HernandezSegura, gene %in% topgenes_10)), stat = NULL)
+                                                                                               HernandezSegura_top5 = subset(signatures_bidirectional$HernandezSegura, gene %in% topgenes_5),
+                                                                                               HernandezSegura_top10 = subset(signatures_bidirectional$HernandezSegura, gene %in% topgenes_10)), stat = NULL)
 (plotNESlollipop_HStests <- plotNESlollipop(GSEA_results=GSEAresults_HStests, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
-                grid = T, nrow = 1, ncol = NULL, widthlabels=18, title=NULL, titlesize=14))
+                                            grid = T, nrow = 1, ncol = NULL, widthlabels=18, title=NULL, titlesize=14))
 ```
 these genes were selected as the ones with the highest cohen's d separating senescent from quiescent samples. and then i created signatures with those genes. it is interesting that the score doesn't give much impact on the number of genes in the signature, but GSEA penalises the NES... if the gene signature is expected to recapitulate as a whole the phenotype, this is not very good if we use scores...
 
@@ -2279,11 +2495,11 @@ Let's try the same for CellAge
 
 ```{r}
 separatinggenes <- CohenD_IndividualGenes(corrcounts[,subset(metadata, Condition!="Proliferative")$sampleID], 
-                       subset(metadata, Condition!="Proliferative"), 
-                       genes=signatures_bidirectional$CellAge$gene,
-                       condition_var = "Condition", 
-                       class = "Senescent", 
-                       group_var = NULL )
+                                          subset(metadata, Condition!="Proliferative"), 
+                                          genes=signatures_bidirectional$CellAge$gene,
+                                          condition_var = "Condition", 
+                                          class = "Senescent", 
+                                          group_var = NULL )
 
 cellage_top2 <- separatinggenes$data[order(separatinggenes$data$CohensD, decreasing = T),][1:2,"Gene"]
 cellage_top5 <- separatinggenes$data[order(separatinggenes$data$CohensD, decreasing = T),][1:5,"Gene"]
@@ -2299,40 +2515,40 @@ cellage_top100 <- separatinggenes$data[order(separatinggenes$data$CohensD, decre
 ```{r fig.width=10, fig.height=3.5}
 
 signatures_CellAge <- list(CellAge=signatures_bidirectional$CellAge,
-                      CellAge_top2 = subset(signatures_bidirectional$CellAge, gene %in% cellage_top2),
-                      CellAge_top5 = subset(signatures_bidirectional$CellAge, gene %in% cellage_top5),
-                      CellAge_top10 = subset(signatures_bidirectional$CellAge, gene %in% cellage_top10),
-                      CellAge_top20 = subset(signatures_bidirectional$CellAge, gene %in% cellage_top20),
-                      CellAge_top100 = subset(signatures_bidirectional$CellAge, gene %in% cellage_top100))
+                           CellAge_top2 = subset(signatures_bidirectional$CellAge, gene %in% cellage_top2),
+                           CellAge_top5 = subset(signatures_bidirectional$CellAge, gene %in% cellage_top5),
+                           CellAge_top10 = subset(signatures_bidirectional$CellAge, gene %in% cellage_top10),
+                           CellAge_top20 = subset(signatures_bidirectional$CellAge, gene %in% cellage_top20),
+                           CellAge_top100 = subset(signatures_bidirectional$CellAge, gene %in% cellage_top100))
 
 (plot_ranking_cellage <- PlotScores_adapted(data = corrcounts, 
-           metadata = metadata, 
-           method = "ranking", 
-           gene_sets = signatures_CellAge,  
-           ColorVariable = "Condition", 
-           Variable="Condition", 
-           ColorValues = Condition_colors, 
-           ConnectGroups=TRUE,  
-           nrow = 1, 
-           widthTitle=24, 
-           legend_nrow = 1, 
-           pointSize=2,
-           titlesize=10, compute_cohen=T,
-           cond_cohend = list(A=c("Senescent"),B="Quiescent"))) 
- 
+                                            metadata = metadata, 
+                                            method = "ranking", 
+                                            gene_sets = signatures_CellAge,  
+                                            ColorVariable = "Condition", 
+                                            Variable="Condition", 
+                                            ColorValues = Condition_colors, 
+                                            ConnectGroups=TRUE,  
+                                            nrow = 1, 
+                                            widthTitle=24, 
+                                            legend_nrow = 1, 
+                                            pointSize=2,
+                                            titlesize=10, compute_cohen=T,
+                                            cond_cohend = list(A=c("Senescent"),B="Quiescent"))) 
+
 ```
 
- 
+
 
 
 ```{r}
- 
+
 GSEAresults_CellAgetests <- runGSEA(list(`Senescent-Quiescent`=degenes$`Senescent-Quiescent`),signatures_CellAge, stat = NULL)
 GSEAresults_CellAgetests
 (plotNESlollipop_CellAgetests <- plotNESlollipop(GSEA_results=GSEAresults_CellAgetests, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
-                grid = T, nrow = 1, ncol = NULL, widthlabels=18, title=NULL, titlesize=14))
+                                                 grid = T, nrow = 1, ncol = NULL, widthlabels=18, title=NULL, titlesize=14))
 ```
- 
+
 ```{r fig.width=18, fig.height=4}
 (plt_impact_score_cellage <- ggarrange(plot_ranking_cellage, plotNESlollipop_CellAgetests$`Senescent-Quiescent`, widths=c(0.7,0.3)))
 ```
@@ -2350,21 +2566,21 @@ modelmat <- model.matrix(~SenescentType, metadata_factor)
 colnames(modelmat) <- gsub("SenescentType","",colnames(modelmat))
 
 degenes_sentype  <- calculateDE(data=corrcounts, 
-                       metadata=metadata,  
-                       modelmat = modelmat ) 
+                                metadata=metadata,  
+                                modelmat = modelmat ) 
 
 degenes_sentype 
 
- 
+
 GSEAresults_sentype  <- runGSEA(degenes_sentype,signatures_bidirectional, stat = NULL, nPermSimple = 10000)
 GSEAresults_sentype
 
 ```
- 
+
 ```{r fig.width=16, fig.height=18}
- 
+
 (plotNESlollipop_sentype <- plotNESlollipop(GSEA_results=GSEAresults_sentype, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
-                grid = T, nrow = 4, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
+                                            grid = T, nrow = 4, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
 
 ```
 
@@ -2382,20 +2598,20 @@ metadata_radiation <- metadata[metadata$SenescentType %in% c("Radiation","none")
 corrcounts_radiation <- corrcounts[,metadata_radiation$sampleID]
 
 table(metadata_radiation$Condition)
-  
+
 degenes_subset  <- calculateDE(data=corrcounts_radiation, 
-                       metadata=metadata_radiation, 
-                       variables="Condition",   
-                       modelmat = NULL, 
-                       contrasts = c("Senescent - Proliferative",
-                                     "Senescent - Quiescent" 
-                                     )) 
+                               metadata=metadata_radiation, 
+                               variables="Condition",   
+                               modelmat = NULL, 
+                               contrasts = c("Senescent - Proliferative",
+                                             "Senescent - Quiescent" 
+                               )) 
 
 degenes_subset 
 ```
 
 
- 
+
 
 
 ```{r}
@@ -2405,12 +2621,12 @@ GSEAresults_radiation
 
 
 ```{r fig.width=12, fig.height=4.5}
- 
+
 (plt_impact_enrichment <- plotNESlollipop(GSEA_results=GSEAresults_radiation, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
-                grid = T, nrow = 1, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
+                                          grid = T, nrow = 1, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
 
 ```
- 
+
 ### All
 
 ```{r fig.width=14, fig.height=10}
@@ -2425,13 +2641,392 @@ ggplot2::ggsave("Figs/Figure5_tradeoffs.png",
 
 
 
+## Figure 7 - Translation potential to human data
+
+
+```{r}
+df_Scores_alltissues <- CalculateScores(data = GTEx_alltissues,
+                                        metadata = metadata_GTEx_alltissues, # sample id has to be first column
+                                        method = "logmedian",
+                                        gene_sets =  signatures_bidirectional)
+```
+
+
+```{r fig.width=12, fig.height=5}
+(plt_gtex_score_alltissues <- ggplot(df_Scores_alltissues$HernandezSegura, aes(x = SMTSD, y = score)) +
+   geom_jitter(color="#DDDDDD") +
+   # add dashed horizontal line for median across all tissues
+   geom_hline(yintercept = median(df_Scores_alltissues$HernandezSegura$score), linetype = "dashed", color = "#888888") +
+   geom_violin(alpha=0.4, fill="#4E9B62")+ 
+   labs( x = "",
+         y = "Normalised \nSignature \nScore") +
+   theme_minimal() +
+   # x axis text 45 degrees
+   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+   # add median with line
+   stat_summary(fun = median, geom = "crossbar", width = 0.1, color = "black")   +
+   theme(text = element_text(size=14)))
+
+
+```
+
+```{r}
+df_Scores_hs <- CalculateScores(data = corrcounts,
+                                metadata = metadata,
+                                method = "logmedian",
+                                gene_sets =  list(HernandezSegura=signatures_bidirectional$HernandezSegura))
+
+df_Scores_hs <- df_Scores_hs$HernandezSegura
+
+df_Scores_hs
+```
+
+
+```{r fig.width=4, fig.height=4}
+(plt_densities_celltype_HS <- ggplot(df_Scores_hs, aes(x = score, color = CellType)) +
+   geom_density(size = 1) +
+   facet_wrap(~Condition, scales = "free_y", ncol=1) +
+   theme_classic() +
+   labs(x = "HernandezSegura Score", y = "Density", color = "Cell Type") +
+   theme(strip.text = element_text(face = "bold"), legend.position = "top") + scale_color_manual(values=CellTypecols) +
+   labs(color="") +
+  guides(color=guide_legend(nrow=3, byrow=TRUE)) )
+```
+
+<!-- ```{r} -->
+<!-- options(error=recover) -->
+<!-- metadata_GTEx_Skin_tissuenames <- metadata_GTEx_Skin -->
+<!-- metadata_GTEx_Skin_tissuenames$SunExposure <- gsub("Skin - Sun Exposed (Lower leg)" ,"Sun Exposed",metadata_GTEx_Skin_tissuenames$SMTSD, fixed = TRUE) -->
+<!-- metadata_GTEx_Skin_tissuenames$SunExposure <- gsub("Skin - Not Sun Exposed (Suprapubic)","Not Sun Exposed",metadata_GTEx_Skin_tissuenames$SunExposure, fixed = TRUE) -->
+<!-- metadata_GTEx_Skin_tissuenames$COHORT <- gsub("Organ Donor (OPO)","Organ Donor",metadata_GTEx_Skin_tissuenames$COHORT, fixed = TRUE) -->
+<!-- metadata_GTEx_Skin_tissuenames$SEX <- gsub(1,"Male",metadata_GTEx_Skin_tissuenames$SEX, fixed = TRUE) -->
+<!-- metadata_GTEx_Skin_tissuenames$SEX <- gsub(2,"Female",metadata_GTEx_Skin_tissuenames$SEX, fixed = TRUE)  -->
+
+<!-- GSEA_VariableAssociation(data=GTEx_Skin,  -->
+<!--                          metadata=metadata_GTEx_Skin_tissuenames,  -->
+<!--                          cols=c("AGE","SunExposure","SEX"), # SMRIN was a variable for batch correction -->
+<!--                          mode="simple",  -->
+<!--                          gene_set=list(HernandezSegura=signatures_bidirectional$HernandezSegura),  -->
+<!--                          saturation_value=0.001, nonsignif_color = "white", signif_color = "red", -->
+<!--                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5)  -->
+
+
+<!-- GSEA_VariableAssociation(data=GTEx_Skin,  -->
+<!--                          metadata=metadata_GTEx_Skin_tissuenames,  -->
+<!--                          cols=c("AGE","SunExposure","SEX"), # SMRIN was a variable for batch correction -->
+<!--                          mode="simple",  -->
+<!--                          gene_set=list(SAUL_SEN_MAYO=signatures_bidirectional$SAUL_SEN_MAYO),  -->
+<!--                          saturation_value=0.001, nonsignif_color = "white", signif_color = "red", -->
+<!--                          sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14, pointSize = 5)  -->
+
+
+<!-- ``` -->
+<!-- This work suggests cohen's d < 1 as not meaningful. -->
+<!-- https://pmc.ncbi.nlm.nih.gov/articles/PMC8916770/?utm_source=chatgpt.com -->
+
+<!-- Also from cohen -->
+<!-- "The terms 'small,' 'medium,' and 'large' are relative, not only to each other, but to the area of behavioral science or even more particularly to the specific content and research method being employed in any given investigation... In the face of this relativity, there is a certain risk inherent in offering conventional operational definitions for these terms for use in power analysis in as diverse a field of inquiry as behavioral science. This risk is nevertheless accepted in the belief that more is to be gained than lost by supplying a common conventional frame of reference which is recommended for use only when no better basis for estimating the ES index is available." (p. 25) -->
+
+<!-- ```{r fig.width=8, fig.height=7} -->
+<!-- Score_VariableAssociation(data=GTEx_Skin,  -->
+<!--                           metadata=metadata_GTEx_Skin_tissuenames,  -->
+<!--                           cols=c("AGE","SunExposure","SEX"), # SMRIN was a variable for batch correction -->
+<!--                           method="logmedian",  -->
+<!--                           gene_set = list(HernandezSegura=signatures_bidirectional$HernandezSegura),  -->
+<!--                           mode="simple", -->
+<!--                           nonsignif_color = "white", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, -->
+<!--                           widthlabels=30, labsize=10, title=NULL, titlesize=12, pointSize=5, discrete_colors=NULL, -->
+<!--                           continuous_color = "#7AACAF", color_palette = "Set2") -->
+
+<!-- Score_VariableAssociation(data=GTEx_Skin,  -->
+<!--                           metadata=metadata_GTEx_Skin_tissuenames,  -->
+<!--                           cols=c("AGE","SunExposure","SEX"), # SMRIN was a variable for batch correction -->
+<!--                           method="logmedian",  -->
+<!--                           gene_set = list(SAUL_SEN_MAYO=signatures_bidirectional$SAUL_SEN_MAYO),  -->
+<!--                           mode="simple", -->
+<!--                           nonsignif_color = "white", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, -->
+<!--                           widthlabels=30, labsize=10, title=NULL, titlesize=12, pointSize=5, discrete_colors=NULL, -->
+<!--                           continuous_color = "#7AACAF", color_palette = "Set2") -->
+<!-- ``` -->
+
+
+```{r}
+
+methods <- c("logmedian","ranking","ssGSEA")
+gene_set <- list(HernandezSegura=signatures_bidirectional$HernandezSegura,
+                 SAUL_SEN_MAYO=signatures_bidirectional$SAUL_SEN_MAYO)
+tissues <- unique(metadata_GTEx_alltissues$SMTSD) 
+
+results_df_score <- data.frame(NULL)
+results_df_gsea <- data.frame(NULL)
+
+# Initialize progress bar
+pb <- txtProgressBar(min = 0, max = length(tissues), style = 3)
+
+for (i in seq_along(tissues)) {
+  
+  tissue <- tissues[i]
+  
+  subset_metadata <- metadata_GTEx_alltissues[metadata_GTEx_alltissues$SMTSD == tissue,]
+  subset_data <- GTEx_alltissues[,subset_metadata$SAMPID]
+  
+  
+  # Update progress bar
+  setTxtProgressBar(pb, i)
+  
+  for (sig in names(gene_set)){
+    
+    signature <- list(gene_set[[sig]])
+    names(signature) <- sig
+    
+    data_varassoc_gsea <- suppressWarnings(suppressMessages(GSEA_VariableAssociation(data=subset_data, 
+                                                                                     metadata=subset_metadata, 
+                                                                                     cols=c("AGE"),  
+                                                                                     mode="simple", 
+                                                                                     gene_set=signature)$data))
+    
+    data_varassoc_gsea <- data_varassoc_gsea[,c("NES","pval","Contrast")]
+    data_varassoc_gsea$signature <- sig
+    data_varassoc_gsea$method <- "GSEA"
+    data_varassoc_gsea$tissue <- tissue
+    
+    results_df_gsea <- rbind(results_df_gsea, data_varassoc_gsea)
+    
+    for (method in methods){
+      
+      data_varassoc_score <- suppressWarnings(suppressMessages(Score_VariableAssociation(data=subset_data, 
+                                                                                         metadata=subset_metadata, 
+                                                                                         cols=c("AGE"), # SMRIN was a variable for batch correction
+                                                                                         method=method, 
+                                                                                         gene_set = signature, 
+                                                                                         mode="simple", printplt = F)$Overall))
+      data_varassoc_score$signature <- sig
+      data_varassoc_score$method <- method
+      data_varassoc_score$tissue <- tissue
+      results_df_score <- rbind(results_df_score, data_varassoc_score)
+      
+      
+      
+    }
+    
+  }
+  
+}
+
+# Close the progress bar
+close(pb)
+
+
+results_df_gsea
+results_df_score
+```
+
+```{r}
+
+
+results_df_score_corr <- results_df_score %>%
+  group_by(signature, method) %>%
+  mutate(P_adj = p.adjust(P_Value, method = "BH")) %>%
+  ungroup()
+
+results_df_gsea_corr <- results_df_gsea %>%
+  group_by(signature) %>%
+  mutate(padj = p.adjust(pval, method = "BH")) %>%
+  ungroup()
+
+# Alphabetically order tissue factor
+tissue_levels <- sort(unique(results_df_score_corr$tissue), decreasing = T)
+results_df_score_corr$tissue <- factor(results_df_score_corr$tissue, levels = tissue_levels)
+results_df_gsea_corr$tissue  <- factor(results_df_gsea_corr$tissue, levels = tissue_levels)
+
+```
+
+
+```{r fig.width=6, fig.height=10}
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+
+# Ensure correct factor levels for method and tissue
+results_df_score_corr$method <- factor(results_df_score_corr$method, levels = c("logmedian", "ranking", "ssGSEA"))
+results_df_gsea_corr$method <- "GSEA"  # single method name
+
+# Add asterisk for significance
+results_df_score_corr <- results_df_score_corr %>%
+  mutate(signif = ifelse(P_adj < 0.05, "*", ""))
+
+results_df_gsea_corr <- results_df_gsea_corr %>%
+  mutate(signif = ifelse(padj < 0.05, "*", ""))
+
+# Loop through each signature
+sigs <- unique(results_df_score_corr$signature)
+
+list_plts_sigs <- list()
+for (sig in sigs) {
+  # Subset for this signature
+  score_data <- results_df_score_corr %>% filter(signature == sig)
+  gsea_data  <- results_df_gsea_corr %>% filter(signature == sig)
+  
+  # Create score plot
+  p_score <- ggplot(score_data, aes(x = method, y = tissue, fill = Cohen_f)) +
+    geom_tile(color = "gray90") +
+    geom_text(aes(label = signif), size = 6, vjust = 0.8, hjust = 0.5) +
+    scale_fill_gradient(low = "white", high = "#49B0AB", name = "Cohen's f") +
+    theme_minimal(base_size = 12) +
+    #labs(title = "Score") +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_text(angle = 45, hjust = 1, size=12),
+          axis.text.y = element_text(size=12)) +
+    # center main title of the plot
+    theme( plot.title = element_text(hjust = 0.5))
+  
+  # Create GSEA plot
+  p_gsea <- ggplot(gsea_data, aes(x = method, y = tissue, fill = abs(NES))) +
+    geom_tile(color = "gray90") +
+    geom_text(aes(label = signif), size = 6, vjust = 0.8, hjust = 0.5) +
+    scale_fill_gradient(low = "white", high = "#B04975", name = "|NES|") +
+    theme_minimal(base_size = 12) +
+    #labs(title = "Enrichment") +
+    theme(axis.title = element_blank(),
+          axis.text.y = element_blank(),
+          axis.text.x = element_text(angle = 45, hjust = 1, size=12),
+          axis.ticks.y = element_blank(), 
+          plot.title = element_text(hjust = 0.5 ))
+  
+  # Combine the two plots side-by-side
+  combined_plot <- p_score + p_gsea + plot_layout(ncol = 2, guides = "collect", widths = c(0.75,0.25)) & theme(legend.position = "right") 
+  
+  # include title with signature name
+  combined_plot <- combined_plot #+  
+  #plot_annotation(title = paste("                     ", sig), theme = theme(plot.title = element_text(hjust = 0.5, size = 16)))
+  
+  list_plts_sigs[[sig]] <- combined_plot
+  # Print the plot 
+}
+
+
+plt_gtex_scores_HS <- list_plts_sigs[["HernandezSegura"]]
+plt_gtex_scores_HS
+
+plt_gtex_scores_SenMayo <- list_plts_sigs[["SAUL_SEN_MAYO"]]
+plt_gtex_scores_SenMayo
+```
+
+
+```{r}
+tissues_signif_HS <- c("Artery - Aorta","Breast - Mammary Tissue", "Cells - Cultured fibroblasts","Thyroid")
+tissues_signif_SenMayo <- c("Artery - Tibial", "Brain - Anterior cingulate cortex (BA24)", "Brain - Hippocampus", "Colon - Sigmoid", "Minor Salivary Gland", "Muscle - Skeletal", "Nerve - Tibial", "Prostate")
+
+```
+
+
+```{r fig.width=6, fig.height=8}
+
+methods <- c("logmedian","ranking","ssGSEA")
+pltlist <- list()
+
+for (tissue in tissues_signif_HS){
+  
+  subset_metadata <- metadata_GTEx_alltissues[metadata_GTEx_alltissues$SMTSD == tissue,]
+  subset_data <- GTEx_alltissues[,subset_metadata$SAMPID]
+  
+  pltlist_aux <- list()
+  
+  for (method in methods){ 
+    
+    scores_df <- CalculateScores(data = subset_data,
+                                 metadata = subset_metadata,
+                                 gene_sets = list(HernandezSegura=signatures_bidirectional$HernandezSegura), method = method)
+     
+    
+    pltlist_aux[[method]] <- ggplot(scores_df$HernandezSegura, aes(x=AGE, y=score)) +
+      geom_jitter(size=2, color="#8F95B1")+ # to preserve the donor's age; correlation was calculated with "real" data
+      geom_density2d( colour="white", size=0.3) +
+      ggplot2::geom_smooth(method = "lm", col = "black", se = FALSE, size=1.3)+ ggpubr::stat_cor(method="spearman", size=3.5, p.digits = 1 ) +
+      xlab("Age (years)") + ylab("Score") +
+      theme_bw() +
+      ggtitle(method) +
+      #center title 
+      theme(plot.title = element_text(hjust = 0.5 ),
+            base_size = 16,
+            axis.text.x = element_text( size=12),
+            axis.text.y = element_text(size=12),
+            axis.title.x = element_text(size=14),
+            axis.title.y = element_text(size=14)) 
+  }
+  
+  pltlist[[tissue]] <- ggarrange(plotlist = pltlist_aux, ncol = 3, nrow = 1, common.legend = TRUE) +
+    ggtitle( tissue)  + theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+  
+  
+}
+
+plt_scoredistribution_HS_GTEx <- ggarrange(plotlist = pltlist, ncol = 1, common.legend = TRUE, legend = "bottom")  
+plt_scoredistribution_HS_GTEx
+```
+
+
+
+```{r fig.width=12, fig.height=8}
+
+methods <- c("logmedian","ranking","ssGSEA")
+pltlist <- list()
+
+for (tissue in tissues_signif_SenMayo){
+  
+  subset_metadata <- metadata_GTEx_alltissues[metadata_GTEx_alltissues$SMTSD == tissue,]
+  subset_data <- GTEx_alltissues[,subset_metadata$SAMPID]
+  
+  pltlist_aux <- list()
+  
+  for (method in methods){ 
+    
+    scores_df <- CalculateScores(data = subset_data,
+                                 metadata = subset_metadata,
+                                 gene_sets = list(SAUL_SEN_MAYO=signatures_bidirectional$SAUL_SEN_MAYO), method = method)
+     
+    
+    pltlist_aux[[method]] <- ggplot(scores_df$SAUL_SEN_MAYO, aes(x=AGE, y=score)) +
+      geom_jitter(size=2, color="#8F95B1")+ # to preserve the donor's age; correlation was calculated with "real" data
+      geom_density2d( colour="white", size=0.3) +
+      ggplot2::geom_smooth(method = "lm", col = "black", se = FALSE, size=1.3)+ ggpubr::stat_cor(method="spearman", size=3.5, p.digits = 1 ) +
+      xlab("Age (years)") + ylab("Score") +
+      theme_bw() +
+      ggtitle(method) +
+      #center title 
+      theme(plot.title = element_text(hjust = 0.5 ),
+            base_size = 16,
+            axis.text.x = element_text( size=12),
+            axis.text.y = element_text(size=12),
+            axis.title.x = element_text(size=14),
+            axis.title.y = element_text(size=14)) 
+  }
+  
+  pltlist[[tissue]] <- ggarrange(plotlist = pltlist_aux, ncol = 3, nrow = 1, common.legend = TRUE) +
+    ggtitle( tissue)  + theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+  
+  
+}
+
+plt_scoredistribution_SenMayo_GTEx <- ggarrange(plotlist = pltlist, ncol = 2, nrow=4, common.legend = TRUE, legend = "bottom")  
+plt_scoredistribution_SenMayo_GTEx
+```
 
 
 
 
+```{r fig.width=12, fig.height=13}
+plt_row1 <- ggarrange(plt_gtex_score_alltissues, plt_densities_celltype_HS, widths=c(0.75,0.25), ncol=2, labels=c("A","B"), vjust = 1 )
+plt_row2 <- ggarrange(plt_gtex_scores_HS,plt_scoredistribution_HS_GTEx, widths=c(0.5,0.5), ncol=2, labels=c("C","D"))  
+(fig7 <- ggarrange(plt_row1,plt_row2, heights=c(0.3,0.63), ncol=1))
 
+```
 
-
+```{r}
+ggplot2::ggsave("Figs/Figure7_GTEx.png",
+                fig7,
+                width = 12, height=13, bg = 'white')
+```
 
 
 
@@ -2464,11 +3059,11 @@ n <- 100
 mock_scores <- data.frame(
   sampleID = paste0("Sample_", 1:(n * 3)),
   Condition = rep(c("Senescent", "Proliferative", "Quiescent"), each = n),
-
+  
   # GOOD signatures
   Sig_Good1 = c(rnorm(n, 8, 1), rnorm(n, 3.5, 1), rnorm(n, 3, 1)),
   Sig_Good2 = c(rnorm(n, 2, 1), rnorm(n, 6, 1), rnorm(n, 6.5, 1)),
-
+  
   # BAD signatures
   Sig_Bad1 = c(rnorm(n, 5, 1), rnorm(n, 5.1, 1), rnorm(n, 5.2, 1)),  # All similar
   Sig_Bad2 = c(rnorm(n, 5, 1), rnorm(n, 8, 1), rnorm(n, 5.1, 1))    # Sen ≈ Quiesc, Prol different
@@ -2524,10 +3119,10 @@ ggplot(mock_long, aes(x = Condition, y = Score, fill = Condition)) +
 ### Cell type specificity of HS scores
 
 ```{r}
-      df_Scores_hs <- CalculateScores(data = corrcounts,
-                             metadata = metadata,
-                             method = "logmedian",
-                             gene_sets =  list(HernandezSegura=signatures_bidirectional$HernandezSegura))
+df_Scores_hs <- CalculateScores(data = corrcounts,
+                                metadata = metadata,
+                                method = "logmedian",
+                                gene_sets =  list(HernandezSegura=signatures_bidirectional$HernandezSegura))
 
 df_Scores_hs <- df_Scores_hs$HernandezSegura
 
@@ -2545,4 +3140,4 @@ ggplot(df_Scores_hs, aes(x = score, color = CellType)) +
   labs(color="")  
 ```
 
- 
+
