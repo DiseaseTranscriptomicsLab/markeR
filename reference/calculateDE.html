@@ -61,7 +61,8 @@ they are applied using <code><a href="https://rdrr.io/pkg/limma/man/makeContrast
 <span>  metadata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  variables <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  modelmat <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  contrasts <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  contrasts <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ignore_NAs <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -93,6 +94,11 @@ are ignored. The order of samples in the design matrix should match the order in
 If multiple contrasts are provided, the function returns a list of DE results (one per contrast). <em>Required</em> if
 <code>lmexpression</code> is NULL, optional otherwise. If not provided, the average expression profile of each
 condition will be returned instead of differential gene expression.</p></dd>
+
+
+<dt id="arg-ignore-nas">ignore_NAs<a class="anchor" aria-label="anchor" href="#arg-ignore-nas"></a></dt>
+<dd><p>Boolean (default: FALSE). Whether to ignore NAs in the metadata. If TRUE, rows with any NAs will be removed before analysis,
+leading to a loss of data to be fitted in the model. Only applicable if <code>variables</code> is provided.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -64,7 +64,8 @@ It generates all possible contrasts for categorical variables and uses linear mo
 <span>  widthlabels <span class="op">=</span> <span class="fl">18</span>,</span>
 <span>  labsize <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>  titlesize <span class="op">=</span> <span class="fl">14</span>,</span>
-<span>  pointSize <span class="op">=</span> <span class="fl">5</span></span>
+<span>  pointSize <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  ignore_NAs <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -130,6 +131,11 @@ value is above the sig_threshold; in that case, it is 0.001.</p></dd>
 
 <dt id="arg-pointsize">pointSize<a class="anchor" aria-label="anchor" href="#arg-pointsize"></a></dt>
 <dd><p>Numeric. The size of points in the lollipop plot (default is 5).</p></dd>
+
+
+<dt id="arg-ignore-nas">ignore_NAs<a class="anchor" aria-label="anchor" href="#arg-ignore-nas"></a></dt>
+<dd><p>Boolean (default: FALSE). Whether to ignore NAs in the metadata when fitting the linear model.
+If TRUE, rows with any NAs will be removed before analysis, leading to a loss of data to be fitted in the model.</p></dd>
 
 
 <dt id="arg-modea">modeA<a class="anchor" aria-label="anchor" href="#arg-modea"></a></dt>
