@@ -22,7 +22,8 @@ Score_VariableAssociation(
   pointSize = 5,
   discrete_colors = NULL,
   continuous_color = "#8C6D03",
-  color_palette = "Set2"
+  color_palette = "Set2",
+  printplt = TRUE
 )
 }
 \arguments{
@@ -70,6 +71,8 @@ Each element should be a named vector where names correspond to factor levels. D
 \item{continuous_color}{A string specifying the color for continuous variables. Default: \code{"#8C6D03"}.}
 
 \item{color_palette}{A string specifying the color palette for discrete variables. Default: \code{"Set2"}.}
+
+\item{printplt}{Boolean specifying if plot is to be printed. Default: \code{TRUE}.}
 }
 \value{
 A list with:

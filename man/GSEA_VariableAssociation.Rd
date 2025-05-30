@@ -18,7 +18,8 @@ GSEA_VariableAssociation(
   widthlabels = 18,
   labsize = 10,
   titlesize = 14,
-  pointSize = 5
+  pointSize = 5,
+  ignore_NAs = FALSE
 )
 }
 \arguments{
@@ -59,6 +60,9 @@ value is above the sig_threshold; in that case, it is 0.001.}
 \item{titlesize}{An integer specifying the plot title size. Default: \code{14}.}
 
 \item{pointSize}{Numeric. The size of points in the lollipop plot (default is 5).}
+
+\item{ignore_NAs}{Boolean (default: FALSE). Whether to ignore NAs in the metadata when fitting the linear model.
+If TRUE, rows with any NAs will be removed before analysis, leading to a loss of data to be fitted in the model.}
 
 \item{modeA}{string specifying the level of detail for contrasts. Options are:
 \itemize{
