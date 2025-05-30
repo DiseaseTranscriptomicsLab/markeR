@@ -87,6 +87,29 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL, co
   # }
   #if(!is.null(modelmat)) colnames(modelmat) <- gsub(" ", "", colnames(modelmat))
 
+
+
+  # Reorder and subset metadata to match data
+  # counts: matrix or data frame with column names as sample IDs
+  # metadata: data frame with at least one column containing sample IDs
+
+  # 1. Find the metadata column that best matches column names of count matrix
+  sample_ids <- colnames(data)
+  best_match_col <- which.max(sapply(metadata, function(col) sum(sample_ids %in% col)))
+
+  # 2. Extract matched column
+  matched_col <- metadata[[best_match_col]]
+
+  # 3. Subset metadata to only those samples present in the count matrix
+  metadata_matched <- metadata[matched_col %in% sample_ids, ]
+
+  # 4. Reorder metadata to match column order of count matrix
+  rownames(metadata_matched) <- metadata_matched[[best_match_col]]
+  metadata_matched <- metadata_matched[sample_ids, , drop = FALSE]  # drop = FALSE to preserve data frame format
+  metadata <- metadata_matched
+
+
+
   # Construct design matrix
   design_matrix <- tryCatch({
 
