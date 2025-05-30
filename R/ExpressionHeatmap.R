@@ -146,8 +146,22 @@ ExpressionHeatmap <- function(data, metadata = NULL, genes, annotate.by = NULL,
         unique_vals <- unique(ann_data[[var]])
         palette_choices <- c("Set1", "Set2", "Set3", "Paired", "Dark2",
                              "Set1", "Set2", "Set3", "Paired", "Dark2")
-        pal <- RColorBrewer::brewer.pal(min(length(unique_vals), 9),
-                                        palette_choices[(which(annotate.by == var) - 1) %% length(palette_choices) + 1])
+        # pal <- RColorBrewer::brewer.pal(min(length(unique_vals), 9),
+        #                                 palette_choices[(which(annotate.by == var) - 1) %% length(palette_choices) + 1])
+
+
+        n_colors <- length(unique_vals)
+        n_colors <- ifelse(n_colors < 3, 3, min(n_colors, 9))  # enforce min = 3
+
+        pal <- RColorBrewer::brewer.pal(
+          n_colors,
+          palette_choices[(which(annotate.by == var) - 1) %% length(palette_choices) + 1]
+        )
+
+        # Optionally subset colors if n_colors > length(unique_vals)
+        pal <- pal[seq_along(unique_vals)]
+
+
         names(pal) <- unique_vals
         ann_colors[[var]] <- pal
       }
