@@ -10,5 +10,4 @@
 docs
 renv.lock
 .obsidian/
-/inst/Paper/data/
-/inst/Paper/Figures/Figs/
+/inst/Paper/data/ 
