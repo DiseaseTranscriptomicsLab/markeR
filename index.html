@@ -114,6 +114,7 @@
 <li><a href="#gsea-association-with-chosen-phenotypic-variables">GSEA Association with Chosen Phenotypic Variables</a></li>
 </ul>
 </li>
+<li><a href="#similarities-with-other-signatures">Similarities with Other Signatures</a></li>
 </ul>
 </div>
 <div class="section level2">
@@ -1071,6 +1072,12 @@ Optionally, label the top (and bottom) N genes based on the chosen statistic to 
 <div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/plotCombinedGSEA.html">plotCombinedGSEA</a></span><span class="op">(</span><span class="va">GSEAresults</span>, sig_threshold <span class="op">=</span> <span class="fl">0.05</span>, PointSize<span class="op">=</span><span class="fl">6</span>, widthlegend <span class="op">=</span> <span class="fl">26</span> <span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-GSEA_volcano-1.png" width="100%"></p>
+<div class="section level5">
+<h5 id="note-on-gsea-for-all-negative-gene-sets">Note on GSEA for All-negative gene sets<a class="anchor" aria-label="anchor" href="#note-on-gsea-for-all-negative-gene-sets"></a>
+</h5>
+<p>In gene set enrichment analysis, the behaviour of gene sets annotated with regulatory direction must be interpreted carefully. In our current implementation, if a gene set includes both positive and negative regulators of a process, the statistics for the negatively annotated genes are inverted, meaning that the enrichment reflects their effect on the process rather than simply their expression direction. This ensures that the final enrichment score captures the coordinated functional outcome of the gene set.</p>
+<p>The same logic is preserved when a gene set contains <strong>only negatively annotated genes</strong> (<em>e.g.</em> negative regulators of senescence): the statistics are inverted so that a positive normalised enrichment score (NES) implies these inhibitors are less expressed, thereby supporting the activation of the process they repress (<em>e.g.</em> senescence). Conversely, a negative NES would suggest their upregulation, which could potentially suppress the process.</p>
+</div>
 </div>
 <div class="section level4">
 <h4 id="gsea-association-with-chosen-phenotypic-variables">GSEA Association with Chosen Phenotypic Variables<a class="anchor" aria-label="anchor" href="#gsea-association-with-chosen-phenotypic-variables"></a>
@@ -1153,11 +1160,71 @@ Optionally, label the top (and bottom) N genes based on the chosen statistic to 
 <span id="cb41-14"><a href="#cb41-14" tabindex="-1"></a><span class="co">#&gt; 3:  1.7675900     7 LMNB1, C....         t           Ana - Francisca</span></span>
 <span id="cb41-15"><a href="#cb41-15" tabindex="-1"></a><span class="co">#&gt; 4: -0.5727763     7 CDKN2A, ....         t          Francisca - John</span></span>
 <span id="cb41-16"><a href="#cb41-16" tabindex="-1"></a><span class="co">#&gt; 5:  1.1260283     7 GLB1, CD....         t          DaysToSequencing</span></span></code></pre></div>
+</div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="similarities-with-other-signatures">Similarities with Other Signatures<a class="anchor" aria-label="anchor" href="#similarities-with-other-signatures"></a>
+</h2>
+<p>Even if a user-defined gene signature demonstrates strong discriminatory power between conditions, it may reflect known biological pathways rather than novel mechanisms. To address this, the <code><a href="reference/signature_similarity.html">signature_similarity()</a></code> function computes pairwise <strong>Jaccard indices</strong> between user-provided gene signatures and a reference set, quantifying their overlap as a percentage of shared genes.</p>
+<p>Users can compare their signatures to:</p>
+<ul>
+<li><p><strong>Custom gene sets</strong>, defined manually, or</p></li>
+<li><p><strong>MSigDB collections</strong>, via the <a href="https://cran.r-project.org/package=msigdbr" class="external-link"><code>msigdbr</code></a> package.</p></li>
+</ul>
+<p>The function provides options to:</p>
+<ul>
+<li><p>Filter by <strong>Jaccard index threshold</strong>, using <code>jaccard_threshold</code> (e.g., only show sets with Jaccard ≥ 0.05), or</p></li>
+<li><p>Limit the number of top-matching reference signatures shown, using <code>num_sigs_toplot</code>.</p></li>
+</ul>
+<div class="section level3">
+<h3 id="example-1-compare-against-user-defined-and-msigdb-gene-sets">Example 1: Compare against user-defined and MSigDB gene sets<a class="anchor" aria-label="anchor" href="#example-1-compare-against-user-defined-and-msigdb-gene-sets"></a>
+</h3>
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Example data (you'd replace these with your actual signatures)</span></span>
+<span><span class="va">signature1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"TP53"</span>, <span class="st">"BRCA1"</span>, <span class="st">"MYC"</span>, <span class="st">"EGFR"</span>, <span class="st">"CDK2"</span><span class="op">)</span></span>
+<span><span class="va">signature2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ATXN2"</span>, <span class="st">"FUS"</span>, <span class="st">"MTOR"</span>, <span class="st">"CASP3"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">signature_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  <span class="st">"User_Apoptosis"</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"TP53"</span>, <span class="st">"CASP3"</span>, <span class="st">"BAX"</span><span class="op">)</span>,</span>
+<span>  <span class="st">"User_CellCycle"</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CDK2"</span>, <span class="st">"CDK4"</span>, <span class="st">"CCNB1"</span>, <span class="st">"MYC"</span><span class="op">)</span>,</span>
+<span>  <span class="st">"User_DNARepair"</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BRCA1"</span>, <span class="st">"RAD51"</span>, <span class="st">"ATM"</span><span class="op">)</span>,</span>
+<span>  <span class="st">"User_MTOR"</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"MTOR"</span>, <span class="st">"AKT1"</span>, <span class="st">"RPS6KB1"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/signature_similarity.html">signature_similarity</a></span><span class="op">(</span></span>
+<span>  signatures <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>SG1 <span class="op">=</span> <span class="va">signature1</span>, SG2 <span class="op">=</span> <span class="va">signature2</span><span class="op">)</span>,</span>
+<span>  other_user_signatures <span class="op">=</span> <span class="va">signature_list</span>,</span>
+<span>  collection <span class="op">=</span> <span class="st">"C2"</span>,</span>
+<span>  subcollection <span class="op">=</span> <span class="st">"CP:KEGG_LEGACY"</span>,</span>
+<span>  num_sigs_toplot <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  jaccard_threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  msig_subset <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-3-1.png" width="60%"></p>
+</div>
+<div class="section level3">
+<h3 id="example-2-restrict-comparison-to-a-custom-subset-of-msigdb">Example 2: Restrict comparison to a custom subset of MSigDB<a class="anchor" aria-label="anchor" href="#example-2-restrict-comparison-to-a-custom-subset-of-msigdb"></a>
+</h3>
+<p>You can also specify exactly which MSigDB pathways to compare against using the <code>msig_subset</code> argument. This is helpful if you’re only interested in a specific set of pathways. If this argument is supplied, filters will only apply to this subset.</p>
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
+<span><span class="fu"><a href="reference/signature_similarity.html">signature_similarity</a></span><span class="op">(</span></span>
+<span>  signatures <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>SG1 <span class="op">=</span> <span class="va">signature1</span>, SG2 <span class="op">=</span> <span class="va">signature2</span><span class="op">)</span>,</span>
+<span>  other_user_signatures <span class="op">=</span> <span class="va">signature_list</span>,</span>
+<span>  collection <span class="op">=</span> <span class="st">"C2"</span>,</span>
+<span>  subcollection <span class="op">=</span> <span class="st">"CP:KEGG_LEGACY"</span>,</span>
+<span>  num_sigs_toplot <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  jaccard_threshold <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  msig_subset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"KEGG_MTOR_SIGNALING_PATHWAY"</span>, <span class="st">"KEGG_APOPTOSIS"</span>, <span class="st">"NON_EXISTENT_PATHWAY"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; The following pathways from msig_subset were not found in the MSigDB collection:</span></span>
+<span><span class="co">#&gt; NON_EXISTENT_PATHWAY</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-4-1.png" width="60%"></p>
 <hr>
 <p>📩 For any questions or concerns, feel free to reach out:</p>
 <p><strong>Rita Martins-Silva</strong><br>
 Email: <a href="mailto:rita.silva@gimm.pt" class="email">rita.silva@gimm.pt</a></p>
-</div>
 </div>
 </div>
 </div>
