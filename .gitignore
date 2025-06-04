@@ -10,3 +10,4 @@
 docs
 renv.lock
 .obsidian/
+/inst/Paper/data/ 
