@@ -183,9 +183,53 @@ plotVolcano <- function(DEResultsList, genes = NULL, N = NULL,
         #                                 "No Information" = highlightcolor)) +
         #   ggplot2::theme(legend.position=NULL)
 
-        if (length(upreg_genes)>0)  p <- p + ggplot2::geom_point(data = fit[row.names(fit) %in% upreg_genes, ], color = highlightcolor_upreg, size = pointSize, alpha=0.8)
-        if (length(downreg_genes)>0)  p <- p + ggplot2::geom_point(data = fit[row.names(fit) %in% downreg_genes, ], color = highlightcolor_downreg, size = pointSize, alpha=0.8)
-        if (length(other_genes)>0)  p <- p + ggplot2::geom_point(data = fit[row.names(fit) %in% other_genes, ], color = highlightcolor, size = pointSize, alpha=0.8)
+        # Working version, but upreg genes are masked by downreg genes
+        # if (length(upreg_genes)>0)  p <- p + ggplot2::geom_point(data = fit[row.names(fit) %in% upreg_genes, ], color = highlightcolor_upreg, size = pointSize, alpha=0.8)
+        # if (length(downreg_genes)>0)  p <- p + ggplot2::geom_point(data = fit[row.names(fit) %in% downreg_genes, ], color = highlightcolor_downreg, size = pointSize, alpha=0.8)
+        # if (length(other_genes)>0)  p <- p + ggplot2::geom_point(data = fit[row.names(fit) %in% other_genes, ], color = highlightcolor, size = pointSize, alpha=0.8)
+
+        # Approach where genes are plotted in a random order
+
+        combined <- list()
+
+        # Only include non-empty subsets
+        if (length(upreg_genes) > 0) {
+          subset_up <- fit[row.names(fit) %in% upreg_genes, ]
+          subset_up$Direction <- "Upregulated"
+          combined[[length(combined) + 1]] <- subset_up
+        }
+
+        if (length(downreg_genes) > 0) {
+          subset_down <- fit[row.names(fit) %in% downreg_genes, ]
+          subset_down$Direction <- "Downregulated"
+          combined[[length(combined) + 1]] <- subset_down
+        }
+
+        if (length(other_genes) > 0) {
+          subset_other <- fit[row.names(fit) %in% other_genes, ]
+          subset_other$Direction <- "No Information"
+          combined[[length(combined) + 1]] <- subset_other
+        }
+
+        # Combine non-empty subsets and shuffle
+        if (length(combined) > 0) {
+          plot_data <- do.call(rbind, combined)
+          set.seed(1234)  # for reproducibility
+          plot_data <- plot_data[sample(nrow(plot_data)), ]
+
+          # Add to plot
+          p <- p + ggplot2::geom_point(data = plot_data,
+                                       aes(color = Direction),
+                                       size = pointSize,
+                                       alpha = 0.8) +
+            ggplot2::scale_color_manual(values = c(
+              "Upregulated" = highlightcolor_upreg,
+              "Downregulated" = highlightcolor_downreg,
+              "No Information" = highlightcolor
+            )) +
+            ggplot2::theme(legend.position = "none")
+        }
+
 
       }
 

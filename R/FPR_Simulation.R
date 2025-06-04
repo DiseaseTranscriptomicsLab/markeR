@@ -205,14 +205,12 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable, gene_l
 
     # Merge Original and Simulated
 
-    final_df_original <- final_df_original_complete[final_df_original_complete$signature == sig,]
+    final_df_original <- final_df_original_complete[final_df_original_complete$signature == sig, ]
 
     final_df_simulated$type <- "Simulated"
     final_df_original$type <- "Original"
 
-    final_df <- rbind(final_df_original,final_df_simulated)
-    final_df$Significance <-  ifelse(final_df$padj <= 0.05, "Significant", "Not Significant")
-    final_df$OriginalSignature <- sig
+    final_df <- rbind(final_df_original, final_df_simulated)
 
     # needed to define the quantile dashed lines
     final_df$method <- factor(final_df$method, levels = methods)
@@ -246,29 +244,29 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable, gene_l
     #   )
     # }))
 
-    # Get all unique methods and contrasts
+    # Calculate FPR for each Original observation
+    final_df$FPR <- NA
+    for (i in which(final_df$type == "Original")) {
+      row <- final_df[i, ]
+      sim_vals <- final_df$cohen[final_df$type == "Simulated" & final_df$method == row$method & final_df$contrast == row$contrast]
+      fpr <- mean(sim_vals >= row$cohen, na.rm = TRUE)
+      final_df$FPR[i] <- fpr
+    }
+
+    # Define the quantile lines
     methods <- unique(final_df$method)
     contrasts <- unique(final_df$contrast)
-
-    # Initialize an empty data.frame to hold segment data
     q_data <- data.frame()
 
     for (ct in contrasts) {
       for (mt in methods) {
-        # Subset the relevant data
         subset_df <- final_df[final_df$method == mt & final_df$contrast == ct, ]
-        # Skip if empty
         if (nrow(subset_df) == 0) next
-        # Compute 95th percentile of cohen
         q95 <- quantile(subset_df$cohen, 0.95, na.rm = TRUE)
         xpos <- which(methods == mt)
         q_data <- rbind(q_data, data.frame(
-          method = mt,
-          contrast = ct,
-          q_high = q95,
-          ypos = xpos,
-          xmin = xpos - 0.3,
-          xmax = xpos + 0.3
+          method = mt, contrast = ct, q_high = q95,
+          ypos = xpos, xmin = xpos - 0.3, xmax = xpos + 0.3
         ))
       }
     }
@@ -298,22 +296,50 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable, gene_l
 #     obs_data$Method <- factor(obs_data$Method, levels = methods)
 #     obs_data$Shape <- ifelse(obs_data$PValue < 0.05, "Significant", "Not Significant")
 
+
+    # Ensuring the label is always on top
+    # Compute max cohen per method + contrast across both Simulated and Original
+    all_max <- aggregate(cohen ~ method + contrast, data = final_df, FUN = max)
+
+    # Extract FPR values from Original rows
+    original_df <- final_df[final_df$type == "Original", ]
+
+    # Merge FPR values to max data
+    all_max$FPR <- NA
+    for (i in seq_len(nrow(all_max))) {
+      match_idx <- which(original_df$method == all_max$method[i] & original_df$contrast == all_max$contrast[i])
+      if (length(match_idx) > 0) {
+        all_max$FPR[i] <- original_df$FPR[match_idx[1]]
+      }
+    }
+
+    # Add label text and offset Y position
+    all_max$label <- sprintf("FPR=%.2f", all_max$FPR)
+    all_max$y <- all_max$cohen + 0.3  # push label above highest point
+
+    # Ensure method is factor with same levels as plotting data
+    all_max$method <- factor(all_max$method, levels = levels(final_df$method))
+
     # Build the plot for the current signature
     p <- ggplot2::ggplot() +
+      geom_jitter(data = final_df[final_df$type == "Simulated",],
+                  aes(y = cohen, x = method, color = type),
+                  width = 0.3, size = pointSize, alpha = 0.5) +
       geom_violin(data = final_df, aes(y = cohen, x = method),
                   fill = "#F0F0F0", color = "black", alpha = 0.5) +
-      geom_jitter(data = final_df[final_df$type =="Simulated",], aes(y = cohen, x = method, shape = Significance, color = type),
-                  width = 0.2, size = pointSize, alpha = 0.5) +
-      geom_jitter(data = final_df[final_df$type =="Original",], aes(y = cohen, x = method, shape = Significance, color = type),
-                  width = 0.2, size = pointSize, alpha = 1) +
+      geom_jitter(data = final_df[final_df$type == "Original",],
+                  aes(y = cohen, x = method, color = type),
+                  width = 0.3, size = pointSize, alpha = 1) +
+      geom_text(data = all_max,
+                aes(x = method, y = y, label = label),
+                size = 3,
+                inherit.aes = FALSE) +
       geom_segment(data = q_data,
                    aes(x = xmin, xend = xmax, y = q_high, yend = q_high),
                    linetype = "dashed", color = "red", inherit.aes = FALSE) +
-      scale_shape_manual(values = c("Significant" = 17, "Not Significant" = 16)) +
       labs(title = wrap_title(sig, widthTitle),
-           x = ifelse(cohentype == "d", "|Cohen's d|", "|Cohen's f|"),
-           y = "Metric",
-           shape = "Adj. p-value <= 0.05",
+           y = ifelse(cohentype == "d", "|Cohen's d|", "|Cohen's f|"),
+           x = "Method",
            color = "") +
       theme_classic() +
       theme(plot.title = element_text(hjust = 0.5, size = titlesize),
@@ -321,11 +347,9 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable, gene_l
       facet_wrap(. ~ contrast, scales = "free", ncol = 1, strip.position = "left") +
       scale_color_manual(values = ColorValues)
 
-    plot_list[[sig]] <- p
-  }
+    plot_list[[sig]] <- p  # ADD THIS LINE to collect each plot
 
-
-
+  }  # ADD THIS LINE to close the for-loop over signatures
 
   n <- length(plot_list)
 
@@ -339,13 +363,22 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable, gene_l
     nrow <- ceiling(n / ncol)
   }
 
+  combined_plot <- ggpubr::ggarrange(
+    plotlist = plot_list,
+    ncol = ncol,
+    nrow = nrow,
+    common.legend = TRUE,
+    legend = "top"
+  )
 
-  combined_plot <- ggpubr::ggarrange(plotlist = plot_list, ncol = ncol, nrow = nrow, common.legend = TRUE, legend = "top")
+  if (!is.null(title)) {
+    title <- wrap_title(title, width = widthTitle)
+  }
 
-  if (!is.null(title)) title <- wrap_title(title, width = widthTitle)
-
-  combined_plot <- ggpubr::annotate_figure(combined_plot,
-                                           top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize)))
+  combined_plot <- ggpubr::annotate_figure(
+    combined_plot,
+    top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize))
+  )
 
   return(combined_plot)
 }

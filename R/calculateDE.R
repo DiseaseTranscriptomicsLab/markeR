@@ -17,6 +17,8 @@
 #'                  If multiple contrasts are provided, the function returns a list of DE results (one per contrast). *Required* if
 #'                  \code{lmexpression} is NULL, optional otherwise. If not provided, the average expression profile of each
 #'                  condition will be returned instead of differential gene expression.
+#' @param ignore_NAs Boolean (default: FALSE). Whether to ignore NAs in the metadata. If TRUE, rows with any NAs will be removed before analysis,
+#'                          leading to a loss of data to be fitted in the model. Only applicable if \code{variables} is provided.
 #'
 #' @return A list of data-frames of differential expression statistics
 #'
@@ -47,7 +49,7 @@
 #'
 #' @importFrom limma lmFit eBayes makeContrasts contrasts.fit topTable
 #' @export
-calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL, contrasts = NULL) {
+calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL, contrasts = NULL, ignore_NAs = FALSE) {
 
 
   remove_prefix <- function(colnames_vector, prefixes) {
@@ -87,12 +89,43 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL, co
   # }
   #if(!is.null(modelmat)) colnames(modelmat) <- gsub(" ", "", colnames(modelmat))
 
+
+
+  # Reorder and subset metadata to match data
+  # counts: matrix or data frame with column names as sample IDs
+  # metadata: data frame with at least one column containing sample IDs
+
+  # 1. Find the metadata column that best matches column names of count matrix
+  sample_ids <- colnames(data)
+  best_match_col <- which.max(sapply(metadata, function(col) sum(sample_ids %in% col)))
+
+  # 2. Extract matched column
+  matched_col <- metadata[[best_match_col]]
+
+  # 3. Subset metadata to only those samples present in the count matrix
+  metadata_matched <- metadata[matched_col %in% sample_ids, ]
+
+  # 4. Reorder metadata to match column order of count matrix
+  rownames(metadata_matched) <- metadata_matched[[best_match_col]]
+  metadata_matched <- metadata_matched[sample_ids, , drop = FALSE]  # drop = FALSE to preserve data frame format
+  metadata <- metadata_matched
+
+
+
+  if (ignore_NAs & !is.null(variables)) {
+    # Remove rows with NAs in the specified variables
+    na_rows <- apply(metadata[variables], 1, function(x) any(is.na(x)))
+    metadata <- metadata[!na_rows, ]
+    data <- data[, rownames(metadata), drop = FALSE]  # Ensure data matches the filtered metadata
+  }
+
+
   # Construct design matrix
   design_matrix <- tryCatch({
 
     if (!is.null(modelmat)) {
       if (!is.matrix(modelmat)) stop("Error: 'modelmat' must be a matrix.")
-      if (nrow(modelmat) != ncol(data)) stop("Error: Rows in 'modelmat' must match the number of samples in 'data'.")
+      if (nrow(modelmat) != ncol(data)) stop("Error: Rows in 'modelmat' must match the number of samples in 'data'. Check if your metadata has any NAs or consider using ignore_NAs = TRUE.")
       modelmat
     # } else if (!is.null(lmexpression)) {
     #   lmexpression <- as.formula(lmexpression, env = parent.frame())
@@ -118,10 +151,9 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL, co
   })
 
 
-
   # Ensure design matrix and data match
   if (nrow(design_matrix) != ncol(data))
-    stop("Error: Mismatch between number of samples in 'data' and rows in 'design_matrix'.")
+    stop("Error: Mismatch between number of samples in 'data' and rows in 'design_matrix'. Check if your metadata has any NAs or consider using ignore_NAs = TRUE.")
 
   # Fit model
   fit <- tryCatch({

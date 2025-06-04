@@ -9,7 +9,8 @@ calculateDE(
   metadata = NULL,
   variables = NULL,
   modelmat = NULL,
-  contrasts = NULL
+  contrasts = NULL,
+  ignore_NAs = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,9 @@ are ignored. The order of samples in the design matrix should match the order in
 If multiple contrasts are provided, the function returns a list of DE results (one per contrast). \emph{Required} if
 \code{lmexpression} is NULL, optional otherwise. If not provided, the average expression profile of each
 condition will be returned instead of differential gene expression.}
+
+\item{ignore_NAs}{Boolean (default: FALSE). Whether to ignore NAs in the metadata. If TRUE, rows with any NAs will be removed before analysis,
+leading to a loss of data to be fitted in the model. Only applicable if \code{variables} is provided.}
 }
 \value{
 A list of data-frames of differential expression statistics

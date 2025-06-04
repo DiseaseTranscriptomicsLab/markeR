@@ -26,6 +26,9 @@
 #'   orientation if on the right and horizontal if on top or bottom.
 #' @param legend_position A character string specifying the position of the annotation legend.
 #'   Options are \code{"top"} (default), \code{"right"}, or \code{"bottom"}.
+#' @param show_row_names A character string specifying whether row names (genes) should be displayed.
+#' @param show_column_names A character string specifying whether column names (samples) should be displayed.
+#'
 #'
 #' @return A list containing:
 #'   \describe{
@@ -75,7 +78,9 @@ ExpressionHeatmap <- function(data, metadata = NULL, genes, annotate.by = NULL,
                               cluster_rows = TRUE, cluster_columns = TRUE,
                               title = NULL, titlesize = 20,
                               scale_position = c("right", "top", "bottom"),
-                              legend_position = c("top", "right", "bottom")) {
+                              legend_position = c("top", "right", "bottom"),
+                              show_row_names=TRUE,
+                              show_column_names=FALSE) {
 
   # Ensure the scale_position and legend_position arguments are matched correctly
   scale_position <- match.arg(scale_position)
@@ -141,8 +146,22 @@ ExpressionHeatmap <- function(data, metadata = NULL, genes, annotate.by = NULL,
         unique_vals <- unique(ann_data[[var]])
         palette_choices <- c("Set1", "Set2", "Set3", "Paired", "Dark2",
                              "Set1", "Set2", "Set3", "Paired", "Dark2")
-        pal <- RColorBrewer::brewer.pal(min(length(unique_vals), 9),
-                                        palette_choices[(which(annotate.by == var) - 1) %% length(palette_choices) + 1])
+        # pal <- RColorBrewer::brewer.pal(min(length(unique_vals), 9),
+        #                                 palette_choices[(which(annotate.by == var) - 1) %% length(palette_choices) + 1])
+
+
+        n_colors <- length(unique_vals)
+        n_colors <- ifelse(n_colors < 3, 3, min(n_colors, 9))  # enforce min = 3
+
+        pal <- RColorBrewer::brewer.pal(
+          n_colors,
+          palette_choices[(which(annotate.by == var) - 1) %% length(palette_choices) + 1]
+        )
+
+        # Optionally subset colors if n_colors > length(unique_vals)
+        pal <- pal[seq_along(unique_vals)]
+
+
         names(pal) <- unique_vals
         ann_colors[[var]] <- pal
       }
@@ -171,8 +190,8 @@ ExpressionHeatmap <- function(data, metadata = NULL, genes, annotate.by = NULL,
                                 col = col_fun,
                                 cluster_rows = cluster_rows,
                                 cluster_columns = cluster_columns,
-                                show_row_names = TRUE,
-                                show_column_names = FALSE,
+                                show_row_names = show_row_names,
+                                show_column_names = show_column_names,
                                 top_annotation = sample_annotation,
                                 column_title = title,
                                 column_title_gp = grid::gpar(fontsize = titlesize),

@@ -1,0 +1,211 @@
+---
+title: "Pre-processing GTEx Skin data (V8)"
+author: "Rita Martins-Silva"
+date: "23/05/2025"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+#  {.tabset .tabset-pills}
+
+## Set up {.tabset}
+
+### Libraries
+
+```{r}
+library(data.table)
+library(markeR)
+```
+
+### Functions
+
+
+```{r}
+wrap_title <- function(title, width = 30) {
+  if (nchar(title) <= width) {
+    return(title)  # No need to wrap if it fits
+  }
+
+  wrapped_title <- ""
+  while (nchar(title) > width) {
+    # Find positions of capital letters and symbols near the wrap point
+    capital_pos <- gregexpr("[A-Z]", title)[[1]]
+    symbol_pos <- gregexpr("(_|-|:|\\+|\\\\|/|\\*|\\.|,|;|\\?|!)", title)[[1]]
+
+    # Check for symbol breaks within the last few characters (width - 5 to width)
+    valid_symbol_breaks <- symbol_pos[symbol_pos >= (width - 5) & symbol_pos <= width]
+
+    if (length(valid_symbol_breaks) > 0) {
+      # If a suitable symbol is found, break at the first valid symbol
+      break_at <- valid_symbol_breaks[1]
+    } else {
+      # If no suitable symbol, look for capital letters within the same range
+      valid_capital_breaks <- capital_pos[capital_pos >= (width - 5) & capital_pos <= width]
+
+      if (length(valid_capital_breaks) > 0) {
+        # If a capital letter is found, break just before the capital letter
+        break_at <- valid_capital_breaks[1] - 1
+      } else {
+        # If no suitable symbol or capital letter, break at width
+        break_at <- width
+      }
+    }
+
+    # Append the wrapped line
+    wrapped_title <- paste0(wrapped_title, substr(title, 1, break_at), "\n")
+
+    # Update title with the remaining text after the break
+    title <- substr(title, break_at + 1, nchar(title))
+  }
+
+  # Add the remaining part of the title
+  wrapped_title <- paste0(wrapped_title, title)
+
+  return(wrapped_title)
+}
+```
+### Load data
+
+Due to data privacy and the long time for projects renewal, we had to use V8 in order to access the specific age of each subject.
+
+#### Metadata
+
+```{r}
+# Subject metadata
+metadata_subject <- as.data.frame(fread("../../../../data/GTEx_Analysis_2017-06-05_v8_Annotations_SubjectPhenotypesDS.txt")) #protected data
+
+# Sample metadata
+metadata_samples <- as.data.frame(fread("https://storage.googleapis.com/adult-gtex/annotations/v8/metadata-files/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"))
+# table(metadata_samples$SMTSD)
+# add subject ID to sample metadata
+metadata_samples$SUBJID <- sub('^([^-]+-[^-]+).*', '\\1', metadata_samples$SAMPID)
+# Merge both metadatas
+metadata <- merge(metadata_samples,metadata_subject, by="SUBJID", all.x=TRUE)
+
+metadata
+
+```
+
+
+#### Data
+
+```{r}
+library(httr)
+library(jsonlite)
+library(data.table)
+
+# GitHub API URL for the folder
+api_url <- "https://api.github.com/repos/DiseaseTranscriptomicsLab/voyAGEr/contents/Corrected_Counts"
+
+# Get the folder content
+res <- GET(api_url)
+stop_for_status(res)
+
+files_info <- fromJSON(content(res, "text", encoding = "UTF-8"))
+
+# Filter only .csv.gz files
+csv_files <- files_info[grepl("\\.csv\\.gz$", files_info$name), ]
+
+# Build raw GitHub URLs
+raw_urls <- gsub("https://github.com", "https://raw.githubusercontent.com", csv_files$html_url)
+raw_urls <- gsub("/blob/", "/", raw_urls)
+
+# Prepare to read and merge expression data
+expression_list <- list()
+common_genes <- NULL
+
+for (i in seq_along(raw_urls)) {
+  url <- raw_urls[i]
+  message("Reading: ", csv_files$name[i])
+  
+  df <- as.data.frame(fread(url))
+  rownames(df) <- df[[1]]
+  df[[1]] <- NULL
+  
+  expression_list[[csv_files$name[i]]] <- df
+  
+  # Track common genes
+  if (is.null(common_genes)) {
+    common_genes <- rownames(df)
+  } else {
+    common_genes <- intersect(common_genes, rownames(df))
+  }
+}
+
+# Keep only common genes
+expression_list_common <- lapply(expression_list, function(df) df[common_genes, , drop = FALSE])
+
+# Combine all into one large matrix
+combined_expression <- do.call(cbind, expression_list_common)
+
+# Done!
+dim(combined_expression)
+
+colnames(combined_expression) <- sub(".*_corrected_logCPM\\.csv\\.gz\\.", "", colnames(combined_expression))
+combined_expression[1:5,1:5]
+
+GTEx_alltissues <- combined_expression[,colnames(combined_expression) %in% metadata$SAMPID]
+metadata <- metadata[metadata$SAMPID %in% colnames(GTEx_alltissues),]
+GTEx_alltissues <- GTEx_alltissues[,metadata$SAMPID] # same order as metadata
+
+GTEx_alltissues <- 2^GTEx_alltissues # remove log
+metadata <- metadata[,c(2,1,3:ncol(metadata))] # sampleID first column
+
+
+dim(GTEx_alltissues)
+dim(metadata)
+
+# 
+# saveRDS(GTEx_alltissues, "../../../../data/GTExV8_voyagercorrected.rds")  
+# saveRDS(metadata, "../../../../data/GTExV8_metadata.rds")  
+
+```
+
+
+
+```{r}
+GTEx_Skin_SunExposed <- as.data.frame(fread(
+  "https://raw.githubusercontent.com/DiseaseTranscriptomicsLab/voyAGEr/main/Corrected_Counts/Skin%20-%20Sun%20Exposed%20(Lower%20leg)_corrected_logCPM.csv.gz",))
+row.names(GTEx_Skin_SunExposed) <- GTEx_Skin_SunExposed$V1
+GTEx_Skin_SunExposed$V1 <- NULL
+
+GTEx_Skin_NotSunExposed <- as.data.frame(fread(
+  "https://raw.githubusercontent.com/DiseaseTranscriptomicsLab/voyAGEr/main/Corrected_Counts/Skin%20-%20Not%20Sun%20Exposed%20(Suprapubic)_corrected_logCPM.csv.gz"
+))
+row.names(GTEx_Skin_NotSunExposed) <- GTEx_Skin_NotSunExposed$V1
+GTEx_Skin_NotSunExposed$V1 <- NULL
+
+common_genes <- intersect(rownames(GTEx_Skin_SunExposed), rownames(GTEx_Skin_NotSunExposed))
+common_genes
+GTEx_Skin_SunExposed <- GTEx_Skin_SunExposed[common_genes,]
+GTEx_Skin_NotSunExposed <- GTEx_Skin_NotSunExposed[common_genes,]
+# merge counts 
+GTEx_Skin <- cbind(GTEx_Skin_SunExposed, GTEx_Skin_NotSunExposed)
+
+
+# subset metadata to skin sun exposed
+metadata_GTEx_Skin <- metadata[metadata$SMTSD == "Skin - Sun Exposed (Lower leg)" | metadata$SMTSD == "Skin - Not Sun Exposed (Suprapubic)",]
+# remove samples not in metadata
+GTEx_Skin <- GTEx_Skin[,colnames(GTEx_Skin) %in% metadata_GTEx_Skin$SAMPID]
+metadata_GTEx_Skin <- metadata_GTEx_Skin[metadata_GTEx_Skin$SAMPID %in% colnames(GTEx_Skin),]
+GTEx_Skin <- GTEx_Skin[,metadata_GTEx_Skin$SAMPID] # same order as metadata
+
+GTEx_Skin_nolog <- 2^GTEx_Skin
+
+# change first column by second column  
+metadata_GTEx_Skin <- metadata_GTEx_Skin[,c(2,1,3:ncol(metadata_GTEx_Skin))]
+
+
+GTEx_Skin_nolog
+metadata_GTEx_Skin
+
+# saveRDS(GTEx_Skin_nolog, "../../../../data/GTExV8_voyagercorrected_SKIN.rds")  
+# saveRDS(metadata_GTEx_Skin, "../../../../data/GTExV8_metadata_SKIN.rds")  
+
+```
+ 
+
+
+

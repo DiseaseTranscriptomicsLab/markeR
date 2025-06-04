@@ -18,7 +18,9 @@ CorrelationHeatmap(
   cluster_columns = TRUE,
   detailedresults = FALSE,
   legend_position = c("right", "top"),
-  titlesize = 20
+  titlesize = 20,
+  show_row_names = TRUE,
+  show_column_names = TRUE
 )
 }
 \arguments{
@@ -60,6 +62,10 @@ stored in the output list (default = \code{FALSE}).}
 or \code{"top"}).}
 
 \item{titlesize}{Numeric; font size of the heatmap title (default = \code{20}).}
+
+\item{show_row_names}{A character string specifying whether row names (genes) should be displayed.}
+
+\item{show_column_names}{A character string specifying whether column names (samples) should be displayed.}
 }
 \value{
 A list containing:

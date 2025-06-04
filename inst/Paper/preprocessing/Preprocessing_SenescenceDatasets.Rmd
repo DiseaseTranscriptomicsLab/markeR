@@ -1,0 +1,675 @@
+---
+title: "Pre-processing Senescence Datasets"
+author: "Rita Martins-Silva"
+date: "05/05/2025"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+#  {.tabset .tabset-pills}
+
+## Set up {.tabset}
+
+### Libraries
+
+```{r , include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,  max.height='100px')
+knitr::opts_knit$set(root.dir = '~/VersionControl/markeR/markeR/inst/Paper/')
+setwd("~/VersionControl/markeR/markeR/inst/Paper/")
+```
+
+```{r}
+library("data.table")
+library("tximport")
+library("ggplot2")
+library("edgeR")
+library("ggpubr")
+```
+
+### Functions
+
+```{r}
+plot_variance_explained <- function(mat, vars, df_metadata){
+  df_metadata <- df_metadata[,vars]
+  #mat <- log2(mat+1)
+  print("calculating variance explained by each variable")
+  varMat <- getVarianceExplained(mat, variables = df_metadata)
+  print("calculation over")
+  p <- plotExplanatoryVariables(
+    varMat,
+    variables = variables)  +
+    ggtitle("Variance Explained") +
+    theme(text = element_text(size=20))+
+    theme(plot.title = element_text(hjust = 0.5))+ 
+    guides(color=guide_legend(title="Variable"))
+  return(p)
+}
+```
+
+## Import Data
+
+To construct a robust reference compendium for evaluating
+senescence-associated gene signatures, we curated publicly available
+human RNA-seq datasets from GEO, ArrayExpress, and prior literature. The
+curation process followed a two-step strategy:
+
+***Step 1: Fibroblast Datasets***
+
+We began by focusing exclusively on fibroblast-derived datasets, as
+fibroblasts represent the most widely used and experimentally tractable
+model for studying cellular senescence. Only RNA-seq studies of Homo
+sapiens with a minimum of 10 samples were considered. Senescence
+validation methods (e.g., SA-β-gal staining, cell cycle arrest markers)
+were manually verified from the original publications. Data available as
+of February 14, 2024 for GEO and Literature Review, and February 29,
+2024 for ArrayExpress.
+
+-   GEO: ("senescence" OR "quiescence") AND "fibroblasts" AND "RNA-seq"
+    AND "Homo sapiens"[porgn] AND ≥10 samples
+
+    Initial: 59 datasets \| Final: 12 datasets \| Total: 298 samples
+
+-   ArrayExpress: (senescence OR quiescence) AND fibroblasts AND
+    (RNA-seq OR RNA sequencing) AND (Homo sapiens OR Human), with ≥10
+    samples and raw data availability
+
+    Initial: 38 datasets \| Final: 1 dataset \| Total: 12 samples
+
+-   Literature Review: Previously validated RNA-seq datasets from
+    senescence-related studies
+
+    3 datasets included \| Total: 74 samples
+
+***Step 2: Other Cell Types***
+
+To expand the diversity and generalizability of our analyses, we next
+incorporated datasets from non-fibroblast cell types. Additional filters
+were applied to ensure relevance and data quality, including exclusion
+of scRNA-seq, ChIP-seq, and cancer-specific studies. Data available as
+of July 12, 2024.
+
+-   GEO: ("senescence" OR "quiescence") NOT "fibroblasts" AND "RNA-seq"
+    NOT "scRNA-seq" NOT "ChIP-seq" AND ≥10 samples AND "Homo
+    sapiens"[porgn]
+
+    Initial: 133 datasets \| Final: 7 datasets \| Total: 113 samples
+
+-   ArrayExpress: (senescence OR quiescence) NOT fibroblasts AND
+    (RNA-seq OR RNA sequencing) AND (Homo sapiens OR Human) AND NOT
+    (single OR ChIP-seq OR ATAC-seq OR Affymetrix) AND NOT (cancer OR
+    tumour)
+
+    Initial: 7 datasets \| Final: 1 dataset \| Total: 24 samples
+
+-   Literature Review: Additional well-characterized datasets from
+    previous analyses
+
+    2 of 6 candidate datasets retained \| Total: 36 samples
+
+***Final Dataset Composition***
+
+In total, 25 datasets comprising 545 RNA-seq
+samples were curated for downstream benchmarking and discovery analyses.
+These include 16 fibroblast-based datasets (384 samples) and 9 datasets
+from other human cell types (161 samples). The fibroblast datasets
+include 192 proliferative, 24 quiescent, and 168 senescent samples. The
+non-fibroblast datasets comprise 80 proliferative, 9 quiescent, and 72
+senescent samples.
+
+### Read Counts
+
+```{r}
+counts <- readRDS("data/counts.rds")
+counts[1:5,1:5]
+```
+
+### Metadata
+
+```{r}
+metadata <- readRDS("data/metadata.rds")
+head(metadata)
+```
+
+## Filtering
+ 
+Lowly expressed genes were filtered out by retaining only those with a mean expression greater than 70 counts in at least one experimental condition (Quiescent, Proliferative, or Senescent). This ensures that genes with minimal or no expression across all groups do not bias downstream analyses.
+
+ 
+```{r}
+# Average expression per gene per condition
+avg_expr_quiesc <- log10(rowMeans(counts[, metadata$Condition == "Quiescent"] + 1))
+avg_expr_prol   <- log10(rowMeans(counts[, metadata$Condition == "Proliferative"] + 1))
+avg_expr_sen    <- log10(rowMeans(counts[, metadata$Condition == "Senescent"] + 1))
+
+# Combine into dataframe
+df_avg_expr <- data.frame(expression = c(avg_expr_quiesc, avg_expr_prol, avg_expr_sen),
+                          Condition = rep(c("Quiescent", "Proliferative", "Senescent"),
+                                          each = nrow(counts)))
+
+# Plot
+ggplot(df_avg_expr, aes(x = expression, fill = Condition)) +
+  geom_density(alpha = 0.3) +
+  theme_bw() +
+  ggtitle("Gene Expression by Condition", subtitle = "Mean log10(count + 1) per gene") +
+  xlab("Mean log10(count + 1) per gene") +
+  ylab("Density") +
+  geom_vline(xintercept = log10(70), linetype = "dotted", color = "black", size = 1)
+
+```
+
+
+```{r}
+# Set threshold (e.g., mean count > 70 in at least one condition)
+min_mean_count <- 70
+
+# Get sample indices per condition
+samples_quiesc <- metadata$sampleID[metadata$Condition == "Quiescent"]
+samples_prol   <- metadata$sampleID[metadata$Condition == "Proliferative"]
+samples_sen    <- metadata$sampleID[metadata$Condition == "Senescent"]
+
+# Calculate mean counts per gene within each condition
+mean_quiesc <- rowMeans(counts[, samples_quiesc])
+mean_prol   <- rowMeans(counts[, samples_prol])
+mean_sen    <- rowMeans(counts[, samples_sen])
+
+# Keep genes where mean expression is above threshold in at least one condition
+keep_genes <- (mean_quiesc > min_mean_count) |
+              (mean_prol > min_mean_count) |
+              (mean_sen > min_mean_count)
+
+# Apply filter to counts
+filtered_counts <- counts[keep_genes, ]
+
+
+cat("Number of genes before filtering:", nrow(counts), "\n")
+cat("Number of genes after filtering:", nrow(filtered_counts), "\n")
+
+```
+```{r}
+# Average expression per gene per condition
+avg_expr_quiesc <- log10(rowMeans(filtered_counts[, metadata$Condition == "Quiescent"] + 1))
+avg_expr_prol   <- log10(rowMeans(filtered_counts[, metadata$Condition == "Proliferative"] + 1))
+avg_expr_sen    <- log10(rowMeans(filtered_counts[, metadata$Condition == "Senescent"] + 1))
+
+# Combine into dataframe
+df_avg_expr <- data.frame(expression = c(avg_expr_quiesc, avg_expr_prol, avg_expr_sen),
+                          Condition = rep(c("Quiescent", "Proliferative", "Senescent"),
+                                          each = nrow(filtered_counts)))
+
+# Plot
+ggplot(df_avg_expr, aes(x = expression, fill = Condition)) +
+  geom_density(alpha = 0.3) +
+  theme_bw() +
+  ggtitle("Gene Expression by Condition (Filtered)", subtitle = "Mean log10(count + 1) per gene") +
+  xlab("Mean log10(count + 1) per gene") +
+  ylab("Density") 
+
+```
+  
+```{r include=FALSE, eval=FALSE}
+#saveRDS(filtered_counts, "data/filtered_counts.rds")
+```
+  
+## Normalisation
+
+ 
+
+ 
+```{r fig.width=10, fig.height=4}
+
+samples_ordered <- colnames(filtered_counts)[order(colSums(filtered_counts))]
+N <- 30
+
+filtcounts_ggplot <- stack(log2(filtered_counts[,c(samples_ordered[1:N], samples_ordered[(length(samples_ordered)-N +1):length(samples_ordered)])]))
+colnames(filtcounts_ggplot) <- c("expression", "sampleID")
+filtcounts_ggplot <- merge(filtcounts_ggplot,metadata, by="sampleID")
+  
+
+ggplot(filtcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(aes(fill=DatasetID), alpha=0.4)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+  theme_bw()+ 
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+  ggtitle("Senescence datasets", subtitle="Before Normalisation - 30 lowest and highest coverage") 
+
+```
+
+
+```{r}
+dgelist_normcounts <- DGEList(filtered_counts) # the matrix with gene names as row names and counts in columns
+dgelist_normcounts <- calcNormFactors(dgelist_normcounts, method = "TMM") 
+normalised_counts <- as.data.frame(voom(dgelist_normcounts,plot=F)$E) 
+#normalised_counts <- as.data.frame(edgeR::cpm(dgelist_normcounts, log = FALSE)) 
+normalised_counts <- 2^normalised_counts
+lognormalised_counts <- log2(normalised_counts+1)
+```
+
+
+
+```{r fig.width=10, fig.height=4}
+
+# samples_ordered <- colnames(filtered_counts)[order(colSums(normalised_counts))]
+# N <- 30
+
+normcounts_ggplot <- stack(log2(normalised_counts[,c(samples_ordered[1:N], samples_ordered[(length(samples_ordered)-N +1):length(samples_ordered)])]))
+colnames(normcounts_ggplot) <- c("expression", "sampleID")
+normcounts_ggplot <- merge(normcounts_ggplot,metadata, by="sampleID")
+  
+
+ggplot(normcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(aes(fill=DatasetID), alpha=0.4)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+  theme_bw()+ 
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+  ggtitle("Senescence datasets", subtitle="After Normalisation - 30 lowest and highest coverage") 
+
+```
+
+```{r include=FALSE, eval=FALSE}
+#saveRDS(normalised_counts, "data/normalised_counts.rds")
+```
+
+## Batch correction
+ 
+```{r fig.width=8, fig.height=6}
+y <- DGEList(lognormalised_counts, samples= metadata)
+PCA_beforeBC  <- prcomp(t(y$counts), scale=FALSE, center=TRUE)
+PCACounts_beforeBC  <- PCA_beforeBC$x
+PCACounts_beforeBC  <- as.data.frame(PCACounts_beforeBC )
+PCAData_beforeBC <-  cbind(PCACounts_beforeBC[1:10],y$samples) 
+
+ev = PCA_beforeBC$sdev^2 
+pc1= round(100*ev[1]/sum(ev),2) 
+pc2 = round(100*ev[2]/sum(ev),2) 
+pc3 = round(100*ev[3]/sum(ev),2) 
+pc4 = round(100*ev[4]/sum(ev),2) 
+pc5 = round(100*ev[5]/sum(ev),2) 
+pc6 = round(100*ev[6]/sum(ev),2)  
+
+
+ggplot(PCAData_beforeBC, aes(PC1,PC2))+
+  geom_point(aes(color=DatasetID), size=5, alpha=0.6)+
+  ggtitle(label ='Senescence datasets')+
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted")
+
+ggplot(PCAData_beforeBC, aes(PC1,PC2))+
+  geom_point(aes(color=Condition), size=5, alpha=0.6)+
+  ggtitle(label ='Senescence datasets')+
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted")
+
+ggplot(PCAData_beforeBC, aes(PC1,PC2))+
+  geom_point(aes(color=CellType), size=5, alpha=0.6)+
+  ggtitle(label ='Senescence datasets')+
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted")
+
+ggplot(PCAData_beforeBC, aes(PC1,PC2))+
+  geom_point(aes(color=SenescentType), size=5, alpha=0.6)+
+  ggtitle(label ='Senescence datasets')+
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted")
+
+ggplot(PCAData_beforeBC, aes(PC1,PC2))+
+  geom_point(aes(color=lib.size), size=5, alpha=0.6)+
+  ggtitle(label ='Senescence datasets')+
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted")
+ 
+```
+ 
+
+See https://github.com/DiseaseTranscriptomicsLab/voyAGEr_scripts/blob/main/Markdowns/voyAGEr.Rmd 
+
+  
+```{r}
+
+# Assume that the cell type will be a biological "batch", but the individual cell lines is not relevant for our problem;
+# DatasetID is for sure a batch
+batch_cols <- c("DatasetID") 
+
+metadata_cols <- c("Condition", "CellType")
+
+mmbatch <- model.matrix(reformulate(paste0("~0 + ",paste0( batch_cols,collapse = " + "))), data=metadata) 
+mmkeep <- model.matrix(reformulate(paste0("~0 + ",paste0( metadata_cols,collapse = " + "))), data=metadata)
+mm <- cbind(mmkeep,mmbatch)
+
+D0 <- DGEList(normalised_counts)  
+D0 <- calcNormFactors(D0) 
+y <- voom(D0, mm, plot = F) 
+fit <- lmFit(y, mm)  
+beta <- fit$coefficients[,-(1:ncol(mmkeep)),drop=FALSE]
+#beta <- fit$coefficients
+beta[is.na(beta)] <- 0
+corrcounts <- as.matrix(y$E) - beta %*% t(mmbatch)
+
+offset <- apply(corrcounts,1,min) - apply(log2(normalised_counts+1),1,min)
+corrcounts <- as.data.frame(corrcounts-offset)
+corrcounts <- 2^corrcounts
+
+```
+
+```{r include=FALSE, eval=FALSE}
+#saveRDS(corrcounts, "data/corrcounts.rds")
+```
+
+
+
+```{r fig.width=8, fig.height=6}
+y <- DGEList(log2(corrcounts+1), samples= metadata)
+PCA <- prcomp(t(y$counts), scale=FALSE, center=TRUE)
+PCACounts <- PCA$x
+PCACounts <- as.data.frame(PCACounts)
+PCAData <-  cbind(PCACounts[1:10],y$samples) 
+
+ev = PCA$sdev^2 
+pc1= round(100*ev[1]/sum(ev),2) 
+pc2 = round(100*ev[2]/sum(ev),2) 
+pc3 = round(100*ev[3]/sum(ev),2) 
+pc4 = round(100*ev[4]/sum(ev),2) 
+pc5 = round(100*ev[5]/sum(ev),2) 
+pc6 = round(100*ev[6]/sum(ev),2)  
+
+
+ggplot(PCAData, aes(PC1,PC2))+
+  geom_point(aes(color=DatasetID), size=5, alpha=0.6)+
+  ggtitle(label ='Senescence datasets')+
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted")
+
+ggplot(PCAData, aes(PC1,PC2))+
+  geom_point(aes(color=Condition), size=5, alpha=0.6)+
+  ggtitle(label ='Senescence datasets')+
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted")
+
+ggplot(PCAData, aes(PC1,PC2))+
+  geom_point(aes(color=CellType), size=5, alpha=0.6)+
+  ggtitle(label ='Senescence datasets')+
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted")
+
+ggplot(PCAData, aes(PC1,PC2))+
+  geom_point(aes(color=SenescentType), size=5, alpha=0.6)+
+  ggtitle(label ='Senescence datasets')+
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted")
+
+ggplot(PCAData, aes(PC1,PC2))+
+  geom_point(aes(color=lib.size), size=5, alpha=0.6)+
+  ggtitle(label ='Senescence datasets')+
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted")
+ 
+
+```
+
+
+
+```{r fig.width=10, fig.height=4}
+
+# samples_ordered <- colnames(filtered_counts)[order(colSums(normalised_counts))]
+# N <- 30
+
+corrcounts_ggplot <- stack(log2(corrcounts[,c(samples_ordered[1:N], samples_ordered[(length(samples_ordered)-N +1):length(samples_ordered)])]))
+colnames(corrcounts_ggplot) <- c("expression", "sampleID")
+corrcounts_ggplot <- merge(corrcounts_ggplot,metadata, by="sampleID")
+  
+
+ggplot(corrcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(aes(fill=DatasetID), alpha=0.4)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+  theme_bw()+ 
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+  ggtitle("Senescence datasets", subtitle="After BEC - 30 lowest and highest coverage") 
+
+```
+
+
+```{r}
+plot_variance_explained(corrcounts, c(""))
+
+metadata
+```
+
+
+
+
+
+
+
+
+
+## Exploratory Analysis
+
+
+```{r}
+ 
+
+Condition_colors <- c(
+  "Senescent"     = "#F4A261",  # Soft orange (not goldenrod)
+  "Proliferative" = "#A1C298",  # Desaturated sage green
+  "Quiescent"     = "#9DB4C0"   # Dusty teal-gray
+)
+
+
+
+# List to collect PCA results
+pca_list_PC12 <- list()
+pca_list_PC23 <- list()
+
+# Loop over CellTypes
+for (ct in unique(metadata$CellType)) {
+  
+  # Subset metadata and counts
+  meta_sub <- metadata[metadata$CellType == ct, ]
+  counts_sub <- corrcounts[, meta_sub$sampleID]
+  
+  # Create DGEList
+  y <- DGEList(log2(counts_sub + 1), samples = meta_sub)
+  
+  # PCA
+  PCA <- prcomp(t(y$counts), scale = FALSE, center = TRUE)
+  PCACounts <- as.data.frame(PCA$x)
+  
+  # Variance explained
+  ev <- PCA$sdev^2
+  pc1 <- round(100 * ev[1] / sum(ev), 2)
+  pc2 <- round(100 * ev[2] / sum(ev), 2)
+  pc3 <- round(100 * ev[3] / sum(ev), 2)  
+  
+  # Combine with metadata
+  PCAData <- cbind(PCACounts[, 1:3], meta_sub) 
+  
+  plt_12 <- ggplot(PCAData, aes(PC1,PC2))+
+  geom_point(aes(fill=Condition), size=4, alpha=0.6, shape=21)+
+  ggtitle(label =ct)+
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin(), legend.title=element_blank())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted") +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5)) +
+    scale_fill_manual(values=Condition_colors)
+  
+  plt_23 <- ggplot(PCAData, aes(PC2,PC3))+
+  geom_point(aes(fill=Condition), size=4, alpha=0.6, shape=21)+
+  ggtitle(label =ct)+
+  xlab(paste0("PC2: ",pc2,"% variance")) +
+  ylab(paste0("PC3: ",pc3,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin(), legend.title=element_blank())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted") +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5)) +
+    scale_fill_manual(values=Condition_colors)
+  
+  
+  pca_list_PC12[[ct]] <- plt_12
+  pca_list_PC23[[ct]] <- plt_23
+  
+}
+
+
+pca_PC12_divided <- ggarrange(plotlist = pca_list_PC12, ncol=3, nrow=2, common.legend = T, legend="bottom")
+pca_PC12_divided
+
+
+pca_PC23_divided <- ggarrange(plotlist = pca_list_PC23, ncol=3, nrow=2, common.legend = T, legend="bottom")
+pca_PC23_divided
+
+```
+
+
+```{r fig.width=5, fig.height=4}
+CellTypecols <- c(
+  "Fibroblast"   = "#E69F00",  # Orange
+  "Keratinocyte" = "#56B4E9",  # Sky Blue
+  "Melanocyte"   = "#009E73",  # Bluish Green
+  "Endothelial"  = "#F0E442",  # Yellow
+  "Neuronal"     = "#0072B2",  # Blue
+  "Mesenchymal"  = "#D55E00"   # Vermilion
+)
+
+
+Condition_colors <- c(
+  "Senescent"     = "#F4A261",  # Soft orange (not goldenrod)
+  "Proliferative" = "#A1C298",  # Desaturated sage green
+  "Quiescent"     = "#9DB4C0"   # Dusty teal-gray
+)
+
+
+
+y <- DGEList(log2(corrcounts+1), samples= metadata)
+PCA <- prcomp(t(y$counts), scale=FALSE, center=TRUE)
+PCACounts <- PCA$x
+PCACounts <- as.data.frame(PCACounts)
+PCAData <-  cbind(PCACounts[1:10],y$samples) 
+
+ev = PCA$sdev^2 
+pc1= round(100*ev[1]/sum(ev),2) 
+pc2 = round(100*ev[2]/sum(ev),2) 
+pc3 = round(100*ev[3]/sum(ev),2) 
+
+
+(PCA_celltype_afterbatch_CellType <- ggplot(PCAData, aes(PC1,PC2))+
+  geom_point(aes(fill=CellType), size=5, alpha=0.8, shape=21)+
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted")+
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        legend.title = element_blank()) +
+    scale_fill_manual(values=CellTypecols))
+
+(PCA_celltype_afterbatch_Condition <- ggplot(PCAData, aes(PC1,PC2))+
+  geom_point(aes(fill=Condition), size=5, alpha=0.8, shape=21)+
+  xlab(paste0("PC1: ",pc1,"% variance")) +
+  ylab(paste0("PC2: ",pc2,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted")+
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        legend.title = element_blank()) +
+    scale_fill_manual(values=Condition_colors))
+
+
+(PCA23_celltype_afterbatch_CellType <- ggplot(PCAData, aes(PC2,PC3))+
+  geom_point(aes(fill=CellType), size=5, alpha=0.8, shape=21)+
+  xlab(paste0("PC2: ",pc2,"% variance")) +
+  ylab(paste0("PC3: ",pc3,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted")+
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        legend.title = element_blank()) +
+    scale_fill_manual(values=CellTypecols))
+
+(PCA23_celltype_afterbatch_Condition <- ggplot(PCAData, aes(PC2,PC3))+
+  geom_point(aes(fill=Condition), size=5, alpha=0.8, shape=21)+
+  xlab(paste0("PC2: ",pc2,"% variance")) +
+  ylab(paste0("PC3: ",pc3,"% variance")) + 
+  theme_bw()+
+  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
+  geom_vline(xintercept=0, linetype="dotted") + 
+  geom_hline(yintercept=0, linetype="dotted")+
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        legend.title = element_blank()) +
+    scale_fill_manual(values=Condition_colors))
+
+
+```
+
+
+ 
+```{r fig.width=12, fig.height=6}
+
+plt1 <- ggarrange(PCA_celltype_afterbatch_CellType,PCA_celltype_afterbatch_Condition, ncol=1)
+(plt_PC12 <- ggarrange(plt1, pca_PC12_divided, widths=c(0.3,0.7)))
+
+plt2 <- ggarrange(PCA23_celltype_afterbatch_CellType,PCA23_celltype_afterbatch_Condition, ncol=1)
+(plt_PC23 <- ggarrange(plt2, pca_PC23_divided, widths=c(0.3,0.7)))
+```
+ 
+
+
+
+
+

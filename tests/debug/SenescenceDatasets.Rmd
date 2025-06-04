@@ -191,6 +191,10 @@ for (sig in names(bidirectsigs)){
 }
 bidirectsigs
 
+
+#saveRDS(bidirectsigs, "~/VersionControl/senescence_benchmarking/CommonFiles/SenescenceSignatures_complete_newCellAge_bidirect.RDS" )
+
+ 
 ```
 
 ```{r fig.width=8, fig.height=10}

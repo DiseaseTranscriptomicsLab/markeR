@@ -23,6 +23,8 @@
 #' This accounts for the number of contrasts tested per signature and provides more stringent control of
 #' false discovery rate across multiple comparisons. If `FALSE`, the function only corrects for the number of gene sets.
 #'
+#' @param nPermSimple Number of permutations in the simple fgsea implementation for preliminary estimation of P-values. Parameter from fgsea.
+#'
 #' @return A named list where each element corresponds to a contrast. Each contrast contains a **single data frame** with GSEA results for all gene sets.
 #' P-values are corrected for multiple testing based on all contrasts.
 #'   The result includes the standard `fgsea` output plus two additional columns:
@@ -45,7 +47,7 @@
 #'
 #' @importFrom fgsea fgsea
 #' @export
-runGSEA <- function(DEGList, gene_sets, stat = NULL, ContrastCorrection=FALSE) {
+runGSEA <- function(DEGList, gene_sets, stat = NULL, ContrastCorrection=FALSE, nPermSimple=10000) {
 
   # Initialize storage for results across contrasts
   results_by_contrast <- list()
@@ -98,7 +100,7 @@ runGSEA <- function(DEGList, gene_sets, stat = NULL, ContrastCorrection=FALSE) {
 
         set.seed("20032025")
         fgseaRes <- fgsea::fgsea(pathways = list(temp = gs_genes),
-                                 stats = ranks,nPermSimple = 10000)
+                                 stats = ranks,nPermSimple = nPermSimple)
 
       } else if (current_stat=="B") {
 
@@ -112,7 +114,7 @@ runGSEA <- function(DEGList, gene_sets, stat = NULL, ContrastCorrection=FALSE) {
         ranks_sorted <- sort(ranks, decreasing = TRUE)
         set.seed("20032025")
         fgseaRes <- fgsea::fgsea(pathways = list(temp = gs_genes),
-                                 stats = ranks_sorted,nPermSimple = 10000)
+                                 stats = ranks_sorted,nPermSimple = nPermSimple)
 
       } else {
         warning("Gene set '", set_name, "' is not in a recognized format. Skipping.")
