@@ -915,6 +915,12 @@ This function helps compare enrichment results when the number of contrasts and 
 plotCombinedGSEA(GSEAresults, sig_threshold = 0.05, PointSize=6, widthlegend = 26 )
 ```
 
+##### Note on GSEA for All-negative gene sets
+
+In gene set enrichment analysis, the behaviour of gene sets annotated with regulatory direction must be interpreted carefully. In our current implementation, if a gene set includes both positive and negative regulators of a process, the statistics for the negatively annotated genes are inverted, meaning that the enrichment reflects their effect on the process rather than simply their expression direction. This ensures that the final enrichment score captures the coordinated functional outcome of the gene set. 
+
+The same logic is preserved when a gene set contains **only negatively annotated genes** (*e.g.* negative regulators of senescence): the statistics are inverted so that a positive normalised enrichment score (NES) implies these inhibitors are less expressed, thereby supporting the activation of the process they repress (*e.g.* senescence). Conversely, a negative NES would suggest their upregulation, which could potentially suppress the process. 
+
 #### GSEA Association with Chosen Phenotypic Variables
  
 

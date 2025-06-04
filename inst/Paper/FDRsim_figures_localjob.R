@@ -1,6 +1,10 @@
 devtools::load_all()
 
 
+metadata <- readRDS("data/metadata.rds")
+corrcounts <- readRDS("data/corrcounts.rds")
+signatures_bidirectional <- readRDS("data/SenescenceSigntures_Bidirectional.rds") # Divided by direction
+
 plt_fdrsim_allsignatures_v2 <- FPR_Simulation(data = corrcounts,
                               metadata = metadata,
                               original_signatures = signatures_bidirectional,
@@ -36,3 +40,7 @@ plt_fdrsim_subset_v2 <- FPR_Simulation(data = corrcounts,
                               ColorValues=NULL,
                               ncol=NULL,
                               nrow=1 )
+
+
+saveRDS("data/plt_fdrsim_allsignatures_v2.rds", plt_fdrsim_allsignatures_v2)
+saveRDS("data/plt_fdrsim_subset_v2.rds", plt_fdrsim_subset_v2)

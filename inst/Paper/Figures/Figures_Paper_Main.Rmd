@@ -1874,6 +1874,21 @@ plt_scatter_HernandezSegura <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) +
         text = element_text(size=12) ) + geom_point(data= degenes_SP_SQ[degenes_SP_SQ$gene %in% signatures_bidirectional$HernandezSegura$gene,], fill="#96C29B", size=3, alpha=0.8, shape=21) + ggtitle("HernandezSegura") +
   geom_vline(xintercept = 0, color="black", size=0.8, linetype="dashed")+
   geom_hline(yintercept = 0, color="black", size=0.8, linetype="dashed")
+# 
+# 
+# plt_scatter_SAUL_SEN_MAYO <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) + 
+#   geom_point(size=3, alpha=0.6, color="#C2C2C2") +
+#   theme_bw() +
+#   xlab("t-statistic Senescent vs Proliferative")+
+#   ylab("t-statistic Senescent \nvs Quiescent") + 
+#   theme_bw()   +  
+#   geom_density_2d(color="white") + 
+#   theme(plot.title = element_text(hjust = 0.5, size=12),
+#         plot.subtitle = element_text(hjust = 0.5),
+#         text = element_text(size=12)) + geom_point(data= degenes_SP_SQ[degenes_SP_SQ$gene %in% signatures_bidirectional$SAUL_SEN_MAYO$gene,], fill="#96C29B", size=3, alpha=0.8, shape=21) + ggtitle("SAUL_SEN_MAYO") +
+#   geom_vline(xintercept = 0, color="black", size=0.8, linetype="dashed")+
+#   geom_hline(yintercept = 0, color="black", size=0.8, linetype="dashed")
+
 
 plt_scatter_REACTOME <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) + 
   geom_point(size=3, alpha=0.6, color="#C2C2C2") +
@@ -1918,6 +1933,8 @@ plt_scatter_REACTOME <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) +
 
 ```
 
+
+
 ```{r fig.width=12, fig.height=6}
 (plt_fig5_senequest <- ggarrange(plt_tstats,plot_logmedian_SeneQuest, ncol=1, heights=c(0.45,0.55), labels=c("A","B")))
 ```
@@ -1925,12 +1942,34 @@ plt_scatter_REACTOME <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) +
 
 
 ```{r}
-ggplot2::ggsave("Figs/Figure5_SeneQuest.png",
-                plt_fig5_senequest,
-                width = 12, height=6, bg = 'white')
+# ggplot2::ggsave("Figs/Figure5_SeneQuest.png",
+#                 plt_fig5_senequest,
+#                 width = 12, height=6, bg = 'white')
 ```
 
 
+
+```{r}
+
+(plot_logmedian_HernandezSegura <- PlotScores_adapted(data = corrcounts, 
+                                                metadata = metadata, 
+                                                method = "logmedian", 
+                                                gene_sets = list(HernandezSegura =  signatures_bidirectional$HernandezSegura ,
+                                                                 UP_HernandezSegura= subset(signatures_bidirectional$HernandezSegura, enrichment==1),
+                                                                 DOWN_HernandezSegura = subset(signatures_bidirectional$HernandezSegura, enrichment==-1)),   
+                                                Variable="Condition",  
+                                                ConnectGroups=F,  
+                                                nrow = 1, 
+                                                widthTitle=20, 
+                                                limits = NULL, 
+                                                legend_nrow = 2, 
+                                                compute_cohen=F,
+                                                pointSize=2,
+                                                titlesize=12,
+                                                cond_cohend = list(A="Senescent",B="Quiescent"),
+                                                pvalcalc = F, ColorValues = "pink"))
+
+```
 
 
 what to expect from scores and GSEA
@@ -1971,12 +2010,12 @@ mock_long <- mock_scores %>%
 ```
 
 
-```{r fig.width=6, fig.height=4}
+```{r fig.width=6, fig.height=3}
 (plt_expectation_scores <- ggplot(mock_long, aes(x = Condition, y = Score, fill = Condition)) +
    #geom_jitter(width = 0.3, size = 2, alpha = 0.5, color = "grey") +
    geom_violin(trim = FALSE, alpha = 0.4, size = 1) + 
    facet_wrap(
-     ~Signature, ncol = 2,
+     ~Signature, nrow=1,
      labeller = labeller(Signature = c(
        "Good Signature A" = "Good Signature",
        "Good Signature B" = "Good Signature",
@@ -1994,6 +2033,7 @@ mock_long <- mock_scores %>%
    theme(
      legend.position = "none",
      axis.text.y = element_blank(),
+     axis.text.x = element_text(angle = 45, hjust = 1),
      axis.ticks.y = element_blank(),
      strip.text = element_text(face = "bold")
    ) +
@@ -2028,7 +2068,7 @@ df_signatures$Quality <- ifelse(
     geom_point(aes(fill = Quality), shape = 21, size = 7, alpha = 0.85, color = "black") +
     scale_fill_manual(values = c("Good" = "#3E7CB1", "Bad" = "#D1495B")) +
     labs(
-      x = "NES (Senescent vs Proliferative)",
+      x = "NES (Senescent vs Proliferative)\n\n",
       y = "NES (Senescent vs Quiescent)",
       fill = "Signature Quality  "
     ) +
@@ -2041,7 +2081,7 @@ df_signatures$Quality <- ifelse(
 
 
 ```{r fig.width=12, fig.height=4}
-(plt_expectations <- ggarrange(plt_expectation_scores,plt_expectation_gsea, labels=c("A","B"), widths=c(0.6,0.4)))
+(plt_expectations <- ggarrange(plt_expectation_scores,plt_expectation_gsea, labels=c("A","B"), widths=c(0.65,0.35)))
 ```
 
 
@@ -2049,8 +2089,9 @@ df_signatures$Quality <- ifelse(
 ```{r fig.width=12, fig.height=6}
 
 
-# Local job
-# plt_fdrsim_subset_v2 <- FPR_Simulation(data = corrcounts,
+# Local job: plt_fdrsim_subset_v2
+# 
+# plt_fdrsim_subset_test <- FPR_Simulation(data = corrcounts,
 #                               metadata = metadata,
 #                               original_signatures = list(CellAge=signatures_bidirectional$CellAge,
 #                                                          HernandezSegura=signatures_bidirectional$HernandezSegura,
@@ -2058,7 +2099,7 @@ df_signatures$Quality <- ifelse(
 #                                                          SeneQuest=signatures_bidirectional$SeneQuest
 #                               ),
 #                               gene_list = row.names(corrcounts),
-#                               number_of_sims = 100,
+#                               number_of_sims = 5,
 #                               widthTitle = 30,
 #                               Variable = "Condition",
 #                               titlesize = 12,
@@ -2069,18 +2110,78 @@ df_signatures$Quality <- ifelse(
 #                               ncol=NULL,
 #                               nrow=1 )
 
+plt_fdrsim_subset_v2 <- readRDS("../data/plt_fdrsim_subset_v2.rds")
 plt_fdrsim_subset_v2
 ```
 
+<!-- # ```{r} -->
+<!-- # signatures_bidirectional_updown <- signatures_bidirectional -->
+<!-- # signatures_bidirectional_updown$UP_HernandezSegura <- subset(signatures_bidirectional_updown$HernandezSegura, enrichment==1) -->
+<!-- # signatures_bidirectional_updown$DOWN_HernandezSegura <- subset(signatures_bidirectional_updown$HernandezSegura, enrichment==-1) -->
+<!-- # signatures_bidirectional_updown$UP_SeneQuest <- subset(signatures_bidirectional_updown$SeneQuest, enrichment==1) -->
+<!-- # signatures_bidirectional_updown$DOWN_SeneQuest <- subset(signatures_bidirectional_updown$SeneQuest, enrichment==-1) -->
+<!-- # signatures_bidirectional_updown$UP_CellAge <- subset(signatures_bidirectional_updown$CellAge, enrichment==1) -->
+<!-- # signatures_bidirectional_updown$DOWN_CellAge <- subset(signatures_bidirectional_updown$CellAge, enrichment==-1) -->
+<!-- #  -->
+<!-- # signatures_bidirectional_updown$HernandezSegura <- NULL -->
+<!-- # signatures_bidirectional_updown$SeneQuest <- NULL -->
+<!-- # signatures_bidirectional_updown$CellAge <- NULL -->
+<!-- #  -->
+<!-- #  -->
+<!-- #  -->
+<!-- # ``` -->
+<!-- #  -->
+<!-- #  -->
+<!-- # ```{r} -->
+<!-- # GSEAresults_separate_UPDOWN <- runGSEA(degenes, signatures_bidirectional_updown, stat = NULL) -->
+<!-- # GSEAresults_separate_UPDOWN -->
+<!-- # ``` -->
+<!-- # ```{r fig.width=4, fig.height=4} -->
+<!-- #  -->
+<!-- # GSEAresults_SQ_updown <- GSEAresults_separate_UPDOWN$`Senescent-Quiescent` -->
+<!-- # GSEAresults_SQ_updown$contrast <- "Sen_vs_Quiesc" -->
+<!-- # GSEAresults_SP_updown <- GSEAresults_separate_UPDOWN$`Senescent-Proliferative` -->
+<!-- # GSEAresults_SP_updown$contrast <- "Sen_vs_Prol" -->
+<!-- #  -->
+<!-- # GSEAresults_merge_updown <- rbind(GSEAresults_SQ_updown,GSEAresults_SP_updown) -->
+<!-- # GSEAresults_merge_updown -->
+<!-- #  -->
+<!-- #  -->
+<!-- # df_ggplot  <- GSEAresults_merge_updown[,c("pathway","contrast","NES","padj")] -->
+<!-- # df_ggplot <- merge(subset(df_ggplot, contrast=="Sen_vs_Prol"),subset(df_ggplot, contrast=="Sen_vs_Quiesc"), by="pathway") -->
+<!-- # colnames(df_ggplot) <- c("pathway","contrast.x","NES_Sen_vs_Prol","padj_Sen_vs_Prol","contrast.y","NES_Sen_vs_Quiesc","padj_Sen_vs_Quiesc") -->
+<!-- # df_ggplot$significance <- df_ggplot$padj_Sen_vs_Prol <= 0.05 & df_ggplot$padj_Sen_vs_Quiesc <= 0.05 -->
+<!-- #  -->
+<!-- # # remove every row without UP or DOWN as prefix -->
+<!-- # df_ggplot <- df_ggplot[grepl("^UP_|^DOWN_", df_ggplot$pathway),] -->
+<!-- #  -->
+<!-- #  -->
+<!-- # (plt_scatter_gsea_updown <- ggplot(df_ggplot, aes(x=NES_Sen_vs_Prol, y=NES_Sen_vs_Quiesc)) + -->
+<!-- #     geom_point(alpha=0.6, size=8, shape=21, aes(fill=significance)) + -->
+<!-- #     theme_bw() + -->
+<!-- #     geom_label_repel(aes(label=pathway), size=3, force_pull = 1, fill=NA, max.overlaps = 10000, min.segment.length = 0, force = 5, box.padding = .5) + -->
+<!-- #     geom_vline(xintercept = 0, size=0.6, linetype="dashed")+ -->
+<!-- #     geom_hline(yintercept = 0, size=0.6, linetype="dashed") + -->
+<!-- #     xlab("NES Senescence vs Proliferation")+ -->
+<!-- #     ylab("NES Senescence vs Quiescence")+  -->
+<!-- #     scale_fill_manual(values = c("#BA3B46","#53A2BE"), name = "Adj. p-value <= 0.05")  + -->
+<!-- #     theme(legend.position = "top") +  -->
+<!-- #     theme( plot.title = element_text(hjust = 0.5 ) ) ) -->
+<!-- # ``` -->
 
-```{r fig.width=14, fig.height=16}
 
-plt_senequest <- ggarrange(plt_tstats,plot_logmedian_SeneQuest, ncol=1, heights=c(0.45,0.6), labels=c("C","D"))
+
+
+```{r fig.width=15, fig.height=16}
+
+plt_scores <- ggarrange(plot_logmedian_SeneQuest, plot_logmedian_HernandezSegura, nrow=1, labels=c("C","D"))
+
+plt_senequest <- ggarrange(plt_scores,plt_tstats, ncol=1, heights=c(0.6,0.45), labels=c("","E"))
 
 (plt_fig5_alternative <- ggarrange(plt_expectations,
                                    plt_senequest,
-                                   plt_fdrsim_subset_v2,
-                                   labels=c("","","E"),
+                                   plt_fdrsim_subset_test,
+                                   labels=c("","","F"),
                                    ncol=1,
                                    heights=c(0.2,0.35,0.35)))
 ```
