@@ -22,7 +22,8 @@ library("markeR")
 library("ggbreak")
 library("ggnewscale")
 library("dplyr")
-library("tidyr")
+library("tidyr")  
+library(patchwork)
 ```
 
 ### Functions
@@ -2180,7 +2181,7 @@ plt_senequest <- ggarrange(plt_scores,plt_tstats, ncol=1, heights=c(0.6,0.45), l
 
 (plt_fig5_alternative <- ggarrange(plt_expectations,
                                    plt_senequest,
-                                   plt_fdrsim_subset_test,
+                                   plt_fdrsim_subset_v2,
                                    labels=c("","","F"),
                                    ncol=1,
                                    heights=c(0.2,0.35,0.35)))
@@ -2188,10 +2189,12 @@ plt_senequest <- ggarrange(plt_scores,plt_tstats, ncol=1, heights=c(0.6,0.45), l
 
 
 ```{r}
-ggplot2::ggsave("Figs/Figure5_ComparisonSigs.png",
+ggplot2::ggsave("../Figures/Figs/Figure5_ComparisonSigs.png",
                 plt_fig5_alternative,
-                width = 14, height=16, bg = 'white')
+                width = 15, height=16, bg = 'white')
+ 
 ```
+
 
 
 ## Figure 6 - Tradeoffs between number of genes and number of samples
@@ -2852,121 +2855,250 @@ df_Scores_hs
 
 
 ```{r}
+# 
+# methods <- c("logmedian","ranking","ssGSEA")
+# gene_set <- list(HernandezSegura=signatures_bidirectional$HernandezSegura,
+#                  SAUL_SEN_MAYO=signatures_bidirectional$SAUL_SEN_MAYO)
+# tissues <- unique(metadata_GTEx_alltissues$SMTSD) 
+# 
+# results_df_score <- data.frame(NULL)
+# results_df_gsea <- data.frame(NULL)
+# 
+# # Initialize progress bar
+# pb <- txtProgressBar(min = 0, max = length(tissues), style = 3)
+# 
+# for (i in seq_along(tissues)) {
+#   
+#   tissue <- tissues[i]
+#   
+#   subset_metadata <- metadata_GTEx_alltissues[metadata_GTEx_alltissues$SMTSD == tissue,]
+#   subset_data <- GTEx_alltissues[,subset_metadata$SAMPID]
+#   
+#   
+#   # Update progress bar
+#   setTxtProgressBar(pb, i)
+#   
+#   for (sig in names(gene_set)){
+#     
+#     signature <- list(gene_set[[sig]])
+#     names(signature) <- sig
+#     
+#     data_varassoc_gsea <- suppressWarnings(suppressMessages(GSEA_VariableAssociation(data=subset_data, 
+#                                                                                      metadata=subset_metadata, 
+#                                                                                      cols=c("AGE"),  
+#                                                                                      mode="simple", 
+#                                                                                      gene_set=signature)$data))
+#     
+#     data_varassoc_gsea <- data_varassoc_gsea[,c("NES","pval","Contrast")]
+#     data_varassoc_gsea$signature <- sig
+#     data_varassoc_gsea$method <- "GSEA"
+#     data_varassoc_gsea$tissue <- tissue
+#     
+#     results_df_gsea <- rbind(results_df_gsea, data_varassoc_gsea)
+#     
+#     for (method in methods){
+#       
+#       data_varassoc_score <- suppressWarnings(suppressMessages(Score_VariableAssociation(data=subset_data, 
+#                                                                                          metadata=subset_metadata, 
+#                                                                                          cols=c("AGE"), # SMRIN was a variable for batch correction
+#                                                                                          method=method, 
+#                                                                                          gene_set = signature, 
+#                                                                                          mode="simple", printplt = F)$Overall))
+#       data_varassoc_score$signature <- sig
+#       data_varassoc_score$method <- method
+#       data_varassoc_score$tissue <- tissue
+#       results_df_score <- rbind(results_df_score, data_varassoc_score)
+#       
+#       
+#       
+#     }
+#     
+#   }
+#   
+# }
+# 
+# # Close the progress bar
+# close(pb)
+# 
+# 
+# results_df_gsea
+# results_df_score
+```
 
-methods <- c("logmedian","ranking","ssGSEA")
-gene_set <- list(HernandezSegura=signatures_bidirectional$HernandezSegura,
-                 SAUL_SEN_MAYO=signatures_bidirectional$SAUL_SEN_MAYO)
-tissues <- unique(metadata_GTEx_alltissues$SMTSD) 
 
-results_df_score <- data.frame(NULL)
-results_df_gsea <- data.frame(NULL)
+```{r}
 
-# Initialize progress bar
-pb <- txtProgressBar(min = 0, max = length(tissues), style = 3)
 
-for (i in seq_along(tissues)) {
-  
-  tissue <- tissues[i]
-  
-  subset_metadata <- metadata_GTEx_alltissues[metadata_GTEx_alltissues$SMTSD == tissue,]
-  subset_data <- GTEx_alltissues[,subset_metadata$SAMPID]
-  
-  
-  # Update progress bar
-  setTxtProgressBar(pb, i)
-  
-  for (sig in names(gene_set)){
-    
-    signature <- list(gene_set[[sig]])
-    names(signature) <- sig
-    
-    data_varassoc_gsea <- suppressWarnings(suppressMessages(GSEA_VariableAssociation(data=subset_data, 
-                                                                                     metadata=subset_metadata, 
-                                                                                     cols=c("AGE"),  
-                                                                                     mode="simple", 
-                                                                                     gene_set=signature)$data))
-    
-    data_varassoc_gsea <- data_varassoc_gsea[,c("NES","pval","Contrast")]
-    data_varassoc_gsea$signature <- sig
-    data_varassoc_gsea$method <- "GSEA"
-    data_varassoc_gsea$tissue <- tissue
-    
-    results_df_gsea <- rbind(results_df_gsea, data_varassoc_gsea)
-    
-    for (method in methods){
-      
-      data_varassoc_score <- suppressWarnings(suppressMessages(Score_VariableAssociation(data=subset_data, 
-                                                                                         metadata=subset_metadata, 
-                                                                                         cols=c("AGE"), # SMRIN was a variable for batch correction
-                                                                                         method=method, 
-                                                                                         gene_set = signature, 
-                                                                                         mode="simple", printplt = F)$Overall))
-      data_varassoc_score$signature <- sig
-      data_varassoc_score$method <- method
-      data_varassoc_score$tissue <- tissue
-      results_df_score <- rbind(results_df_score, data_varassoc_score)
-      
-      
-      
-    }
-    
-  }
-  
-}
+# results_df_score_corr <- results_df_score %>%
+#   group_by(signature, method) %>%
+#   mutate(P_adj = p.adjust(P_Value, method = "BH")) %>%
+#   ungroup()
+# 
+# results_df_gsea_corr <- results_df_gsea %>%
+#   group_by(signature) %>%
+#   mutate(padj = p.adjust(pval, method = "BH")) %>%
+#   ungroup()
 
-# Close the progress bar
-close(pb)
 
+
+```
+
+
+
+```{r}
+# local job: ~5 days
+# 
+# 
+# methods <- c("logmedian","ranking","ssGSEA")
+# gene_set <- list(HernandezSegura=signatures_bidirectional$HernandezSegura,
+#                  SAUL_SEN_MAYO=signatures_bidirectional$SAUL_SEN_MAYO)
+# tissues <- unique(metadata_GTEx_alltissues$SMTSD)
+# 
+# results_df_score <- data.frame(NULL)
+# results_df_gsea <- data.frame(NULL)
+# 
+# # Initialize progress bar
+# pb <- txtProgressBar(min = 0, max = length(tissues), style = 3)
+# 
+# for (i in seq_along(tissues)) {
+# 
+#   tissue <- tissues[i]
+# 
+#   subset_metadata <- metadata_GTEx_alltissues[metadata_GTEx_alltissues$SMTSD == tissue,]
+#   subset_data <- GTEx_alltissues[,subset_metadata$SAMPID]
+# 
+# 
+#   # Update progress bar
+#   setTxtProgressBar(pb, i)
+# 
+#   for (sig in names(gene_set)){
+# 
+#     signature <- list(gene_set[[sig]])
+#     names(signature) <- sig
+# 
+#     data_varassoc_gsea <- suppressWarnings(suppressMessages(GSEA_VariableAssociation(data=subset_data,
+#                                                                                      metadata=subset_metadata,
+#                                                                                      cols=c("AGE"),
+#                                                                                      mode="simple",
+#                                                                                      gene_set=signature)$data))
+# 
+#     data_varassoc_gsea <- data_varassoc_gsea[,c("NES","pval","Contrast")]
+#     data_varassoc_gsea$signature <- sig
+#     data_varassoc_gsea$method <- "GSEA"
+#     data_varassoc_gsea$tissue <- tissue
+# 
+#     results_df_gsea <- rbind(results_df_gsea, data_varassoc_gsea)
+# 
+#     for (method in methods){
+# 
+#       data_varassoc_score <- suppressWarnings(suppressMessages(Score_VariableAssociation(data=subset_data,
+#                                                                                          metadata=subset_metadata,
+#                                                                                          cols=c("AGE"), # SMRIN was a variable for batch correction
+#                                                                                          method=method,
+#                                                                                          gene_set = signature,
+#                                                                                          mode="simple", printplt = F)$Overall))
+# 
+# 
+#       df_permutations <- data.frame(NULL)
+#       for (j in 1:nperm){
+#         set.seed(j)
+#         metadata_subset_shuffleAGE <- subset_metadata
+#         metadata_subset_shuffleAGE$AGE <- sample(metadata_subset_shuffleAGE$AGE)
+# 
+#         cohend_shuffle <- suppressWarnings(suppressMessages(Score_VariableAssociation(data=subset_data[,metadata_subset_shuffleAGE$SAMPID],
+#                                                                                            metadata=metadata_subset_shuffleAGE,
+#                                                                                            cols=c("AGE"), # SMRIN was a variable for batch correction
+#                                                                                            method=method,
+#                                                                                            gene_set = signature,
+#                                                                                            mode="simple", printplt = F)$Overall))
+# 
+# 
+#         cohend_shuffle$signature <- sig
+#         cohend_shuffle$method <- method
+#         cohend_shuffle$tissue <- tissue
+#         df_permutations <- rbind(df_permutations, cohend_shuffle)
+# 
+#       }
+# 
+#       # calculateFPR
+# 
+#       df_permutations$Cohen_f
+#       fpr <- sum(df_permutations$Cohen_f > data_varassoc_score$Cohen_f)/length(df_permutations$Cohen_f)
+# 
+# 
+#       data_varassoc_score$signature <- sig
+#       data_varassoc_score$method <- method
+#       data_varassoc_score$tissue <- tissue
+#       data_varassoc_score$fpr <- fpr
+#       results_df_score <- rbind(results_df_score, data_varassoc_score)
+# 
+# 
+# 
+# 
+#     }
+# 
+#   }
+# 
+# }
+# 
+# # Close the progress bar
+# close(pb)
+# 
+# 
+# saveRDS( results_df_gsea,"results_df_gsea_GTEx_FPR.rds")
+# saveRDS( results_df_score,"results_df_score_GTEx_FPR.rds") # same results for t-test's p value and 1000 perms
+```
+
+
+```{r}
+results_df_score <- readRDS("../data/results_df_score_GTEx_FPR.rds")
+results_df_gsea <- readRDS("../data/results_df_gsea_GTEx_FPR.rds")
+
+
+results_df_gsea <- results_df_gsea %>%
+  group_by(signature) %>%
+  mutate(padj = p.adjust(pval, method = "BH")) %>%
+  ungroup()
+
+results_df_score <- results_df_score %>%
+  group_by(signature, method) %>%
+  mutate(P_adj = p.adjust(fpr, method = "BH")) %>%
+  ungroup()
+
+
+# Alphabetically order tissue factor
+tissue_levels <- sort(unique(results_df_score$tissue), decreasing = T)
+results_df_score$tissue <- factor(results_df_score$tissue, levels = tissue_levels)
+results_df_gsea$tissue  <- factor(results_df_gsea$tissue, levels = tissue_levels)
 
 results_df_gsea
 results_df_score
 ```
 
-```{r}
-
-
-results_df_score_corr <- results_df_score %>%
-  group_by(signature, method) %>%
-  mutate(P_adj = p.adjust(P_Value, method = "BH")) %>%
-  ungroup()
-
-results_df_gsea_corr <- results_df_gsea %>%
-  group_by(signature) %>%
-  mutate(padj = p.adjust(pval, method = "BH")) %>%
-  ungroup()
-
-# Alphabetically order tissue factor
-tissue_levels <- sort(unique(results_df_score_corr$tissue), decreasing = T)
-results_df_score_corr$tissue <- factor(results_df_score_corr$tissue, levels = tissue_levels)
-results_df_gsea_corr$tissue  <- factor(results_df_gsea_corr$tissue, levels = tissue_levels)
-
-```
 
 
 ```{r fig.width=6, fig.height=10}
-library(ggplot2)
-library(dplyr)
-library(patchwork)
+
 
 # Ensure correct factor levels for method and tissue
-results_df_score_corr$method <- factor(results_df_score_corr$method, levels = c("logmedian", "ranking", "ssGSEA"))
-results_df_gsea_corr$method <- "GSEA"  # single method name
+results_df_score$method <- factor(results_df_score$method, levels = c("logmedian", "ranking", "ssGSEA"))
+results_df_gsea$method <- "GSEA"  # single method name
 
 # Add asterisk for significance
-results_df_score_corr <- results_df_score_corr %>%
+results_df_score <- results_df_score %>%
   mutate(signif = ifelse(P_adj < 0.05, "*", ""))
 
-results_df_gsea_corr <- results_df_gsea_corr %>%
+results_df_gsea <- results_df_gsea %>%
   mutate(signif = ifelse(padj < 0.05, "*", ""))
 
 # Loop through each signature
-sigs <- unique(results_df_score_corr$signature)
+sigs <- unique(results_df_score$signature)
 
 list_plts_sigs <- list()
 for (sig in sigs) {
   # Subset for this signature
-  score_data <- results_df_score_corr %>% filter(signature == sig)
-  gsea_data  <- results_df_gsea_corr %>% filter(signature == sig)
+  score_data <- results_df_score %>% filter(signature == sig)
+  gsea_data  <- results_df_gsea %>% filter(signature == sig)
   
   # Create score plot
   p_score <- ggplot(score_data, aes(x = method, y = tissue, fill = Cohen_f)) +
@@ -3043,8 +3175,9 @@ for (tissue in tissues_signif_HS){
     pltlist_aux[[method]] <- ggplot(scores_df$HernandezSegura, aes(x=AGE, y=score)) +
       geom_jitter(size=2, color="#8F95B1")+ # to preserve the donor's age; correlation was calculated with "real" data
       geom_density2d( colour="white", size=0.3) +
-      ggplot2::geom_smooth(method = "lm", col = "black", se = FALSE, size=1.3)+ ggpubr::stat_cor(method="spearman", size=3.5, p.digits = 1 ) +
-      xlab("Age (years)") + ylab("Score") +
+      ggplot2::geom_smooth(method = "lm", col = "black", se = FALSE, size=1.3)+ ggpubr::stat_cor(aes(label = ..r.label..),  
+                                                                                                 label.x = 20, size=4) +  
+    xlab("Age (years)") + ylab("Score") +
       theme_bw() +
       ggtitle(method) +
       #center title 
@@ -3090,7 +3223,8 @@ for (tissue in tissues_signif_SenMayo){
     pltlist_aux[[method]] <- ggplot(scores_df$SAUL_SEN_MAYO, aes(x=AGE, y=score)) +
       geom_jitter(size=2, color="#8F95B1")+ # to preserve the donor's age; correlation was calculated with "real" data
       geom_density2d( colour="white", size=0.3) +
-      ggplot2::geom_smooth(method = "lm", col = "black", se = FALSE, size=1.3)+ ggpubr::stat_cor(method="spearman", size=3.5, p.digits = 1 ) +
+      ggplot2::geom_smooth(method = "lm", col = "black", se = FALSE, size=1.3)+ ggpubr::stat_cor(aes(label = ..r.label..),  
+                                                                                                 label.x = 20, size=4) +  
       xlab("Age (years)") + ylab("Score") +
       theme_bw() +
       ggtitle(method) +
@@ -3124,9 +3258,10 @@ plt_row2 <- ggarrange(plt_gtex_scores_HS,plt_scoredistribution_HS_GTEx, widths=c
 ```
 
 ```{r}
-ggplot2::ggsave("Figs/Figure7_GTEx.png",
+ 
+ggplot2::ggsave("../Figures/Figs/Figure7_GTEx.png",
                 fig7,
-                width = 12, height=13, bg = 'white')
+                width = 13, height=14, bg = 'white')
 ```
 
 
