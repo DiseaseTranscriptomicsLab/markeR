@@ -7,8 +7,8 @@
 #'
 #' @param signatures A named list of character vectors representing reference gene signatures.
 #' @param other_user_signatures Optional. A named list of character vectors representing other user-defined signatures to compare against. If `NULL`, MSigDB gene sets (if provided) will be used.
-#' @param collection Optional. MSigDB collection name (e.g., `"H"` for hallmark, `"C2"` for curated gene sets).
-#' @param subcollection Optional. Subcategory within an MSigDB collection (e.g., `"CP:KEGG"`).
+#' @param collection Optional. MSigDB collection name (e.g., `"H"` for hallmark, `"C2"` for curated gene sets). Use msigdbr::msigdbr_collections() for the available options.
+#' @param subcollection Optional. Subcategory within an MSigDB collection (e.g., `"CP:REACTOME"`). Use msigdbr::msigdbr_collections() for the available options.
 #' @param limits Numeric vector of length 2. Limits for the Jaccard index color scale. Default is `c(0, 1)`.
 #' @param title_size Integer specifying the font size for the plot title. Default is `12`.
 #' @param color_values Character vector of colors used in the Jaccard fill gradient. Default is `c("#F9F4AE", "#B44141")`.
@@ -31,13 +31,6 @@
 #' signature_similarity(
 #'   signatures = sig1,
 #'   other_user_signatures = sig2
-#' )
-#'
-#' signature_similarity(
-#'   signatures = sig1,
-#'   collection = "H",
-#'   jaccard_threshold = 0.1,
-#'   num_sigs_toplot = 5
 #' )
 #'
 #' @export
@@ -67,8 +60,8 @@ signature_similarity <- function(
   if (!is.null(collection)) {
     gs <- msigdbr::msigdbr(
       species = "Homo sapiens",
-      category = collection,
-      subcategory = subcollection
+      collection = collection,
+      subcollection = subcollection
     )
 
     gsets <- split(toupper(gs$gene_symbol), gs$gs_name)

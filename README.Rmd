@@ -995,7 +995,7 @@ signature_similarity(
   signatures = list(SG1 = signature1, SG2 = signature2),
   other_user_signatures = signature_list,
   collection = "C2",
-  subcollection = "CP:KEGG",
+  subcollection = "CP:KEGG_LEGACY",
   num_sigs_toplot = NULL,
   jaccard_threshold = 0.05,
   msig_subset = NULL
@@ -1013,7 +1013,7 @@ signature_similarity(
   signatures = list(SG1 = signature1, SG2 = signature2),
   other_user_signatures = signature_list,
   collection = "C2",
-  subcollection = "CP:KEGG",
+  subcollection = "CP:KEGG_LEGACY",
   num_sigs_toplot = NULL,
   jaccard_threshold = 0,
   msig_subset = c("KEGG_MTOR_SIGNALING_PATHWAY", "KEGG_APOPTOSIS", "NON_EXISTENT_PATHWAY")
