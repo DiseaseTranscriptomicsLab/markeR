@@ -84,6 +84,7 @@ and metadata variables using differential expression (DE) analysis and Gene Set 
 It generates all possible contrasts for categorical variables and uses linear modeling for continuous variables.
 }
 \examples{
+\dontrun{
 # Example usage with random data
 set.seed(42)  # For reproducibility
 
@@ -105,5 +106,5 @@ results <- GSEA_VariableAssociation(data, metadata, cols = "group", gene_set = g
 # View results
 print(results$data)
 print(results$plot)
-
+}
 }

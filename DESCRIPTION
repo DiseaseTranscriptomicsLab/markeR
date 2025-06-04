@@ -39,13 +39,15 @@ Imports:
     reshape2,
     rstatix,
     scales,
-    stats, 
+    stats,
     utils,
     fgsea,
     limma,
     ggrepel,
     effectsize,
-    patchwork
+    patchwork,
+    msigdbr,
+    tibble
 Suggests: 
     devtools,
     markdown,

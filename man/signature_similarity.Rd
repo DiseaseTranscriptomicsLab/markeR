@@ -23,9 +23,9 @@ signature_similarity(
 
 \item{other_user_signatures}{Optional. A named list of character vectors representing other user-defined signatures to compare against. If \code{NULL}, MSigDB gene sets (if provided) will be used.}
 
-\item{collection}{Optional. MSigDB collection name (e.g., \code{"H"} for hallmark, \code{"C2"} for curated gene sets).}
+\item{collection}{Optional. MSigDB collection name (e.g., \code{"H"} for hallmark, \code{"C2"} for curated gene sets). Use msigdbr::msigdbr_collections() for the available options.}
 
-\item{subcollection}{Optional. Subcategory within an MSigDB collection (e.g., \code{"CP:KEGG"}).}
+\item{subcollection}{Optional. Subcategory within an MSigDB collection (e.g., \code{"CP:REACTOME"}). Use msigdbr::msigdbr_collections() for the available options.}
 
 \item{limits}{Numeric vector of length 2. Limits for the Jaccard index color scale. Default is \code{c(0, 1)}.}
 
@@ -57,13 +57,6 @@ sig2 <- list(B = c("TP53", "MYC", "EGFR"), C = c("GATA3", "STAT3"))
 signature_similarity(
   signatures = sig1,
   other_user_signatures = sig2
-)
-
-signature_similarity(
-  signatures = sig1,
-  collection = "H",
-  jaccard_threshold = 0.1,
-  num_sigs_toplot = 5
 )
 
 }

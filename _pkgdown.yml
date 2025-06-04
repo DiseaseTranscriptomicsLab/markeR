@@ -18,6 +18,9 @@ reference:
     contents:
       - counts_example
       - metadata_example
+  - title: "Signature Homology"
+    contents:
+      - signature_similarity
   - title: "Score-based Analysis"
     contents:
       - CalculateScores

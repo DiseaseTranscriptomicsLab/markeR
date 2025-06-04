@@ -37,6 +37,7 @@
 #'   - `plot`: A ggplot2 object visualizing the GSEA results as a lollipop plot.
 #'
 #' @examples
+#' \dontrun{
 #' # Example usage with random data
 #' set.seed(42)  # For reproducibility
 #'
@@ -58,7 +59,7 @@
 #' # View results
 #' print(results$data)
 #' print(results$plot)
-#'
+#'}
 #' @export
 GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("simple","medium","extensive"), gene_set,nonsignif_color = "grey", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, widthlabels=18, labsize=10, titlesize=14, pointSize=5, ignore_NAs = FALSE) {
   mode <- match.arg(mode)
