@@ -29,6 +29,8 @@
 #' @param labsize An integer controlling the axis text size in the plot. Default: `10`.
 #' @param titlesize An integer specifying the plot title size. Default: `14`.
 #' @param pointSize Numeric. The size of points in the lollipop plot (default is 5).
+#' @param ignore_NAs Boolean (default: FALSE). Whether to ignore NAs in the metadata when fitting the linear model.
+#'                    If TRUE, rows with any NAs will be removed before analysis, leading to a loss of data to be fitted in the model.
 #'
 #' @return A list with two elements:
 #'   - `data`: A data frame containing the GSEA results, including normalized enrichment scores (NES), adjusted p-values, and contrasts.
@@ -58,7 +60,7 @@
 #' print(results$plot)
 #'
 #' @export
-GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("simple","medium","extensive"), gene_set,nonsignif_color = "grey", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, widthlabels=18, labsize=10, titlesize=14, pointSize=5) {
+GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("simple","medium","extensive"), gene_set,nonsignif_color = "grey", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, widthlabels=18, labsize=10, titlesize=14, pointSize=5, ignore_NAs = FALSE) {
   mode <- match.arg(mode)
   metadata <- metadata[, cols %in% colnames(metadata), drop = FALSE]
 
@@ -85,7 +87,7 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
       # Use a model matrix for continuous variables
       design <- model.matrix(as.formula(paste("~1+", var)), data = metadata)
 
-      DEGs_var <- calculateDE(data = data, metadata = metadata, modelmat =  design, contrasts = c(var))
+      DEGs_var <- calculateDE(data = data, metadata = metadata, modelmat =  design, contrasts = c(var), ignore_NAs = ignore_NAs)
       #cont_vec <- c(cont_vec,c(paste0("intercept_",var),var))
       cont_vec <- c(cont_vec, var)
 
