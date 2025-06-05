@@ -46,8 +46,10 @@ signature_similarity <- function(
   title = NULL,
   num_sigs_toplot = NULL,
   jaccard_threshold = 0,
-  msig_subset = NULL
+  msig_subset = NULL,
+  width_text=20
 ) {
+
   # Convert gene names to uppercase
   signatures <- lapply(signatures, toupper)
   if (!is.null(other_user_signatures)) {
@@ -132,7 +134,12 @@ signature_similarity <- function(
 
   plot_title <- if (is.null(title)) "Signature Overlap" else title
 
-  ggplot2::ggplot(jaccard_df, ggplot2::aes(x = Reference_Signature, y = Compared_Signature, fill = Jaccard)) +
+  jaccard_df <- as.data.frame(jaccard_df)
+
+ jaccard_df$Reference_Signature <- sapply(jaccard_df$Reference_Signature, function(x) wrap_title(x, width_text))
+ jaccard_df$Compared_Signature <- sapply(jaccard_df$Compared_Signature, function(x) wrap_title(x, width_text))
+
+  plt <- ggplot2::ggplot(jaccard_df, ggplot2::aes(x = Reference_Signature, y = Compared_Signature, fill = Jaccard)) +
     ggplot2::geom_tile(color = "white") +
     ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", Jaccard)), color = "black") +
     ggplot2::scale_fill_gradientn(colors = color_values, limits = limits, oob = scales::squish) +
@@ -147,4 +154,6 @@ signature_similarity <- function(
       axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
       plot.title = ggplot2::element_text(hjust = 0.5, size = title_size)
     )
+
+  return(plt)
 }
