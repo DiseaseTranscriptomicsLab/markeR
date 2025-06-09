@@ -22,6 +22,8 @@ A dashed horizontal line is drawn at this threshold.}
 \item{PointSize}{Numeric, default = 4. Size of the plotted points.}
 
 \item{widthlegend}{Numeric, default = 16. Controls the width of pathway labels in the legend.}
+
+\item{width_text}{Numeric, default = 16. Width for wrapping pathway names in the plot.}
 }
 \value{
 A ggplot2 object displaying the combined GSEA results.

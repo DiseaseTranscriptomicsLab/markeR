@@ -2,53 +2,71 @@
 % Please edit documentation in R/signature_similarity.R
 \name{signature_similarity}
 \alias{signature_similarity}
-\title{Plot Signature Similarity via Jaccard Index}
+\title{Plot Signature Similarity via Jaccard Index or Fisher's Odds Ratio}
 \usage{
 signature_similarity(
   signatures,
   other_user_signatures = NULL,
   collection = NULL,
   subcollection = NULL,
-  limits = c(0, 1),
+  metric = c("jaccard", "odds_ratio"),
+  universe = NULL,
+  or_threshold = 1,
+  pval_threshold = 0.05,
+  limits = NULL,
   title_size = 12,
   color_values = c("#F9F4AE", "#B44141"),
   title = NULL,
   num_sigs_toplot = NULL,
   jaccard_threshold = 0,
-  msig_subset = NULL
+  msig_subset = NULL,
+  width_text = 20,
+  na_color = "grey90"
 )
 }
 \arguments{
 \item{signatures}{A named list of character vectors representing reference gene signatures.}
 
-\item{other_user_signatures}{Optional. A named list of character vectors representing other user-defined signatures to compare against. If \code{NULL}, MSigDB gene sets (if provided) will be used.}
+\item{other_user_signatures}{Optional. A named list of character vectors representing other user-defined signatures to compare against.}
 
 \item{collection}{Optional. MSigDB collection name (e.g., \code{"H"} for hallmark, \code{"C2"} for curated gene sets). Use msigdbr::msigdbr_collections() for the available options.}
 
 \item{subcollection}{Optional. Subcategory within an MSigDB collection (e.g., \code{"CP:REACTOME"}). Use msigdbr::msigdbr_collections() for the available options.}
 
-\item{limits}{Numeric vector of length 2. Limits for the Jaccard index color scale. Default is \code{c(0, 1)}.}
+\item{metric}{Character. Either "jaccard" or "odds_ratio".}
+
+\item{universe}{Character vector. Background gene universe. Required for odds ratio.}
+
+\item{or_threshold}{Numeric. Minimum Odds Ratio required for a gene set to be included in the plot. Default is 1.}
+
+\item{pval_threshold}{Numeric. Maximum adjusted p-value to show a label. Default is 0.05.}
+
+\item{limits}{Numeric vector of length 2. Limits for color scale.}
 
 \item{title_size}{Integer specifying the font size for the plot title. Default is \code{12}.}
 
-\item{color_values}{Character vector of colors used in the Jaccard fill gradient. Default is \code{c("#F9F4AE", "#B44141")}.}
+\item{color_values}{Character vector of colors used for the fill gradient. Default is \code{c("#F9F4AE", "#B44141")}.}
 
 \item{title}{Optional. Custom title for the plot. If \code{NULL}, the title defaults to \code{"Signature Overlap"}.}
 
 \item{num_sigs_toplot}{Optional. Integer. Maximum number of comparison signatures (including user and MSigDB) to display.}
 
-\item{jaccard_threshold}{Numeric. Minimum Jaccard index required for an MSigDB gene set to be included in the plot. Default is \code{0}.}
+\item{jaccard_threshold}{Numeric. Minimum Jaccard index required for a gene set to be included in the plot. Default is \code{0}.}
 
-\item{msig_subset}{Optional. Character vector of MSigDB gene set names to subset from the specified collection. Useful to restrict analysis to a specific set of pathways. If supplied, other filters will apply only to this subset.}
+\item{msig_subset}{Optional. Character vector of MSigDB gene set names to subset from the specified collection. Useful to restrict analysis to a specific set of pathways.
+If supplied, other filters will apply only to this subset.}
+
+\item{width_text}{Integer. Character wrap width for labels.}
+
+\item{na_color}{Character. Color for NA values in the heatmap. Default is \code{"grey90"}.}
 }
 \value{
-A \code{ggplot} object showing a heatmap of Jaccard similarities between reference and comparison signatures.
+A ggplot heatmap object.
 }
 \description{
-Visualises the similarity between user-defined gene signatures and either
-other user-defined signatures or MSigDB gene sets, using the Jaccard index.
-Produces a heatmap of pairwise Jaccard indices between reference and comparison
-signatures.
+Visualizes similarity between user-defined gene signatures and either
+other user-defined signatures or MSigDB gene sets, using either the Jaccard index
+or Fisher's Odds Ratio. Produces a heatmap of pairwise similarity metrics.
 }
 \examples{
 sig1 <- list(A = c("TP53", "BRCA1", "EGFR"))

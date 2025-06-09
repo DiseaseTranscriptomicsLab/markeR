@@ -15,6 +15,7 @@
 #' A dashed horizontal line is drawn at this threshold.
 #' @param PointSize Numeric, default = 4. Size of the plotted points.
 #' @param widthlegend Numeric, default = 16. Controls the width of pathway labels in the legend.
+#' @param width_text Numeric, default = 16. Width for wrapping pathway names in the plot.
 #'
 #' @return A ggplot2 object displaying the combined GSEA results.
 #'

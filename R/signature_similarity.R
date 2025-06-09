@@ -1,23 +1,29 @@
-#' Plot Signature Similarity via Jaccard Index
+#' Plot Signature Similarity via Jaccard Index or Fisher's Odds Ratio
 #'
-#' Visualises the similarity between user-defined gene signatures and either
-#' other user-defined signatures or MSigDB gene sets, using the Jaccard index.
-#' Produces a heatmap of pairwise Jaccard indices between reference and comparison
-#' signatures.
+#' Visualizes similarity between user-defined gene signatures and either
+#' other user-defined signatures or MSigDB gene sets, using either the Jaccard index
+#' or Fisher's Odds Ratio. Produces a heatmap of pairwise similarity metrics.
 #'
 #' @param signatures A named list of character vectors representing reference gene signatures.
-#' @param other_user_signatures Optional. A named list of character vectors representing other user-defined signatures to compare against. If `NULL`, MSigDB gene sets (if provided) will be used.
+#' @param other_user_signatures Optional. A named list of character vectors representing other user-defined signatures to compare against.
 #' @param collection Optional. MSigDB collection name (e.g., `"H"` for hallmark, `"C2"` for curated gene sets). Use msigdbr::msigdbr_collections() for the available options.
 #' @param subcollection Optional. Subcategory within an MSigDB collection (e.g., `"CP:REACTOME"`). Use msigdbr::msigdbr_collections() for the available options.
-#' @param limits Numeric vector of length 2. Limits for the Jaccard index color scale. Default is `c(0, 1)`.
+#' @param metric Character. Either "jaccard" or "odds_ratio".
+#' @param universe Character vector. Background gene universe. Required for odds ratio.
+#' @param or_threshold Numeric. Minimum Odds Ratio required for a gene set to be included in the plot. Default is 1.
+#' @param pval_threshold Numeric. Maximum adjusted p-value to show a label. Default is 0.05.
+#' @param limits Numeric vector of length 2. Limits for color scale.
 #' @param title_size Integer specifying the font size for the plot title. Default is `12`.
-#' @param color_values Character vector of colors used in the Jaccard fill gradient. Default is `c("#F9F4AE", "#B44141")`.
+#' @param color_values Character vector of colors used for the fill gradient. Default is `c("#F9F4AE", "#B44141")`.
 #' @param title Optional. Custom title for the plot. If `NULL`, the title defaults to `"Signature Overlap"`.
 #' @param num_sigs_toplot Optional. Integer. Maximum number of comparison signatures (including user and MSigDB) to display.
-#' @param jaccard_threshold Numeric. Minimum Jaccard index required for an MSigDB gene set to be included in the plot. Default is `0`.
-#' @param msig_subset Optional. Character vector of MSigDB gene set names to subset from the specified collection. Useful to restrict analysis to a specific set of pathways. If supplied, other filters will apply only to this subset.
+#' @param jaccard_threshold Numeric. Minimum Jaccard index required for a gene set to be included in the plot. Default is `0`.
+#' @param msig_subset Optional. Character vector of MSigDB gene set names to subset from the specified collection. Useful to restrict analysis to a specific set of pathways.
+#'                    If supplied, other filters will apply only to this subset. Use "collection = "all" to mix gene sets from different collections.
+#' @param width_text Integer. Character wrap width for labels.
+#' @param na_color Character. Color for NA values in the heatmap. Default is `"grey90"`.
 #'
-#' @return A `ggplot` object showing a heatmap of Jaccard similarities between reference and comparison signatures.
+#' @return A ggplot heatmap object.
 #'
 #' @import ggplot2
 #' @importFrom tibble tibble
@@ -34,117 +40,230 @@
 #' )
 #'
 #' @export
-
 signature_similarity <- function(
-  signatures,
-  other_user_signatures = NULL,
-  collection = NULL,
-  subcollection = NULL,
-  limits = c(0, 1),
-  title_size = 12,
-  color_values = c("#F9F4AE", "#B44141"),
-  title = NULL,
-  num_sigs_toplot = NULL,
-  jaccard_threshold = 0,
-  msig_subset = NULL
+    signatures,
+    other_user_signatures = NULL,
+    collection = NULL,
+    subcollection = NULL,
+    metric = c("jaccard","odds_ratio"),
+    universe = NULL,
+    or_threshold = 1,
+    pval_threshold = 0.05,
+    limits = NULL,
+    title_size = 12,
+    color_values = c("#F9F4AE", "#B44141"),
+    title = NULL,
+    num_sigs_toplot = NULL,
+    jaccard_threshold = 0,
+    msig_subset = NULL,
+    width_text = 20,
+    na_color = "grey90"
 ) {
-  # Convert gene names to uppercase
+  if (is.null(signatures) || length(signatures) == 0) {
+    stop("You must provide at least one signature.")
+  }
+  if (!is.list(signatures) || !all(sapply(signatures, is.character))) {
+    stop("Signatures must be a named list of character vectors.")
+  }
+  if (!is.null(other_user_signatures) && (!is.list(other_user_signatures) || !all(sapply(other_user_signatures, is.character)))) {
+    stop("Other user signatures must be a named list of character vectors.")
+  }
+  if (!is.null(collection) && !is.character(collection)) {
+    stop("Collection must be a character string or NULL.")
+  }
+  if (!is.null(subcollection) && !is.character(subcollection)) {
+    stop("Subcollection must be a character string or NULL.")
+  }
+  if (!is.null(universe) && !is.character(universe)) {
+    stop("Universe must be a character vector or NULL.")
+  }
+
+  if (!is.numeric(or_label_threshold) || or_label_threshold < 0) {
+    stop("or_label_threshold must be a non-negative numeric value.")
+  }
+
+  if (!is.numeric(pval_threshold) || pval_threshold < 0 || pval_threshold > 1) {
+    stop("pval_threshold must be a numeric value between 0 and 1.")
+  }
+
+  if (!is.null(limits) && (!is.numeric(limits) || length(limits) != 2)) {
+    stop("limits must be a numeric vector of length 2.")
+  }
+
+  if (!is.numeric(title_size) || title_size <= 0) {
+    stop("title_size must be a positive numeric value.")
+  }
+
+  if (!is.character(color_values) || length(color_values) < 2) {
+    stop("color_values must be a character vector with two colors.")
+  }
+
+  if (!is.null(title) && !is.character(title)) {
+    stop("title must be a character string or NULL.")
+  }
+
+  if (!is.null(num_sigs_toplot) && (!is.numeric(num_sigs_toplot) || num_sigs_toplot <= 0)) {
+    stop("num_sigs_toplot must be a positive numeric value or NULL.")
+  }
+
+  if (!is.numeric(jaccard_threshold) || jaccard_threshold < 0 || jaccard_threshold > 1) {
+    stop("jaccard_threshold must be a numeric value between 0 and 1.")
+  }
+  if (!is.null(msig_subset) && (!is.character(msig_subset) || length(msig_subset) == 0)) {
+    stop("msig_subset must be a character vector or NULL.")
+  }
+
+  if (!is.character(metric) || length(metric) != 1) {
+    stop("metric must be a single character string.")
+  }
+  metric <- tolower(metric)
+  if (is.null(metric) || metric == "") {
+    stop("You must specify a metric: 'jaccard' or 'odds_ratio'.")
+  } else if (!metric %in% c("jaccard", "odds_ratio")) {
+    stop("Invalid metric specified. Use 'jaccard' or 'odds_ratio'.")
+  }
+
   signatures <- lapply(signatures, toupper)
   if (!is.null(other_user_signatures)) {
     other_user_signatures <- lapply(other_user_signatures, toupper)
   }
+  if (!is.null(universe)) {
+    universe <- toupper(universe)
+  }
 
-  gsets_filtered <- list()
-
-  # Load MSigDB gene sets if requested
   if (!is.null(collection)) {
-    gs <- msigdbr::msigdbr(
-      species = "Homo sapiens",
-      collection = collection,
-      subcollection = subcollection
-    )
+
+    if (collection=="all"){
+      gs <- msigdbr::msigdbr(
+        species = "Homo sapiens",
+        collection = NULL,
+        subcollection = NULL
+      )
+    } else {
+      gs <- msigdbr::msigdbr(
+        species = "Homo sapiens",
+        collection = collection,
+        subcollection = subcollection
+      )
+    }
+
 
     gsets <- split(toupper(gs$gene_symbol), gs$gs_name)
 
     if (!is.null(msig_subset)) {
-      missing <- setdiff(msig_subset, names(gsets))
-      if (length(missing) > 0) {
-        message("The following pathways from msig_subset were not found in the MSigDB collection:\n", paste(missing, collapse = ", "))
-      }
       gsets <- gsets[names(gsets) %in% msig_subset]
     }
 
-    jaccard_msigdb <- do.call(rbind, lapply(names(signatures), function(ref_name) {
-      do.call(rbind, lapply(names(gsets), function(comp_name) {
-        sig1 <- signatures[[ref_name]]
-        sig2 <- gsets[[comp_name]]
-        jaccard <- length(intersect(sig1, sig2)) / length(union(sig1, sig2))
-        data.frame(
-          Reference_Signature = ref_name,
-          Compared_Signature = comp_name,
-          Jaccard = jaccard,
-          stringsAsFactors = FALSE
-        )
-      }))
-    }))
+  }
 
-    # Aggregate max Jaccard for each MSigDB signature
-    max_jaccard <- tapply(jaccard_msigdb$Jaccard, jaccard_msigdb$Compared_Signature, max)
-    msigdb_ranks <- data.frame(
-      Compared_Signature = names(max_jaccard),
-      Max_Jaccard = as.numeric(max_jaccard),
-      stringsAsFactors = FALSE
-    )
-    msigdb_ranks <- msigdb_ranks[msigdb_ranks$Max_Jaccard >= jaccard_threshold, ]
-    msigdb_ranks <- msigdb_ranks[order(-msigdb_ranks$Max_Jaccard), , drop = FALSE]
+  if (is.null(other_user_signatures)) {
+    other_user_signatures <- gsets
+  } else {
+    other_user_signatures <- c(other_user_signatures, gsets)
+  }
 
-    if (nrow(msigdb_ranks) == 0) {
-      message("No MSigDB pathways passed the Jaccard threshold of ", jaccard_threshold, ". Only user-defined signatures will be plotted.")
-    } else {
-      num_custom <- if (!is.null(other_user_signatures)) length(other_user_signatures) else 0
-      num_remaining <- if (!is.null(num_sigs_toplot)) max(num_sigs_toplot - num_custom, 0) else nrow(msigdb_ranks)
-      top_msigdb_names <- head(msigdb_ranks$Compared_Signature, num_remaining)
-      gsets_filtered <- gsets[top_msigdb_names]
+  similarity_list <- list()
+
+  for (ref_name in names(signatures)) {
+    sig1 <- signatures[[ref_name]]
+
+    for (comp_name in names(other_user_signatures)) {
+      sig2 <- other_user_signatures[[comp_name]]
+
+      if (metric == "jaccard") {
+        score <- length(intersect(sig1, sig2)) / length(union(sig1, sig2))
+        label <- sprintf("%.2f", score)
+        pval <- NA
+      } else {
+        if (is.null(universe)) {
+          stop("You must provide a gene universe for odds_ratio.")
+        }
+
+        a <- length(intersect(sig1, sig2))
+        b <- length(setdiff(sig1, sig2))
+        c <- length(setdiff(sig2, sig1))
+        d <- length(setdiff(universe, union(sig1, sig2)))
+
+        cont_tbl <- matrix(c(a, b, c, d), nrow = 2)
+        ft <- fisher.test(cont_tbl)
+
+        score <- log10(ft$estimate)
+        if (!is.na(ft$p.value) && ft$p.value <= pval_threshold && ft$estimate >= or_label_threshold) {
+          label <- sprintf("%.1f", score)
+        } else {
+          label <- ""
+        }
+        pval <- ft$p.value
+      }
+
+      row <- data.frame(
+        Reference_Signature = ref_name,
+        Compared_Signature = comp_name,
+        Score = score,
+        Label = label,
+        Pval = pval,
+        stringsAsFactors = FALSE
+      )
+
+      similarity_list[[length(similarity_list) + 1]] <- row
     }
   }
 
-  # Combine custom and filtered MSigDB
-  if (is.null(other_user_signatures)) {
-    other_user_signatures <- gsets_filtered
-  } else {
-    other_user_signatures <- c(other_user_signatures, gsets_filtered)
+  # Combine all rows into one data frame
+  similarity_df <- do.call(rbind, similarity_list)
+
+
+  if (metric == "odds_ratio" ) {
+    similarity_df <- similarity_df %>%
+      dplyr::group_by(Compared_Signature) %>%
+      dplyr::filter(any(10^Score >= or_threshold, na.rm = TRUE)) %>%
+      dplyr::ungroup()
   }
 
-  # Final Jaccard data
-  jaccard_df <- do.call(rbind, lapply(names(signatures), function(ref_name) {
-    do.call(rbind, lapply(names(other_user_signatures), function(comp_name) {
-      sig1 <- signatures[[ref_name]]
-      sig2 <- other_user_signatures[[comp_name]]
-      jaccard <- length(intersect(sig1, sig2)) / length(union(sig1, sig2))
-      data.frame(
-        Reference_Signature = ref_name,
-        Compared_Signature = comp_name,
-        Jaccard = jaccard,
-        stringsAsFactors = FALSE
+
+  if (metric == "odds_ratio") {
+    similarity_df <- similarity_df %>%
+      dplyr::mutate(
+        Label = ifelse(Pval <= pval_threshold, sprintf("%.1f", Score), "")
       )
-    }))
-  }))
+  }
 
-  plot_title <- if (is.null(title)) "Signature Overlap" else title
+  if (metric == "jaccard" && jaccard_threshold > 0) {
+    similarity_df <- similarity_df %>%
+      dplyr::group_by(Compared_Signature) %>%
+      dplyr::filter(any(Score >= jaccard_threshold, na.rm = TRUE)) %>%
+      dplyr::ungroup()
+  }
 
-  ggplot2::ggplot(jaccard_df, ggplot2::aes(x = Reference_Signature, y = Compared_Signature, fill = Jaccard)) +
-    ggplot2::geom_tile(color = "white") +
-    ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", Jaccard)), color = "black") +
-    ggplot2::scale_fill_gradientn(colors = color_values, limits = limits, oob = scales::squish) +
-    ggplot2::labs(
+
+  similarity_df$Reference_Signature <- sapply(similarity_df$Reference_Signature, function(x) wrap_title(x, width_text))
+  similarity_df$Compared_Signature <- sapply(similarity_df$Compared_Signature, function(x) wrap_title(x, width_text))
+
+  if (is.null(limits)) {
+    if (metric == "jaccard") {
+      limits <- c(0, 1)
+    } else {
+      # For odds ratio, we set limits based on the data
+      # but ensure they are at least 0 to avoid negative log10 values
+    limits <- c(0, max(similarity_df$Score, na.rm = TRUE))
+  }
+  }
+
+  plt <- ggplot(similarity_df, aes(x = Reference_Signature, y = Compared_Signature, fill = Score)) +
+    geom_tile(color = "white") +
+    geom_text(aes(label = Label), color = "black") +
+    scale_fill_gradientn(colors = color_values, limits = limits, oob = scales::squish, na.value = na_color) +
+    labs(
       x = "",
       y = "Compared Signature",
-      fill = "Jaccard Index",
-      title = plot_title
+      fill = ifelse(metric == "jaccard", "Jaccard Index", "log10(OR)"),
+      title = ifelse(is.null(title), paste("Signature Overlap (", metric, ")"), title)
     ) +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(
-      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      plot.title = ggplot2::element_text(hjust = 0.5, size = title_size)
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      plot.title = element_text(hjust = 0.5, size = title_size)
     )
+
+  return(plt)
 }
