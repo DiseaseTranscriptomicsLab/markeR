@@ -18,6 +18,7 @@ library("colorspace")
 library("scales")
 library("scater") 
 library("reshape2")
+library("data.table")
 ```
 
 
@@ -449,15 +450,15 @@ COMPARTMENTS: https://academic.oup.com/database/article/doi/10.1093/database/bau
 Human Protein Atlas: https://www.proteinatlas.org/about/assays+annotation#ih_reliability
 
 ```{r}
-gene_annotations <- as.data.frame(fread("data/BioMart_Gene_Characterisation_March2024.txt"))
+gene_annotations <- as.data.frame(fread("../../../../data/BioMart_Gene_Characterisation_March2024.txt"))
 gene_annotations <- subset(gene_annotations, gene_annotations$`Protein stable ID`!="")
 
 
-protein_localisation <- as.data.frame(fread("data/human_compartment_knowledge_full.tsv"))
+protein_localisation <- as.data.frame(fread("../../../../data/human_compartment_knowledge_full.tsv"))
 protein_localisation <- subset(protein_localisation, V5 == "UniProtKB")
 protein_localisation <- subset(protein_localisation, V6 %in% c("CURATED")) #c("CURATED", "IDA", "TAS", "NAS")  
 
-protein_localisation_HumanAtlas_all <- as.data.frame(fread("data/HumanAtlas_subcellular_location.tsv"))
+protein_localisation_HumanAtlas_all <- as.data.frame(fread("../../../../data/HumanAtlas_subcellular_location.tsv"))
 protein_localisation_HumanAtlas <- subset(protein_localisation_HumanAtlas_all, Reliability != "Uncertain")
 ```
 
@@ -669,6 +670,144 @@ ggplot2::ggsave("Figs/Sup2_GeneSets_Function_Localisation.png",
                 supfig2,
                 width = 20, height=24, bg = 'white')
 ```
+
+
+
+### Alternative - using Signature Similarity
+
+```{r}
+gene_sets <- lapply(signatures_bidirectional, function(x) {
+  if (is.data.frame(x)) unique(x[[1]])
+  else if (is.vector(x)) unique(x)
+  else NULL
+})
+
+
+```
+ 
+
+
+```{r fig.width=8, fig.height=16}
+ 
+(plt_logodds <- signature_similarity(
+  signatures = gene_sets,
+  other_user_signatures = NULL,
+  collection = "H",
+  subcollection = NULL,
+  metric = "odds_ratio",
+  unique(toupper(protein_localisation_HumanAtlas_all$`Gene name`)), # universe of protein coding geenes, as they are probably the ones important in this
+  or_threshold = 1,
+  pval_threshold = 0.05,
+  limits = NULL,
+  title_size = 12,
+  color_values = c("#F9F4AE", "#B44141"),
+  title = "",
+  num_sigs_toplot = NULL,
+  jaccard_threshold = 0.1,
+  msig_subset = NULL,
+  width_text = 28
+))
+```
+ 
+
+```{r fig.width=10, fig.height=16}
+ library(ggplot2)
+library(ggpubr)
+
+plot_list <- list()
+plot_heights <- numeric()
+
+for (sig_name in names(gene_sets)) {
+  genes <- gene_sets[[sig_name]]
+  sub_data <- protein_localisation_HumanAtlas_all[protein_localisation_HumanAtlas_all$`Gene name` %in% genes, ]
+  sub_data <- sub_data[!duplicated(sub_data[c("Gene name", "Main location")]), ]
+
+  sub_data$SecretionStatus <- ifelse(grepl("Predicted to be secreted", sub_data$`Extracellular location`),
+                                     "Predicted to be secreted", "Not reported")
+
+  counts <- data.frame(Location = character(),
+                       SecretionStatus = character(),
+                       Count = numeric(),
+                       stringsAsFactors = FALSE)
+
+  for (i in seq_len(nrow(sub_data))) {
+    locs <- unlist(strsplit(sub_data$`Main location`[i], ";"))
+    locs <- trimws(locs)
+    locs <- locs[locs != ""]
+    if (length(locs) == 0) locs <- "Unspecified"
+    secretion <- sub_data$SecretionStatus[i]
+
+    for (loc in locs) {
+      match_row <- which(counts$Location == loc & counts$SecretionStatus == secretion)
+      if (length(match_row) == 0) {
+        counts <- rbind(counts, data.frame(Location = loc, SecretionStatus = secretion, Count = 1))
+      } else {
+        counts$Count[match_row] <- counts$Count[match_row] + 1
+      }
+    }
+  }
+
+  total_counts <- tapply(counts$Count, counts$Location, sum)
+  counts$Location <- factor(counts$Location, levels = names(sort(total_counts)))
+  counts$SecretionStatus <- factor(counts$SecretionStatus, levels = c("Predicted to be secreted","Not reported"))
+
+  sig_name_wrapped <- wrap_title(sig_name, 28)
+
+  p <- ggplot(counts, aes(x = Count, y = Location)) +
+    geom_bar(stat = "identity", aes(fill = SecretionStatus)) +
+    labs(title = sig_name_wrapped, x = "Frequency", y = "Cellular localisation\n") +
+    scale_fill_manual(values = c("Predicted to be secreted" = "#3D5D56", 
+                                 "Not reported" = "#899C98"),
+                      labels = c("Predicted to be secreted", "not reported")) +
+    theme_classic() +
+    theme(plot.title = element_text(hjust = 0.5, size=10),
+          axis.text.y = element_text(size = 10),
+          
+          axis.text.x = element_text(size = 10),
+          legend.title = element_blank(), legend.position = "none")
+
+  plot_list[[sig_name]] <- p
+  
+  # 🔑 Add number of y-axis rows as a proxy for height
+  n_locs <- length(levels(counts$Location))
+  plot_heights <- c(plot_heights, n_locs)
+}
+
+# Normalize heights so that they sum to 1
+plot_heights <- plot_heights / sum(plot_heights)
+names(plot_heights) <- names(plot_list)
+
+plot_heights["GOBP_POSITIVE_REGULATION_OF_CELLULAR_SENESCENCE"] <- 0.06
+plot_heights["GOBP_NEGATIVE_REGULATION_OF_CELLULAR_SENESCENCE"] <- 0.06
+
+# Combine plots in one column, adjusting heights automatically
+final_plot_localisation2_1 <- ggarrange(plotlist = plot_list[c("CellAge","CSgene","REACTOME_CELLULAR_SENESCENCE","SAUL_SEN_MAYO")],
+                                      ncol = 1,
+                                      heights = plot_heights[c("CellAge","CSgene","REACTOME_CELLULAR_SENESCENCE","SAUL_SEN_MAYO")] )
+
+final_plot_localisation2_2 <- ggarrange(plotlist = plot_list[!names(plot_list) %in% c("CellAge","CSgene","REACTOME_CELLULAR_SENESCENCE","SAUL_SEN_MAYO")],
+                                      ncol = 1,
+                                      heights = plot_heights[!names(plot_heights) %in% c("CellAge","CSgene","REACTOME_CELLULAR_SENESCENCE","SAUL_SEN_MAYO")],
+                                      common.legend = TRUE,
+                                      legend = "top")
+
+
+(final_plot_localisation2 <- ggarrange(final_plot_localisation2_2,final_plot_localisation2_1,
+                                      nrow = 1,
+                                      heights = plot_heights))
+```
+
+```{r fig.width=15, fig.height=14}
+(plt_sup2_alternative <- ggarrange(final_plot_localisation2,plt_logodds, nrow=1, labels = "AUTO", font.label = list(size = 20), widths = c(0.5,0.5)))
+```
+
+
+```{r}
+ggplot2::ggsave("Figs/SupFigure2_GeneSets_Function_Localisation_alternative.png",
+                plt_sup2_alternative,
+                width = 15, height=14, bg = 'white')
+```
+
 
 ## Supplementary Figure 3 - Score Distribution on Different Senescence-Inducing Factors
 
