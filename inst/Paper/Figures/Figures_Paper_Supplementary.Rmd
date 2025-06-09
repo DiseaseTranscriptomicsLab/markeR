@@ -99,6 +99,8 @@ CellTypecols <- c(
   "Mesenchymal"  = "#D55E00"   # Vermilion
 )
 
+
+
 dataset_colors <- c(
   "HernandezSegura" = "#8DD3C7",
   "Mangelinck"      = "#FFFFB3",
