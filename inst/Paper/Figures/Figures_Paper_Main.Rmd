@@ -24,6 +24,8 @@ library("ggnewscale")
 library("dplyr")
 library("tidyr")  
 library(patchwork)
+library("ggpubr") 
+library(purrr)
 ```
 
 ### Functions
@@ -280,7 +282,7 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
     if (method == "ssGSEA") {
       xlab <- "ssGSEA Enrichment Score"
     } else if (method == "logmedian") {
-      xlab <- "Normalized Signature Score"
+      xlab <- "Normalised Signature Score"
     } else if (method == "ranking") {
       xlab <- "Signature Genes' Ranking"
     }
@@ -480,7 +482,7 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
   if (method == "ssGSEA") {
     ylab <- "ssGSEA Enrichment Score"
   } else if (method == "logmedian") {
-    ylab <- "Normalized Signature Score"
+    ylab <- "Normalised Signature Score"
   } else if (method == "ranking") {
     ylab <- "Signature Genes' Ranking"
   }
@@ -681,7 +683,7 @@ PlotScores_Numeric_adapted <- function(data,
     if (method == "ssGSEA") {
       xlab <- "ssGSEA Enrichment Score"
     } else if (method == "logmedian") {
-      xlab <- "Normalized Signature Score"
+      xlab <- "Normalised Signature Score"
     } else if (method == "ranking") {
       xlab <- "Signature Genes' Ranking"
     }
@@ -847,6 +849,16 @@ CellTypecols <- c(
   "Neuronal"     = "#0072B2",  # Blue
   "Mesenchymal"  = "#D55E00"   # Vermilion
 )
+
+CellTypecols_alt <- c(
+  "Fibroblast"   = "#1b9e77",  # Teal green
+  "Keratinocyte" = "#d95f02",  # Warm orange-brown
+  "Melanocyte"   = "#7570b3",  # Muted purple
+  "Endothelial"  = "#e7298a",  # Dark pink
+  "Neuronal"     = "#66a61e",  # Olive green
+  "Mesenchymal"  = "#e6ab02"   # Mustard
+)
+
 
 dataset_colors <- c(
   "HernandezSegura" = "#8DD3C7",
@@ -1019,7 +1031,7 @@ plt_nb_genes2 <- ggplot(summary_df, aes(x = count, y = signature_plt, fill = enr
     breaks = seq(0, 1500, 500),  # Define breaks at intervals of 500
     limits = c(0, 1500)          # Set the x-axis limits from 0 to 2000
   ) +
-  guides(fill= guide_legend(title = "Gene Direction", title.position="top", title.hjust = 0.5))
+  guides(fill= guide_legend(title = element_blank(), title.position="top", title.hjust = 0.5))
 
 plt_nb_genes2
 ```
@@ -1135,12 +1147,7 @@ plt_genesets
 ```
 
 
-```{r fig.width=12, fig.height=7}
-plt_genesets2 <- ggarrange( plt_heatmap + theme(legend.position = "top"),
-                            plt_nb_genes2 + theme(legend.position = "top",axis.text.y=element_blank()) , nrow=1, align = "h",
-                            widths=c(0.7,0.3))
-plt_genesets2
-```
+
 
 
 ### Senescence Datasets
@@ -1149,12 +1156,12 @@ plt_genesets2
 ```{r}
 
 
-Condition_colors <- c(
-  "Senescent"     = "#F4A261",  # Soft orange (not goldenrod)
-  "Proliferative" = "#A1C298",  # Desaturated sage green
-  "Quiescent"     = "#9DB4C0"   # Dusty teal-gray
-)
-
+# Condition_colors <- c(
+#   "Senescent"     = "#F4A261",  # Soft orange (not goldenrod)
+#   "Proliferative" = "#A1C298",  # Desaturated sage green
+#   "Quiescent"     = "#9DB4C0"   # Dusty teal-gray
+# )
+# 
 
 
 # List to collect PCA results
@@ -1228,21 +1235,21 @@ pca_PC23_divided
 
 
 ```{r fig.width=5, fig.height=4}
-CellTypecols <- c(
-  "Fibroblast"   = "#E69F00",  # Orange
-  "Keratinocyte" = "#56B4E9",  # Sky Blue
-  "Melanocyte"   = "#009E73",  # Bluish Green
-  "Endothelial"  = "#F0E442",  # Yellow
-  "Neuronal"     = "#0072B2",  # Blue
-  "Mesenchymal"  = "#D55E00"   # Vermilion
-)
+# CellTypecols <- c(
+#   "Fibroblast"   = "#E69F00",  # Orange
+#   "Keratinocyte" = "#56B4E9",  # Sky Blue
+#   "Melanocyte"   = "#009E73",  # Bluish Green
+#   "Endothelial"  = "#F0E442",  # Yellow
+#   "Neuronal"     = "#0072B2",  # Blue
+#   "Mesenchymal"  = "#D55E00"   # Vermilion
+# )
 
 
-Condition_colors <- c(
-  "Senescent"     = "#F4A261",  # Soft orange (not goldenrod)
-  "Proliferative" = "#A1C298",  # Desaturated sage green
-  "Quiescent"     = "#9DB4C0"   # Dusty teal-gray
-)
+# Condition_colors <- c(
+#   "Senescent"     = "#F4A261",  # Soft orange (not goldenrod)
+#   "Proliferative" = "#A1C298",  # Desaturated sage green
+#   "Quiescent"     = "#9DB4C0"   # Dusty teal-gray
+# )
 
 
 
@@ -1269,7 +1276,7 @@ pc3 = round(100*ev[3]/sum(ev),2)
     theme(plot.title = element_text(hjust = 0.5),
           plot.subtitle = element_text(hjust = 0.5),
           legend.title = element_blank()) +
-    scale_fill_manual(values=CellTypecols))
+    scale_fill_manual(values=CellTypecols_alt))
 
 (PCA_celltype_afterbatch_Condition <- ggplot(PCAData, aes(PC1,PC2))+
     geom_point(aes(fill=Condition), size=5, alpha=0.8, shape=21)+
@@ -1296,7 +1303,7 @@ pc3 = round(100*ev[3]/sum(ev),2)
     theme(plot.title = element_text(hjust = 0.5),
           plot.subtitle = element_text(hjust = 0.5),
           legend.title = element_blank()) +
-    scale_fill_manual(values=CellTypecols))
+    scale_fill_manual(values=CellTypecols_alt))
 
 (PCA23_celltype_afterbatch_Condition <- ggplot(PCAData, aes(PC2,PC3))+
     geom_point(aes(fill=Condition), size=5, alpha=0.8, shape=21)+
@@ -1333,118 +1340,460 @@ plt2 <- ggarrange(PCA23_celltype_afterbatch_CellType,PCA23_celltype_afterbatch_C
 (plt_fig1 <- ggarrange(plt_genesets,plt_PC12, ncol=1, heights=c(0.55,0.45), labels=c("A","") ))
 ```
 ```{r}
-ggplot2::ggsave("Figs/Figure1_GeneSets_Datasets.png",
+ggplot2::ggsave("../Figures/Figs/Figure2_GeneSets_Datasets.png",
                 plt_fig1,
                 width = 13, height=12, bg = 'white')
 ```
 
 
+Alternative
 
-
-
-```{r  fig.width=10, fig.height=12}
-(plt_fig1_v2 <- ggarrange(plt_genesets2,plt_PC12, ncol=1, heights=c(0.55,0.45), labels=c("A","") ))
+```{r fig.width=12, fig.height=6}
+ 
+(plt1_pcas <- ggarrange(PCA_celltype_afterbatch_CellType,PCA_celltype_afterbatch_Condition, ncol=1))
+pca_PC12_divided
+ 
 ```
+
+```{r fig.width=12, fig.height=7}
+plt_genesets2 <- ggarrange( plt_heatmap + theme(legend.position = "top"),
+                            plt_nb_genes2 + theme(legend.position = "top",axis.text.y=element_blank())  +scale_x_continuous(position = "top", limits = c(0,1650)) , nrow=1, align = "h",
+                            widths=c(0.7,0.3))
+plt_genesets2
+```
+
+```{r  fig.width=14, fig.height=7}
+(plt_1 <- ggarrange(plt_genesets2,plt1_pcas, widths=c(0.7,0.3)))
+```
+
+```{r fig.width=6, fig.height=6}
+# Make pie chart
+metadata_aux <- metadata
+metadata_aux <- metadata_aux[metadata_aux$SenescentType != "none",]
+  
+sen_type_counts <- metadata_aux %>%
+  count(SenescentType)
+
+my_colors_custom_pastel <- c(
+  "#7ba6d8",  # dusty cornflower blue
+  "#f5a763",  # warm honey orange
+  "#89bf8a",  # soft sage green
+  "#ea7b7a",  # muted coral red
+  "#b398ca",  # lavender purple
+  "#b18372",  # cinnamon brown
+  "#f3a8c4",  # bubblegum pink
+  "#9d9d9d",  # medium grey
+  "#d3d566",  # chartreuse pastel
+  "#4eb9bb",  # bright teal
+  "#adc3e5",  # pale steel blue
+  "#f6ce7e",  # golden yellow pastel
+  "#9dcc9b"   # fresh mint green
+)
+
+ggplot(sen_type_counts, aes(x = "", y = n, fill = SenescentType)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar(theta = "y") +
+  theme_void() +
+  scale_fill_manual(values = my_colors_custom_pastel, guide = guide_legend(ncol =3)) +
+  theme(legend.position = "bottom", title = element_blank())
+
+
+library(ggplot2)
+library(dplyr)
+
+(sentypes_plt <- ggplot(sen_type_counts, aes(x = 2, y = n, fill = SenescentType)) +
+  geom_bar(stat = "identity", width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  xlim(0.5, 2.5) +
+  theme_void() +
+  scale_fill_manual(values = my_colors_custom_pastel, guide = guide_legend(ncol = 3)) +
+  theme(legend.position = "bottom", legend.title = element_blank()) +
+  annotate("text", x = 1, y = 0, label = "\n\n\nSenescece\nInducers", size = 5,  hjust = 0.5, vjust = 0.5))
+
+
+```
+
+```{r  fig.width=14, fig.height=12}
+plt_row1 <- ggarrange(plt_genesets2,plt1_pcas, widths=c(0.7,0.3), labels=c("A","B"))
+plt_row2 <- ggarrange(pca_PC12_divided,sentypes_plt, widths=c(0.6,0.4), labels=c("C","D"))
+
+(plt_fig2_alt <- ggarrange(plt_row1,plt_row2, ncol=1, heights=c(0.6,0.4)))
+```
+
+
+```{r}
+ggplot2::ggsave("../Figures/Figs/Figure2_GeneSets_Datasets.png",
+                plt_fig2_alt,
+                width = 14, height=12, bg = 'white')
+```
+
 
 ## Figure 3 - Scores
 
 
-```{r fig.width=20, fig.height=4}
+<!-- ```{r fig.width=20, fig.height=4} -->
 
-(plot_logmedian <- PlotScores(data = corrcounts, 
-                              metadata = metadata, 
-                              method = "logmedian", 
-                              gene_sets = signatures_bidirectional,  
-                              ColorVariable = "CellType", 
-                              Variable="Condition", 
-                              ColorValues = CellTypecols, 
-                              ConnectGroups=TRUE,  
-                              nrow = 1, 
-                              widthTitle=20, 
-                              limits = NULL, 
-                              legend_nrow = 2, 
-                              compute_cohen=F,
-                              pointSize=2,
-                              titlesize=10))
+<!-- (plot_logmedian <- PlotScores(data = corrcounts,  -->
+<!--                               metadata = metadata,  -->
+<!--                               method = "logmedian",  -->
+<!--                               gene_sets = signatures_bidirectional,   -->
+<!--                               ColorVariable = "CellType",  -->
+<!--                               Variable="Condition",  -->
+<!--                               ColorValues = CellTypecols_alt,  -->
+<!--                               ConnectGroups=TRUE,   -->
+<!--                               nrow = 1,  -->
+<!--                               widthTitle=20,  -->
+<!--                               limits = NULL,  -->
+<!--                               legend_nrow = 1,  -->
+<!--                               compute_cohen=F, -->
+<!--                               pointSize=2, -->
+<!--                               titlesize=10, -->
+<!--                               xlab = "", -->
+<!--                               labsize = 12)) -->
 
-(plot_ranking <- PlotScores_adapted(data = corrcounts, 
-                                    metadata = metadata, 
-                                    method = "ranking", 
-                                    gene_sets = signatures_bidirectional,  
-                                    ColorVariable = "CellType", 
-                                    Variable="Condition", 
-                                    ColorValues = CellTypecols, 
-                                    ConnectGroups=TRUE,  
-                                    nrow = 1, 
-                                    widthTitle=20, 
-                                    limits = NULL, 
-                                    legend_nrow = 2, 
-                                    compute_cohen=F,
-                                    pointSize=2,
-                                    titlesize=10))
+<!-- (plot_ranking <- PlotScores_adapted(data = corrcounts,  -->
+<!--                                     metadata = metadata,  -->
+<!--                                     method = "ranking",  -->
+<!--                                     gene_sets = signatures_bidirectional,   -->
+<!--                                     ColorVariable = "CellType",  -->
+<!--                                     Variable="Condition",  -->
+<!--                                     ColorValues = CellTypecols_alt,  -->
+<!--                                     ConnectGroups=TRUE,   -->
+<!--                                     nrow = 1,  -->
+<!--                                     widthTitle=20,  -->
+<!--                                     limits = NULL,  -->
+<!--                                     legend_nrow = 1,  -->
+<!--                                     compute_cohen=F, -->
+<!--                                     pointSize=2, -->
+<!--                                     titlesize=10, -->
+<!--                                     xlab = "", -->
+<!--                                     labsize = 12)) -->
 
-(plot_ssGSEA <- PlotScores_adapted(data = corrcounts, 
-                                   metadata = metadata, 
-                                   method = "ssGSEA", 
-                                   gene_sets = signatures_bidirectional,  
-                                   ColorVariable = "CellType", 
-                                   Variable="Condition", 
-                                   ColorValues = CellTypecols, 
-                                   ConnectGroups=TRUE,  
-                                   nrow = 1, 
-                                   widthTitle=20, 
-                                   limits = NULL, 
-                                   legend_nrow = 2, 
-                                   compute_cohen=F,
-                                   pointSize=2,
-                                   titlesize=10))
+<!-- (plot_ssGSEA <- PlotScores_adapted(data = corrcounts,  -->
+<!--                                    metadata = metadata,  -->
+<!--                                    method = "ssGSEA",  -->
+<!--                                    gene_sets = signatures_bidirectional,   -->
+<!--                                    ColorVariable = "CellType",  -->
+<!--                                    Variable="Condition",  -->
+<!--                                    ColorValues = CellTypecols_alt,  -->
+<!--                                    ConnectGroups=TRUE,   -->
+<!--                                    nrow = 1,  -->
+<!--                                    widthTitle=20,  -->
+<!--                                    limits = NULL,  -->
+<!--                                    legend_nrow = 1,  -->
+<!--                                    compute_cohen=F, -->
+<!--                                    pointSize=2, -->
+<!--                                    titlesize=10, -->
+<!--                                    xlab = "", -->
+<!--                                    labsize = 12)) -->
 
+<!-- ``` -->
+
+
+
+<!-- ```{r fig.width=20, fig.height=10} -->
+<!-- (fig3_scores_dist <- ggarrange(plot_logmedian , -->
+<!--           plot_ssGSEA , -->
+<!--           plot_ranking ,  -->
+<!--           common.legend=T, ncol=1, heights=c(0.35,0.3,0.3), labels = c("A","B","C"))) -->
+<!-- ``` -->
+
+
+<!-- ```{r fig.width=18, fig.height=4} -->
+
+
+<!-- Scores_Overview_All <- PlotScores(data = corrcounts,  -->
+<!--                                   metadata = metadata,   -->
+<!--                                   gene_sets=signatures_bidirectional,  -->
+<!--                                   Variable="Condition",   -->
+<!--                                   method ="all",    -->
+<!--                                   ncol = NULL,  -->
+<!--                                   nrow = 1,  -->
+<!--                                   widthTitle=20,  -->
+<!--                                   limits = c(0,2),    -->
+<!--                                   title=NULL,  -->
+<!--                                   titlesize = 10, -->
+<!--                                   #ColorValues = list(heatmap=c("#F9F4AE", "#B44141") ), -->
+<!--                                   mode="simple"#, -->
+<!--                                   #widthlegend=30,  -->
+<!--                                   #sig_threshold=0.05,  -->
+<!--                                   #cohen_threshold=0.6, -->
+<!--                                   #pointSize=6, -->
+<!--                                   #colorPalette="Paired" -->
+<!-- ) -->
+
+<!-- plt_cohenheatmap <- Scores_Overview_All$heatmap -->
+<!-- plt_cohenheatmap -->
+<!-- ``` -->
+
+<!-- ```{r fig.width=8, fig.height=8} -->
+<!-- plt_auc_heatmap <- AUC_Scores(data = corrcounts,  -->
+<!--                               metadata = metadata,  -->
+<!--                               gene_sets=signatures_bidirectional,  -->
+<!--                               method = "all",  -->
+<!--                               mode = "simple",  -->
+<!--                               variable="Condition",  -->
+<!--                               nrow = 3,  -->
+<!--                               ncol = NULL,  -->
+<!--                               limits = c(0.5,1),  -->
+<!--                               widthTitle = 20,  -->
+<!--                               titlesize = 10,  -->
+<!--                               ColorValues = c("#F9F4AE", "#B44141") )  -->
+<!-- plt_auc_heatmap -->
+
+<!-- ``` -->
+ 
+<!-- ```{r fig.width=18, fig.height=4} -->
+
+<!-- (plot_logmedian_nodir <- PlotScores(data = corrcounts,  -->
+<!--                                     metadata = metadata,  -->
+<!--                                     method = "logmedian",  -->
+<!--                                     gene_sets = signatures_nodir,   -->
+<!--                                     ColorVariable = "CellType",  -->
+<!--                                     Variable="Condition",  -->
+<!--                                     ColorValues = CellTypecols_alt,  -->
+<!--                                     ConnectGroups=TRUE,   -->
+<!--                                     nrow = 1,  -->
+<!--                                     widthTitle=20,  -->
+<!--                                     limits = NULL,  -->
+<!--                                     legend_nrow = 2,  -->
+<!--                                     compute_cohen=F, -->
+<!--                                     pointSize=2, -->
+<!--                                     titlesize=9)) -->
+
+<!-- (plot_ranking_nodir <- PlotScores(data = corrcounts,  -->
+<!--                                   metadata = metadata,  -->
+<!--                                   method = "ranking",  -->
+<!--                                   gene_sets = signatures_nodir,   -->
+<!--                                   ColorVariable = "CellType",  -->
+<!--                                   Variable="Condition",  -->
+<!--                                   ColorValues = CellTypecols_alt,  -->
+<!--                                   ConnectGroups=TRUE,   -->
+<!--                                   nrow = 1,  -->
+<!--                                   widthTitle=20,  -->
+<!--                                   limits = NULL,  -->
+<!--                                   legend_nrow = 2,  -->
+<!--                                   compute_cohen=F, -->
+<!--                                   pointSize=2, -->
+<!--                                   titlesize=9)) -->
+
+<!-- (plot_ssGSEA_nodir <- PlotScores(data = corrcounts,  -->
+<!--                                  metadata = metadata,  -->
+<!--                                  method = "ssGSEA",  -->
+<!--                                  gene_sets = signatures_nodir,   -->
+<!--                                  ColorVariable = "CellType",  -->
+<!--                                  Variable="Condition",  -->
+<!--                                  ColorValues = CellTypecols_alt,  -->
+<!--                                  ConnectGroups=TRUE,   -->
+<!--                                  nrow = 1,  -->
+<!--                                  widthTitle=20,  -->
+<!--                                  limits = NULL,  -->
+<!--                                  legend_nrow = 2,  -->
+<!--                                  compute_cohen=F, -->
+<!--                                  pointSize=2, -->
+<!--                                  titlesize=9)) -->
+
+<!-- ``` -->
+
+
+
+<!-- CellAge interpretation changes drastically... -->
+
+
+<!-- ```{r} -->
+
+<!-- (plot_ranking_direct_cellage <- PlotScores_adapted(data = corrcounts,  -->
+<!--                                                    metadata = metadata,  -->
+<!--                                                    method = "ranking",  -->
+<!--                                                    gene_sets = list(CellAge=signatures_bidirectional[["CellAge"]]),   -->
+<!--                                                    ColorVariable = "CellType",  -->
+<!--                                                    Variable="Condition",  -->
+<!--                                                    ColorValues = CellTypecols_alt,  -->
+<!--                                                    ConnectGroups=TRUE,   -->
+<!--                                                    nrow = 1,  -->
+<!--                                                    widthTitle=20,  -->
+<!--                                                    limits = NULL,  -->
+<!--                                                    legend_nrow = 2,  -->
+<!--                                                    compute_cohen=F, -->
+<!--                                                    pointSize=4, -->
+<!--                                                    titlesize=14, -->
+<!--                                                    labsize = 12, -->
+<!--                                                   xlab = "")) -->
+
+<!-- (plot_roc_direct_cellage <-  ROC_Scores(data = corrcounts,  -->
+<!--                                         metadata = metadata,  -->
+<!--                                         gene_sets=list(CellAge=signatures_bidirectional[["CellAge"]]),  -->
+<!--                                         method = "all",  -->
+<!--                                         variable ="Condition", -->
+<!--                                         colors = c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52"),  -->
+<!--                                         grid = TRUE,  -->
+<!--                                         spacing_annotation=0.3,  -->
+<!--                                         ncol=NULL,  -->
+<!--                                         nrow=1, -->
+<!--                                         mode = "simple", -->
+<!--                                         widthTitle = 28, -->
+<!--                                         titlesize = 12 ) ) -->
+
+<!-- (plot_ranking_nodir_cellage <- PlotScores_adapted(data = corrcounts,  -->
+<!--                                                   metadata = metadata,  -->
+<!--                                                   method = "ranking",  -->
+<!--                                                   gene_sets = list(CellAge=signatures_nodir[["CellAge"]]),   -->
+<!--                                                   ColorVariable = "CellType",  -->
+<!--                                                   Variable="Condition",  -->
+<!--                                                   ColorValues = CellTypecols_alt,  -->
+<!--                                                   ConnectGroups=TRUE,   -->
+<!--                                                   nrow = 1,  -->
+<!--                                                   widthTitle=20,  -->
+<!--                                                   limits = NULL,  -->
+<!--                                                   legend_nrow = 2,  -->
+<!--                                                   compute_cohen=F, -->
+<!--                                                   pointSize=4, -->
+<!--                                                   titlesize=14, -->
+<!--                                                    labsize = 12, -->
+<!--                                                   xlab = "")) -->
+
+
+<!-- (plot_roc_nodir_cellage <-  ROC_Scores(data = corrcounts,  -->
+<!--                                        metadata = metadata,  -->
+<!--                                        gene_sets=list(CellAge=signatures_nodir[["CellAge"]]),  -->
+<!--                                        method = "all",  -->
+<!--                                        variable ="Condition", -->
+<!--                                        colors = c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52"),  -->
+<!--                                        grid = TRUE,  -->
+<!--                                        spacing_annotation=0.3,  -->
+<!--                                        ncol=NULL,  -->
+<!--                                        nrow=1, -->
+<!--                                        mode = "simple", -->
+<!--                                        widthTitle = 28, -->
+<!--                                        titlesize = 12 ) ) -->
+
+<!-- ``` -->
+
+<!-- ```{r fig.width=9, fig.height=3} -->
+<!-- fig_cellage_direct <- ggarrange(plot_ranking_direct_cellage,plot_roc_direct_cellage, widths=c(0.3,0.6)) -->
+<!-- fig_cellage_direct -->
+<!-- ``` -->
+
+<!-- ```{r fig.width=9, fig.height=3} -->
+<!-- fig_cellage_nodir <- ggarrange(plot_ranking_nodir_cellage,plot_roc_nodir_cellage, widths=c(0.3,0.6) ) -->
+<!-- fig_cellage_nodir -->
+<!-- ``` -->
+<!-- ```{r fig.width=10, fig.height=6} -->
+<!-- fig_cellage <- ggarrange(fig_cellage_direct,fig_cellage_nodir, labels=c("F","G"), ncol=1,font.label = list(size = 20) ) -->
+<!-- fig_cellage -->
+<!-- ``` -->
+
+<!-- ```{r fig.width=18, fig.height=6} -->
+<!-- fig_EFG <- ggarrange(plt_auc_heatmap,fig_cellage, -->
+<!--                      nrow=1, -->
+<!--                      labels=c("E","",""), widths=c(0.4,0.6),font.label = list(size = 20)) -->
+<!-- fig_EFG -->
+<!-- ``` -->
+
+
+
+<!-- ```{r fig.width=20, fig.height=21} -->
+<!-- (plt_fig2 <- ggarrange(plot_logmedian, -->
+<!--                        plot_ranking, -->
+<!--                        plot_ssGSEA, -->
+<!--                        plt_cohenheatmap, -->
+<!--                        fig_EFG, labels=c("A","B","C","D",""), ncol=1, heights=c(0.18,0.15,0.15,0.15,0.3),font.label = list(size = 20))) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- ggplot2::ggsave("../Figures/Figs/Figure3_Scores.png", -->
+<!--                 plt_fig2, -->
+<!--                 width = 20, height=22, bg = 'white') -->
+<!-- ``` -->
+
+<!-- ### Alternative -->
+
+```{r}
+(scores_logmedian <- CalculateScores(data = corrcounts, 
+                                     metadata = metadata, 
+                                     method = "logmedian", 
+                                     gene_sets = signatures_bidirectional))
+
+(scores_ssGSEA <- CalculateScores(data = corrcounts, 
+                                     metadata = metadata, 
+                                     method = "ssGSEA", 
+                                     gene_sets = signatures_bidirectional))
+
+(scores_ranking <- CalculateScores(data = corrcounts, 
+                                     metadata = metadata, 
+                                     method = "ranking", 
+                                     gene_sets = signatures_bidirectional))
+
+scoresList <- list(logmedian=scores_logmedian,
+               ssGSEA=scores_ssGSEA,
+               ranking=scores_ranking)
 ```
 
 
-```{r fig.width=18, fig.height=4}
+```{r}
+ 
+flat_df_scores <- imap_dfr(scoresList, function(signature_list, method_name) {
+  imap_dfr(signature_list, function(signature_df, signature_name) {
+    signature_df %>%
+      mutate(
+        Method = method_name,
+        Signature = signature_name
+      )
+  })
+})
 
-
-Scores_Overview_All <- PlotScores(data = corrcounts, 
-                                  metadata = metadata,  
-                                  gene_sets=signatures_bidirectional, 
-                                  Variable="Condition",  
-                                  method ="all",   
-                                  ncol = NULL, 
-                                  nrow = 1, 
-                                  widthTitle=20, 
-                                  limits = c(0,2),   
-                                  title=NULL, 
-                                  titlesize = 10,
-                                  #ColorValues = list(heatmap=c("#F9F4AE", "#B44141") ),
-                                  mode="simple"#,
-                                  #widthlegend=30, 
-                                  #sig_threshold=0.05, 
-                                  #cohen_threshold=0.6,
-                                  #pointSize=6,
-                                  #colorPalette="Paired"
-)
-
-plt_cohenheatmap <- Scores_Overview_All$heatmap
-plt_cohenheatmap
-```
-
-```{r fig.width=18, fig.height=3}
-plt_auc_heatmap <- AUC_Scores(data = corrcounts, 
-                              metadata = metadata, 
-                              gene_sets=signatures_bidirectional, 
-                              method = "all", 
-                              mode = "simple", 
-                              variable="Condition", 
-                              nrow = 1, 
-                              ncol = NULL, 
-                              limits = c(0.5,1), 
-                              widthTitle = 20, 
-                              titlesize = 10, 
-                              ColorValues = c("#F9F4AE", "#B44141") ) 
-plt_auc_heatmap
+flat_df_scores
 
 ```
+```{r fig.width=16, fig.height=12}
+# Get the unique signatures
+signatures <- unique(flat_df_scores$Signature)
+
+# Create an empty list to store plots
+plot_list <- list()
+
+# Loop over each signature
+for (sig in signatures) {
+  df_sig <- flat_df_scores[flat_df_scores$Signature == sig, ]
+
+  p <- ggplot(df_sig, aes(x = Condition, y = score)) +
+    geom_jitter(size=2, aes(color = CellType), alpha=0.7)+
+    geom_violin(trim = FALSE, alpha=0.6, scale = "width") +  
+    stat_summary(aes(group = CellType, color = CellType),
+                                     fun.y = median, geom = "line", size = 1.5, alpha = 0.75,
+                                     show.legend = FALSE) +
+    stat_summary(fun = median, fun.min = median, fun.max = median,
+                                   geom = "crossbar", width = 0.25,
+                                   position = position_dodge(width = 0.13)) +
+    facet_wrap(~ Method, scales = "free_y") +
+    scale_color_manual(values = CellTypecols_alt) +
+    theme_minimal(base_size = 16) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      strip.text = element_text(face = "bold"),
+      legend.position = "right",
+      plot.title = ggplot2::element_text(hjust = 0.5),
+
+    ) +
+    labs(
+      title = wrap_title(sig, width = 28),
+      x = "",
+      y = "Score",
+      color = ""
+    ) + 
+    guides(color = guide_legend(nrow = 1, override.aes = list(size = 4)))
+
+  plot_list[[sig]] <- p
+}
+
+
+# Arrange all plots in a grid with ggarrange
+plt_scores_2 <- ggarrange(plotlist = plot_list, ncol = 3, nrow=3, common.legend = T, legend = "top", align="h")
+plt_scores_2
+
+```
+
+CellAge interpretation changes
 
 ```{r}
 
@@ -1457,89 +1806,30 @@ signatures_nodir <- lapply(signatures_bidirectional, function(entry) {
     entry  # Already a vector
   }
 })
-
-
-
-
+ 
 ```
-
-
-```{r fig.width=18, fig.height=4}
-
-(plot_logmedian_nodir <- PlotScores(data = corrcounts, 
-                                    metadata = metadata, 
-                                    method = "logmedian", 
-                                    gene_sets = signatures_nodir,  
-                                    ColorVariable = "CellType", 
-                                    Variable="Condition", 
-                                    ColorValues = CellTypecols, 
-                                    ConnectGroups=TRUE,  
-                                    nrow = 1, 
-                                    widthTitle=20, 
-                                    limits = NULL, 
-                                    legend_nrow = 2, 
-                                    compute_cohen=F,
-                                    pointSize=2,
-                                    titlesize=9))
-
-(plot_ranking_nodir <- PlotScores(data = corrcounts, 
-                                  metadata = metadata, 
-                                  method = "ranking", 
-                                  gene_sets = signatures_nodir,  
-                                  ColorVariable = "CellType", 
-                                  Variable="Condition", 
-                                  ColorValues = CellTypecols, 
-                                  ConnectGroups=TRUE,  
-                                  nrow = 1, 
-                                  widthTitle=20, 
-                                  limits = NULL, 
-                                  legend_nrow = 2, 
-                                  compute_cohen=F,
-                                  pointSize=2,
-                                  titlesize=9))
-
-(plot_ssGSEA_nodir <- PlotScores(data = corrcounts, 
-                                 metadata = metadata, 
-                                 method = "ssGSEA", 
-                                 gene_sets = signatures_nodir,  
-                                 ColorVariable = "CellType", 
-                                 Variable="Condition", 
-                                 ColorValues = CellTypecols, 
-                                 ConnectGroups=TRUE,  
-                                 nrow = 1, 
-                                 widthTitle=20, 
-                                 limits = NULL, 
-                                 legend_nrow = 2, 
-                                 compute_cohen=F,
-                                 pointSize=2,
-                                 titlesize=9))
-
-```
-
-
-
-CellAge interpretation changes drastically...
-
 
 ```{r}
 
-(plot_ranking_direct_cellage <- PlotScores_adapted(data = corrcounts, 
+(plot_ranking_direct_cellage_2 <- PlotScores_adapted(data = corrcounts, 
                                                    metadata = metadata, 
                                                    method = "ranking", 
                                                    gene_sets = list(CellAge=signatures_bidirectional[["CellAge"]]),  
                                                    ColorVariable = "CellType", 
                                                    Variable="Condition", 
-                                                   ColorValues = CellTypecols, 
+                                                   ColorValues = CellTypecols_alt, 
                                                    ConnectGroups=TRUE,  
                                                    nrow = 1, 
                                                    widthTitle=20, 
                                                    limits = NULL, 
                                                    legend_nrow = 2, 
                                                    compute_cohen=F,
-                                                   pointSize=4,
-                                                   titlesize=12))
+                                                   pointSize=2,
+                                                   titlesize=14,
+                                                   labsize = 12,
+                                                  xlab = ""))
 
-(plot_roc_direct_cellage <-  ROC_Scores(data = corrcounts, 
+(plot_roc_direct_cellage_2 <-  ROC_Scores(data = corrcounts, 
                                         metadata = metadata, 
                                         gene_sets=list(CellAge=signatures_bidirectional[["CellAge"]]), 
                                         method = "all", 
@@ -1551,26 +1841,28 @@ CellAge interpretation changes drastically...
                                         nrow=1,
                                         mode = "simple",
                                         widthTitle = 28,
-                                        titlesize = 9 ) )
+                                        titlesize = 12 ) )
 
-(plot_ranking_nodir_cellage <- PlotScores_adapted(data = corrcounts, 
+(plot_ranking_nodir_cellage_2 <- PlotScores_adapted(data = corrcounts, 
                                                   metadata = metadata, 
                                                   method = "ranking", 
                                                   gene_sets = list(CellAge=signatures_nodir[["CellAge"]]),  
                                                   ColorVariable = "CellType", 
                                                   Variable="Condition", 
-                                                  ColorValues = CellTypecols, 
+                                                  ColorValues = CellTypecols_alt, 
                                                   ConnectGroups=TRUE,  
                                                   nrow = 1, 
                                                   widthTitle=20, 
                                                   limits = NULL, 
                                                   legend_nrow = 2, 
                                                   compute_cohen=F,
-                                                  pointSize=4,
-                                                  titlesize=12))
+                                                  pointSize=2,
+                                                  titlesize=14,
+                                                   labsize = 12,
+                                                  xlab = ""))
 
 
-(plot_roc_nodir_cellage <-  ROC_Scores(data = corrcounts, 
+(plot_roc_nodir_cellage_2 <-  ROC_Scores(data = corrcounts, 
                                        metadata = metadata, 
                                        gene_sets=list(CellAge=signatures_nodir[["CellAge"]]), 
                                        method = "all", 
@@ -1582,43 +1874,27 @@ CellAge interpretation changes drastically...
                                        nrow=1,
                                        mode = "simple",
                                        widthTitle = 28,
-                                       titlesize = 9 ) )
+                                       titlesize = 12 ) )
 
 ```
 
-```{r fig.width=9, fig.height=3}
-fig_cellage_direct <- ggarrange(plot_ranking_direct_cellage,plot_roc_direct_cellage, widths=c(0.3,0.6))
-fig_cellage_direct
+```{r fig.width=16, fig.height=3}
+fig_cellage_direct <- ggarrange(plot_ranking_direct_cellage_2,plot_roc_direct_cellage_2, widths=c(0.2,0.7))
+  
+fig_cellage_nodir <- ggarrange(plot_ranking_nodir_cellage_2,plot_roc_nodir_cellage_2, widths=c(0.2,0.7) )
+  
+fig_cellage_2 <- ggarrange(fig_cellage_direct,fig_cellage_nodir,  nrow=1, labels=c("B","C"),font.label = list(size = 20))
+fig_cellage_2
 ```
-
-```{r fig.width=9, fig.height=3}
-fig_cellage_nodir <- ggarrange(plot_ranking_nodir_cellage,plot_roc_nodir_cellage, widths=c(0.3,0.6))
-fig_cellage_nodir
+```{r fig.width=16, fig.height=16}
+plt_fig3_alt <- ggarrange(plt_scores_2, fig_cellage_2, heights=c(0.78,0.22), ncol=1, labels=c("A",""),font.label = list(size = 20))
+plt_fig3_alt
 ```
-```{r fig.width=18, fig.height=3}
-fig_cellage <- ggarrange(fig_cellage_direct,fig_cellage_nodir, labels=c("F","G"), nrow=1,font.label = list(size = 20))
-fig_cellage
-```
-
-
-
-
-```{r fig.width=20, fig.height=18}
-(plt_fig2 <- ggarrange(plot_logmedian,
-                       plot_ranking,
-                       plot_ssGSEA,
-                       plt_cohenheatmap,
-                       plt_auc_heatmap,
-                       fig_cellage, labels=c("A","B","C","D","E",""), ncol=1, heights=c(0.2,0.15,0.15,0.15,0.12,0.15),font.label = list(size = 20)))
-```
-
 ```{r}
-ggplot2::ggsave("Figs/Figure2_Scores.png",
-                plt_fig2,
-                width = 20, height=20, bg = 'white')
+ggplot2::ggsave("../Figures/Figs/Figure3_Scores_alt.png",
+                plt_fig3_alt,
+                width = 18, height=16, bg = 'white')
 ```
-
-
 
 ## Figure 4 - Enrichment-based methods
 
@@ -1676,7 +1952,7 @@ GSEAresults
 
 ```{r fig.width=11, fig.height=4.5}
 
-(plotNESlollipop <- plotNESlollipop(GSEA_results=GSEAresults, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
+(plotNESlollipop <- plotNESlollipop(GSEA_results=GSEAresults, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "#934873",
                                     grid = T, nrow = 1, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
 
 ```
@@ -1734,7 +2010,7 @@ df_ggplot$significance <- df_ggplot$padj_Sen_vs_Prol <= 0.05 & df_ggplot$padj_Se
     geom_hline(yintercept = 0, size=0.6, linetype="dashed") +
     xlab("NES Senescence vs Proliferation")+
     ylab("NES Senescence vs Quiescence")+ 
-    scale_fill_manual(values = c("#BA3B46","#53A2BE"), name = "Adj. p-value <= 0.05")  +
+    scale_fill_manual(values = c("white","#934873"), name = "Adj. p-value <= 0.05    .")  +
     theme(legend.position = "top") + 
     theme( plot.title = element_text(hjust = 0.5 ) ) )
 ```
@@ -1814,10 +2090,10 @@ plotvolcano_3 <- plotVolcano(DEResultsList=degenes,
 
 ```{r fig.width=5, fig.height=10}
 
-(plotNESlollipop_1 <- plotNESlollipop(GSEA_results=list("Senescent-Proliferative"=GSEAresults$`Senescent-Proliferative`), sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
+(plotNESlollipop_1 <- plotNESlollipop(GSEA_results=list("Senescent-Proliferative"=GSEAresults$`Senescent-Proliferative`), sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "#934873",
                                       grid = T, nrow = 1, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
 
-(plotNESlollipop_2 <- plotNESlollipop(GSEA_results=list("Senescent-Quiescent"=GSEAresults$`Senescent-Quiescent`), sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
+(plotNESlollipop_2 <- plotNESlollipop(GSEA_results=list("Senescent-Quiescent"=GSEAresults$`Senescent-Quiescent`), sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "#934873",
                                       grid = T, nrow = 1, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
 
 (plotNESlollipop_new <- ggarrange(plotNESlollipop_1$`Senescent-Proliferative`,plotNESlollipop_2$`Senescent-Quiescent`,ncol=1, common.legend = T))
@@ -1830,7 +2106,7 @@ plt_right <- ggarrange(plotNESlollipop_new,plt_scatter_gsea, ncol=1, labels=c("B
 ```
 
 ```{r}
-ggplot2::ggsave("Figs/Figure4_Enrichment_alternative.png",
+ggplot2::ggsave("../Figures/Figs/Figure4_Enrichment_alternative.png",
                 plt_final,
                 width = 12, height=14, bg = 'white')
 ```
@@ -2319,7 +2595,7 @@ for (sig_name in names(gene_sets)) {
 
 ```{r}
 #(results <- readRDS("data/Tradeoffs_v1.rds"))
-(results <- readRDS("data/Tradeoffs_v3.rds"))
+(results <- readRDS("../data/Tradeoffs_v3.rds"))
 results$p_score <- p.adjust(results$p_score, method = "BH")
 results$p_enrich <- p.adjust(results$p_enrich, method = "BH")
 ```
@@ -2517,79 +2793,79 @@ topgenes_10 <- c("CDCD5","PCIF1","PDLIM4","FAM214B","CREBBP","CCND1","PATZ1","CN
 
 ```
 
-```{r fig.width=10, fig.height=10}
+<!-- ```{r fig.width=10, fig.height=10} -->
 
-signatures_HS <- list(HernandezSegura=signatures_bidirectional$HernandezSegura,
-                      HernandezSegura_top1 = subset(signatures_bidirectional$HernandezSegura, gene %in% topgenes_1),
-                      HernandezSegura_top5 = subset(signatures_bidirectional$HernandezSegura, gene %in% topgenes_5),
-                      HernandezSegura_top10 = subset(signatures_bidirectional$HernandezSegura, gene %in% topgenes_10))
+<!-- signatures_HS <- list(HernandezSegura=signatures_bidirectional$HernandezSegura, -->
+<!--                       HernandezSegura_top1 = subset(signatures_bidirectional$HernandezSegura, gene %in% topgenes_1), -->
+<!--                       HernandezSegura_top5 = subset(signatures_bidirectional$HernandezSegura, gene %in% topgenes_5), -->
+<!--                       HernandezSegura_top10 = subset(signatures_bidirectional$HernandezSegura, gene %in% topgenes_10)) -->
 
-(plot_ranking <- PlotScores_adapted(data = corrcounts, 
-                                    metadata = metadata, 
-                                    method = "ranking", 
-                                    gene_sets = signatures_HS,  
-                                    ColorVariable = "Condition", 
-                                    Variable="Condition", 
-                                    ColorValues = Condition_colors, 
-                                    ConnectGroups=TRUE,  
-                                    nrow = 1, 
-                                    widthTitle=24, 
-                                    legend_nrow = 1, 
-                                    pointSize=2,
-                                    titlesize=10, compute_cohen=T,
-                                    cond_cohend = list(A=c("Senescent"),B="Quiescent")))
+<!-- (plot_ranking <- PlotScores_adapted(data = corrcounts,  -->
+<!--                                     metadata = metadata,  -->
+<!--                                     method = "ranking",  -->
+<!--                                     gene_sets = signatures_HS,   -->
+<!--                                     ColorVariable = "Condition",  -->
+<!--                                     Variable="Condition",  -->
+<!--                                     ColorValues = Condition_colors,  -->
+<!--                                     ConnectGroups=TRUE,   -->
+<!--                                     nrow = 1,  -->
+<!--                                     widthTitle=24,  -->
+<!--                                     legend_nrow = 1,  -->
+<!--                                     pointSize=2, -->
+<!--                                     titlesize=10, compute_cohen=T, -->
+<!--                                     cond_cohend = list(A=c("Senescent"),B="Quiescent"))) -->
 
-(plot_logmedian <- PlotScores_adapted(data = corrcounts, 
-                                      metadata = metadata, 
-                                      method = "logmedian", 
-                                      gene_sets = signatures_HS,  
-                                      ColorVariable = "Condition", 
-                                      Variable="Condition", 
-                                      ColorValues = Condition_colors, 
-                                      ConnectGroups=TRUE,  
-                                      nrow = 1, 
-                                      widthTitle=24, 
-                                      legend_nrow = 1, 
-                                      pointSize=2,
-                                      titlesize=10, compute_cohen=T,
-                                      cond_cohend = list(A=c("Senescent"),B="Quiescent")))
+<!-- (plot_logmedian <- PlotScores_adapted(data = corrcounts,  -->
+<!--                                       metadata = metadata,  -->
+<!--                                       method = "logmedian",  -->
+<!--                                       gene_sets = signatures_HS,   -->
+<!--                                       ColorVariable = "Condition",  -->
+<!--                                       Variable="Condition",  -->
+<!--                                       ColorValues = Condition_colors,  -->
+<!--                                       ConnectGroups=TRUE,   -->
+<!--                                       nrow = 1,  -->
+<!--                                       widthTitle=24,  -->
+<!--                                       legend_nrow = 1,  -->
+<!--                                       pointSize=2, -->
+<!--                                       titlesize=10, compute_cohen=T, -->
+<!--                                       cond_cohend = list(A=c("Senescent"),B="Quiescent"))) -->
 
-(plot_ssGSEA <- PlotScores_adapted(data = corrcounts, 
-                                   metadata = metadata, 
-                                   method = "ssGSEA", 
-                                   gene_sets = signatures_HS,  
-                                   ColorVariable = "Condition", 
-                                   Variable="Condition", 
-                                   ColorValues = Condition_colors, 
-                                   ConnectGroups=TRUE,  
-                                   nrow = 1, 
-                                   widthTitle=24, 
-                                   legend_nrow = 1, 
-                                   pointSize=2,
-                                   titlesize=10, compute_cohen=T,
-                                   cond_cohend = list(A=c("Senescent"),B="Quiescent")))
+<!-- (plot_ssGSEA <- PlotScores_adapted(data = corrcounts,  -->
+<!--                                    metadata = metadata,  -->
+<!--                                    method = "ssGSEA",  -->
+<!--                                    gene_sets = signatures_HS,   -->
+<!--                                    ColorVariable = "Condition",  -->
+<!--                                    Variable="Condition",  -->
+<!--                                    ColorValues = Condition_colors,  -->
+<!--                                    ConnectGroups=TRUE,   -->
+<!--                                    nrow = 1,  -->
+<!--                                    widthTitle=24,  -->
+<!--                                    legend_nrow = 1,  -->
+<!--                                    pointSize=2, -->
+<!--                                    titlesize=10, compute_cohen=T, -->
+<!--                                    cond_cohend = list(A=c("Senescent"),B="Quiescent"))) -->
 
-ggarrange(plot_logmedian,plot_ranking,plot_ssGSEA,ncol=1)
-```
+<!-- ggarrange(plot_logmedian,plot_ranking,plot_ssGSEA,ncol=1) -->
+<!-- ``` -->
 
-```{r fig.width=10, fig.height=4}
-plot_ranking
-```
+<!-- ```{r fig.width=10, fig.height=4} -->
+<!-- plot_ranking -->
+<!-- ``` -->
 
 
-```{r}
-options(error=recover)
-GSEAresults_HStests <- runGSEA(list(`Senescent-Quiescent`=degenes$`Senescent-Quiescent`), list(HernandezSegura=signatures_bidirectional$HernandezSegura, 
-                                                                                               HernandezSegura_top5 = subset(signatures_bidirectional$HernandezSegura, gene %in% topgenes_5),
-                                                                                               HernandezSegura_top10 = subset(signatures_bidirectional$HernandezSegura, gene %in% topgenes_10)), stat = NULL)
-(plotNESlollipop_HStests <- plotNESlollipop(GSEA_results=GSEAresults_HStests, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
-                                            grid = T, nrow = 1, ncol = NULL, widthlabels=18, title=NULL, titlesize=14))
-```
-these genes were selected as the ones with the highest cohen's d separating senescent from quiescent samples. and then i created signatures with those genes. it is interesting that the score doesn't give much impact on the number of genes in the signature, but GSEA penalises the NES... if the gene signature is expected to recapitulate as a whole the phenotype, this is not very good if we use scores...
+<!-- ```{r} -->
+<!-- options(error=recover) -->
+<!-- GSEAresults_HStests <- runGSEA(list(`Senescent-Quiescent`=degenes$`Senescent-Quiescent`), list(HernandezSegura=signatures_bidirectional$HernandezSegura,  -->
+<!--                                                                                                HernandezSegura_top5 = subset(signatures_bidirectional$HernandezSegura, gene %in% topgenes_5), -->
+<!--                                                                                                HernandezSegura_top10 = subset(signatures_bidirectional$HernandezSegura, gene %in% topgenes_10)), stat = NULL) -->
+<!-- (plotNESlollipop_HStests <- plotNESlollipop(GSEA_results=GSEAresults_HStests, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "#934873", -->
+<!--                                             grid = T, nrow = 1, ncol = NULL, widthlabels=18, title=NULL, titlesize=14)) -->
+<!-- ``` -->
+<!-- these genes were selected as the ones with the highest cohen's d separating senescent from quiescent samples. and then i created signatures with those genes. it is interesting that the score doesn't give much impact on the number of genes in the signature, but GSEA penalises the NES... if the gene signature is expected to recapitulate as a whole the phenotype, this is not very good if we use scores... -->
 
-```{r fig.width=14, fig.height=4}
-(plt_impact_score <- ggarrange(plot_logmedian, plotNESlollipop_HStests$`Senescent-Quiescent`, widths=c(0.65,0.35)))
-```
+<!-- ```{r fig.width=14, fig.height=4} -->
+<!-- (plt_impact_score <- ggarrange(plot_logmedian, plotNESlollipop_HStests$`Senescent-Quiescent`, widths=c(0.65,0.35))) -->
+<!-- ``` -->
 
 
 
@@ -2649,12 +2925,12 @@ signatures_CellAge <- list(CellAge=signatures_bidirectional$CellAge,
 
 GSEAresults_CellAgetests <- runGSEA(list(`Senescent-Quiescent`=degenes$`Senescent-Quiescent`),signatures_CellAge, stat = NULL)
 GSEAresults_CellAgetests
-(plotNESlollipop_CellAgetests <- plotNESlollipop(GSEA_results=GSEAresults_CellAgetests, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
+(plotNESlollipop_CellAgetests <- plotNESlollipop(GSEA_results=GSEAresults_CellAgetests, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "#934873",
                                                  grid = T, nrow = 1, ncol = NULL, widthlabels=18, title=NULL, titlesize=14))
 ```
 
 ```{r fig.width=18, fig.height=4}
-(plt_impact_score_cellage <- ggarrange(plot_ranking_cellage, plotNESlollipop_CellAgetests$`Senescent-Quiescent`, widths=c(0.7,0.3)))
+(plt_impact_score_cellage <- ggarrange(plot_ranking_cellage, plotNESlollipop_CellAgetests$`Senescent-Quiescent`, widths=c(0.65,0.35)))
 ```
 
 
@@ -2683,7 +2959,7 @@ GSEAresults_sentype
 
 ```{r fig.width=16, fig.height=18}
 
-(plotNESlollipop_sentype <- plotNESlollipop(GSEA_results=GSEAresults_sentype, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
+(plotNESlollipop_sentype <- plotNESlollipop(GSEA_results=GSEAresults_sentype, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "#934873",
                                             grid = T, nrow = 4, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
 
 ```
@@ -2726,7 +3002,7 @@ GSEAresults_radiation
 
 ```{r fig.width=12, fig.height=4.5}
 
-(plt_impact_enrichment <- plotNESlollipop(GSEA_results=GSEAresults_radiation, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
+(plt_impact_enrichment <- plotNESlollipop(GSEA_results=GSEAresults_radiation, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "#934873",
                                           grid = T, nrow = 1, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
 
 ```
@@ -2737,7 +3013,7 @@ GSEAresults_radiation
 (fig5_tradeoffs <- ggarrange(plt_tradeoffs,plt_impact_score_cellage, plt_impact_enrichment, ncol=1, heights=c(0.3,0.3,0.45), labels=c("","C","D")))
 ```
 ```{r}
-ggplot2::ggsave("Figs/Figure5_tradeoffs.png",
+ggplot2::ggsave("../Figures/Figs/Figure6_tradeoffs.png",
                 fig5_tradeoffs,
                 width = 14, height=10, bg = 'white')
 ```
@@ -2956,7 +3232,7 @@ for (sig in sigs) {
   p_score <- ggplot(score_data, aes(x = method, y = tissue, fill = Cohen_f)) +
     geom_tile(color = "gray90") +
     geom_text(aes(label = signif), size = 6, vjust = 0.8, hjust = 0.5) +
-    scale_fill_gradient(low = "white", high = "#49B0AB", name = "Cohen's f") +
+    scale_fill_gradient(low = "white", high = "#49B0AB", name = "Cohen's f", limits=c(0,0.4)) +
     theme_minimal(base_size = 12) +
     #labs(title = "Score") +
     theme(axis.title = element_blank(),
@@ -2969,7 +3245,7 @@ for (sig in sigs) {
   p_gsea <- ggplot(gsea_data, aes(x = method, y = tissue, fill = abs(NES))) +
     geom_tile(color = "gray90") +
     geom_text(aes(label = signif), size = 6, vjust = 0.8, hjust = 0.5) +
-    scale_fill_gradient(low = "white", high = "#B04975", name = "|NES|") +
+    scale_fill_gradient(low = "white", high = "#B04975", name = "|NES|", limits=c(0,2.5)) +
     theme_minimal(base_size = 12) +
     #labs(title = "Enrichment") +
     theme(axis.title = element_blank(),
@@ -3075,109 +3351,5 @@ ggplot2::ggsave("../Figures/Figs/Figure7_GTEx.png",
 
 
 
-
-
-
-
-## Interesting plots
-
-### Good and bad signatures
-
-```{r}
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-
-set.seed(123)
-
-# Sample size per condition
-n <- 100
-
-# Two BAD signatures:
-# - Bad A: all conditions similar
-# - Bad B: Senescent and Quiescent similar; Proliferative very different
-mock_scores <- data.frame(
-  sampleID = paste0("Sample_", 1:(n * 3)),
-  Condition = rep(c("Senescent", "Proliferative", "Quiescent"), each = n),
-  
-  # GOOD signatures
-  Sig_Good1 = c(rnorm(n, 8, 1), rnorm(n, 3.5, 1), rnorm(n, 3, 1)),
-  Sig_Good2 = c(rnorm(n, 2, 1), rnorm(n, 6, 1), rnorm(n, 6.5, 1)),
-  
-  # BAD signatures
-  Sig_Bad1 = c(rnorm(n, 5, 1), rnorm(n, 5.1, 1), rnorm(n, 5.2, 1)),  # All similar
-  Sig_Bad2 = c(rnorm(n, 5, 1), rnorm(n, 8, 1), rnorm(n, 5.1, 1))    # Sen ≈ Quiesc, Prol different
-)
-
-# Reshape
-mock_long <- mock_scores %>%
-  pivot_longer(cols = starts_with("Sig_"), names_to = "Signature", values_to = "Score") %>%
-  mutate(Signature = recode(Signature,
-                            Sig_Good1 = "Good Signature A",
-                            Sig_Good2 = "Good Signature B",
-                            Sig_Bad1  = "Bad Signature A",
-                            Sig_Bad2  = "Bad Signature B"))
-
-```
-
-
-```{r}
-ggplot(mock_long, aes(x = Condition, y = Score, fill = Condition)) +
-  geom_jitter(width = 0.3, size = 2, alpha = 0.5, color = "grey") +
-  geom_violin(trim = FALSE, alpha = 0.4, size = 1) + 
-  facet_wrap(
-    ~Signature, ncol = 2,
-    labeller = labeller(Signature = c(
-      "Good Signature A" = "Good Signature",
-      "Good Signature B" = "Good Signature",
-      "Bad Signature A" = "Bad Signature",
-      "Bad Signature B" = "Bad Signature"
-    ))
-  ) +
-  theme_classic(base_size = 13) +
-  scale_fill_manual(values = c(
-    "Senescent"     = "#F4A261",
-    "Proliferative" = "#A1C298",
-    "Quiescent"     = "#9DB4C0"
-  )) +
-  labs(x = NULL, y = "NSS") +
-  theme(
-    legend.position = "none",
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    strip.text = element_text(face = "bold")
-  ) +
-  stat_summary(
-    fun.y = median, fun.ymin = median, fun.ymax = median,
-    geom = "crossbar", width = 0.25,
-    position = position_dodge(width = .13)
-  )
-
-
-```
-
-### Cell type specificity of HS scores
-
-```{r}
-df_Scores_hs <- CalculateScores(data = corrcounts,
-                                metadata = metadata,
-                                method = "logmedian",
-                                gene_sets =  list(HernandezSegura=signatures_bidirectional$HernandezSegura))
-
-df_Scores_hs <- df_Scores_hs$HernandezSegura
-
-df_Scores_hs
-```
-
-
-```{r fig.width=4, fig.height=4}
-ggplot(df_Scores_hs, aes(x = score, color = CellType)) +
-  geom_density(size = 1) +
-  facet_wrap(~Condition, scales = "free_y", ncol=1) +
-  theme_classic() +
-  labs(x = "HernandezSegura Score", y = "Density", color = "Cell Type") +
-  theme(strip.text = element_text(face = "bold"), legend.position = "top") + scale_color_manual(values=CellTypecols) +
-  labs(color="")  
-```
-
+ 
 

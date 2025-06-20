@@ -3,7 +3,7 @@
 #' Computes and visualizes gene signature scores using one or more methods, returning plots
 #' such as scatter plots, violin plots, heatmaps, or volcano plots depending on inputs.
 #'
-#' @param data A data frame of normalized (non-transformed) counts where each row is a gene and each column is a sample.
+#' @param data A data frame of Normalised (non-transformed) counts where each row is a gene and each column is a sample.
 #'   Row names should contain gene names, and column names should contain sample identifiers. **(Required)**
 #' @param metadata A data frame with sample-level attributes. Each row corresponds to a sample, with the first column containing sample IDs
 #'   that match `colnames(data)`. **Required if `method = "all"` or if metadata-derived groupings or colors are used.**
@@ -246,7 +246,7 @@ PlotScores <- function(data, metadata, gene_sets,
 #'
 #'   - **ssGSEA**: Uses the single-sample Gene Set Enrichment Analysis (ssGSEA) method to compute an enrichment score
 #'     for each signature in each sample using an adaptation of the `gsva()` function from the `GSVA` package.
-#'   - **logmedian**: Computes the score as the sum of the normalized (log2-median-centered) expression values of the
+#'   - **logmedian**: Computes the score as the sum of the Normalised (log2-median-centered) expression values of the
 #'     signature genes divided by the number of genes in the signature.
 #'   - **ranking**: Computes gene signature scores for each sample by ranking the expression of signature genes
 #'     in the dataset and normalizing the score based on the total number of genes.
@@ -260,7 +260,7 @@ PlotScores <- function(data, metadata, gene_sets,
 #' - **If `method != "all"`** and the variable is `NULL`, a density plot of the score distribution is displayed.
 #' - **If `method != "all"`** and the variable is **numeric**, a scatter plot is created to show the relationship between the scores and the numeric variable.
 #'
-#' @param data A data frame of normalized (non-transformed) counts where each row is a gene and each column is a sample.
+#' @param data A data frame of Normalised (non-transformed) counts where each row is a gene and each column is a sample.
 #'   Row names should contain gene names, and column names should contain sample identifiers. **(Required)**
 #' @param metadata A data frame describing the attributes of each sample, where each row corresponds to a sample and each column to an attribute.
 #'   The first column should contain sample identifiers (i.e., the column names of `data`). **(Required if method = "all")**
@@ -371,7 +371,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
     if (method == "ssGSEA") {
       xlab <- "ssGSEA Enrichment Score"
     } else if (method == "logmedian") {
-      xlab <- "Normalized Signature Score"
+      xlab <- "Normalised Signature Score"
     } else if (method == "ranking") {
       xlab <- "Signature Genes' Ranking"
     }
@@ -538,7 +538,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 
     # Adjust legend rows if legend_nrow is specified.
     if (!is.null(legend_nrow)) {
-      p <- p + ggplot2::guides(color = ggplot2::guide_legend(nrow = legend_nrow))
+      p <- p + ggplot2::guides(color = ggplot2::guide_legend(nrow = legend_nrow, override.aes = list(size = pointSize + 2)))
     }
 
     # Store the plot in the list.
@@ -563,6 +563,8 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
   # Annotate with axis labels.
   if (is.null(xlab)) {
     xlab <- GroupingVariable
+  } else if (xlab ==""){
+    xlab <- NULL
   }
 
   if (!is.null(title)) title <- wrap_title(title, width = widthTitle)
@@ -571,7 +573,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
   if (method == "ssGSEA") {
     ylab <- "ssGSEA Enrichment Score"
   } else if (method == "logmedian") {
-    ylab <- "Normalized Signature Score"
+    ylab <- "Normalised Signature Score"
   } else if (method == "ranking") {
     ylab <- "Signature Genes' Ranking"
   }
@@ -591,7 +593,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 #' Signature scores are computed per sample using one of three methods: \code{"ssGSEA"}, \code{"logmedian"}, or \code{"ranking"}.
 #' Optionally, the effect size (Cohen's f) and p-value for the association between the signature score and the continuous variable can be computed and displayed.
 #'
-#' @param data A data frame of normalized (non-transformed) gene expression counts. Rows are genes, columns are samples. Row names should be gene names, and column names should match sample identifiers in \code{metadata}.
+#' @param data A data frame of Normalised (non-transformed) gene expression counts. Rows are genes, columns are samples. Row names should be gene names, and column names should match sample identifiers in \code{metadata}.
 #' @param metadata A data frame where each row corresponds to a sample and contains sample-level attributes (e.g., clinical or experimental metadata). Must include a column matching the sample IDs in \code{data}.
 #' @param gene_sets A list of gene sets (signatures). Each element is either a character vector of gene names or a data frame with gene names and enrichment direction (1 for upregulated, -1 for downregulated).
 #' @param method Scoring method to use. One of \code{"ssGSEA"}, \code{"logmedian"}, or \code{"ranking"}. Default is \code{"logmedian"}.
@@ -708,7 +710,7 @@ PlotScores_Numeric <- function(data,
     if (method == "ssGSEA") {
       xlab <- "ssGSEA Enrichment Score"
     } else if (method == "logmedian") {
-      xlab <- "Normalized Signature Score"
+      xlab <- "Normalised Signature Score"
     } else if (method == "ranking") {
       xlab <- "Signature Genes' Ranking"
     }
@@ -812,6 +814,8 @@ PlotScores_Numeric <- function(data,
   # Annotate with axis labels.
   if (is.null(xlab)) {
     xlab <- Variable
+  }else if (xlab ==""){
+    xlab <- NULL
   }
 
   if (!is.null(title)) title <- wrap_title(title, width = widthTitle)
@@ -820,7 +824,7 @@ PlotScores_Numeric <- function(data,
   if (method == "ssGSEA") {
     ylab <- "ssGSEA Enrichment Score"
   } else if (method == "logmedian") {
-    ylab <- "Normalized Signature Score"
+    ylab <- "Normalised Signature Score"
   } else if (method == "ranking") {
     ylab <- "Signature Genes' Ranking"
   }

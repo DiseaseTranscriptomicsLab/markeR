@@ -743,7 +743,7 @@ PlotScores_Categorical_adapted_noX <- function(data, metadata, gene_sets,
     if (method == "ssGSEA") {
       xlab <- "ssGSEA Enrichment Score"
     } else if (method == "logmedian") {
-      xlab <- "Normalized Signature Score"
+      xlab <- "Normalised Signature Score"
     } else if (method == "ranking") {
       xlab <- "Signature Genes' Ranking"
     }
@@ -910,7 +910,7 @@ PlotScores_Categorical_adapted_noX <- function(data, metadata, gene_sets,
     
     # Adjust legend rows if legend_nrow is specified.
     if (!is.null(legend_nrow)) {
-      p <- p + ggplot2::guides(color = ggplot2::guide_legend(nrow = legend_nrow, override.aes = list(size = 4)))
+      p <- p + ggplot2::guides(color = ggplot2::guide_legend(nrow = legend_nrow, override.aes = list(size = pointSize + 2)))
     }
     
     # Store the plot in the list.
@@ -943,7 +943,7 @@ PlotScores_Categorical_adapted_noX <- function(data, metadata, gene_sets,
   if (method == "ssGSEA") {
     ylab <- "ssGSEA Enrichment Score"
   } else if (method == "logmedian") {
-    ylab <- "Normalized Signature Score"
+    ylab <- "Normalised Signature Score"
   } else if (method == "ranking") {
     ylab <- "Signature Genes' Ranking"
   }
@@ -1061,6 +1061,9 @@ PlotScores_adapted_noX <- function(data, metadata, gene_sets,
 }
 ```
 
+
+
+ 
 ### Load relevant data
 
 ```{r}
@@ -1159,7 +1162,7 @@ df_avg_expr <- data.frame(expression = c(avg_expr_quiesc, avg_expr_prol, avg_exp
 # Plot
 (plt_beforefilt <- ggplot(df_avg_expr, aes(x = expression, fill = Condition)) +
   geom_density(alpha = 0.7) +
-  theme_bw() +
+  theme_bw(base_size = 14) +
   xlab("Mean log10(count + 1) per gene") +
   ylab("Density") +
   geom_vline(xintercept = log10(70), linetype = "dotted", color = "black", size = 1) +
@@ -1179,12 +1182,12 @@ df_avg_expr <- data.frame(expression = c(avg_expr_quiesc, avg_expr_prol, avg_exp
 # Plot
 (plt_afterfilt <- ggplot(df_avg_expr, aes(x = expression, fill = Condition)) +
   geom_density(alpha = 0.7) +
-  theme_bw() +
+  theme_bw(base_size = 14) +
   xlab("Mean log10(count + 1) per gene") +
   ylab("Density") +
   geom_vline(xintercept = log10(70), linetype = "dotted", color = "black", size = 1) +
   scale_fill_manual(values = Condition_colors) +
-  theme(legend.position="bottom", legend.title = element_blank()))
+  theme(legend.position="bottom", legend.title = element_blank() ))
 
 ```
 
@@ -1207,9 +1210,9 @@ filtcounts_ggplot <- merge(filtcounts_ggplot,metadata, by="sampleID")
 (plt_beforenorm <- ggplot(filtcounts_ggplot, aes(sampleID,expression)) + 
     geom_boxplot(aes(fill=DatasetID))+ 
     xlab("Samples") + 
-    ylab("Gene Expression (log2(CPM))")    +  
+    ylab("Gene Expression \n(log2(CPM))")    +  
     theme(axis.text.x = element_text(angle = 45, hjust=1))+
-  theme_bw()+ 
+  theme_bw(base_size = 14)+ 
   theme(plot.title = element_text(hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5),
         axis.text.x=element_blank(),
@@ -1225,9 +1228,9 @@ normcounts_ggplot <- merge(normcounts_ggplot,metadata, by="sampleID")
 (plt_afternorm <- ggplot(normcounts_ggplot, aes(sampleID,expression)) + 
     geom_boxplot(aes(fill=DatasetID))+ 
     xlab("Samples") + 
-    ylab("Gene Expression (log2(CPM))")   +  
+    ylab("Gene Expression \n(log2(CPM))")   +  
     theme(axis.text.x = element_text(angle = 45, hjust=1))+
-  theme_bw()+ 
+  theme_bw(base_size = 14)+ 
   theme(plot.title = element_text(hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5),
         axis.text.x=element_blank(),
@@ -1262,18 +1265,18 @@ pc2 = round(100*ev[2]/sum(ev),2)
   geom_point(aes(fill=DatasetID), size=5, alpha=0.6, shape=21)+ 
   xlab(paste0("PC1: ",pc1,"% variance")) +
   ylab(paste0("PC2: ",pc2,"% variance")) + 
-  theme_bw()+
+  theme_bw(base_size = 14)+
   theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
   geom_vline(xintercept=0, linetype="dotted") + 
   geom_hline(yintercept=0, linetype="dotted") + 
     scale_fill_manual(values = dataset_colors) +
-  theme( legend.title = element_blank())+ guides(fill=guide_legend(nrow=7,byrow=TRUE)))
+  theme( legend.title = element_blank())+ guides(fill=guide_legend(ncol=2,byrow=TRUE)))
 
 (PCA_beforeBEC_Conditon <- ggplot(PCAData_beforeBC, aes(PC1,PC2))+
   geom_point(aes(fill=Condition), size=5, alpha=0.6, shape=21)+ 
   xlab(paste0("PC1: ",pc1,"% variance")) +
   ylab(paste0("PC2: ",pc2,"% variance")) + 
-  theme_bw()+
+  theme_bw(base_size = 14)+
   theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
   geom_vline(xintercept=0, linetype="dotted") + 
   geom_hline(yintercept=0, linetype="dotted") + 
@@ -1284,7 +1287,7 @@ pc2 = round(100*ev[2]/sum(ev),2)
   geom_point(aes(fill=CellType), size=5, alpha=0.6, shape=21)+ 
   xlab(paste0("PC1: ",pc1,"% variance")) +
   ylab(paste0("PC2: ",pc2,"% variance")) + 
-  theme_bw()+
+  theme_bw(base_size = 14)+
   theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
   geom_vline(xintercept=0, linetype="dotted") + 
   geom_hline(yintercept=0, linetype="dotted") + 
@@ -1315,18 +1318,18 @@ pc2 = round(100*ev[2]/sum(ev),2)
   geom_point(aes(fill=DatasetID), size=5, alpha=0.6, shape=21)+ 
   xlab(paste0("PC1: ",pc1,"% variance")) +
   ylab(paste0("PC2: ",pc2,"% variance")) + 
-  theme_bw()+
+  theme_bw(base_size = 14)+
   theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
   geom_vline(xintercept=0, linetype="dotted") + 
   geom_hline(yintercept=0, linetype="dotted") + 
     scale_fill_manual(values = dataset_colors) +
-  theme( legend.title = element_blank())+ guides(fill=guide_legend(nrow=7,byrow=TRUE)))
+  theme( legend.title = element_blank())+ guides(fill=guide_legend(ncol=3,byrow=TRUE)))
 
 (PCA_afterBEC_Conditon <- ggplot(PCAData_afterBC, aes(PC1,PC2))+
   geom_point(aes(fill=Condition), size=5, alpha=0.6, shape=21)+ 
   xlab(paste0("PC1: ",pc1,"% variance")) +
   ylab(paste0("PC2: ",pc2,"% variance")) + 
-  theme_bw()+
+  theme_bw(base_size = 14)+
   theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
   geom_vline(xintercept=0, linetype="dotted") + 
   geom_hline(yintercept=0, linetype="dotted") + 
@@ -1337,11 +1340,11 @@ pc2 = round(100*ev[2]/sum(ev),2)
   geom_point(aes(fill=CellType), size=5, alpha=0.6, shape=21)+ 
   xlab(paste0("PC1: ",pc1,"% variance")) +
   ylab(paste0("PC2: ",pc2,"% variance")) + 
-  theme_bw()+
+  theme_bw(base_size = 14)+
   theme(legend.position="bottom", legend.box="vertical", legend.margin=margin())  + 
   geom_vline(xintercept=0, linetype="dotted") + 
   geom_hline(yintercept=0, linetype="dotted") + 
-    scale_fill_manual(values = CellTypecols) +
+    scale_fill_manual(values = CellTypecols_alt) +
   theme( legend.title = element_blank()))
  
  
@@ -1358,9 +1361,9 @@ corrcounts_ggplot <- merge(corrcounts_ggplot,metadata, by="sampleID")
 (plt_afterBEC <- ggplot(corrcounts_ggplot, aes(sampleID,expression)) + 
     geom_boxplot(aes(fill=DatasetID))+ 
     xlab("Samples") + 
-    ylab("Gene Expression (log2(CPM))")   +  
+    ylab("Gene Expression \n(log2(CPM))")   +  
     theme(axis.text.x = element_text(angle = 45, hjust=1))+
-  theme_bw()+ 
+  theme_bw(base_size = 14)+ 
   theme(plot.title = element_text(hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5),
         axis.text.x=element_blank(),
@@ -1381,26 +1384,28 @@ vars <- c("DatasetID","Condition","CellType")
     geom_bar(stat = "identity") +
     ylab("Mean Variance Explained (%)") +
     xlab("") +
-    theme_minimal(base_size = 12) +
+    theme_minimal(base_size = 14) +
     theme(plot.title = element_text(hjust = 0.5),
           legend.position="bottom",
           legend.title=element_blank()) +
-    scale_fill_manual(values = c("#ECD963", "#EC6363", "#63B8EC")[1:length(vars)]) +
+  scale_fill_manual(values = c("#F4C430", "#E07A5F", "#3D84A8") )+
     guides(fill = guide_legend(title = "Variable"))+
-    ylim(c(0,100)))
+    ylim(c(0,100)) + 
+    theme(legend.position = "none"))
 
 
 (var_afterBEC <- ggplot(df_variance_corrcounts, aes(x = reorder(Variable, -VarianceExplained), y = VarianceExplained, fill = Variable)) +
     geom_bar(stat = "identity") + 
     ylab("Mean Variance Explained (%)") +
     xlab("") +
-    theme_minimal(base_size = 12) +
+    theme_minimal(base_size = 14) +
     theme(plot.title = element_text(hjust = 0.5),
           legend.position="bottom",
           legend.title=element_blank()) +
-    scale_fill_manual(values = c("#ECD963", "#EC6363", "#63B8EC")[1:length(vars)]) +
+    scale_fill_manual(values = c("#F4C430", "#E07A5F", "#3D84A8")) +
     guides(fill = guide_legend(title = "Variable"))+
-    ylim(c(0,100)))
+    ylim(c(0,100))+ 
+    theme(legend.position = "none"))
 
 
 
@@ -1414,22 +1419,27 @@ vars <- c("DatasetID","Condition","CellType")
 (panelA <- ggarrange(plt_beforefilt,plt_afterfilt, ncol=1, common.legend = T, legend="bottom"))
 # normalisation
 (panelB <- ggarrange(plt_beforenorm,plt_afternorm,ncol=1, common.legend = T, legend="bottom"))
-(panelAB <- ggarrange(panelA,panelB,nrow=1, widths=c(0.3,0.7), labels = c("A","B")))
+(panelAB <- ggarrange(panelA,panelB,nrow=1, widths=c(0.3,0.7), labels = c("A","B"),
+                      font.label = list(size = 18, face = "bold")))
 # before BEC
-(panelC_left <- ggarrange(PCA_beforeBEC_Dataset,PCA_beforeBEC_Conditon, ncol = 1, heights=c(0.6,0.4) ))
+(panelC_left <- ggarrange(PCA_beforeBEC_Dataset+
+  theme(plot.margin = margin(t = 5, r = 5, b = 5, l = 30)),PCA_beforeBEC_Conditon, ncol = 1, heights=c(0.7,0.3) ))
 (panelC_right <- ggarrange(PCA_beforeBEC_CellType,var_beforeBEC, ncol=1, heights=c(0.45,0.55) ))
 (panelC <- ggarrange(panelC_left,panelC_right, ncol=2  ))
 
 # after BEC
 (panelD_bottom <- ggarrange(PCA_afterBEC_Dataset,var_afterBEC, nrow=1, widths=c(0.6,0.4)))
 (panelD <- ggarrange(plt_afterBEC,panelD_bottom,ncol=1, heights = c(0.4,0.6)))
-(panelCD <- ggarrange(panelC,panelD, labels = c("C","D")))
-  
+(panelCD <- ggarrange(
+  panelC, panelD,
+  labels = c("C", "D"),
+  font.label = list(size = 18, face = "bold")
+))  
 (plt_sup1 <- ggarrange(panelAB,panelCD, ncol=1, heights=c(0.45,0.65)))
 ```
 
 ```{r}
-ggplot2::ggsave("Figs/Sup1_Preprocessing.png",
+ggplot2::ggsave("../Figures/Figs/Sup1_Preprocessing.png",
                 plt_sup1,
                 width = 19, height=16, bg = 'white')
 ```
@@ -1833,7 +1843,7 @@ plt_logmedian_stressors_1 <-  PlotScores_adapted_noX(data = corrcounts,
            legend_nrow = 1, 
            compute_cohen=F,
            pointSize=1,
-           titlesize=14, xlab = "Senescence Stressor")
+           titlesize=14, xlab = "Senescence Inducer")
 
 plt_logmedian_stressors_2 <-  PlotScores_adapted(data = corrcounts, 
            metadata = metadata, 
@@ -1849,7 +1859,7 @@ plt_logmedian_stressors_2 <-  PlotScores_adapted(data = corrcounts,
            legend_nrow = 1, 
            compute_cohen=F,
            pointSize=1,
-           titlesize=14, xlab = "Senescence Stressor")
+           titlesize=14, xlab = "Senescence Inducer")
 
 (plt_logmedian_stressors <- ggarrange(plt_logmedian_stressors_1,plt_logmedian_stressors_2, ncol=1, heights=c(0.55,0.45)))
 
@@ -1867,7 +1877,7 @@ plt_ssGSEA_stressors_1 <-  PlotScores_adapted_noX(data = corrcounts,
            legend_nrow = 1, 
            compute_cohen=F,
            pointSize=1,
-           titlesize=14, xlab = "Senescence Stressor")
+           titlesize=14, xlab = "Senescence Inducer")
 
 plt_ssGSEA_stressors_2 <-  PlotScores_adapted(data = corrcounts, 
            metadata = metadata, 
@@ -1883,7 +1893,7 @@ plt_ssGSEA_stressors_2 <-  PlotScores_adapted(data = corrcounts,
            legend_nrow = 1, 
            compute_cohen=F,
            pointSize=1,
-           titlesize=14, xlab = "Senescence Stressor")
+           titlesize=14, xlab = "Senescence Inducer")
 
 (plt_ssGSEA_stressors <- ggarrange(plt_ssGSEA_stressors_1,plt_ssGSEA_stressors_2, ncol=1, heights=c(0.55,0.45)))
 
@@ -1901,7 +1911,7 @@ plt_ranking_stressors_1 <-  PlotScores_adapted_noX(data = corrcounts,
            legend_nrow = 1, 
            compute_cohen=F,
            pointSize=1,
-           titlesize=14, xlab = "Senescence Stressor")
+           titlesize=14, xlab = "Senescence Inducer")
 
 plt_ranking_stressors_2 <-  PlotScores_adapted(data = corrcounts, 
            metadata = metadata, 
@@ -1917,7 +1927,7 @@ plt_ranking_stressors_2 <-  PlotScores_adapted(data = corrcounts,
            legend_nrow = 1, 
            compute_cohen=F,
            pointSize=1,
-           titlesize=14, xlab = "Senescence Stressor")
+           titlesize=14, xlab = "Senescence Inducer")
 
 (plt_ranking_stressors <- ggarrange(plt_ranking_stressors_1,plt_ranking_stressors_2, ncol=1, heights=c(0.55,0.45)))
 ```
@@ -1930,13 +1940,69 @@ plt_ranking_stressors_2 <-  PlotScores_adapted(data = corrcounts,
 ```
 
 ```{r}
-ggplot2::ggsave("../Figures/Figs/Sup3_Scores_SenescenceStressors.png",
+ggplot2::ggsave("../Figures/Figs/SupFigure3_Scores_SenescenceStressors.png",
                 supfigure_3,
                 width = 12, height=20, bg = 'white')
 ```
 
 
-## Supplementary Figure 4 - FPR for all signatures
+## Supplementary Figure 4 - Cohen's d and AUC for all signatures (scores)
+
+
+```{r  fig.width=8, fig.height=8}
+
+
+Scores_Overview_All <- PlotScores(data = corrcounts, 
+                                  metadata = metadata,  
+                                  gene_sets=signatures_bidirectional, 
+                                  Variable="Condition",  
+                                  method ="all",   
+                                  ncol = 3, 
+                                  nrow = 3, 
+                                  widthTitle=28, 
+                                  limits = c(0,2),   
+                                  title=NULL, 
+                                  titlesize = 10,
+                                  #ColorValues = list(heatmap=c("#F9F4AE", "#B44141") ),
+                                  mode="simple"#,
+                                  #widthlegend=30, 
+                                  #sig_threshold=0.05, 
+                                  #cohen_threshold=0.6,
+                                  #pointSize=6,
+                                  #colorPalette="Paired"
+)
+
+plt_cohenheatmap <- Scores_Overview_All$heatmap
+plt_cohenheatmap
+```
+
+```{r fig.width=8, fig.height=8}
+plt_auc_heatmap <- AUC_Scores(data = corrcounts, 
+                              metadata = metadata, 
+                              gene_sets=signatures_bidirectional, 
+                              method = "all", 
+                              mode = "simple", 
+                              variable="Condition", 
+                              nrow = 3, 
+                              ncol = 3, 
+                              limits = c(0.5,1), 
+                              widthTitle = 28, 
+                              titlesize = 10, 
+                              ColorValues = c("#F9F4AE", "#B44141") ) 
+plt_auc_heatmap
+
+```
+```{r fig.width=11, fig.height=12}
+(supfig4 <- ggarrange(plt_cohenheatmap,plt_auc_heatmap,ncol=1, labels="AUTO", heights=c(0.55,0.45) ))
+```
+
+```{r}
+ggplot2::ggsave("../Figures/Figs/SupFigure4_Scores_AUCCohen.png",
+                supfig4,
+                width = 11, height=12, bg = 'white')
+```
+
+## Supplementary Figure 5 - FPR for all signatures
 
  
 ```{r fig.width=12, fig.height=18}
@@ -1962,13 +2028,13 @@ plt_fdrsim_allsignatures_v2
 ```
 
 ```{r}
-ggplot2::ggsave("Figs/Sup4_FPRsimulations.png",
+ggplot2::ggsave("Figs/SupFigure5_FPRsimulations.png",
                 plt_fdrsim_allsignatures_v2,
                 width = 12, height=18, bg = 'white')
 ```
 
 
-## Supplementary Figure 5 - SenMayo for GTEx
+## Supplementary Figure 6 - SenMayo for GTEx
  
  
 
@@ -2134,7 +2200,7 @@ for (sig in sigs) {
   p_score <- ggplot(score_data, aes(x = tissue, y = method, fill = Cohen_f)) +
     geom_tile(color = "gray90") +
     geom_text(aes(label = signif), size = 6, vjust = 0.8, hjust = 0.5) +
-    scale_fill_gradient(low = "white", high = "#49B0AB", name = "Cohen's f") +
+    scale_fill_gradient(low = "white", high = "#49B0AB", name = "Cohen's f", limits=c(0,0.4) ) +
     theme_minimal(base_size = 12) +
     theme(
       axis.title = element_blank(),
@@ -2147,7 +2213,7 @@ for (sig in sigs) {
   p_gsea <- ggplot(gsea_data, aes(x = tissue, y = method, fill = abs(NES))) +
     geom_tile(color = "gray90") +
     geom_text(aes(label = signif), size = 6, vjust = 0.8, hjust = 0.5) +
-    scale_fill_gradient(low = "white", high = "#B04975", name = "|NES|") + 
+    scale_fill_gradient(low = "white", high = "#B04975", name = "|NES|", limits=c(0,2.5),na.value = "#B04975"  ) + 
     theme_minimal(base_size = 12) +
     theme(
       axis.title = element_blank(), 
@@ -2226,9 +2292,321 @@ plt_scoredistribution_SenMayo_GTEx
 ```{r fig.width=13, fig.height=15}
  # sup figure?
 
-(supfig5 <-  ggarrange(plt_gtex_scores_SenMayo,plt_scoredistribution_SenMayo_GTEx, heights=c(0.35,0.65), labels = c("A","B"), nrow=2))
-ggplot2::ggsave("../Figures/Figs/SupFigure5_GTEx_SenMayo.png",
-                supfig5,
+(supfig6 <-  ggarrange(plt_gtex_scores_SenMayo,plt_scoredistribution_SenMayo_GTEx, heights=c(0.35,0.65), labels = c("A","B"), nrow=2))
+ggplot2::ggsave("../Figures/Figs/SupFigure6_GTEx_SenMayo.png",
+                supfig6,
                 width = 13, height=15, bg = 'white')
 
 ```
+
+
+
+###SenMayo with and without inflammation genes
+
+
+```{r}
+# Retrieve all hallmark gene sets (category H)
+hallmark_sets <- msigdbr(species = "Homo sapiens", category = "H")
+
+# View unique hallmark gene set names
+unique(hallmark_sets$gs_name)
+
+inflammation_sets <- c(
+  "HALLMARK_INFLAMMATORY_RESPONSE",
+  "HALLMARK_TNFA_SIGNALING_VIA_NFKB",
+  "HALLMARK_INTERFERON_GAMMA_RESPONSE",
+  "HALLMARK_INTERFERON_ALPHA_RESPONSE",
+  "HALLMARK_IL6_JAK_STAT3_SIGNALING",
+  #"HALLMARK_COMPLEMENT",
+  "HALLMARK_INFLAMMATORY_RESPONSE"
+)
+
+inflammation_genes <- msigdbr(species = "Homo sapiens", category = "H") |>
+  dplyr::filter(gs_name %in% inflammation_sets) |>
+  dplyr::pull(gene_symbol) |>
+  unique()
+
+inflammation_genes
+
+overlap <- intersect(signatures_bidirectional$SAUL_SEN_MAYO$gene, inflammation_genes)
+
+overlap
+
+SenMayo_woInflammation <- signatures_bidirectional$SAUL_SEN_MAYO[signatures_bidirectional$SAUL_SEN_MAYO$gene %in% overlap,]
+SenMayo_InflammationOnly <- signatures_bidirectional$SAUL_SEN_MAYO[!signatures_bidirectional$SAUL_SEN_MAYO$gene %in% overlap,]
+
+SenMayo_Signatures <- list(SAUL_SEN_MAYO=signatures_bidirectional$SAUL_SEN_MAYO,
+                           SAUL_SEN_MAYO_WO_INFLAMMATION=SenMayo_woInflammation,
+                           SAUL_SEN_MAYO_INFLAMMATION=SenMayo_InflammationOnly
+)
+
+```
+
+
+```{r fig.width=8, fig.height=4}
+(plt_senmayo_scores <- PlotScores(data = corrcounts, 
+           metadata = metadata, 
+           method = "ranking", 
+           gene_sets = SenMayo_Signatures,  
+           ColorVariable = "CellType", 
+           Variable="Condition", 
+           ColorValues = CellTypecols_alt, 
+           ConnectGroups=T,  
+           ncol = 3, 
+           widthTitle=20, 
+           limits = NULL, 
+           legend_nrow = 1, 
+           compute_cohen=F,
+           pointSize=3,
+           titlesize=14, xlab = ""))
+
+```
+
+ 
+```{r}
+
+degenes_senmayo <- calculateDE(data=corrcounts, 
+                       metadata=metadata, 
+                       variables="Condition",   
+                       modelmat = NULL, 
+                       contrasts = c("Senescent - Proliferative",
+                                     "Senescent - Quiescent"#,
+                                     #"Proliferative - Quiescent"
+                       )) 
+
+degenes_senmayo
+```
+
+
+ 
+
+
+
+```{r}
+GSEAresults_senmayo <- runGSEA(degenes_senmayo, SenMayo_Signatures, stat = NULL)
+GSEAresults_senmayo
+```
+
+
+ 
+
+```{r fig.width=11, fig.height=3}
+
+(plotNESlollipop_senmayo <- plotNESlollipop(GSEA_results=GSEAresults_senmayo, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "#934873",
+                                    grid = T, nrow = 1, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
+
+```
+
+
+
+```{r} 
+
+methods <- c("logmedian","ranking","ssGSEA")
+gene_set <- SenMayo_Signatures[2:3] #wo/ senmayo original, wich we already got
+tissues <- unique(metadata_GTEx_alltissues$SMTSD) 
+
+results_df_score_SenMayoCustom <- data.frame(NULL)
+results_df_gsea_SenMayoCustom <- data.frame(NULL)
+
+# Initialize progress bar
+pb <- txtProgressBar(min = 0, max = length(tissues), style = 3)
+
+for (i in seq_along(tissues)) {
+  
+  tissue <- tissues[i]
+  
+  subset_metadata <- metadata_GTEx_alltissues[metadata_GTEx_alltissues$SMTSD == tissue,]
+  subset_data <- GTEx_alltissues[,subset_metadata$SAMPID]
+  
+  
+  # Update progress bar
+  setTxtProgressBar(pb, i)
+  
+  for (sig in names(gene_set)){
+    
+    signature <- list(gene_set[[sig]])
+    names(signature) <- sig
+    
+    data_varassoc_gsea <- suppressWarnings(suppressMessages(GSEA_VariableAssociation(data=subset_data, 
+                                                                                     metadata=subset_metadata, 
+                                                                                     cols=c("AGE"),  
+                                                                                     mode="simple", 
+                                                                                     gene_set=signature)$data))
+    
+    data_varassoc_gsea <- data_varassoc_gsea[,c("NES","pval","Contrast")]
+    data_varassoc_gsea$signature <- sig
+    data_varassoc_gsea$method <- "GSEA"
+    data_varassoc_gsea$tissue <- tissue
+    
+    results_df_gsea_SenMayoCustom <- rbind(results_df_gsea_SenMayoCustom, data_varassoc_gsea)
+    
+    for (method in methods){
+      
+      data_varassoc_score <- suppressWarnings(suppressMessages(Score_VariableAssociation(data=subset_data, 
+                                                                                         metadata=subset_metadata, 
+                                                                                         cols=c("AGE"), # SMRIN was a variable for batch correction
+                                                                                         method=method, 
+                                                                                         gene_set = signature, 
+                                                                                         mode="simple", printplt = F)$Overall))
+      data_varassoc_score$signature <- sig
+      data_varassoc_score$method <- method
+      data_varassoc_score$tissue <- tissue
+      results_df_score_SenMayoCustom <- rbind(results_df_score_SenMayoCustom, data_varassoc_score)
+      
+      
+      
+    }
+    
+  }
+  
+}
+
+# Close the progress bar
+close(pb)
+
+
+results_df_gsea_SenMayoCustom
+results_df_score_SenMayoCustom
+```
+ 
+```{r}
+
+results_df_gsea_SenMayoCustom  <- results_df_gsea_SenMayoCustom  %>%
+  group_by(signature) %>%
+  mutate(padj = p.adjust(pval, method = "BH")) %>%
+  ungroup()
+
+results_df_score_SenMayoCustom <- results_df_score_SenMayoCustom  %>%
+  group_by(signature, method) %>%
+  mutate(P_adj = p.adjust(P_Value, method = "BH")) %>%
+  ungroup()
+
+
+# Alphabetically order tissue factor
+tissue_levels <- sort(unique(results_df_score_SenMayoCustom$tissue), decreasing = T)
+results_df_score_SenMayoCustom$tissue <- factor(results_df_score_SenMayoCustom$tissue, levels = tissue_levels)
+results_df_gsea_SenMayoCustom$tissue  <- factor(results_df_gsea_SenMayoCustom$tissue, levels = tissue_levels)
+
+results_df_gsea_SenMayoCustom
+results_df_score_SenMayoCustom
+```
+
+
+```{r fig.width=12, fig.height=5}
+
+# Ensure correct factor levels for method and tissue
+results_df_score_SenMayoCustom$method <- factor(results_df_score_SenMayoCustom$method, levels = c("logmedian", "ranking", "ssGSEA"))
+results_df_gsea_SenMayoCustom$method <- "GSEA"  # single method name
+
+# Add asterisk for significance
+results_df_score_SenMayoCustom <- results_df_score_SenMayoCustom %>%
+  mutate(signif = ifelse(P_adj < 0.05, "*", ""))
+
+results_df_gsea_SenMayoCustom <- results_df_gsea_SenMayoCustom %>%
+  mutate(signif = ifelse(padj < 0.05, "*", ""))
+
+# Loop through each signature
+sigs <- unique(results_df_score_SenMayoCustom$signature)
+
+list_plts_sigs <- list()
+for (sig in sigs) {
+  # Subset for this signature
+  score_data <- results_df_score_SenMayoCustom %>% filter(signature == sig)
+  gsea_data  <- results_df_gsea_SenMayoCustom %>% filter(signature == sig)
+
+  # Score plot
+  p_score <- ggplot(score_data, aes(x = tissue, y = method, fill = Cohen_f)) +
+    geom_tile(color = "gray90") +
+    geom_text(aes(label = signif), size = 6, vjust = 0.8, hjust = 0.5) +
+    scale_fill_gradient(low = "white", high = "#49B0AB", name = "Cohen's f", limits=c(0,0.4) ) +
+    theme_minimal(base_size = 12) +
+    theme(
+      axis.title = element_blank(),
+      axis.text.x = element_text(angle = 60, hjust = 1, size = 12),
+      axis.text.y = element_text(size = 12),
+      legend.position = "none"
+    )
+
+  # GSEA plot
+  p_gsea <- ggplot(gsea_data, aes(x = tissue, y = method, fill = abs(NES))) +
+    geom_tile(color = "gray90") +
+    geom_text(aes(label = signif), size = 6, vjust = 0.8, hjust = 0.5) +
+    scale_fill_gradient(low = "white", high = "#B04975", name = "|NES|", limits=c(0,2.5) ) + 
+    theme_minimal(base_size = 12) +
+    theme(
+      axis.title = element_blank(), 
+      axis.text.x = element_blank(),
+      axis.ticks.x = element_blank(),
+      legend.position = "none"
+    )
+
+  # Combine score and GSEA plots
+  combined_plot <- p_gsea + p_score  + 
+    plot_layout(ncol = 1, guides = "collect", heights = c(0.25, 0.75))  
+
+  list_plts_sigs[[sig]] <- combined_plot
+}
+
+plt_senmayo_original <- plt_gtex_scores_SenMayo + plot_annotation(
+  title = "SAUL_SEN_MAYO",
+  theme = theme(
+    plot.title = element_text(hjust = 0.5, size = 16 )
+  )
+)
+plt_senmayo_woinfl <- list_plts_sigs$SAUL_SEN_MAYO_WO_INFLAMMATION +
+  plot_annotation(
+  title = "SAUL_SEN_MAYO_WO_INFLAMMATION",
+  theme = theme(
+    plot.title = element_text(hjust = 0.5, size = 16 )
+  )
+)
+plt_senmayo_infl <- list_plts_sigs$SAUL_SEN_MAYO_INFLAMMATION +
+  plot_annotation(
+  title = "SAUL_SEN_MAYO_INFLAMMATION",
+  theme = theme(
+    plot.title = element_text(hjust = 0.5, size = 16 )
+  )
+)
+
+```
+```{r fig.width=12, fig.height=10}
+ 
+
+# Adjust plot 1: keep legend, hide x-axis
+plt_senmayo_original <- plt_senmayo_original + 
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+# Adjust plot 2: remove legend and x-axis
+plt_senmayo_woinfl <- plt_senmayo_woinfl + 
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank() )
+ 
+
+# Combine plots vertically
+(plt_senmayo_gtex_custom <- ggarrange(
+  plt_senmayo_original,
+  plt_senmayo_woinfl,
+  plt_senmayo_infl,
+  ncol = 1,
+  align = "v",
+  heights=c(0.3,0.2,0.5)
+))
+ 
+```
+
+```{r fig.width=12, fig.height=6}
+(plt_senmayo_invitro <- ggarrange(plt_senmayo_scores,plotNESlollipop_senmayo, nrow=2, heights=c(0.65,0.35), labels=c("A","B")))
+```
+
+```{r fig.width=12, fig.height= 16}
+(plt_senmayo_custom <- ggarrange(plt_senmayo_invitro,plt_senmayo_gtex_custom, labels=c("","C"), ncol=1, heights=c(0.4,0.6)))
+```
+```{r}
+ggplot2::ggsave("../Figures/Figs/SupFigure7_GTEx_SenMayo_Custom.png",
+                plt_senmayo_custom,
+                width = 12, height=16, bg = 'white')
+```
+
