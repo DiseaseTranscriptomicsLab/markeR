@@ -6,7 +6,7 @@
 <!-- badges: start -->
 
 ![](https://img.shields.io/badge/status-development-yellowgreen)
-[![R-CMD-check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/r.yaml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/r.yaml)
+[![R-CMD-check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml)
 [![Pkgdown](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://diseasetranscriptomicslab.github.io/markeR/)
 <!-- badges: end -->
 
