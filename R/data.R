@@ -45,3 +45,20 @@
 #'
 #' @keywords datasets
 "counts_example"
+
+
+#' Example Gene Sets for Cellular Senescence
+#'
+#' @format A named list of length 3:
+#' \describe{
+#'   \item{Literature_Senescence}{Character vector of gene symbols. A small, curated gene set of commonly reported senescence markers, with directionality (+1 or -1).}
+#'   \item{REACTOME_Senescence}{Character vector of gene symbols. A gene set from the REACTOME_CELLULAR_SENESCENCE MSigDB pathway. No directionality.}
+#'   \item{HernandezSegura}{A data frame with columns `gene` and `direction`. A gene set from Hernandez-Segura et al. (2017), with directionality (+1 or -1).}
+#' }
+#'
+#' @usage data(genesets_example)
+#' @keywords datasets
+#' @references Hernandez-Segura A, de Jong TV, Melov S, Guryev V, Campisi J, Demaria M. Unmasking Transcriptional Heterogeneity in Senescent Cells.
+#' *Curr Biol.* 2017 Sep 11;27(17):2652-2660.e4. doi: 10.1016/j.cub.2017.07.033. Epub 2017 Aug 30. PMID: 28844647; PMCID: PMC5788810.
+"genesets_example"
+
