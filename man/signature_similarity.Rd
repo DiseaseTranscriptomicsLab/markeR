@@ -54,7 +54,7 @@ signature_similarity(
 \item{jaccard_threshold}{Numeric. Minimum Jaccard index required for a gene set to be included in the plot. Default is \code{0}.}
 
 \item{msig_subset}{Optional. Character vector of MSigDB gene set names to subset from the specified collection. Useful to restrict analysis to a specific set of pathways.
-If supplied, other filters will apply only to this subset.}
+If supplied, other filters will apply only to this subset. Use "collection = "all" to mix gene sets from different collections.}
 
 \item{width_text}{Integer. Character wrap width for labels.}
 
