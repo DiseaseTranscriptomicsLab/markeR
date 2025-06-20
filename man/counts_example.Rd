@@ -5,8 +5,7 @@
 \alias{counts_example}
 \title{Gene Expression Counts for Marthandan et al. (2016) RNA-Seq Data}
 \format{
-A numeric matrix with rows corresponding to genes and columns corresponding to samples.
-Row names indicate gene symbols and column names are sample identifiers.
+A numeric matrix with rows as genes (gene symbols) and columns as samples (sample IDs).
 }
 \source{
 \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE63577}
@@ -15,19 +14,22 @@ Row names indicate gene symbols and column names are sample identifiers.
 counts_example
 }
 \description{
-A numeric matrix containing gene expression data from the Marthandan et al. (2016) study (GEO code GSE63577).
-The data represent normalized (non-transformed) counts for genes across samples.
+A numeric matrix containing filtered and normalized gene expression data from the Marthandan et al. (2016) study (GEO accession GSE63577).
 }
 \details{
-The samples were quality-controlled using FastQC and aligned using kallisto (v0.46.1) against the
-RefSeq v109 transcriptome. The original dataset had 45 samples, but intermediate time points from
-HFF and MRC5 were removed.
+Raw FASTQ files were downloaded using \code{fasterq-dump} (v2.11.0) and processed in a reproducible conda environment (Python v3.11.5).
+Quality control was conducted using FastQC (v0.12.1) and summarised with MultiQC (v1.14). Pseudo-alignment to the RefSeq transcriptome (NCBI release 109)
+was performed using kallisto (v0.44.0). Genes with low expression (mean count < 70 in all conditions) were filtered out. Count normalization factors were
+calculated with \code{edgeR::calcNormFactors}, and log2-transformed values were obtained via \code{limma::voom}.
+
+Intermediate time points for HFF and MRC5 cell lines were excluded, resulting in a final dataset with 45 high-quality samples across proliferative, quiescent,
+and senescent conditions.
 }
 \references{
-Marthandan S, Priebe S, Baumgart M, Groth M et al. Similarities in Gene Expression Profiles during
-In Vitro Aging of Primary Human Embryonic Lung and Foreskin Fibroblasts. Biomed Res Int 2015;2015:731938. PMID: 26339636
+Marthandan S, Priebe S, Baumgart M, Groth M et al. Similarities in Gene Expression Profiles during In Vitro Aging of Primary Human Embryonic Lung and
+Foreskin Fibroblasts. \emph{Biomed Res Int} 2015;2015:731938. PMID: 26339636
 
-Marthandan S, Baumgart M, Priebe S, Groth M et al. Conserved Senescence Associated Genes and Pathways
-in Primary Human Fibroblasts Detected by RNA-Seq. PLoS One 2016;11(5):e0154531. PMID: 27140416
+Marthandan S, Baumgart M, Priebe S, Groth M et al. Conserved Senescence Associated Genes and Pathways in Primary Human Fibroblasts Detected by RNA-Seq.
+\emph{PLoS One} 2016;11(5):e0154531. PMID: 27140416
 }
 \keyword{datasets}

@@ -33,7 +33,7 @@ PlotScores_Categorical(
 )
 }
 \arguments{
-\item{data}{A data frame of normalized (non-transformed) counts where each row is a gene and each column is a sample.
+\item{data}{A data frame of Normalised (non-transformed) counts where each row is a gene and each column is a sample.
 Row names should contain gene names, and column names should contain sample identifiers. \strong{(Required)}}
 
 \item{metadata}{A data frame describing the attributes of each sample, where each row corresponds to a sample and each column to an attribute.
@@ -102,7 +102,7 @@ Four methods are available:
 \itemize{
 \item \strong{ssGSEA}: Uses the single-sample Gene Set Enrichment Analysis (ssGSEA) method to compute an enrichment score
 for each signature in each sample using an adaptation of the \code{gsva()} function from the \code{GSVA} package.
-\item \strong{logmedian}: Computes the score as the sum of the normalized (log2-median-centered) expression values of the
+\item \strong{logmedian}: Computes the score as the sum of the Normalised (log2-median-centered) expression values of the
 signature genes divided by the number of genes in the signature.
 \item \strong{ranking}: Computes gene signature scores for each sample by ranking the expression of signature genes
 in the dataset and normalizing the score based on the total number of genes.
