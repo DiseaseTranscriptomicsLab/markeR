@@ -4,8 +4,8 @@ pkgdown_sha: ~
 articles:
   Tutorial_BenchmarkingMode: Tutorial_BenchmarkingMode.html
   Tutorial_DiscoveryMode: Tutorial_DiscoveryMode.html
-  Tutorial_SignatureSimilarity: Tutorial_SignatureSimilarity.html
-last_built: 2025-06-20T15:42Z
+  Tutorial_GeneSetSimilarity: Tutorial_GeneSetSimilarity.html
+last_built: 2025-06-20T16:33Z
 urls:
   reference: https://diseasetranscriptomicslab.github.io/markeR/reference
   article: https://diseasetranscriptomicslab.github.io/markeR/articles

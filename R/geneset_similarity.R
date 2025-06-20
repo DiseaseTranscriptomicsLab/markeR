@@ -40,7 +40,7 @@
 #' )
 #'
 #' @export
-signature_similarity <- function(
+geneset_similarity <- function(
     signatures,
     other_user_signatures = NULL,
     collection = NULL,
@@ -78,8 +78,8 @@ signature_similarity <- function(
     stop("Universe must be a character vector or NULL.")
   }
 
-  if (!is.numeric(or_label_threshold) || or_label_threshold < 0) {
-    stop("or_label_threshold must be a non-negative numeric value.")
+  if (!is.numeric(or_threshold) || or_threshold < 0) {
+    stop("or_threshold must be a non-negative numeric value.")
   }
 
   if (!is.numeric(pval_threshold) || pval_threshold < 0 || pval_threshold > 1) {
@@ -188,7 +188,7 @@ signature_similarity <- function(
         ft <- fisher.test(cont_tbl)
 
         score <- log10(ft$estimate)
-        if (!is.na(ft$p.value) && ft$p.value <= pval_threshold && ft$estimate >= or_label_threshold) {
+        if (!is.na(ft$p.value) && ft$p.value <= pval_threshold && ft$estimate >= or_threshold) {
           label <- sprintf("%.1f", score)
         } else {
           label <- ""

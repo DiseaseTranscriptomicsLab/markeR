@@ -21,9 +21,9 @@ reference:
       - counts_example
       - metadata_example
       - genesets_example
-  - title: "Signature Homology"
+  - title: "Gene Set Similarity"
     contents:
-      - signature_similarity
+      - geneset_similarity
   - title: "Score-based Analysis"
     contents:
       - CalculateScores
