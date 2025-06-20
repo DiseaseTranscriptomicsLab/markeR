@@ -1,0 +1,26 @@
+name: R-CMD-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  R-CMD-check:
+    runs-on: ubuntu-latest
+    name: R CMD check
+    steps:
+      - uses: actions/checkout@v3
+      - uses: r-lib/actions/setup-r@v2
+
+      - name: Install dependencies
+        run: |
+          install.packages('remotes')
+          remotes::install_deps(dependencies = TRUE)
+        shell: Rscript {0}
+
+      - name: Check
+        run: |
+          R CMD check --no-manual --as-cran .
+        shell: bash

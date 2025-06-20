@@ -1,0 +1,13 @@
+---
+title: "Discovery Mode Tutorial"
+output: rmarkdown::html_document
+vignette: >
+  %\VignetteIndexEntry{Introduction to markeR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r}
+print("Hello World")
+```
+
