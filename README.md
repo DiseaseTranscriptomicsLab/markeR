@@ -15,7 +15,7 @@
 > Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). *markeR: an R
 > Toolkit for Evaluating Gene Sets as Phenotypic Markers*. Gulbenkian
 > Institute for Molecular Medicine, Faculdade de Medicina, Universidade
-> de Lisboa, Lisbon, Portugal. R package version 0.99.0,
+> de Lisboa, Lisbon, Portugal. R package version 0.9.1,
 > <https://github.com/DiseaseTranscriptomicsLab/markeR>.
 
 **markeR** provides a suite of methods for using gene sets (signatures)
