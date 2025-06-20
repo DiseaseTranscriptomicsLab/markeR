@@ -35,7 +35,7 @@ PlotScores(
 )
 }
 \arguments{
-\item{data}{A data frame of normalized (non-transformed) counts where each row is a gene and each column is a sample.
+\item{data}{A data frame of Normalised (non-transformed) counts where each row is a gene and each column is a sample.
 Row names should contain gene names, and column names should contain sample identifiers. \strong{(Required)}}
 
 \item{metadata}{A data frame with sample-level attributes. Each row corresponds to a sample, with the first column containing sample IDs

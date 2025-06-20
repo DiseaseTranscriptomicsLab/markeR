@@ -27,7 +27,7 @@ PlotScores_Numeric(
 )
 }
 \arguments{
-\item{data}{A data frame of normalized (non-transformed) gene expression counts. Rows are genes, columns are samples. Row names should be gene names, and column names should match sample identifiers in \code{metadata}.}
+\item{data}{A data frame of Normalised (non-transformed) gene expression counts. Rows are genes, columns are samples. Row names should be gene names, and column names should match sample identifiers in \code{metadata}.}
 
 \item{metadata}{A data frame where each row corresponds to a sample and contains sample-level attributes (e.g., clinical or experimental metadata). Must include a column matching the sample IDs in \code{data}.}
 

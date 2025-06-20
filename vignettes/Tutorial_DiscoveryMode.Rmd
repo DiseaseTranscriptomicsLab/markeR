@@ -7,7 +7,183 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r}
-print("Hello World")
+This vignette provides a comprehensive introduction to the **markeR** package, focusing on its **Discovery Mode**. The discovery mode was designed for users who are interested in quantifying a known, robust gene set in a given dataset to explore associations with other phenotypic or clinical variables. This approach is particularly suited to hypothesis generation where the phenotype marked by the gene set is of known biological or clinical relevance.
+ 
+# Installation 
+
+The user can install the development version of markeR from [GitHub](https://github.com/) with:
+   
+ 
+```{r, include = FALSE }
+library(markeR)
 ```
 
+``` r
+# install.packages("devtools")
+devtools::install_github("DiseaseTranscriptomicsLab/markeR")
+```
+
+ 
+# Case-study: Senescence
+
+We will be using an already pre-processed gene expression dataset, derived from the Marthandan et al. (2016) study (GSE63577), that includes human fibroblast samples cultured under two different conditions: replicative senescence and proliferative control. The dataset has already been filtered and normalized using the `edgeR` package. For more information about the dataset structure, see the help pages for `?counts_example` and `?metadata_example`.
+
+This dataset serves as a working example to demonstrate the main functionalities of the markeR package. In particular, it will be used to showcase the two primary modules designed for benchmarking gene signatures:
+
+-   **Score**: calculates expression-based signature scores for each sample, and
+-   **Enrichment**: evaluates the over-representation of gene signatures within ranked gene lists.
+
+To illustrate the usage of `markeR`, we use the **HernandezSegura** gene set: A transcriptomic gene set identified by Hernandez-Segura et al. (2017) as consistently altered across multiple senescence models. This set includes information on the directionality of gene regulation. It has shown strong performance in classification and enrichment analyses, including in the original paper of markeR, and also in the Tutorial on the *Benchmarking Mode* of `markeR`.
+
+```{r example}
+library(markeR)
+```
+
+```{r loadsig} 
+# Load example gene sets
+data("genesets_example")
+HernandezSegura_GeneSet <- list(HernandezSegura=genesets_example$HernandezSegura)
+print(HernandezSegura_GeneSet) 
+```
+
+```{r loaddata}
+data(counts_example)
+# Load example data
+counts_example[1:5,1:5]
+```
+
+For illustration purposes of different variable types, let's imagine we also had two additional variables: one indicating the number of days between sample preparation and sequencing (`DaysToSequencing`), and another identifying the person who processed each sample (`researcher`). These variables are hypothetical and not part of the original study design.
+ 
+
+```{r load_metadata}
+data(metadata_example)
+
+set.seed("123456")
+
+metadata_example$Researcher <- sample(c("John","Ana","Francisca"),39, replace = T)
+metadata_example$DaysToSequencing <- sample(c(1:20),39, replace = T)
+ 
+head(metadata_example)
+```
+
+# Score-Based approaches 
+  
+The **Score** module in `markeR` quantifies the association between a gene signature and phenotypic variables by calculating a score for each sample based on the expression of genes in the signature. This score can then be correlated with other variables, such as clinical or experimental conditions:
+
+- **Quantifies associations** between phenotype variables and a gene signature score using *Cohen's effect sizes* and *p-values*.
+- **Visualizes** results through lollipop plots, contrast plots, and distribution plots.
+
+This is useful for identifying:
+
+- **Biological relationships** (e.g., phenotype-score associations)
+- **Technical confounders** (e.g., batch effects)
+
+## Outputs
+
+The main function returns a structured list with:
+
+- **`overall`**: Effect sizes (*Cohen’s f*) and p-values for each variable.
+- **`contrasts`**: For categorical variables, pairwise or grouped comparisons using *Cohen’s d* with BH-adjusted p-values.
+- **`plot`**: A combined visualization showing:
+    1. Lollipop plot of effect sizes (*Cohen’s f*)
+    2. Distribution plots of the score by variable (density or scatter)
+    3. Lollipop plots of contrasts (*Cohen’s d*) for categorical variables, if applicable
+- **`plot_overall`**, **`plot_contrasts`**, **`plot_distributions`**: Individual components of the combined plot.
+
+## Controlling Contrast Resolution
+
+The `mode` parameter determines the level of contrast detail for categorical variables:
+
+- **`"simple"`**: All pairwise contrasts between group levels (e.g., A vs B, A vs C, B vs C).
+- **`"medium"`**: One group vs. the union of all others (e.g., A vs B+C+D).
+- **`"extensive"`**: All algebraic combinations of group levels (e.g., A+B vs C+D).
+
+## Results
+
+For this example, we use:
+
+- The **HernandezSegura** gene signature
+- The **`logmedian`** scoring method
+- **`mode = "extensive"`** for thorough contrast analysis
+
+We also include two synthetic phenotypic variables:
+
+- **`Researcher`** — a categorical variable representing who processed each sample
+- **`DaysToSequencing`** — a numeric variable indicating time between preparation and sequencing
+
+Though artificial, these mimic potential **technical covariates**. Strong associations between these and the score could indicate **batch effects**, where technical variation may confound biological interpretation.
+
+
+```{r variableassoc_score_sen, fig.width=10, fig.height=7, out.width="100%", warning=FALSE, message=FALSE} 
+results_scoreassoc_bidirect <- Score_VariableAssociation(data = counts_example, 
+                          metadata = metadata_example, 
+                          cols = c("Condition","Researcher","DaysToSequencing"), 
+                          method="logmedian", 
+                          gene_set = HernandezSegura_GeneSet,
+                          mode="extensive",
+                          nonsignif_color = "white", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05,
+                          widthlabels=30, labsize=10, title=NULL, titlesize=14, pointSize=5, discrete_colors=NULL,
+                          continuous_color = "#8C6D03", color_palette = "Set2")
+
+results_scoreassoc_bidirect$Overall
+results_scoreassoc_bidirect$Contrasts
+```
+ 
+# Enrichment-based approaches
+
+The `GSEA_VariableAssociation()` function evaluates how phenotypic variables are associated with **gene set activity**, using enrichment scores derived from gene expression statistics (B- or t-statistics). This allows users to understand whether a gene set is enriched or depleted in relation to different sample attributes.
+
+## Outputs
+
+The `GSEA_VariableAssociation()` function returns a list with two elements:
+
+- **`data`**: A tidy data frame of GSEA results. For each variable contrast, this includes:
+    - **Contrast**: The comparison performed (e.g., A - B, A - (B+C))
+    - **Statistic**: The metric used for gene ranking (either *t* or *B*)
+    - **NES**: Normalized Enrichment Score
+    - **Adjusted p-value**: Multiple-testing corrected p-value (e.g., Benjamini–Hochberg)
+    - **Gene Set Name**: The gene set being tested
+
+- **`plot`**: A `ggplot2` object showing the NES and significance of each contrast as a **lollipop plot**:
+    - **Point position** reflects NES (directional enrichment)
+    - **Point color** reflects adjusted p-value significance
+    - **Dashed lines** represent contrasts with negative NES under the **B statistic**, indicating likely non-alteration
+
+## Output Interpretation
+
+Depending on the statistic used (`t` or `B`), the interpretation of results varies:
+
+- **Negative NES (Normalized Enrichment Score):**
+    - **t statistic**: A negative NES implies the gene set is **depleted** in over-expressed genes — i.e., genes in the set are under-expressed relative to others.
+    - **B statistic**: A negative NES suggests the gene set is **less altered** than most other genes — indicating a lack of strong expression change.
+
+- **Dashed Lines in the Plot:**
+    - Dashed lines denote contrasts with **negative NES** using the **B statistic**, indicating gene sets that are putatively *not* altered.
+
+- **Subtitle Differences in the Plot:**
+    - When using the **B statistic**, the plot subtitle is **"Altered Contrasts"**.
+    - When using the **t statistic**, the subtitle becomes **"Enriched/Depleted Contrasts"**.
+
+## Example: Exploring Gene Set Enrichment by Variable
+
+The following code evaluates how three phenotypic variables — `Condition`, `Researcher`, and `DaysToSequencing` — are associated with the **HernandezSegura** gene set:
+
+```{r GSEA_varassoc, fig.width=6, fig.height=6, out.width="60%", warning=FALSE, message=FALSE}
+GSEA_VariableAssociation(
+  data = counts_example,
+  metadata = metadata_example,
+  cols = c("Condition", "Researcher", "DaysToSequencing"),
+  mode = "simple",
+  gene_set = HernandezSegura_GeneSet,
+  saturation_value = NULL,
+  nonsignif_color = "white",
+  signif_color = "red",
+  sig_threshold = 0.05,
+  widthlabels = 30,
+  labsize = 10,
+  titlesize = 14,
+  pointSize = 5
+)
+ 
+```
+ 

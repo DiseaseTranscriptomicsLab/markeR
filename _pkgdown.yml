@@ -3,6 +3,8 @@ template:
   bootstrap: 5
   light-switch: true
   assets: "pkgdown/assets"
+  toc:
+    depth: 4
 
 badges: true
 
@@ -18,9 +20,10 @@ reference:
     contents:
       - counts_example
       - metadata_example
-  - title: "Signature Homology"
+      - genesets_example
+  - title: "Gene Set Similarity"
     contents:
-      - signature_similarity
+      - geneset_similarity
   - title: "Score-based Analysis"
     contents:
       - CalculateScores
