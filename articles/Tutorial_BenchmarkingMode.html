@@ -41,7 +41,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/Tutorial_BenchmarkingMode.html">Benchmarking Mode Tutorial</a></li>
     <li><a class="dropdown-item" href="../articles/Tutorial_DiscoveryMode.html">Discovery Mode Tutorial</a></li>
-    <li><a class="dropdown-item" href="../articles/Tutorial_SignatureSimilarity.html">Signature Similarity Tutorial</a></li>
+    <li><a class="dropdown-item" href="../articles/Tutorial_GeneSetSimilarity.html">Gene Set Similarity Tutorial</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -80,10 +80,1384 @@
 
     
     
+<p>This vignette provides a comprehensive introduction to the
+<strong>markeR</strong> package, focusing on its <strong>Benchmarking
+Mode</strong>. This mode is designed to evaluate the performance of gene
+signatures in quantifying specific biological states or phenotypes, such
+as disease states or cellular conditions. It allows users to assess the
+robustness and reliability of gene signatures across various conditions,
+providing a standardized framework for benchmarking.</p>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Hello World"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] "Hello World"</span></span></code></pre>
-  </main>
+<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"DiseaseTranscriptomicsLab/markeR"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="case-study-senescence">Case-study: Senescence<a class="anchor" aria-label="anchor" href="#case-study-senescence"></a>
+</h2>
+<p>We will be using an already pre-processed gene expression dataset,
+derived from the Marthandan et al. (2016) study (GSE63577), that
+includes human fibroblast samples cultured under two different
+conditions: replicative senescence and proliferative control. The
+dataset has already been filtered and normalized using the
+<code>edgeR</code> package. For more information about the dataset
+structure, see the help pages for <code><a href="../reference/counts_example.html">?counts_example</a></code> and
+<code><a href="../reference/metadata_example.html">?metadata_example</a></code>.</p>
+<p>This dataset serves as a working example to demonstrate the main
+functionalities of the markeR package. In particular, it will be used to
+showcase the two primary modules designed for benchmarking gene
+signatures:</p>
+<ul>
+<li>
+<strong>Score</strong>: calculates expression-based signature scores
+for each sample, and</li>
+<li>
+<strong>Enrichment</strong>: evaluates the over-representation of
+gene signatures within ranked gene lists.</li>
+</ul>
+<p>To illustrate the usage of <code>markeR</code>, we use three gene
+sets commonly associated with cellular senescence:</p>
+<ul>
+<li>
+<strong>LiteratureMarkers</strong>: A small, curated set of
+well-established senescence-associated genes repeatedly reported in the
+literature. This concise gene set includes key markers often used for
+validating senescence phenotypes. This set includes information on the
+directionality of gene regulation (i.e., whether genes are typically up-
+or down-regulated in senescence).</li>
+<li>
+<strong>REACTOME_CELLULAR_SENESCENCE</strong>: A comprehensive gene
+set from the MSigDB REACTOME collection, representing known molecular
+pathways involved in cellular senescence and commonly used in
+enrichment-based analyses. This is also treated as an undirected gene
+set without information on the up- or down-regulation of individual
+genes.</li>
+<li>
+<strong>HernandezSegura</strong>: A transcriptomic gene set
+identified by Hernandez-Segura et al. (2017) as consistently altered
+across multiple senescence models. This set includes information on the
+directionality of gene regulation. It has shown strong performance in
+classification and enrichment analyses, including in the original paper
+of markeR.</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://diseasetranscriptomicslab.github.io/markeR/">markeR</a></span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Load example gene sets</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"genesets_example"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">genesets_example</span><span class="op">)</span> </span></code></pre></div>
+<pre><code><span><span class="co">## $HernandezSegura</span></span>
+<span><span class="co">##        gene enrichment</span></span>
+<span><span class="co">## 1    ACADVL          1</span></span>
+<span><span class="co">## 2     ADPGK          1</span></span>
+<span><span class="co">## 3  ARHGAP35         -1</span></span>
+<span><span class="co">## 4     ARID2         -1</span></span>
+<span><span class="co">## 5     ASCC1         -1</span></span>
+<span><span class="co">## 6   B4GALT7          1</span></span>
+<span><span class="co">## 7    BCL2L2          1</span></span>
+<span><span class="co">## 8     C2CD5         -1</span></span>
+<span><span class="co">## 9     CCND1          1</span></span>
+<span><span class="co">## 10    CHMP5          1</span></span>
+<span><span class="co">## 11    CNTLN         -1</span></span>
+<span><span class="co">## 12   CREBBP         -1</span></span>
+<span><span class="co">## 13     DDA1          1</span></span>
+<span><span class="co">## 14     DGKA          1</span></span>
+<span><span class="co">## 15   DYNLT3          1</span></span>
+<span><span class="co">## 16    EFNB3         -1</span></span>
+<span><span class="co">## 17  FAM214B          1</span></span>
+<span><span class="co">## 18     GBE1          1</span></span>
+<span><span class="co">## 19     GDNF          1</span></span>
+<span><span class="co">## 20    GSTM4         -1</span></span>
+<span><span class="co">## 21     ICE1         -1</span></span>
+<span><span class="co">## 22    KCTD3         -1</span></span>
+<span><span class="co">## 23     KLC1          1</span></span>
+<span><span class="co">## 24    MEIS1         -1</span></span>
+<span><span class="co">## 25   MT-CYB          1</span></span>
+<span><span class="co">## 26     NFIA         -1</span></span>
+<span><span class="co">## 27     NOL3          1</span></span>
+<span><span class="co">## 28    P4HA2          1</span></span>
+<span><span class="co">## 29    PATZ1         -1</span></span>
+<span><span class="co">## 30    PCIF1         -1</span></span>
+<span><span class="co">## 31   PDLIM4          1</span></span>
+<span><span class="co">## 32    PDS5B         -1</span></span>
+<span><span class="co">## 33     PLK3          1</span></span>
+<span><span class="co">## 34   PLXNA3          1</span></span>
+<span><span class="co">## 35   POFUT2          1</span></span>
+<span><span class="co">## 36    RAI14          1</span></span>
+<span><span class="co">## 37    RHNO1         -1</span></span>
+<span><span class="co">## 38     SCOC          1</span></span>
+<span><span class="co">## 39  SLC10A3          1</span></span>
+<span><span class="co">## 40  SLC16A3          1</span></span>
+<span><span class="co">## 41      SMO         -1</span></span>
+<span><span class="co">## 42   SPATA6         -1</span></span>
+<span><span class="co">## 43    SPIN4         -1</span></span>
+<span><span class="co">## 44    STAG1         -1</span></span>
+<span><span class="co">## 45    SUSD6          1</span></span>
+<span><span class="co">## 46    TAF13          1</span></span>
+<span><span class="co">## 47  TMEM87B          1</span></span>
+<span><span class="co">## 48   TOLLIP          1</span></span>
+<span><span class="co">## 49   TRDMT1         -1</span></span>
+<span><span class="co">## 50  TSPAN13          1</span></span>
+<span><span class="co">## 51     UFM1          1</span></span>
+<span><span class="co">## 52   USP6NL         -1</span></span>
+<span><span class="co">## 53   ZBTB7A          1</span></span>
+<span><span class="co">## 54    ZC3H4         -1</span></span>
+<span><span class="co">## 55   ZNHIT1          1</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $REACTOME_CELLULAR_SENESCENCE</span></span>
+<span><span class="co">##   [1] "CDC27"    "E2F2"     "SCMH1"    "MRE11"    "MAP2K3"   "MAPK9"   </span></span>
+<span><span class="co">##   [7] "ANAPC4"   "MAP2K4"   "MAP4K4"   "RPS6KA2"  "UBE2D1"   "EED"     </span></span>
+<span><span class="co">##  [13] "MAP2K7"   "TNRC6C"   "MAPKAPK5" "ANAPC5"   "TNRC6A"   "TINF2"   </span></span>
+<span><span class="co">##  [19] "AGO1"     "CDC23"    "CABIN1"   "MAPK1"    "HIRA"     "TNRC6B"  </span></span>
+<span><span class="co">##  [25] "E2F1"     "RBBP7"    "MAPK3"    "ACD"      "NBN"      "CCNE1"   </span></span>
+<span><span class="co">##  [31] "FZR1"     "ERF"      "CDK6"     "H2AZ2"    "EZH2"     "MAPK8"   </span></span>
+<span><span class="co">##  [37] "UBE2S"    "MAP2K6"   "NFKB1"    "MAPK10"   "ANAPC15"  "CDKN1B"  </span></span>
+<span><span class="co">##  [43] "PHC1"     "ASF1A"    "MAPK14"   "E2F3"     "LMNB1"    "RAD50"   </span></span>
+<span><span class="co">##  [49] "TFDP2"    "MAPKAPK3" "IL1A"     "RPS6KA1"  "UBN1"     "RNF2"    </span></span>
+<span><span class="co">##  [55] "CDKN2C"   "CDK2"     "H1-3"     "H1-1"     "H2BC11"   "CDKN1A"  </span></span>
+<span><span class="co">##  [61] "ID1"      "AGO3"     "POT1"     "CDKN2D"   "CDC16"    "H3-3B"   </span></span>
+<span><span class="co">##  [67] "KDM6B"    "TERF2"    "CCNA1"    "PHC2"     "AGO4"     "ETS1"    </span></span>
+<span><span class="co">##  [73] "CDK4"     "MDM2"     "IL6"      "TXN"      "HMGA1"    "RB1"     </span></span>
+<span><span class="co">##  [79] "MINK1"    "TP53"     "ANAPC11"  "CBX8"     "CBX4"     "RPS27A"  </span></span>
+<span><span class="co">##  [85] "CCNA2"    "H2BC1"    "TERF1"    "CDKN2B"   "CDKN2A"   "ATM"     </span></span>
+<span><span class="co">##  [91] "HMGA2"    "UBC"      "VENTX"    "ANAPC1"   "TNIK"     "MOV10"   </span></span>
+<span><span class="co">##  [97] "ETS2"     "H2BC5"    "H4C8"     "RBBP4"    "MAPKAPK2" "H3-3A"   </span></span>
+<span><span class="co">## [103] "IGFBP7"   "ANAPC10"  "ANAPC16"  "MAPK7"    "TERF2IP"  "H3-4"    </span></span>
+<span><span class="co">## [109] "BMI1"     "H1-4"     "STAT3"    "CXCL8"    "UBE2E1"   "UBB"     </span></span>
+<span><span class="co">## [115] "FOS"      "IFNB1"    "CEBPB"    "KAT5"     "RELA"     "PHC3"    </span></span>
+<span><span class="co">## [121] "CBX2"     "UBE2C"    "CCNE2"    "ANAPC2"   "CDC26"    "RPS6KA3" </span></span>
+<span><span class="co">## [127] "JUN"      "SUZ12"    "H2AC6"    "H2BC4"    "EHMT1"    "EP400"   </span></span>
+<span><span class="co">## [133] "H3C13"    "CBX6"     "H2AC20"   "H1-5"     "H2BC21"   "H2BC13"  </span></span>
+<span><span class="co">## [139] "MAPK11"   "SP1"      "H1-2"     "H2AX"     "H1-0"     "ANAPC7"  </span></span>
+<span><span class="co">## [145] "H2AC7"    "H2BC26"   "H4C3"     "H3C12"    "H4C11"    "H3C4"    </span></span>
+<span><span class="co">## [151] "MAP3K5"   "H4C16"    "H2BC12"   "TFDP1"    "MDM4"     "H3C14"   </span></span>
+<span><span class="co">## [157] "H3C15"    "RING1"    "EHMT2"    "UBA52"    "H2AJ"     "H4C15"   </span></span>
+<span><span class="co">## [163] "H4C14"    "H4C12"    "H2BC14"   "H2BC8"    "H3C8"     "H2AB1"   </span></span>
+<span><span class="co">## [169] "H2BC6"    "H4C6"     "H2BC17"   "H3C6"     "H4C13"    "H3C11"   </span></span>
+<span><span class="co">## [175] "H2BC9"    "H3C1"     "H4C9"     "H2AC14"   "H2BC3"    "H4C5"    </span></span>
+<span><span class="co">## [181] "H2AC8"    "H4C4"     "H2BC7"    "H3C7"     "H2AC4"    "H2BC10"  </span></span>
+<span><span class="co">## [187] "H4C1"     "H4C2"     "H3C10"    "MIR24-2"  "MIR24-1"  "H3C2"    </span></span>
+<span><span class="co">## [193] "H3C3"     "H2AC18"   "H2AC19"  </span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $LiteratureMarkers</span></span>
+<span><span class="co">##     gene enrichment</span></span>
+<span><span class="co">## 1 CDKN1A          1</span></span>
+<span><span class="co">## 2 CDKN2A          1</span></span>
+<span><span class="co">## 3   GLB1          1</span></span>
+<span><span class="co">## 4   TP53          1</span></span>
+<span><span class="co">## 5   CCL2          1</span></span>
+<span><span class="co">## 6  LMNB1         -1</span></span>
+<span><span class="co">## 7  MKI67         -1</span></span></code></pre>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">counts_example</span><span class="op">)</span></span>
+<span><span class="co"># Load example data</span></span>
+<span><span class="va">counts_example</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span></span></code></pre></div>
+<pre><code><span><span class="co">##          SRR1660534 SRR1660535 SRR1660536 SRR1660537 SRR1660538</span></span>
+<span><span class="co">## A1BG        9.94566   9.476768   8.229231   8.515083   7.806479</span></span>
+<span><span class="co">## A1BG-AS1   12.08655  11.550303  12.283976   7.580694   7.312666</span></span>
+<span><span class="co">## A2M        77.50289  56.612839  58.860268   8.997624   6.981857</span></span>
+<span><span class="co">## A4GALT     14.74183  15.226083  14.815891  14.675780  15.222488</span></span>
+<span><span class="co">## AAAS       47.92755  46.292377  43.965972  47.109493  47.213739</span></span></code></pre>
+<p>For illustration purposes of different variable types, let’s imagine
+we also had two additional variables: one indicating the number of days
+between sample preparation and sequencing
+(<code>DaysToSequencing</code>), and another identifying the person who
+processed each sample (<code>researcher</code>). These variables are
+hypothetical and not part of the original study design.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">metadata_example</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="st">"123456"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">metadata_example</span><span class="op">$</span><span class="va">Researcher</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"John"</span>,<span class="st">"Ana"</span>,<span class="st">"Francisca"</span><span class="op">)</span>,<span class="fl">39</span>, replace <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
+<span><span class="va">metadata_example</span><span class="op">$</span><span class="va">DaysToSequencing</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">20</span><span class="op">)</span>,<span class="fl">39</span>, replace <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
+<span> </span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">metadata_example</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##       sampleID      DatasetID   CellType     Condition       SenescentType</span></span>
+<span><span class="co">## 252 SRR1660534 Marthandan2016 Fibroblast     Senescent Telomere shortening</span></span>
+<span><span class="co">## 253 SRR1660535 Marthandan2016 Fibroblast     Senescent Telomere shortening</span></span>
+<span><span class="co">## 254 SRR1660536 Marthandan2016 Fibroblast     Senescent Telomere shortening</span></span>
+<span><span class="co">## 255 SRR1660537 Marthandan2016 Fibroblast Proliferative                none</span></span>
+<span><span class="co">## 256 SRR1660538 Marthandan2016 Fibroblast Proliferative                none</span></span>
+<span><span class="co">## 257 SRR1660539 Marthandan2016 Fibroblast Proliferative                none</span></span>
+<span><span class="co">##                         Treatment Researcher DaysToSequencing</span></span>
+<span><span class="co">## 252 PD72 (Replicative senescence)        Ana                6</span></span>
+<span><span class="co">## 253 PD72 (Replicative senescence)        Ana               18</span></span>
+<span><span class="co">## 254 PD72 (Replicative senescence)       John               19</span></span>
+<span><span class="co">## 255                         young        Ana                2</span></span>
+<span><span class="co">## 256                         young  Francisca                9</span></span>
+<span><span class="co">## 257                         young       John               10</span></span></code></pre>
+</div>
+<div class="section level2">
+<h2 id="calculate-senescence-scores">Calculate Senescence Scores<a class="anchor" aria-label="anchor" href="#calculate-senescence-scores"></a>
+</h2>
+<p>The <code>CalculateScores</code> function computes the signature
+scores for each sample based on predefined gene sets, such as a
+senescence gene set. It returns a named list where each entry
+corresponds to a specific gene set and includes the calculated scores,
+along with metadata (if available). When setting
+<code>method = "all"</code>, the function returns a list, where each
+element corresponds to a scoring method and contains the respective data
+frame of scores, allowing comparison between methods. The function
+allows users to select from three different scoring methods:</p>
+<ul>
+<li>
+<strong>ssGSEA</strong>: Computes an enrichment score for each gene
+set in each sample.</li>
+<li>
+<strong>logmedian</strong>: Calculates the score as the sum of the
+normalized (log2-median-centered) expression values of the genes in the
+gene set, divided by the number of genes.</li>
+<li>
+<strong>ranking</strong>: Determines the score by ranking the
+expression of the genes in the gene set and normalizing the result.</li>
+</ul>
+<p>These methods are very similar and, when applied to a robust gene
+set, will yield similar results across all three methods. Empirically, a
+good gene set will be one that shows consistent results, both in the
+calculated scores and in Cohen’s d or F statistics, across different
+methods. If the gene set is not robust, or if there is considerable
+noise, the results across methods may differ significantly. Consistent
+scores across methods typically indicate a more reliable and meaningful
+gene set. These methods are explained in more detail below, allowing the
+user to select the most appropriate one for their analysis.</p>
+<p>The <code>PlotScores</code> function can be used to compute and
+visualize the scores in various ways, depending on the method and
+variable chosen.</p>
+<ul>
+<li>If <code>method = "all"</code> and the variable is categorical, it
+will return a heatmap of Cohen’s d or F statistics and a volcano plot
+showing contrasts between all groups of that variable.</li>
+<li>If <code>method = "all"</code> and the variable is numeric, a
+heatmap of Cohen’s F and a volcano plot will be produced.</li>
+<li>If <code>method != "all"</code> and the variable is categorical, it
+will generate a violin plot for each gene set.</li>
+<li>If <code>method != "all"</code> and the variable is
+<code>NULL</code>, a density plot of the score distribution will be
+displayed.</li>
+<li>If <code>method != "all"</code> and the variable is numeric, a
+scatter plot will be created to show the relationship between the scores
+and the numeric variable.</li>
+</ul>
+<div class="section level3">
+<h3 id="logmedian-method">logmedian method<a class="anchor" aria-label="anchor" href="#logmedian-method"></a>
+</h3>
+<p>The following example uses the
+<strong><code>logmedian</code></strong> method to calculate a gene
+signature score. This method first applies a log2 transformation to the
+expression values, and then centers them by subtracting the median
+expression (across all samples) for each genes. The score for each
+sample is then computed by summing the normalised expression values of
+the genes in the gene set, and dividing by the number of genes in the
+gene set. This normalization makes each gene’s expression relative to
+its typical behavior across the dataset, allowing for meaningful
+comparisons between genes with different expression scales. By using
+log2 median-centering, the method ensures that both highly and lowly
+expressed genes contribute comparably to the score, as long as their
+variances are similar. This normalization emphasizes relative changes in
+expression rather than absolute values, allowing the score to reflect
+the coordinated behavior of the genes in a gene set. Users can calculate
+the gene signature score for each sample based on one or more predefined
+gene sets (signatures).</p>
+<p>Here’s an example where we calculate the signature score using the
+“logmedian” method:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df_Scores</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/CalculateScores.html">CalculateScores</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>,</span>
+<span>                             metadata <span class="op">=</span> <span class="va">metadata_example</span>,</span>
+<span>                             method <span class="op">=</span> <span class="st">"logmedian"</span>,</span>
+<span>                             gene_sets <span class="op">=</span> <span class="va">genesets_example</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## Considering bidirectional gene signature mode for signature HernandezSegura</span></span></code></pre>
+<pre><code><span><span class="co">## Considering unidirectional gene signature mode for signature REACTOME_CELLULAR_SENESCENCE</span></span></code></pre>
+<pre><code><span><span class="co">## Considering bidirectional gene signature mode for signature LiteratureMarkers</span></span></code></pre>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">df_Scores</span><span class="op">$</span><span class="va">REACTOME_CELLULAR_SENESCENCE</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##       sample       score      DatasetID   CellType     Condition</span></span>
+<span><span class="co">## 1 SRR1660534 -0.05098427 Marthandan2016 Fibroblast     Senescent</span></span>
+<span><span class="co">## 2 SRR1660535 -0.05497976 Marthandan2016 Fibroblast     Senescent</span></span>
+<span><span class="co">## 3 SRR1660536 -0.03370396 Marthandan2016 Fibroblast     Senescent</span></span>
+<span><span class="co">## 4 SRR1660537 -0.02091467 Marthandan2016 Fibroblast Proliferative</span></span>
+<span><span class="co">## 5 SRR1660538 -0.01089274 Marthandan2016 Fibroblast Proliferative</span></span>
+<span><span class="co">## 6 SRR1660539 -0.01012807 Marthandan2016 Fibroblast Proliferative</span></span>
+<span><span class="co">##         SenescentType                     Treatment Researcher DaysToSequencing</span></span>
+<span><span class="co">## 1 Telomere shortening PD72 (Replicative senescence)        Ana                6</span></span>
+<span><span class="co">## 2 Telomere shortening PD72 (Replicative senescence)        Ana               18</span></span>
+<span><span class="co">## 3 Telomere shortening PD72 (Replicative senescence)       John               19</span></span>
+<span><span class="co">## 4                none                         young        Ana                2</span></span>
+<span><span class="co">## 5                none                         young  Francisca                9</span></span>
+<span><span class="co">## 6                none                         young       John               10</span></span></code></pre>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">df_Scores</span><span class="op">$</span><span class="va">HernandezSegura</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##       sample      score      DatasetID   CellType     Condition</span></span>
+<span><span class="co">## 1 SRR1660534  0.4460830 Marthandan2016 Fibroblast     Senescent</span></span>
+<span><span class="co">## 2 SRR1660535  0.4564033 Marthandan2016 Fibroblast     Senescent</span></span>
+<span><span class="co">## 3 SRR1660536  0.4727664 Marthandan2016 Fibroblast     Senescent</span></span>
+<span><span class="co">## 4 SRR1660537 -0.1676110 Marthandan2016 Fibroblast Proliferative</span></span>
+<span><span class="co">## 5 SRR1660538 -0.1198661 Marthandan2016 Fibroblast Proliferative</span></span>
+<span><span class="co">## 6 SRR1660539 -0.1467108 Marthandan2016 Fibroblast Proliferative</span></span>
+<span><span class="co">##         SenescentType                     Treatment Researcher DaysToSequencing</span></span>
+<span><span class="co">## 1 Telomere shortening PD72 (Replicative senescence)        Ana                6</span></span>
+<span><span class="co">## 2 Telomere shortening PD72 (Replicative senescence)        Ana               18</span></span>
+<span><span class="co">## 3 Telomere shortening PD72 (Replicative senescence)       John               19</span></span>
+<span><span class="co">## 4                none                         young        Ana                2</span></span>
+<span><span class="co">## 5                none                         young  Francisca                9</span></span>
+<span><span class="co">## 6                none                         young       John               10</span></span></code></pre>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">df_Scores</span><span class="op">$</span><span class="va">LiteratureMarkers</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##       sample      score      DatasetID   CellType     Condition</span></span>
+<span><span class="co">## 1 SRR1660534  2.2008955 Marthandan2016 Fibroblast     Senescent</span></span>
+<span><span class="co">## 2 SRR1660535  1.8078284 Marthandan2016 Fibroblast     Senescent</span></span>
+<span><span class="co">## 3 SRR1660536  1.8542998 Marthandan2016 Fibroblast     Senescent</span></span>
+<span><span class="co">## 4 SRR1660537 -0.3543785 Marthandan2016 Fibroblast Proliferative</span></span>
+<span><span class="co">## 5 SRR1660538 -0.3799436 Marthandan2016 Fibroblast Proliferative</span></span>
+<span><span class="co">## 6 SRR1660539 -0.4281760 Marthandan2016 Fibroblast Proliferative</span></span>
+<span><span class="co">##         SenescentType                     Treatment Researcher DaysToSequencing</span></span>
+<span><span class="co">## 1 Telomere shortening PD72 (Replicative senescence)        Ana                6</span></span>
+<span><span class="co">## 2 Telomere shortening PD72 (Replicative senescence)        Ana               18</span></span>
+<span><span class="co">## 3 Telomere shortening PD72 (Replicative senescence)       John               19</span></span>
+<span><span class="co">## 4                none                         young        Ana                2</span></span>
+<span><span class="co">## 5                none                         young  Francisca                9</span></span>
+<span><span class="co">## 6                none                         young       John               10</span></span></code></pre>
+<p>The user can also chose to directly plot the scores.</p>
+<p>Effect sizes can be computed using the <code>compute_cohen</code>
+parameter (default = <code>T</code>): when the grouping variable has
+only two levels, Cohen’s d is calculated by default. If there are more
+than two levels, Cohen’s f is used unless a specific pairwise comparison
+is defined via <code>cond_cohend</code>, in which case Cohen’s d is
+reported for that comparison. If <code>pvalcalc = TRUE</code> (default =
+<code>FALSE</code>), an associated p-value (not corrected for multiple
+testing) is also reported. The p-value is derived from a two-sample
+t-test for two-group comparisons or numeric variables, or from an ANOVA
+for multi-group comparisons.</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">senescence_triggers_colors</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  <span class="st">"none"</span> <span class="op">=</span> <span class="st">"#E57373"</span>,  <span class="co"># Soft red   </span></span>
+<span>  <span class="st">"Telomere shortening"</span> <span class="op">=</span> <span class="st">"#4FC3F7"</span>  <span class="co"># Vivid sky blue  </span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">cond_cohend</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>A<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Senescent"</span><span class="op">)</span>,  </span>
+<span>                    B<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Proliferative"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/PlotScores.html">PlotScores</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
+<span>           metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
+<span>           gene_sets <span class="op">=</span> <span class="va">genesets_example</span>,</span>
+<span>           ColorVariable <span class="op">=</span> <span class="st">"SenescentType"</span>, </span>
+<span>           Variable<span class="op">=</span><span class="st">"Condition"</span>,  </span>
+<span>           method <span class="op">=</span><span class="st">"logmedian"</span>, </span>
+<span>           ColorValues <span class="op">=</span> <span class="va">senescence_triggers_colors</span>, </span>
+<span>           ConnectGroups<span class="op">=</span><span class="cn">TRUE</span>, </span>
+<span>           ncol <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>           nrow <span class="op">=</span> <span class="fl">1</span>, </span>
+<span>           widthTitle<span class="op">=</span><span class="fl">24</span>, </span>
+<span>           limits <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>           legend_nrow <span class="op">=</span> <span class="fl">1</span>, </span>
+<span>           pointSize<span class="op">=</span><span class="fl">4</span>,</span>
+<span>           compute_cohen<span class="op">=</span><span class="cn">T</span>,</span>
+<span>           cond_cohend<span class="op">=</span><span class="va">cond_cohend</span>,</span>
+<span>           title<span class="op">=</span><span class="st">"Marthandan et al. 2016"</span>,</span>
+<span>           labsize<span class="op">=</span><span class="fl">9</span>, </span>
+<span>           titlesize <span class="op">=</span> <span class="fl">12</span><span class="op">)</span>  </span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/exampleScore-1.png" width="80%"></p>
+<p>Interestingly, when we provide directionality for a signature—such as
+the <em>Literature_Senescence</em> set—the interpretation of the results
+can change substantially. For example, without specifying direction,
+senescent samples may appear to have lower scores than proliferative
+ones. But once directionality is accounted for, the scores shift in a
+way that aligns better with biological expectations. Therefore, it is
+<strong>strongly advised</strong> that, whenever possible (i.e., if
+known), the user states the putative regulation “sign” of the genes in
+the gene set This helps ensure more accurate and meaningful
+interpretations of the data.</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">GeneSets_Example_Bidirectionality</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>LiteratureMarkers<span class="op">=</span><span class="va">genesets_example</span><span class="op">$</span><span class="va">LiteratureMarkers</span>,</span>
+<span>                                          LiteratureMarkers_Unidirectional <span class="op">=</span>  <span class="va">genesets_example</span><span class="op">$</span><span class="va">LiteratureMarkers</span><span class="op">$</span><span class="va">gene</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">GeneSets_Example_Bidirectionality</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## $LiteratureMarkers</span></span>
+<span><span class="co">##     gene enrichment</span></span>
+<span><span class="co">## 1 CDKN1A          1</span></span>
+<span><span class="co">## 2 CDKN2A          1</span></span>
+<span><span class="co">## 3   GLB1          1</span></span>
+<span><span class="co">## 4   TP53          1</span></span>
+<span><span class="co">## 5   CCL2          1</span></span>
+<span><span class="co">## 6  LMNB1         -1</span></span>
+<span><span class="co">## 7  MKI67         -1</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $LiteratureMarkers_Unidirectional</span></span>
+<span><span class="co">## [1] "CDKN1A" "CDKN2A" "GLB1"   "TP53"   "CCL2"   "LMNB1"  "MKI67"</span></span></code></pre>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/PlotScores.html">PlotScores</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
+<span>           metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
+<span>           gene_sets <span class="op">=</span>  <span class="va">GeneSets_Example_Bidirectionality</span>,</span>
+<span>           ColorVariable <span class="op">=</span> <span class="st">"SenescentType"</span>, </span>
+<span>           Variable<span class="op">=</span><span class="st">"Condition"</span>,  </span>
+<span>           method <span class="op">=</span><span class="st">"logmedian"</span>, </span>
+<span>           ColorValues <span class="op">=</span> <span class="va">senescence_triggers_colors</span>, </span>
+<span>           ConnectGroups<span class="op">=</span><span class="cn">TRUE</span>, </span>
+<span>           ncol <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>           nrow <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>           widthTitle<span class="op">=</span><span class="fl">24</span>, </span>
+<span>           limits <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>           legend_nrow <span class="op">=</span> <span class="fl">1</span>, </span>
+<span>           pointSize<span class="op">=</span><span class="fl">4</span>,</span>
+<span>           compute_cohen<span class="op">=</span><span class="cn">T</span>,</span>
+<span>           cond_cohend<span class="op">=</span><span class="va">cond_cohend</span>,</span>
+<span>           title<span class="op">=</span><span class="st">"Marthandan et al. 2016"</span>,</span>
+<span>           labsize<span class="op">=</span><span class="fl">9</span>, </span>
+<span>           titlesize <span class="op">=</span> <span class="fl">12</span><span class="op">)</span>  </span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/exampleScore_bidirectional-1.png" width="60%"></p>
+<p>To use the function for numeric variables, the user should specify
+the relevant parameters, including the numeric variable to be analysed.
+The function will generate a scatter plot for the numeric variable,
+optionally calculating Cohen’s f as the effect size. The user can choose
+a correlation method (e.g., Pearson, Spearman, or Kendall) to assess the
+relationship between the variable and the signature scores. The plot
+will also include optional p-value calculations for comparisons.</p>
+<p>Here is an example of how to configure the function for numeric
+variables:</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/PlotScores.html">PlotScores</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>,</span>
+<span>           metadata <span class="op">=</span> <span class="va">metadata_example</span>,</span>
+<span>           gene_sets <span class="op">=</span> <span class="va">genesets_example</span>,</span>
+<span>           Variable <span class="op">=</span> <span class="st">"DaysToSequencing"</span>,               </span>
+<span>           method <span class="op">=</span> <span class="st">"logmedian"</span>,            </span>
+<span>           ColorValues <span class="op">=</span> <span class="st">"#3B415B"</span>,             </span>
+<span>           ConnectGroups <span class="op">=</span> <span class="cn">FALSE</span>,          </span>
+<span>           ncol <span class="op">=</span> <span class="cn">NULL</span>,                    </span>
+<span>           nrow <span class="op">=</span> <span class="fl">1</span>,                    </span>
+<span>           pointSize <span class="op">=</span> <span class="fl">6</span>,                  </span>
+<span>           compute_cohen <span class="op">=</span> <span class="cn">TRUE</span>,          </span>
+<span>           pvalcalc <span class="op">=</span> <span class="cn">TRUE</span>,                </span>
+<span>           title <span class="op">=</span> <span class="st">"Marthandan et al. 2016"</span>,  </span>
+<span>           labsize<span class="op">=</span><span class="fl">9</span>, </span>
+<span>           titlesize <span class="op">=</span> <span class="fl">12</span>, </span>
+<span>           widthTitle <span class="op">=</span> <span class="fl">26</span>,</span>
+<span>           cor <span class="op">=</span> <span class="st">"pearson"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/examplenumeric-1.png" width="80%"></p>
+<p>For users interested in viewing the overall distribution of scores
+across gene signatures, the <code>PlotScores</code> function can be used
+without specifying the <code>GroupingVariable</code> parameter, i.e,
+without grouping scores by any metadata variable. In this case, the
+function will automatically generate a grid of density plots, with each
+plot representing the distribution of scores for a specific gene set</p>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/PlotScores.html">PlotScores</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
+<span>           metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
+<span>           gene_sets <span class="op">=</span> <span class="va">genesets_example</span>, </span>
+<span>           method <span class="op">=</span><span class="st">"logmedian"</span>, </span>
+<span>           ColorValues <span class="op">=</span> <span class="cn">NULL</span>,  </span>
+<span>           ncol <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>           nrow <span class="op">=</span> <span class="fl">1</span>, </span>
+<span>           widthTitle<span class="op">=</span><span class="fl">24</span>, </span>
+<span>           limits <span class="op">=</span> <span class="cn">NULL</span>,  </span>
+<span>           title<span class="op">=</span><span class="st">"Marthandan et al. 2016"</span>,</span>
+<span>           labsize<span class="op">=</span><span class="fl">9</span>, </span>
+<span>           titlesize <span class="op">=</span> <span class="fl">11</span><span class="op">)</span>  </span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/plotscores_density-1.png" width="80%"></p>
+</div>
+<div class="section level3">
+<h3 id="ssgsea-method">ssGSEA method<a class="anchor" aria-label="anchor" href="#ssgsea-method"></a>
+</h3>
+<p>The same approach can be applied for <strong>ssGSEA</strong>
+(single-sample Gene Set Enrichment Analysis; Barbie et al. (2009)) for
+score calculation and visualization, both for unidirectional and
+bidirectional signatures. ssGSEA computes an enrichment score for each
+gene signature in each sample using an adaptation of the
+<code>gsva()</code> function from the <code>GSVA</code> package. This
+method is useful for evaluating gene set enrichment in individual
+samples rather than groups, as described in the sections below.</p>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">senescence_triggers_colors</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  <span class="st">"none"</span> <span class="op">=</span> <span class="st">"#E57373"</span>,  <span class="co"># Soft red   </span></span>
+<span>  <span class="st">"Telomere shortening"</span> <span class="op">=</span> <span class="st">"#4FC3F7"</span>  <span class="co"># Vivid sky blue  </span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">cond_cohend</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>A<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Senescent"</span><span class="op">)</span>,  </span>
+<span>                    B<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Proliferative"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/PlotScores.html">PlotScores</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
+<span>           metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
+<span>           gene_sets <span class="op">=</span> <span class="va">genesets_example</span>,</span>
+<span>           ColorVariable <span class="op">=</span> <span class="st">"SenescentType"</span>, </span>
+<span>           Variable<span class="op">=</span><span class="st">"Condition"</span>,  </span>
+<span>           method <span class="op">=</span><span class="st">"ssGSEA"</span>, </span>
+<span>           ColorValues <span class="op">=</span> <span class="va">senescence_triggers_colors</span>, </span>
+<span>           ConnectGroups<span class="op">=</span><span class="cn">TRUE</span>, </span>
+<span>           ncol <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>           nrow <span class="op">=</span> <span class="fl">1</span>, </span>
+<span>           widthTitle<span class="op">=</span><span class="fl">24</span>, </span>
+<span>           limits <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>           legend_nrow <span class="op">=</span> <span class="fl">1</span>, </span>
+<span>           pointSize<span class="op">=</span><span class="fl">4</span>,</span>
+<span>           compute_cohen<span class="op">=</span><span class="cn">T</span>,</span>
+<span>           cond_cohend<span class="op">=</span><span class="va">cond_cohend</span>,</span>
+<span>           title<span class="op">=</span><span class="st">"Marthandan et al. 2016"</span>,</span>
+<span>           labsize<span class="op">=</span><span class="fl">9</span>, </span>
+<span>           titlesize <span class="op">=</span> <span class="fl">12</span><span class="op">)</span>  </span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/examplessGSEA-1.png" width="80%"></p>
+</div>
+<div class="section level3">
+<h3 id="ranking-method">Ranking method<a class="anchor" aria-label="anchor" href="#ranking-method"></a>
+</h3>
+<p>The <strong>ranking</strong> method computes gene signature scores
+for each sample by ranking the expression of signature genes in the
+dataset and normalizing the score based on the total number of
+genes.</p>
+<p>The following example demonstrates the use of the “ranking” method
+for both unidirectional and bidirectional signatures:</p>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">senescence_triggers_colors</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  <span class="st">"none"</span> <span class="op">=</span> <span class="st">"#E57373"</span>,  <span class="co"># Soft red   </span></span>
+<span>  <span class="st">"Telomere shortening"</span> <span class="op">=</span> <span class="st">"#4FC3F7"</span>  <span class="co"># Vivid sky blue  </span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">cond_cohend</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>A<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Senescent"</span><span class="op">)</span>,  </span>
+<span>                    B<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Proliferative"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/PlotScores.html">PlotScores</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
+<span>           metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
+<span>           gene_sets <span class="op">=</span> <span class="va">genesets_example</span>,</span>
+<span>           ColorVariable <span class="op">=</span> <span class="st">"SenescentType"</span>, </span>
+<span>           Variable<span class="op">=</span><span class="st">"Condition"</span>,  </span>
+<span>           method <span class="op">=</span><span class="st">"ranking"</span>, </span>
+<span>           ColorValues <span class="op">=</span> <span class="va">senescence_triggers_colors</span>, </span>
+<span>           ConnectGroups<span class="op">=</span><span class="cn">TRUE</span>, </span>
+<span>           ncol <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>           nrow <span class="op">=</span> <span class="fl">1</span>, </span>
+<span>           widthTitle<span class="op">=</span><span class="fl">24</span>, </span>
+<span>           limits <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>           legend_nrow <span class="op">=</span> <span class="fl">1</span>, </span>
+<span>           pointSize<span class="op">=</span><span class="fl">4</span>,</span>
+<span>           compute_cohen<span class="op">=</span><span class="cn">T</span>,</span>
+<span>           cond_cohend<span class="op">=</span><span class="va">cond_cohend</span>,</span>
+<span>           title<span class="op">=</span><span class="st">"Marthandan et al. 2016"</span>,</span>
+<span>           labsize<span class="op">=</span><span class="fl">9</span>, </span>
+<span>           titlesize <span class="op">=</span> <span class="fl">12</span><span class="op">)</span>  </span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/ranking-1.png" width="80%"></p>
+</div>
+<div class="section level3">
+<h3 id="all-methods">All methods<a class="anchor" aria-label="anchor" href="#all-methods"></a>
+</h3>
+<p>To compare various metrics across different condition combinations,
+violin plots may not always be the best choice. In such cases, users can
+set<code>method = "all"</code> to generate a summary heatmap and
+volcano-like plot. The function will return one heatmap per gene set,
+with rows corresponding to all possible combinations of values in the
+<code>GroupingVariable</code>. In parenthesis is represented the
+p-value, adjusted using the <code>BH</code> method (i.e., the
+Benjamini–Hochberg false discovery rate procedure), across all
+combinations of contrasts and gene signatures. It will also return a
+volcano-like plot (Cohen’s d effect sizes vs -log10(adjusted p-values)),
+where each dot represents a method-signature pair, faceted by contrast.
+The dashed lines represent user-defined thresholds for significance and
+effect size.</p>
+<p>The <code>mode</code> parameter controls how contrasts are generated
+for categorical variables, allowing users to adjust the complexity of
+the analysis:</p>
+<ul>
+<li>
+<strong>“simple”</strong>: Performs the minimal number of pairwise
+comparisons between group levels (e.g., for a factor with levels A, B, C
+and D, it generates A - B, A - C, A - D, B - C, B - D, C - D).</li>
+<li>
+<strong>“medium”</strong>: Includes comparisons between one group
+and the union of other groups (e.g., A - (B + C + D); B - (A + C + D)),
+allowing for broader contrasts beyond simple pairwise comparisons.</li>
+<li>
+<strong>“extensive”</strong>: Allows for all possible algebraic
+combinations of group levels (e.g., (A + B) - (C + D)).</li>
+</ul>
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">Overall_Scores</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/PlotScores.html">PlotScores</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
+<span>                             metadata <span class="op">=</span> <span class="va">metadata_example</span>,  </span>
+<span>                             gene_sets<span class="op">=</span><span class="va">genesets_example</span>, </span>
+<span>                             Variable<span class="op">=</span><span class="st">"Condition"</span>,  </span>
+<span>                             method <span class="op">=</span><span class="st">"all"</span>,   </span>
+<span>                             ncol <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>                             nrow <span class="op">=</span> <span class="fl">1</span>, </span>
+<span>                             widthTitle<span class="op">=</span><span class="fl">30</span>, </span>
+<span>                             limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">3.5</span><span class="op">)</span>,   </span>
+<span>                             title<span class="op">=</span><span class="st">"Marthandan et al. 2016"</span>, </span>
+<span>                             titlesize <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>                             ColorValues <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>heatmap<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#F9F4AE"</span>, <span class="st">"#B44141"</span><span class="op">)</span>,</span>
+<span>                                                volcano<span class="op">=</span><span class="va">signature_colors</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>                                                  HernandezSegura <span class="op">=</span> <span class="st">"#A07395"</span>,               </span>
+<span>                                                  REACTOME_CELLULAR_SENESCENCE <span class="op">=</span> <span class="st">"#6B8E9E"</span>,  </span>
+<span>                                                  LiteratureMarkers <span class="op">=</span> <span class="st">"#CA7E45"</span>             </span>
+<span>                                                <span class="op">)</span></span>
+<span>                             <span class="op">)</span>,</span>
+<span>                             mode<span class="op">=</span><span class="st">"simple"</span>,</span>
+<span>                             widthlegend<span class="op">=</span><span class="fl">30</span>, </span>
+<span>                             sig_threshold<span class="op">=</span><span class="fl">0.05</span>, </span>
+<span>                             cohen_threshold<span class="op">=</span><span class="fl">0.6</span>,</span>
+<span>                             pointSize<span class="op">=</span><span class="fl">6</span>,</span>
+<span>                             colorPalette<span class="op">=</span><span class="st">"Paired"</span><span class="op">)</span>  </span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">Overall_Scores</span><span class="op">$</span><span class="va">heatmap</span></span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/Overall_Scores_heatmap-1.png" width="80%"></p>
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">Overall_Scores</span><span class="op">$</span><span class="va">volcano</span></span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/Overall_Scores_volcano-1.png" width="60%"></p>
+</div>
+<div class="section level3">
+<h3 id="classification-potential-of-gene-signatures">Classification Potential of Gene Signatures<a class="anchor" aria-label="anchor" href="#classification-potential-of-gene-signatures"></a>
+</h3>
+<p>The <code>ROC_Scores</code> and <code>AUC_Scores</code> functions
+allow users to evaluate the classification potential of gene set scores
+based on ROC curves and their AUC values. These functions help to assess
+how well a given score can differentiate between conditions, based on
+predefined contrasts. Besides <code>method="all"</code>, these functions
+can also be used for each method individually.</p>
+<p>The <code>ROC_Scores</code> function generates ROC curves for
+different scoring methods across contrasts, allowing users to visualize
+performance differences.</p>
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span> <span class="fu"><a href="../reference/ROC_Scores.html">ROC_Scores</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
+<span>           metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
+<span>           gene_sets<span class="op">=</span><span class="va">genesets_example</span>, </span>
+<span>           method <span class="op">=</span> <span class="st">"all"</span>, </span>
+<span>           variable <span class="op">=</span><span class="st">"Condition"</span>,</span>
+<span>           colors <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>logmedian <span class="op">=</span> <span class="st">"#3E5587"</span>, ssGSEA <span class="op">=</span> <span class="st">"#B65285"</span>, ranking <span class="op">=</span> <span class="st">"#B68C52"</span><span class="op">)</span>, </span>
+<span>           grid <span class="op">=</span> <span class="cn">TRUE</span>, </span>
+<span>           spacing_annotation<span class="op">=</span><span class="fl">0.3</span>, </span>
+<span>           ncol<span class="op">=</span><span class="cn">NULL</span>, </span>
+<span>           nrow<span class="op">=</span><span class="fl">1</span>,</span>
+<span>            mode <span class="op">=</span> <span class="st">"simple"</span>,</span>
+<span>            widthTitle <span class="op">=</span> <span class="fl">28</span>,</span>
+<span>           titlesize <span class="op">=</span> <span class="fl">10</span>,  </span>
+<span>           title<span class="op">=</span><span class="st">"Marthandan et al. 2016"</span><span class="op">)</span> </span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/roc_scores-1.png" width="70%"></p>
+<p>The <code>AUC_Scores</code> function generates heatmaps summarizing
+AUC values for each gene set, with methods as columns and contrasts as
+rows. The plot is returned in the <code>$plt</code> element, and the
+underlying data used to generate it is available in the
+<code>$data</code> element.</p>
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/AUC_Scores.html">AUC_Scores</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
+<span>           metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
+<span>           gene_sets<span class="op">=</span><span class="va">genesets_example</span>, </span>
+<span>           method <span class="op">=</span> <span class="st">"all"</span>, </span>
+<span>           mode <span class="op">=</span> <span class="st">"simple"</span>, </span>
+<span>           variable<span class="op">=</span><span class="st">"Condition"</span>, </span>
+<span>           nrow <span class="op">=</span> <span class="fl">1</span>, </span>
+<span>           ncol <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>           limits <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>           widthTitle <span class="op">=</span> <span class="fl">28</span>, </span>
+<span>           titlesize <span class="op">=</span> <span class="fl">10</span>, </span>
+<span>           ColorValues <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#F9F4AE"</span>, <span class="st">"#B44141"</span><span class="op">)</span>,   </span>
+<span>           title<span class="op">=</span><span class="st">"Marthandan et al. 2016"</span><span class="op">)</span> </span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/auc_scores-1.png" width="80%"></p>
+</div>
+<div class="section level3">
+<h3 id="false-positive-rate-fpr-calculations">False Positive Rate (FPR) Calculations<a class="anchor" aria-label="anchor" href="#false-positive-rate-fpr-calculations"></a>
+</h3>
+<p>The user can assess the significance of gene set scores by comparing
+observed effect sizes against a distribution of those originated by
+random gene sets with the same number of genes and matched
+directionality. For each original gene set, the function calculates the
+observed Cohen’s d (and p‑value) using (<code>GroupingVariable</code>).
+It then generates a number of simulated gene sets
+(<code>number_of_sims</code>) by randomly sampling the same number of
+genes from a user provided gene list (<code>gene_list</code>) and
+computes their Cohen’s d values. The simulation results are visualised
+as violin plots of the distribution of Cohen’s d values for each method,
+overlaid with the observed values of the original gene sets, and a 95th
+percentile threshold. Significance is indicated by distinct point shapes
+based on the associated p‑value.</p>
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/FPR_Simulation.html">FPR_Simulation</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>,</span>
+<span>               metadata <span class="op">=</span> <span class="va">metadata_example</span>,</span>
+<span>               original_signatures <span class="op">=</span> <span class="va">genesets_example</span>,</span>
+<span>               gene_list <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/row.names.html" class="external-link">row.names</a></span><span class="op">(</span><span class="va">counts_example</span><span class="op">)</span>,</span>
+<span>               number_of_sims <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>               title <span class="op">=</span> <span class="st">"Marthandan et al. 2016"</span>,</span>
+<span>               widthTitle <span class="op">=</span> <span class="fl">30</span>,</span>
+<span>               Variable <span class="op">=</span> <span class="st">"Condition"</span>,</span>
+<span>               titlesize <span class="op">=</span> <span class="fl">12</span>,</span>
+<span>               pointSize <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>               labsize <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>               mode <span class="op">=</span> <span class="st">"simple"</span>,</span>
+<span>               ColorValues<span class="op">=</span><span class="cn">NULL</span>,</span>
+<span>               ncol<span class="op">=</span><span class="cn">NULL</span>, </span>
+<span>               nrow<span class="op">=</span><span class="fl">1</span> <span class="op">)</span> </span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/FDRSim-1.png" width="100%"></p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="enrichment-based-methods">Enrichment-Based Methods<a class="anchor" aria-label="anchor" href="#enrichment-based-methods"></a>
+</h2>
+<div class="section level3">
+<h3 id="differentially-expressed-genes">Differentially Expressed Genes<a class="anchor" aria-label="anchor" href="#differentially-expressed-genes"></a>
+</h3>
+<p>The <code>calculateDE</code> function in the <code>markeR</code>
+package leverages the <code>limma</code> framework to compute
+differential gene expression statistics from raw count data. This
+function is highly flexible and supports several modes of operation
+depending on the user’s experimental design. In the examples below, we
+illustrate two common scenarios:</p>
+<ul>
+<li>
+<strong>Automatic Design Matrix with Contrasts:</strong> In the
+first example, the design matrix is built automatically from the
+metadata using a specified variable (here, <code>"Condition"</code>).
+The user must explicitly define the comparisons of interest based on the
+levels of this variable (e.g., <code>Senescent - Proliferative</code>).
+Internally, this approach fits a linear model without an intercept,
+enabling the user to define contrasts between the levels. This is ideal
+for simpler experimental designs, where quick comparison between
+predefined groups is desired without manually specifying the full model
+matrix.</li>
+<li>
+<strong>Providing an Externally Constructed Design Matrix:</strong>
+In the second example, the user manually creates the design matrix
+(e.g., using <code>model.matrix(~ 0 + Condition)</code> for a
+no-intercept model) and provides it directly to
+<code>calculateDE</code>. This gives full control over how the design is
+specified, including complex experimental setups or custom encodings.
+Multiple contrasts can be defined later, based on this matrix, to
+extract specific comparisons of interest, using the
+<code>Contrast</code> parameter. If this parameter is left as
+<code>NULL</code>, the function will return results for all conditions
+(i.e. columns) defined in the design matrix. This approach is
+recommended when the user has a complex design or has already
+constructed the design matrix as part of a broader analysis
+pipeline.</li>
+</ul>
+<p>Below are the corresponding code snippets demonstrating each
+scenario, by answering the same question: <strong>What are the genes
+differentially expressed between senescence and proliferative
+cells?</strong></p>
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Example 1: Build design matrix from variables (Condition) and apply a contrast.</span></span>
+<span><span class="co"># In this case, the design matrix is constructed automatically using the variable "Condition".</span></span>
+<span><span class="va">DEGs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculateDE.html">calculateDE</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>,</span>
+<span>                    metadata <span class="op">=</span> <span class="va">metadata_example</span>,</span>
+<span>                    variables <span class="op">=</span> <span class="st">"Condition"</span>,</span>
+<span>                    contrasts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Senescent - Proliferative"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">DEGs</span><span class="op">$</span><span class="va">`Senescent-Proliferative`</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,<span class="op">]</span></span></code></pre></div>
+<pre><code><span><span class="co">##            logFC  AveExpr         t      P.Value    adj.P.Val        B</span></span>
+<span><span class="co">## CCND2   3.816674 4.406721 12.393130 2.747202e-15 2.435712e-12 24.70982</span></span>
+<span><span class="co">## MKI67  -3.581174 6.605339 -9.197510 2.007135e-11 4.992097e-10 15.96203</span></span>
+<span><span class="co">## PTCHD4  3.398914 3.556007 10.740867 2.318137e-13 3.002118e-11 20.35906</span></span>
+<span><span class="co">## KIF20A -3.365481 5.934893 -9.728709 4.176398e-12 1.844336e-10 17.51106</span></span>
+<span><span class="co">## CDC20  -3.304602 6.104079 -9.801724 3.375212e-12 1.657492e-10 17.72110</span></span></code></pre>
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Example 2: Supply a custom design matrix directly.</span></span>
+<span><span class="co"># Here, the design matrix is created externally (using no intercept, for instance).</span></span>
+<span><span class="va">design</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/model.matrix.html" class="external-link">model.matrix</a></span><span class="op">(</span><span class="op">~</span><span class="fl">0</span> <span class="op">+</span> <span class="va">Condition</span>, data <span class="op">=</span> <span class="va">metadata_example</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">design</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Proliferative"</span>,<span class="st">"Senescent"</span><span class="op">)</span></span>
+<span><span class="va">DEGs2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculateDE.html">calculateDE</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>,</span>
+<span>                     metadata <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>                     variables <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>                     modelmat <span class="op">=</span> <span class="va">design</span>,</span>
+<span>                     contrasts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Senescent - Proliferative"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">DEGs2</span><span class="op">$</span><span class="va">`Senescent-Proliferative`</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,<span class="op">]</span></span></code></pre></div>
+<pre><code><span><span class="co">##            logFC  AveExpr         t      P.Value    adj.P.Val        B</span></span>
+<span><span class="co">## CCND2   3.816674 4.406721 12.393130 2.747202e-15 2.435712e-12 24.70982</span></span>
+<span><span class="co">## MKI67  -3.581174 6.605339 -9.197510 2.007135e-11 4.992097e-10 15.96203</span></span>
+<span><span class="co">## PTCHD4  3.398914 3.556007 10.740867 2.318137e-13 3.002118e-11 20.35906</span></span>
+<span><span class="co">## KIF20A -3.365481 5.934893 -9.728709 4.176398e-12 1.844336e-10 17.51106</span></span>
+<span><span class="co">## CDC20  -3.304602 6.104079 -9.801724 3.375212e-12 1.657492e-10 17.72110</span></span></code></pre>
+<p>After running differential expression analysis (for example, using
+the <code>calculateDE</code> function), the user can visualize their
+results with the <code>plotVolcano</code> function. This function
+provides a flexible interface for exploring their data by allowing the
+user to:</p>
+<ul>
+<li>
+<strong>Plot Differential Gene Expression Statistics:</strong><br>
+Display a volcano plot with chosen statistics (e.g., log fold-change on
+the x-axis and –log₁₀ adjusted p-value on the y-axis).</li>
+<li>
+<strong>Color Interesting Genes:</strong><br>
+Highlight genes that pass user-specified thresholds by adjusting
+<code>threshold_y</code> and <code>threshold_x</code>.</li>
+<li>
+<strong>Annotate Top and Bottom N Genes:</strong><br>
+Optionally, label the top (and bottom) N genes based on the chosen
+statistic to quickly identify the most significant genes.</li>
+<li>
+<strong>Highlight Gene Signatures:</strong> If the user provides a
+list of gene signatures using the <code>genes</code> argument, the
+function can highlight these genes in the plot. The user can also
+specify distinct colors for putativelyupregulated and downregulated if
+their direction is known, or a color for genes that do not have a
+putative direction.</li>
+</ul>
+<p>Below is an example usage of <code>plotVolcano</code> that visualizes
+differential expression results from a <code>DEResultsList</code>. The
+first plot shows the default behavior, generating a basic volcano plot
+without thresholds or gene highlights. Subsequent examples demonstrate
+how to customize the plot:</p>
+<ul>
+<li>Adding significance thresholds to highlight genes of interest,</li>
+<li>Annotating the top and bottom N genes by effect size,</li>
+<li>And using gene signatures to color genes across multiple plots
+arranged by contrast and signature.</li>
+</ul>
+<p>These examples illustrate how users can customise the output plot to
+highlight biologically meaningful patterns or focus on specific gene
+sets.</p>
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Plot Differentially Expressed Genes:</span></span>
+<span><span class="fu"><a href="../reference/plotVolcano.html">plotVolcano</a></span><span class="op">(</span><span class="va">DEGs</span>, genes <span class="op">=</span> <span class="cn">NULL</span>, N <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>            x <span class="op">=</span> <span class="st">"logFC"</span>, y <span class="op">=</span> <span class="st">"-log10(adj.P.Val)"</span>, pointSize <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>            color <span class="op">=</span> <span class="st">"#6489B4"</span>, highlightcolor <span class="op">=</span> <span class="st">"#05254A"</span>, nointerestcolor <span class="op">=</span> <span class="st">"#B7B7B7"</span>,</span>
+<span>            threshold_y <span class="op">=</span> <span class="cn">NULL</span>, threshold_x <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>            xlab <span class="op">=</span> <span class="cn">NULL</span>, ylab <span class="op">=</span> <span class="cn">NULL</span>, ncol <span class="op">=</span> <span class="cn">NULL</span>, nrow <span class="op">=</span> <span class="cn">NULL</span>, title <span class="op">=</span> <span class="st">"Marthandan et al. 2016"</span>,</span>
+<span>            labsize <span class="op">=</span> <span class="fl">8</span>, widthlabs <span class="op">=</span> <span class="fl">25</span>, invert <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/volcanos_DEGs-1.png" width="40%"></p>
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Color Interesting Genes:</span></span>
+<span><span class="fu"><a href="../reference/plotVolcano.html">plotVolcano</a></span><span class="op">(</span><span class="va">DEGs</span>, genes <span class="op">=</span> <span class="cn">NULL</span>, N <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>            x <span class="op">=</span> <span class="st">"logFC"</span>, y <span class="op">=</span> <span class="st">"-log10(adj.P.Val)"</span>, pointSize <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>            color <span class="op">=</span> <span class="st">"#6489B4"</span>, highlightcolor <span class="op">=</span> <span class="st">"#05254A"</span>, nointerestcolor <span class="op">=</span> <span class="st">"#B7B7B7"</span>,</span>
+<span>            threshold_y <span class="op">=</span> <span class="fl">0.0001</span>, threshold_x <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>            xlab <span class="op">=</span> <span class="cn">NULL</span>, ylab <span class="op">=</span> <span class="cn">NULL</span>, ncol <span class="op">=</span> <span class="cn">NULL</span>, nrow <span class="op">=</span> <span class="cn">NULL</span>, title <span class="op">=</span> <span class="st">"Marthandan et al. 2016"</span>,</span>
+<span>            labsize <span class="op">=</span> <span class="fl">8</span>, widthlabs <span class="op">=</span> <span class="fl">25</span>, invert <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/volcanos_DEGs-2.png" width="40%"></p>
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Annotate Top and Bottom N Genes:</span></span>
+<span><span class="fu"><a href="../reference/plotVolcano.html">plotVolcano</a></span><span class="op">(</span><span class="va">DEGs</span>, genes <span class="op">=</span> <span class="cn">NULL</span>, N <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>            x <span class="op">=</span> <span class="st">"logFC"</span>, y <span class="op">=</span> <span class="st">"-log10(adj.P.Val)"</span>, pointSize <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>            color <span class="op">=</span> <span class="st">"pink"</span>, highlightcolor <span class="op">=</span> <span class="st">"#05254A"</span>, nointerestcolor <span class="op">=</span> <span class="st">"#B7B7B7"</span>,</span>
+<span>            threshold_y <span class="op">=</span> <span class="cn">NULL</span>, threshold_x <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>            xlab <span class="op">=</span> <span class="cn">NULL</span>, ylab <span class="op">=</span> <span class="cn">NULL</span>, ncol <span class="op">=</span> <span class="cn">NULL</span>, nrow <span class="op">=</span> <span class="cn">NULL</span>, title <span class="op">=</span> <span class="st">"Marthandan et al. 2016"</span>,</span>
+<span>            labsize <span class="op">=</span> <span class="fl">8</span>, widthlabs <span class="op">=</span> <span class="fl">25</span>, invert <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/volcanos_DEGs-3.png" width="40%"></p>
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Change order: signatures in columns, contrast in rows</span></span>
+<span><span class="fu"><a href="../reference/plotVolcano.html">plotVolcano</a></span><span class="op">(</span><span class="va">DEGs</span>, genes <span class="op">=</span> <span class="va">genesets_example</span>, </span>
+<span>            N <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>            x <span class="op">=</span> <span class="st">"logFC"</span>, y <span class="op">=</span> <span class="st">"-log10(adj.P.Val)"</span>, pointSize <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>            color <span class="op">=</span> <span class="st">"#6489B4"</span>, highlightcolor <span class="op">=</span> <span class="st">"#05254A"</span>, highlightcolor_upreg <span class="op">=</span> <span class="st">"#038C65"</span>, highlightcolor_downreg <span class="op">=</span> <span class="st">"#8C0303"</span>,nointerestcolor <span class="op">=</span> <span class="st">"#B7B7B7"</span>,</span>
+<span>            threshold_y <span class="op">=</span> <span class="cn">NULL</span>, threshold_x <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>            xlab <span class="op">=</span> <span class="cn">NULL</span>, ylab <span class="op">=</span> <span class="cn">NULL</span>, ncol <span class="op">=</span> <span class="cn">NULL</span>, nrow <span class="op">=</span> <span class="cn">NULL</span>, title <span class="op">=</span> <span class="st">"Marthandan et al. 2016"</span>,</span>
+<span>            labsize <span class="op">=</span> <span class="fl">10</span>, widthlabs <span class="op">=</span> <span class="fl">24</span>, invert <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/volcanos_DEGs3-1.png" width="90%"></p>
+<div class="section level4">
+<h4 id="note-on-continuous-variables">Note on Continuous Variables<a class="anchor" aria-label="anchor" href="#note-on-continuous-variables"></a>
+</h4>
+<p>If the user wants to analyse continuous variables (e.g., time or
+dosage), they must provide a custom design matrix via the
+<code>modelmat</code> argument, instead of using the
+<code>variables</code> argument. This is because the
+<code>variables</code> argument is intended to be used for categorical
+variables only: internally, when using <code>variables</code> to specify
+a phenotypic variable of interest, the function constructs a design
+matrix without an intercept and treats each level of the variable as a
+discrete group. This is appropriate for defining explicit contrasts
+between categorical levels but is not suitable for continuous variables,
+where such discretization would distort the relationship.</p>
+<p>For continuous variables, the user should instead build a design
+matrix manually (e.g., using <code>model.matrix(~ variable)</code>),
+ensuring that the variable of interest is numeric and has a
+corresponding column in the matrix with the same name. The
+<code><a href="../reference/calculateDE.html">calculateDE()</a></code> function will then use this matrix directly
+for linear modelling.</p>
+<p>The interpretation of the differential expression results remains
+consistent: the statistics reflect always the expected change in
+expression associated with a 1-unit increase in the variable (e.g., one
+day, one unit of dosage, “Senescent” to “Proliferative”, etc).</p>
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">design</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/model.matrix.html" class="external-link">model.matrix</a></span><span class="op">(</span><span class="op">~</span><span class="fl">1</span> <span class="op">+</span> <span class="va">DaysToSequencing</span>, data <span class="op">=</span> <span class="va">metadata_example</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">DEGs_continuous1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculateDE.html">calculateDE</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>,</span>
+<span>                                metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
+<span>                                modelmat <span class="op">=</span> <span class="va">design</span>,</span>
+<span>                                contrasts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"DaysToSequencing"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## Warning in limma::makeContrasts(contrasts = contrasts, levels = design_matrix):</span></span>
+<span><span class="co">## Renaming (Intercept) to Intercept</span></span></code></pre>
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">DEGs_continuous1</span><span class="op">$</span><span class="va">DaysToSequencing</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>,<span class="op">]</span></span></code></pre></div>
+<pre><code><span><span class="co">##                logFC  AveExpr         t   P.Value adj.P.Val         B</span></span>
+<span><span class="co">## RNA45SN2 -0.07628608 7.712585 -1.626674 0.1117361 0.9997685 -6.018805</span></span>
+<span><span class="co">## RNA18SN2  0.06743439 9.577467  1.554171 0.1280974 0.9997685 -6.129426</span></span>
+<span><span class="co">## RNA18SN3  0.06743439 9.577467  1.554171 0.1280974 0.9997685 -6.129426</span></span></code></pre>
+<p>This usage of the <code>modelmat</code> argument allows the user to
+combine categorical and numeric variables in a fully customized design
+matrix. In the example below:</p>
+<ul>
+<li>
+<code>(Intercept)</code>: Baseline expression when days = 0 and
+Condition = Control.</li>
+<li>
+<code>DaysToSequencing</code>: Change in expression per unit of time
+(day) increase.</li>
+<li>
+<code>Senescent</code>: Average difference in expression between
+Senescent and Control conditions.</li>
+</ul>
+<p>This approach is useful when modeling continuous effects alongside
+group comparisons, and it provides complete flexibility in specifying
+the design.</p>
+<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Manually construct the design matrix</span></span>
+<span><span class="va">model_matrix</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/model.matrix.html" class="external-link">model.matrix</a></span><span class="op">(</span><span class="op">~</span> <span class="va">DaysToSequencing</span> <span class="op">+</span> <span class="va">Condition</span>, data <span class="op">=</span> <span class="va">metadata_example</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">model_matrix</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"(Intercept)"</span>, <span class="st">"DaysToSequencing"</span>, <span class="st">"Senescent"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Provide the custom design matrix to calculateDE using the `modelmat` argument</span></span>
+<span><span class="va">DEGs_continuous2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculateDE.html">calculateDE</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>,</span>
+<span>                                modelmat <span class="op">=</span> <span class="va">model_matrix</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Access results for each coefficient</span></span>
+<span><span class="va">DEGs_continuous2</span><span class="op">$</span><span class="va">`(Intercept)`</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span></span></code></pre></div>
+<pre><code><span><span class="co">##           logFC  AveExpr         t      P.Value    adj.P.Val         B</span></span>
+<span><span class="co">## FN1    13.23994 13.21879  74.04645 1.265799e-43 3.210740e-43  89.73456</span></span>
+<span><span class="co">## EEF1A1 12.94192 12.85091 179.29631 1.402180e-58 9.033979e-57 121.69861</span></span>
+<span><span class="co">## GAPDH  12.71139 12.53188 147.86006 2.586838e-55 5.583501e-54 115.21324</span></span></code></pre>
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">DEGs_continuous2</span><span class="op">$</span><span class="va">DaysToSequencing</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span></span></code></pre></div>
+<pre><code><span><span class="co">##                logFC  AveExpr         t    P.Value adj.P.Val         B</span></span>
+<span><span class="co">## RNA45SN2 -0.08056063 7.712585 -1.689209 0.09914647 0.9853746 -6.052523</span></span>
+<span><span class="co">## RNA18SN2  0.06598991 9.577467  1.490666 0.14407989 0.9853746 -6.355482</span></span>
+<span><span class="co">## RNA18SN3  0.06598991 9.577467  1.490666 0.14407989 0.9853746 -6.355482</span></span></code></pre>
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">DEGs_continuous2</span><span class="op">$</span><span class="va">Senescent</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span></span></code></pre></div>
+<pre><code><span><span class="co">##            logFC  AveExpr         t      P.Value    adj.P.Val        B</span></span>
+<span><span class="co">## CCND2   3.863054 4.406721 12.344742 4.643461e-15 4.865503e-12 24.20437</span></span>
+<span><span class="co">## MKI67  -3.655159 6.605339 -9.296026 1.907736e-11 5.010329e-10 16.02834</span></span>
+<span><span class="co">## PTCHD4  3.453362 3.556007 10.774059 2.907380e-13 3.864144e-11 20.14942</span></span></code></pre>
+</div>
+</div>
+<div class="section level3">
+<h3 id="gene-set-enrichment-analyses">Gene Set Enrichment Analyses<a class="anchor" aria-label="anchor" href="#gene-set-enrichment-analyses"></a>
+</h3>
+<p>To perform GSEA, the user can use the <code><a href="../reference/runGSEA.html">runGSEA()</a></code>
+function. This function takes a named list of differential expression
+statistics (one per contrast) and a set of gene signatures to compute
+enrichment scores.</p>
+<ul>
+<li><p><code>DEGList</code>: A list of differentially expressed genes
+(DEGs) for each contrast.</p></li>
+<li>
+<p><code>gene_sets</code>: A list of gene sets, where each entry can
+be:</p>
+<ul>
+<li>A vector of gene names (unidirectional analysis).</li>
+<li>A data frame where the first column is the gene name and the second
+column indicates the expected direction (+1 or -1, bidirectional
+analysis).</li>
+</ul>
+</li>
+<li>
+<p><code>stat</code>: The ranking statistic. If NULL, the ranking
+statistic is automatically selected:</p>
+<ul>
+<li>
+<code>"B"</code> for gene sets with <strong>no known
+direction</strong> (vectors).</li>
+<li>
+<code>"t"</code> for <strong>unidirectional</strong> or
+<strong>bidirectional</strong> gene sets (data frames).</li>
+<li>If provided, this argument overrides the automatic selection.</li>
+</ul>
+</li>
+<li><p><code>ContrastCorrection</code>: Logical, default is
+<code>FALSE</code>. If <code>TRUE</code>, applies an additional multiple
+testing correction (Benjamini–Hochberg) across all contrasts returned in
+the <code>DEGList</code> results list. This accounts for the number of
+contrasts tested per signature and provides more stringent control of
+false discovery rate across multiple comparisons (similar to answering
+the question “Is there any signature that is significant in any of the
+contrasts” instead of “For each contrast, is there any signature that is
+significant”). If <code>FALSE</code>, the function only corrects for the
+number of gene sets.</p></li>
+</ul>
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">GSEAresults</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/runGSEA.html">runGSEA</a></span><span class="op">(</span>DEGList <span class="op">=</span> <span class="va">DEGs</span>, </span>
+<span>                       gene_sets <span class="op">=</span> <span class="va">genesets_example</span>,</span>
+<span>                       stat <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>                        ContrastCorrection <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">GSEAresults</span></span></code></pre></div>
+<pre><code><span><span class="co">## $`Senescent-Proliferative`</span></span>
+<span><span class="co">##                         pathway         pval         padj   log2err        ES</span></span>
+<span><span class="co">##                          &lt;char&gt;        &lt;num&gt;        &lt;num&gt;     &lt;num&gt;     &lt;num&gt;</span></span>
+<span><span class="co">## 1:              HernandezSegura 4.042321e-10 1.212696e-09 0.8140358 0.6376777</span></span>
+<span><span class="co">## 2: REACTOME_CELLULAR_SENESCENCE 3.375614e-03 5.063421e-03 0.2526439 0.3807095</span></span>
+<span><span class="co">## 3:            LiteratureMarkers 1.838843e-02 1.838843e-02 0.1526759 0.7068136</span></span>
+<span><span class="co">##         NES  size  leadingEdge stat_used</span></span>
+<span><span class="co">##       &lt;num&gt; &lt;int&gt;       &lt;list&gt;    &lt;char&gt;</span></span>
+<span><span class="co">## 1: 2.638885    52 CNTLN, D....         t</span></span>
+<span><span class="co">## 2: 1.572974   137 H1-2, H2....         B</span></span>
+<span><span class="co">## 3: 1.653726     7 LMNB1, M....         t</span></span></code></pre>
+<p>Depending on the statistic used, the interpretation of the plots
+changes:</p>
+<ol style="list-style-type: decimal">
+<li>
+<strong>B Statistic vs. t Statistic:</strong>
+<ul>
+<li>The B statistic does not specify the direction (enriched or
+depleted) of the gene set’s alterations. It only indicates the strength
+of evidence for any alterations.</li>
+<li>The t statistic orders genes from stronger evidence of
+over-expression to stronger evidence for under-expression.</li>
+</ul>
+</li>
+<li>
+<strong>Graph’s annotation:</strong>
+<ul>
+<li>When using the B statistic, the plot will include “Altered Gene Set”
+beneath its title to reflect this focus on whether genes are
+altered.</li>
+<li>For the t statistic, the plot will include “Enriched/Depleted Gene
+Set” beneath its title, indicating its focus on the enrichment or
+depletion of genes.</li>
+</ul>
+</li>
+</ol>
+<p>After running GSEA, the user can visualize enrichment plots using the
+<code><a href="../reference/plotGSEAenrichment.html">plotGSEAenrichment()</a></code> function. This function generates
+enrichment plots for each gene signature and contrast, displaying also
+the <strong>Normalized Enrichment Scores (NES)</strong> and
+<strong>adjusted p-value</strong> for each enrichment result. As
+<code>plotGSEAenrichment</code>’s relevant graphical parameters:</p>
+<ul>
+<li>
+<code>grid = TRUE</code>: Arranges the plots in a grid for better
+visualization.</li>
+<li>
+<code>titlesize</code>: Adjusts title font size.</li>
+<li>
+<code>nrow</code>/<code>ncol</code>: Specifies the grid layout for
+arranging plots.</li>
+</ul>
+<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plotGSEAenrichment.html">plotGSEAenrichment</a></span><span class="op">(</span>GSEA_results<span class="op">=</span><span class="va">GSEAresults</span>, </span>
+<span>                   DEGList<span class="op">=</span><span class="va">DEGs</span>, </span>
+<span>                   gene_sets<span class="op">=</span><span class="va">genesets_example</span>, </span>
+<span>                   widthTitle<span class="op">=</span><span class="fl">40</span>, grid <span class="op">=</span> <span class="cn">T</span>, titlesize <span class="op">=</span> <span class="fl">10</span>, nrow<span class="op">=</span><span class="fl">1</span>, ncol<span class="op">=</span><span class="fl">3</span><span class="op">)</span> </span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/GSEA_plotenrichment-1.png" width="90%"></p>
+<p>The <code><a href="../reference/plotNESlollipop.html">plotNESlollipop()</a></code> function creates lollipop plots
+for visualizing Gene Set Enrichment Analysis (GSEA) results. Each plot
+displays gene sets on the y-axis and Normalized Enrichment Scores (NES)
+on the x-axis, with a color gradient proportional to the adjusted
+p-value. The function supports multiple contrasts and includes options
+for customizing the color gradient, significance threshold, and plot
+layout. It can also arrange individual plots into a grid layout for
+comparative visualization.</p>
+<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plotNESlollipop.html">plotNESlollipop</a></span><span class="op">(</span>GSEA_results<span class="op">=</span><span class="va">GSEAresults</span>, </span>
+<span>                saturation_value<span class="op">=</span><span class="cn">NULL</span>, </span>
+<span>                nonsignif_color <span class="op">=</span> <span class="st">"#F4F4F4"</span>, </span>
+<span>                signif_color <span class="op">=</span> <span class="st">"red"</span>,</span>
+<span>                sig_threshold <span class="op">=</span> <span class="fl">0.05</span>, </span>
+<span>                grid <span class="op">=</span> <span class="cn">FALSE</span>, </span>
+<span>                nrow <span class="op">=</span> <span class="cn">NULL</span>, ncol <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>                widthlabels<span class="op">=</span><span class="fl">13</span>, </span>
+<span>                title<span class="op">=</span><span class="cn">NULL</span>, titlesize<span class="op">=</span><span class="fl">12</span><span class="op">)</span> </span></code></pre></div>
+<pre><code><span><span class="co">## $`Senescent-Proliferative`</span></span></code></pre>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/GSEA_lollypop-1.png" width="60%"></p>
+<p>The <code><a href="../reference/plotCombinedGSEA.html">plotCombinedGSEA()</a></code> function generates a scatter plot
+to visualize the results of Gene Set Enrichment Analysis (GSEA) across
+multiple contrasts. Each point represents a pathway, with:</p>
+<ul>
+<li>X-axis: Normalized Enrichment Score (NES)</li>
+<li>Y-axis: -log10 adjusted p-value (significance)</li>
+<li>Color: Gene sets</li>
+<li>Shape: Contrasts</li>
+<li>Dashed line: Significance threshold</li>
+</ul>
+<p>This function helps compare enrichment results when the number of
+contrasts and the number of pathways is high, scenario of which the
+example herein is not too representative.</p>
+<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plotCombinedGSEA.html">plotCombinedGSEA</a></span><span class="op">(</span><span class="va">GSEAresults</span>, sig_threshold <span class="op">=</span> <span class="fl">0.05</span>, PointSize<span class="op">=</span><span class="fl">6</span>, widthlegend <span class="op">=</span> <span class="fl">26</span> <span class="op">)</span></span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/GSEA_volcano-1.png" width="100%"></p>
+<div class="section level4">
+<h4 id="note-on-gsea-for-all-negative-gene-sets">Note on GSEA for All-negative gene sets<a class="anchor" aria-label="anchor" href="#note-on-gsea-for-all-negative-gene-sets"></a>
+</h4>
+<p>In gene set enrichment analysis, the behaviour of gene sets annotated
+with regulatory direction must be interpreted carefully. In our current
+implementation, if a gene set includes both positive and negative
+regulators of a process, the statistics for the negatively annotated
+genes are inverted, meaning that the enrichment reflects their effect on
+the process rather than simply their expression direction. This ensures
+that the final enrichment score captures the coordinated functional
+outcome of the gene set.</p>
+<p>The same logic is preserved when a gene set contains <strong>only
+negatively annotated genes</strong> (<em>e.g.</em> negative regulators
+of senescence): the statistics are inverted so that a positive
+normalised enrichment score (NES) implies these inhibitors are less
+expressed, thereby supporting the activation of the process they repress
+(<em>e.g.</em> senescence). Conversely, a negative NES would suggest
+their upregulation, which could potentially suppress the process.</p>
+</div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="comparison-of-both-approaches">Comparison of both approaches<a class="anchor" aria-label="anchor" href="#comparison-of-both-approaches"></a>
+</h2>
+<p>Based on these very simple analyses, the REACTOME_CELLULAR_SENESCENCE
+showed consistently poor performance, highlighing caution when this or
+other MSigDB pathways appear in common enrichment-based analyses with
+RNA-seq data. The HernandezSegura signature, with its moderate size (55
+genes) and annotated gene direction, performed best in enrichment-based
+methods such as GSEA. In contrast, the LiteratureMarkers set yielded
+stronger results in scoring approaches, likely due to a small number of
+highly informative genes rather than coordinated activity across the
+entire set.</p>
+<p>These findings highlight important trade-offs: while scoring methods
+offer per-sample resolution and are less sensitive (in terms of
+statistical significance) to gene set size, making them useful for
+classification tasks, they may be overly influenced by a small subset of
+genes, which could limit biological interpretability. While more robust
+to sample heterogeneity and better at capturing coordinated expression
+changes, enrichment-based methods are sensitive to gene set composition
+and size. Caution is warranted when interpreting results, especially
+from score-based approaches, as strong signals may not always reflect
+the intended biological process, but rather a handful of dominant
+genes.</p>
+<div class="section level3">
+<h3 id="visualise-individual-gene-behaviour">Visualise Individual Gene Behaviour<a class="anchor" aria-label="anchor" href="#visualise-individual-gene-behaviour"></a>
+</h3>
+<p>As highlighted in the previous section, score-based approaches can be
+disproportionately influenced by a small subset of genes. To address
+this, <code>markeR</code> includes dedicated functions for exploring
+individual gene behaviour, enabling users to assess if and which genes
+may be driving the overall signal. We demonstrate this functionality
+using the <code>LiteratureMarkers</code> gene set.</p>
+<p>The <code>ExpressionHeatmap</code> function generates a heatmap to
+display the expression levels of selected senescence genes across
+samples. Samples are annotated by a chosen condition, and expression
+values are color-scaled for easy visual comparison. Clustering options
+and customizable color palettes allow for flexible and informative
+visualization.</p>
+<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">annotation_colors</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span> </span>
+<span>  Condition <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="st">"Senescent"</span>     <span class="op">=</span> <span class="st">"#65AC7C"</span>,  <span class="co"># Example color: greenish</span></span>
+<span>    <span class="st">"Proliferative"</span> <span class="op">=</span> <span class="st">"#5F90D4"</span>  <span class="co"># Example color: blueish </span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/ExpressionHeatmap.html">ExpressionHeatmap</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">counts_example</span>, </span>
+<span>                  metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
+<span>                  genes<span class="op">=</span><span class="va">genesets_example</span><span class="op">$</span><span class="va">LiteratureMarkers</span><span class="op">$</span><span class="va">gene</span>,  </span>
+<span>                  annotate.by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Condition"</span><span class="op">)</span>,</span>
+<span>                  annotation_colors <span class="op">=</span> <span class="va">annotation_colors</span>,</span>
+<span>                  colorlist <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>low <span class="op">=</span> <span class="st">"#3F4193"</span>, mid <span class="op">=</span> <span class="st">"#F9F4AE"</span>, high <span class="op">=</span> <span class="st">"#B44141"</span><span class="op">)</span>,</span>
+<span>                  cluster_rows <span class="op">=</span> <span class="cn">TRUE</span>, </span>
+<span>                  cluster_columns <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>                  title <span class="op">=</span> <span class="st">"Senescence Genes"</span>, </span>
+<span>                  titlesize <span class="op">=</span> <span class="fl">20</span>,</span>
+<span>                  legend_position <span class="op">=</span> <span class="st">"right"</span>,</span>
+<span>                  scale_position<span class="op">=</span><span class="st">"right"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/example_exprheatmap-1.png" width="70%"></p>
+<p>The <code>IndividualGenes_Violins</code> function creates violin
+plots to visualize the expression distributions of selected senescence
+genes across conditions. Jittered points represent individual samples,
+and grouping (x axis, <code>GroupingVariable</code>) and color variables
+(<code>ColorVariable</code> and <code>ColorValues</code>) from the
+metadata allow for additional stratification and insight. Customization
+options include layout, point size, colors, and axis labeling.</p>
+<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">senescence_triggers_colors</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  <span class="st">"none"</span> <span class="op">=</span> <span class="st">"#E57373"</span>,  <span class="co"># Soft red   </span></span>
+<span>  <span class="st">"Telomere shortening"</span> <span class="op">=</span> <span class="st">"#4FC3F7"</span>  <span class="co"># Vivid sky blue  </span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/IndividualGenes_Violins.html">IndividualGenes_Violins</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
+<span>                        metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
+<span>                        genes <span class="op">=</span> <span class="va">genesets_example</span><span class="op">$</span><span class="va">LiteratureMarkers</span><span class="op">$</span><span class="va">gene</span>, </span>
+<span>                        GroupingVariable <span class="op">=</span> <span class="st">"Condition"</span>, </span>
+<span>                        plot<span class="op">=</span><span class="cn">T</span>, </span>
+<span>                        ncol<span class="op">=</span><span class="cn">NULL</span>, </span>
+<span>                        nrow<span class="op">=</span><span class="fl">1</span>, </span>
+<span>                        divide<span class="op">=</span><span class="cn">NULL</span>, </span>
+<span>                        invert_divide<span class="op">=</span><span class="cn">FALSE</span>,</span>
+<span>                        ColorValues<span class="op">=</span><span class="va">senescence_triggers_colors</span>, </span>
+<span>                        pointSize<span class="op">=</span><span class="fl">2</span>, </span>
+<span>                        ColorVariable<span class="op">=</span><span class="st">"SenescentType"</span>, </span>
+<span>                        title<span class="op">=</span><span class="st">"Senescence Genes"</span>, </span>
+<span>                        widthTitle<span class="op">=</span><span class="fl">16</span>,</span>
+<span>                        y_limits <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>                        legend_nrow<span class="op">=</span><span class="fl">1</span>, </span>
+<span>                        xlab<span class="op">=</span><span class="st">"Condition"</span>,</span>
+<span>                        colorlab<span class="op">=</span><span class="st">""</span><span class="op">)</span> </span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/exampleviolins-1.png" width="100%"></p>
+<p>The <code>CorrelationHeatmap</code> function displays pairwise
+correlations between selected genes, helping to reveal co-expression
+patterns within the senescence signature. Correlations can be computed
+separately for different conditions, and the heatmap is fully
+customizable with options for clustering, color scaling, and correlation
+method (e.g., Spearman or Pearson).</p>
+<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/CorrelationHeatmap.html">CorrelationHeatmap</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">counts_example</span>, </span>
+<span>                   metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
+<span>                   genes<span class="op">=</span><span class="va">genesets_example</span><span class="op">$</span><span class="va">LiteratureMarkers</span><span class="op">$</span><span class="va">gene</span>, </span>
+<span>                   separate.by <span class="op">=</span> <span class="st">"Condition"</span>, </span>
+<span>                   method <span class="op">=</span> <span class="st">"spearman"</span>,  </span>
+<span>                   colorlist <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>low <span class="op">=</span> <span class="st">"#3F4193"</span>, mid <span class="op">=</span> <span class="st">"#F9F4AE"</span>, high <span class="op">=</span> <span class="st">"#B44141"</span><span class="op">)</span>,</span>
+<span>                   limits_colorscale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span>,<span class="fl">0</span>,<span class="fl">1</span><span class="op">)</span>, </span>
+<span>                   widthTitle <span class="op">=</span> <span class="fl">16</span>, </span>
+<span>                   title <span class="op">=</span> <span class="st">"Senescence Genes"</span>, </span>
+<span>                   cluster_rows <span class="op">=</span> <span class="cn">TRUE</span>, </span>
+<span>                   cluster_columns <span class="op">=</span> <span class="cn">TRUE</span>,  </span>
+<span>                   detailedresults <span class="op">=</span> <span class="cn">FALSE</span>, </span>
+<span>                   legend_position<span class="op">=</span><span class="st">"right"</span>,</span>
+<span>                   titlesize<span class="op">=</span><span class="fl">20</span><span class="op">)</span></span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/example_heatmap-1.png" width="70%"></p>
+<p>The <code>ROCandAUCplot</code> function evaluates the discriminatory
+power of individual genes in the signature by computing ROC curves and
+AUC values based on a binary classification (e.g., senescent
+vs. proliferative). If the selected grouping variable has more than two
+levels, the user can specify the reference group using the class
+parameter. For example, if a variable has levels A, B, C, and D, setting
+<code>class = c("A", "B")</code> will group samples from A and B
+together as the positive class*, while the remaining samples (C and D)
+are automatically grouped as the negative class. Additionally, the user
+can use the <code>group_var</code> parameter to split and display
+results separately for each level of another metadata variable —
+allowing for subgroup-specific ROC analyses. Outputs include individual
+ROC plots and an AUC heatmap, with customisable layout, color schemes,
+and clustering options—ideal for identifying genes with strong
+discriminatory ability. If <code>group_var</code>is not specified, the
+AUC values will be displayed in a barplot.</p>
+<ul>
+<li>For ease of interpretation, the directionality of the comparison is
+adjusted so that the AUC is always &gt;=0.5, showing only discriminatory
+power rather than directionality.</li>
+</ul>
+<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>error<span class="op">=</span><span class="va">recover</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/ROCandAUCplot.html">ROCandAUCplot</a></span><span class="op">(</span><span class="va">counts_example</span>, </span>
+<span>              <span class="va">metadata_example</span>, </span>
+<span>              condition_var <span class="op">=</span> <span class="st">"Condition"</span>, </span>
+<span>              class <span class="op">=</span> <span class="st">"Senescent"</span>, </span>
+<span>              group_var<span class="op">=</span><span class="cn">NULL</span>,</span>
+<span>              title <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>              genes<span class="op">=</span><span class="va">genesets_example</span><span class="op">$</span><span class="va">LiteratureMarkers</span><span class="op">$</span><span class="va">gene</span>, </span>
+<span>              plot_type <span class="op">=</span> <span class="st">"all"</span>,</span>
+<span>              auc_params <span class="op">=</span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>colors <span class="op">=</span>  <span class="st">"#3B415B"</span>,</span>
+<span>                                    limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>,<span class="fl">1</span><span class="op">)</span> <span class="op">)</span>,</span>
+<span>              roc_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>nrow<span class="op">=</span><span class="fl">3</span>,</span>
+<span>                                ncol<span class="op">=</span><span class="fl">3</span>, </span>
+<span>                                colors<span class="op">=</span><span class="st">"#3B415B"</span><span class="op">)</span>,</span>
+<span>              commomplot_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>widths<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>,<span class="fl">0.3</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/rocAUCexample-1.png" width="100%"></p>
+<p>The <code>CohenD_IndividualGenes</code> function computes the effect
+size (Cohen’s d) of the difference in expression of each gene between
+two conditions, given by the variable <code>condition_var</code>. If the
+selected condition variable has more than two levels, the
+<code>class</code> parameter specifies which condition will be compared
+to the rest. Additionally, the user can use the <code>group_var</code>
+parameter to split and display results separately for each level of
+another metadata variable. Results are visualized as a heatmap, with
+customizable color scales and clustering options for easy interpretation
+of effect sizes across genes. If <code>group_var</code> is not
+specified, the function will return a barplot instead.</p>
+<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/CohenD_IndividualGenes.html">CohenD_IndividualGenes</a></span><span class="op">(</span><span class="va">counts_example</span>, </span>
+<span>                       <span class="va">metadata_example</span>, </span>
+<span>                       genes<span class="op">=</span><span class="va">genesets_example</span><span class="op">$</span><span class="va">LiteratureMarkers</span><span class="op">$</span><span class="va">gene</span>,</span>
+<span>                       condition_var <span class="op">=</span> <span class="st">"Condition"</span>, </span>
+<span>                       class <span class="op">=</span> <span class="st">"Senescent"</span>, </span>
+<span>                       group_var <span class="op">=</span> <span class="cn">NULL</span>,  </span>
+<span>                       params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>colors <span class="op">=</span> <span class="st">"#3B415B"</span>,</span>
+<span>                                             limits <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>                                             cluster_rows<span class="op">=</span><span class="cn">T</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/cohendexample-1.png" width="70%"></p>
+<p>The <code>plotPCA</code> function performs a PCA on the expression of
+a selected set of genes to understand if they explain enough variance in
+the data, allowing the user to test if the genes in the signature are
+sufficient to separate the group of interest (given by the
+`ColourVariable’ parameter). While previous metrics assess
+discriminatory power quantitatively (e.g., AUC), PCA provides a
+complementary, unsupervised visualization that can help assess whether
+the gene signature is sufficient to visually separate groups of
+interest. Users can customize which principal components to display
+using the PCs argument and adjust layout, point size, and colour
+annotations for comparison across conditions.</p>
+<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">annotation_colors</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>  </span>
+<span>  <span class="st">"Senescent"</span>     <span class="op">=</span> <span class="st">"#65AC7C"</span>,  <span class="co"># Example color: greenish</span></span>
+<span>  <span class="st">"Proliferative"</span> <span class="op">=</span> <span class="st">"#5F90D4"</span>  <span class="co"># Example color: blueish </span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/plotPCA.html">plotPCA</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
+<span>        metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
+<span>        genes<span class="op">=</span><span class="va">genesets_example</span><span class="op">$</span><span class="va">LiteratureMarkers</span><span class="op">$</span><span class="va">gene</span>, </span>
+<span>        scale<span class="op">=</span><span class="cn">FALSE</span>, </span>
+<span>        center<span class="op">=</span><span class="cn">TRUE</span>, </span>
+<span>        PCs<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">3</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>,<span class="fl">4</span><span class="op">)</span><span class="op">)</span>, </span>
+<span>        ColorVariable<span class="op">=</span><span class="st">"Condition"</span>,</span>
+<span>        ColorValues<span class="op">=</span><span class="va">annotation_colors</span>,</span>
+<span>        pointSize<span class="op">=</span><span class="fl">5</span>,</span>
+<span>        legend_nrow<span class="op">=</span><span class="fl">1</span>, </span>
+<span>        ncol<span class="op">=</span><span class="fl">3</span>, </span>
+<span>        nrow<span class="op">=</span><span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/pca-1.png" width="90%"></p>
+</div>
+<div class="section level3">
+<h3 id="comment">Comment<a class="anchor" aria-label="anchor" href="#comment"></a>
+</h3>
+<p>As demonstrated by the behaviour of individual genes in the
+<code>LiteratureMarkers</code> gene set, LMNB1, MKI67, and GLB1 appear
+to drive the overall signal. These genes consistently show higher
+performance metrics (e.g., Cohen’s d, AUC), strong expression changes
+between conditions, and LMNB1 and MKI67 specifically have correlated
+expression patterns. This underscores the importance of examining
+gene-level behaviour, as a strong overall signature score may reflect
+the influence of only a few informative genes, rather than coordinated
+activity across the entire set. In this case, the strong performance of
+the <code>LiteratureMarkers</code> set in scoring approaches is likely
+driven by these genes. However, relying heavily on a few markers can be
+a caveat: for example, MKI67 and LMNB1 (proliferation-related genes) may
+also change in other biological contexts like quiescence or
+differentiation, potentially limiting their specificity for senescence.
+Thus, the choice of gene set and analysis strategy should be guided by
+the research question, and complemented with both score distributions,
+enrichment analyses, and individual gene behaviour. Notably, scoring
+with just these three genes yielded results similar (or, even, slightly
+better) to the full <code>LiteratureMarkers</code> set.</p>
+<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">GeneSets_Example_DrivingGenes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>LiteratureMarkers<span class="op">=</span><span class="va">genesets_example</span><span class="op">$</span><span class="va">LiteratureMarkers</span>,</span>
+<span>                                          LiteratureMarkers_subset<span class="op">=</span><span class="va">genesets_example</span><span class="op">$</span><span class="va">LiteratureMarkers</span><span class="op">[</span><span class="va">genesets_example</span><span class="op">$</span><span class="va">LiteratureMarkers</span><span class="op">$</span><span class="va">gene</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"LMNB1"</span>, <span class="st">"MKI67"</span>,<span class="st">"GLB1"</span><span class="op">)</span>,<span class="op">]</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">GeneSets_Example_DrivingGenes</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## $LiteratureMarkers</span></span>
+<span><span class="co">##     gene enrichment</span></span>
+<span><span class="co">## 1 CDKN1A          1</span></span>
+<span><span class="co">## 2 CDKN2A          1</span></span>
+<span><span class="co">## 3   GLB1          1</span></span>
+<span><span class="co">## 4   TP53          1</span></span>
+<span><span class="co">## 5   CCL2          1</span></span>
+<span><span class="co">## 6  LMNB1         -1</span></span>
+<span><span class="co">## 7  MKI67         -1</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $LiteratureMarkers_subset</span></span>
+<span><span class="co">##    gene enrichment</span></span>
+<span><span class="co">## 3  GLB1          1</span></span>
+<span><span class="co">## 6 LMNB1         -1</span></span>
+<span><span class="co">## 7 MKI67         -1</span></span></code></pre>
+<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/PlotScores.html">PlotScores</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
+<span>           metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
+<span>           gene_sets <span class="op">=</span>  <span class="va">GeneSets_Example_DrivingGenes</span>,</span>
+<span>           ColorVariable <span class="op">=</span> <span class="st">"SenescentType"</span>, </span>
+<span>           Variable<span class="op">=</span><span class="st">"Condition"</span>,  </span>
+<span>           method <span class="op">=</span><span class="st">"logmedian"</span>, </span>
+<span>           ColorValues <span class="op">=</span> <span class="va">senescence_triggers_colors</span>, </span>
+<span>           ConnectGroups<span class="op">=</span><span class="cn">TRUE</span>, </span>
+<span>           ncol <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>           nrow <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>           widthTitle<span class="op">=</span><span class="fl">24</span>, </span>
+<span>           limits <span class="op">=</span> <span class="cn">NULL</span>, </span>
+<span>           legend_nrow <span class="op">=</span> <span class="fl">1</span>, </span>
+<span>           pointSize<span class="op">=</span><span class="fl">4</span>,</span>
+<span>           compute_cohen<span class="op">=</span><span class="cn">T</span>,</span>
+<span>           cond_cohend<span class="op">=</span><span class="va">cond_cohend</span>,</span>
+<span>           title<span class="op">=</span><span class="st">"Marthandan et al. 2016"</span>,</span>
+<span>           labsize<span class="op">=</span><span class="fl">9</span>, </span>
+<span>           titlesize <span class="op">=</span> <span class="fl">12</span><span class="op">)</span>  </span></code></pre></div>
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/example_genesdrivingresults-1.png" width="60%"></p>
+</div>
+</div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside>
 </div>
 
 

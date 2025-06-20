@@ -41,7 +41,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/Tutorial_BenchmarkingMode.html">Benchmarking Mode Tutorial</a></li>
     <li><a class="dropdown-item" href="../articles/Tutorial_DiscoveryMode.html">Discovery Mode Tutorial</a></li>
-    <li><a class="dropdown-item" href="../articles/Tutorial_SignatureSimilarity.html">Signature Similarity Tutorial</a></li>
+    <li><a class="dropdown-item" href="../articles/Tutorial_GeneSetSimilarity.html">Gene Set Similarity Tutorial</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -80,10 +80,426 @@
 
     
     
+<p>This vignette provides a comprehensive introduction to the
+<strong>markeR</strong> package, focusing on its <strong>Discovery
+Mode</strong>. The discovery mode was designed for users who are
+interested in quantifying a known, robust gene set in a given dataset to
+explore associations with other phenotypic or clinical variables. This
+approach is particularly suited to hypothesis generation where the
+phenotype marked by the gene set is of known biological or clinical
+relevance.</p>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
+<p>The user can install the development version of markeR from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Hello World"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] "Hello World"</span></span></code></pre>
-  </main>
+<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"DiseaseTranscriptomicsLab/markeR"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="case-study-senescence">Case-study: Senescence<a class="anchor" aria-label="anchor" href="#case-study-senescence"></a>
+</h2>
+<p>We will be using an already pre-processed gene expression dataset,
+derived from the Marthandan et al. (2016) study (GSE63577), that
+includes human fibroblast samples cultured under two different
+conditions: replicative senescence and proliferative control. The
+dataset has already been filtered and normalized using the
+<code>edgeR</code> package. For more information about the dataset
+structure, see the help pages for <code><a href="../reference/counts_example.html">?counts_example</a></code> and
+<code><a href="../reference/metadata_example.html">?metadata_example</a></code>.</p>
+<p>This dataset serves as a working example to demonstrate the main
+functionalities of the markeR package. In particular, it will be used to
+showcase the two primary modules designed for benchmarking gene
+signatures:</p>
+<ul>
+<li>
+<strong>Score</strong>: calculates expression-based signature scores
+for each sample, and</li>
+<li>
+<strong>Enrichment</strong>: evaluates the over-representation of
+gene signatures within ranked gene lists.</li>
+</ul>
+<p>To illustrate the usage of <code>markeR</code>, we use the
+<strong>HernandezSegura</strong> gene set: A transcriptomic gene set
+identified by Hernandez-Segura et al. (2017) as consistently altered
+across multiple senescence models. This set includes information on the
+directionality of gene regulation. It has shown strong performance in
+classification and enrichment analyses, including in the original paper
+of markeR, and also in the Tutorial on the <em>Benchmarking Mode</em> of
+<code>markeR</code>.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://diseasetranscriptomicslab.github.io/markeR/">markeR</a></span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Load example gene sets</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"genesets_example"</span><span class="op">)</span></span>
+<span><span class="va">HernandezSegura_GeneSet</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>HernandezSegura<span class="op">=</span><span class="va">genesets_example</span><span class="op">$</span><span class="va">HernandezSegura</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">HernandezSegura_GeneSet</span><span class="op">)</span> </span></code></pre></div>
+<pre><code><span><span class="co">## $HernandezSegura</span></span>
+<span><span class="co">##        gene enrichment</span></span>
+<span><span class="co">## 1    ACADVL          1</span></span>
+<span><span class="co">## 2     ADPGK          1</span></span>
+<span><span class="co">## 3  ARHGAP35         -1</span></span>
+<span><span class="co">## 4     ARID2         -1</span></span>
+<span><span class="co">## 5     ASCC1         -1</span></span>
+<span><span class="co">## 6   B4GALT7          1</span></span>
+<span><span class="co">## 7    BCL2L2          1</span></span>
+<span><span class="co">## 8     C2CD5         -1</span></span>
+<span><span class="co">## 9     CCND1          1</span></span>
+<span><span class="co">## 10    CHMP5          1</span></span>
+<span><span class="co">## 11    CNTLN         -1</span></span>
+<span><span class="co">## 12   CREBBP         -1</span></span>
+<span><span class="co">## 13     DDA1          1</span></span>
+<span><span class="co">## 14     DGKA          1</span></span>
+<span><span class="co">## 15   DYNLT3          1</span></span>
+<span><span class="co">## 16    EFNB3         -1</span></span>
+<span><span class="co">## 17  FAM214B          1</span></span>
+<span><span class="co">## 18     GBE1          1</span></span>
+<span><span class="co">## 19     GDNF          1</span></span>
+<span><span class="co">## 20    GSTM4         -1</span></span>
+<span><span class="co">## 21     ICE1         -1</span></span>
+<span><span class="co">## 22    KCTD3         -1</span></span>
+<span><span class="co">## 23     KLC1          1</span></span>
+<span><span class="co">## 24    MEIS1         -1</span></span>
+<span><span class="co">## 25   MT-CYB          1</span></span>
+<span><span class="co">## 26     NFIA         -1</span></span>
+<span><span class="co">## 27     NOL3          1</span></span>
+<span><span class="co">## 28    P4HA2          1</span></span>
+<span><span class="co">## 29    PATZ1         -1</span></span>
+<span><span class="co">## 30    PCIF1         -1</span></span>
+<span><span class="co">## 31   PDLIM4          1</span></span>
+<span><span class="co">## 32    PDS5B         -1</span></span>
+<span><span class="co">## 33     PLK3          1</span></span>
+<span><span class="co">## 34   PLXNA3          1</span></span>
+<span><span class="co">## 35   POFUT2          1</span></span>
+<span><span class="co">## 36    RAI14          1</span></span>
+<span><span class="co">## 37    RHNO1         -1</span></span>
+<span><span class="co">## 38     SCOC          1</span></span>
+<span><span class="co">## 39  SLC10A3          1</span></span>
+<span><span class="co">## 40  SLC16A3          1</span></span>
+<span><span class="co">## 41      SMO         -1</span></span>
+<span><span class="co">## 42   SPATA6         -1</span></span>
+<span><span class="co">## 43    SPIN4         -1</span></span>
+<span><span class="co">## 44    STAG1         -1</span></span>
+<span><span class="co">## 45    SUSD6          1</span></span>
+<span><span class="co">## 46    TAF13          1</span></span>
+<span><span class="co">## 47  TMEM87B          1</span></span>
+<span><span class="co">## 48   TOLLIP          1</span></span>
+<span><span class="co">## 49   TRDMT1         -1</span></span>
+<span><span class="co">## 50  TSPAN13          1</span></span>
+<span><span class="co">## 51     UFM1          1</span></span>
+<span><span class="co">## 52   USP6NL         -1</span></span>
+<span><span class="co">## 53   ZBTB7A          1</span></span>
+<span><span class="co">## 54    ZC3H4         -1</span></span>
+<span><span class="co">## 55   ZNHIT1          1</span></span></code></pre>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">counts_example</span><span class="op">)</span></span>
+<span><span class="co"># Load example data</span></span>
+<span><span class="va">counts_example</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span></span></code></pre></div>
+<pre><code><span><span class="co">##          SRR1660534 SRR1660535 SRR1660536 SRR1660537 SRR1660538</span></span>
+<span><span class="co">## A1BG        9.94566   9.476768   8.229231   8.515083   7.806479</span></span>
+<span><span class="co">## A1BG-AS1   12.08655  11.550303  12.283976   7.580694   7.312666</span></span>
+<span><span class="co">## A2M        77.50289  56.612839  58.860268   8.997624   6.981857</span></span>
+<span><span class="co">## A4GALT     14.74183  15.226083  14.815891  14.675780  15.222488</span></span>
+<span><span class="co">## AAAS       47.92755  46.292377  43.965972  47.109493  47.213739</span></span></code></pre>
+<p>For illustration purposes of different variable types, let’s imagine
+we also had two additional variables: one indicating the number of days
+between sample preparation and sequencing
+(<code>DaysToSequencing</code>), and another identifying the person who
+processed each sample (<code>researcher</code>). These variables are
+hypothetical and not part of the original study design.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">metadata_example</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="st">"123456"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">metadata_example</span><span class="op">$</span><span class="va">Researcher</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"John"</span>,<span class="st">"Ana"</span>,<span class="st">"Francisca"</span><span class="op">)</span>,<span class="fl">39</span>, replace <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
+<span><span class="va">metadata_example</span><span class="op">$</span><span class="va">DaysToSequencing</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">20</span><span class="op">)</span>,<span class="fl">39</span>, replace <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
+<span> </span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">metadata_example</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##       sampleID      DatasetID   CellType     Condition       SenescentType</span></span>
+<span><span class="co">## 252 SRR1660534 Marthandan2016 Fibroblast     Senescent Telomere shortening</span></span>
+<span><span class="co">## 253 SRR1660535 Marthandan2016 Fibroblast     Senescent Telomere shortening</span></span>
+<span><span class="co">## 254 SRR1660536 Marthandan2016 Fibroblast     Senescent Telomere shortening</span></span>
+<span><span class="co">## 255 SRR1660537 Marthandan2016 Fibroblast Proliferative                none</span></span>
+<span><span class="co">## 256 SRR1660538 Marthandan2016 Fibroblast Proliferative                none</span></span>
+<span><span class="co">## 257 SRR1660539 Marthandan2016 Fibroblast Proliferative                none</span></span>
+<span><span class="co">##                         Treatment Researcher DaysToSequencing</span></span>
+<span><span class="co">## 252 PD72 (Replicative senescence)        Ana                6</span></span>
+<span><span class="co">## 253 PD72 (Replicative senescence)        Ana               18</span></span>
+<span><span class="co">## 254 PD72 (Replicative senescence)       John               19</span></span>
+<span><span class="co">## 255                         young        Ana                2</span></span>
+<span><span class="co">## 256                         young  Francisca                9</span></span>
+<span><span class="co">## 257                         young       John               10</span></span></code></pre>
+</div>
+<div class="section level2">
+<h2 id="score-based-approaches">Score-Based approaches<a class="anchor" aria-label="anchor" href="#score-based-approaches"></a>
+</h2>
+<p>The <strong>Score</strong> module in <code>markeR</code> quantifies
+the association between a gene signature and phenotypic variables by
+calculating a score for each sample based on the expression of genes in
+the signature. This score can then be correlated with other variables,
+such as clinical or experimental conditions:</p>
+<ul>
+<li>
+<strong>Quantifies associations</strong> between phenotype variables
+and a gene signature score using <em>Cohen’s effect sizes</em> and
+<em>p-values</em>.</li>
+<li>
+<strong>Visualizes</strong> results through lollipop plots, contrast
+plots, and distribution plots.</li>
+</ul>
+<p>This is useful for identifying:</p>
+<ul>
+<li>
+<strong>Biological relationships</strong> (e.g., phenotype-score
+associations)</li>
+<li>
+<strong>Technical confounders</strong> (e.g., batch effects)</li>
+</ul>
+<div class="section level3">
+<h3 id="outputs">Outputs<a class="anchor" aria-label="anchor" href="#outputs"></a>
+</h3>
+<p>The main function returns a structured list with:</p>
+<ul>
+<li>
+<strong><code>overall</code></strong>: Effect sizes (<em>Cohen’s
+f</em>) and p-values for each variable.</li>
+<li>
+<strong><code>contrasts</code></strong>: For categorical variables,
+pairwise or grouped comparisons using <em>Cohen’s d</em> with
+BH-adjusted p-values.</li>
+<li>
+<strong><code>plot</code></strong>: A combined visualization
+showing:
+<ol style="list-style-type: decimal">
+<li>Lollipop plot of effect sizes (<em>Cohen’s f</em>)</li>
+<li>Distribution plots of the score by variable (density or
+scatter)</li>
+<li>Lollipop plots of contrasts (<em>Cohen’s d</em>) for categorical
+variables, if applicable</li>
+</ol>
+</li>
+<li>
+<strong><code>plot_overall</code></strong>,
+<strong><code>plot_contrasts</code></strong>,
+<strong><code>plot_distributions</code></strong>: Individual components
+of the combined plot.</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="controlling-contrast-resolution">Controlling Contrast Resolution<a class="anchor" aria-label="anchor" href="#controlling-contrast-resolution"></a>
+</h3>
+<p>The <code>mode</code> parameter determines the level of contrast
+detail for categorical variables:</p>
+<ul>
+<li>
+<strong><code>"simple"</code></strong>: All pairwise contrasts
+between group levels (e.g., A vs B, A vs C, B vs C).</li>
+<li>
+<strong><code>"medium"</code></strong>: One group vs. the union of
+all others (e.g., A vs B+C+D).</li>
+<li>
+<strong><code>"extensive"</code></strong>: All algebraic
+combinations of group levels (e.g., A+B vs C+D).</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="results">Results<a class="anchor" aria-label="anchor" href="#results"></a>
+</h3>
+<p>For this example, we use:</p>
+<ul>
+<li>The <strong>HernandezSegura</strong> gene signature</li>
+<li>The <strong><code>logmedian</code></strong> scoring method</li>
+<li>
+<strong><code>mode = "extensive"</code></strong> for thorough
+contrast analysis</li>
+</ul>
+<p>We also include two synthetic phenotypic variables:</p>
+<ul>
+<li>
+<strong><code>Researcher</code></strong> — a categorical variable
+representing who processed each sample</li>
+<li>
+<strong><code>DaysToSequencing</code></strong> — a numeric variable
+indicating time between preparation and sequencing</li>
+</ul>
+<p>Though artificial, these mimic potential <strong>technical
+covariates</strong>. Strong associations between these and the score
+could indicate <strong>batch effects</strong>, where technical variation
+may confound biological interpretation.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">results_scoreassoc_bidirect</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Score_VariableAssociation.html">Score_VariableAssociation</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
+<span>                          metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
+<span>                          cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Condition"</span>,<span class="st">"Researcher"</span>,<span class="st">"DaysToSequencing"</span><span class="op">)</span>, </span>
+<span>                          method<span class="op">=</span><span class="st">"logmedian"</span>, </span>
+<span>                          gene_set <span class="op">=</span> <span class="va">HernandezSegura_GeneSet</span>,</span>
+<span>                          mode<span class="op">=</span><span class="st">"extensive"</span>,</span>
+<span>                          nonsignif_color <span class="op">=</span> <span class="st">"white"</span>, signif_color <span class="op">=</span> <span class="st">"red"</span>, saturation_value<span class="op">=</span><span class="cn">NULL</span>,sig_threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>                          widthlabels<span class="op">=</span><span class="fl">30</span>, labsize<span class="op">=</span><span class="fl">10</span>, title<span class="op">=</span><span class="cn">NULL</span>, titlesize<span class="op">=</span><span class="fl">14</span>, pointSize<span class="op">=</span><span class="fl">5</span>, discrete_colors<span class="op">=</span><span class="cn">NULL</span>,</span>
+<span>                          continuous_color <span class="op">=</span> <span class="st">"#8C6D03"</span>, color_palette <span class="op">=</span> <span class="st">"Set2"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="Tutorial_DiscoveryMode_files/figure-html/variableassoc_score_sen-1.png" width="100%"></p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">results_scoreassoc_bidirect</span><span class="op">$</span><span class="va">Overall</span></span></code></pre></div>
+<pre><code><span><span class="co">##           Variable    Cohen_f      P_Value</span></span>
+<span><span class="co">## 1        Condition 1.19407625 1.267423e-08</span></span>
+<span><span class="co">## 2       Researcher 0.12816159 7.458318e-01</span></span>
+<span><span class="co">## 3 DaysToSequencing 0.00792836 9.617953e-01</span></span></code></pre>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">results_scoreassoc_bidirect</span><span class="op">$</span><span class="va">Contrasts</span></span></code></pre></div>
+<pre><code><span><span class="co">##     Variable                  Contrast          Group1           Group2</span></span>
+<span><span class="co">## 1  Condition Proliferative - Senescent   Proliferative        Senescent</span></span>
+<span><span class="co">## 2 Researcher                Ana - John             Ana             John</span></span>
+<span><span class="co">## 3 Researcher           Ana - Francisca             Ana        Francisca</span></span>
+<span><span class="co">## 4 Researcher          Francisca - John       Francisca             John</span></span>
+<span><span class="co">## 5 Researcher  Ana - (Francisca + John)             Ana Francisca + John</span></span>
+<span><span class="co">## 6 Researcher  (Ana + Francisca) - John Ana + Francisca             John</span></span>
+<span><span class="co">## 7 Researcher  (Ana + John) - Francisca      Ana + John        Francisca</span></span>
+<span><span class="co">##        CohenD       PValue         padj</span></span>
+<span><span class="co">## 1 -2.33302465 1.267423e-08 8.871962e-08</span></span>
+<span><span class="co">## 2 -0.05584444 9.021669e-01 9.021669e-01</span></span>
+<span><span class="co">## 3  0.24731622 4.904610e-01 8.034391e-01</span></span>
+<span><span class="co">## 4 -0.27989036 5.477802e-01 8.034391e-01</span></span>
+<span><span class="co">## 5  0.14113793 6.646037e-01 8.034391e-01</span></span>
+<span><span class="co">## 6 -0.16850285 6.886621e-01 8.034391e-01</span></span>
+<span><span class="co">## 7  0.25285837 4.472210e-01 8.034391e-01</span></span></code></pre>
+</div>
+</div>
+<div class="section level2">
+<h2 id="enrichment-based-approaches">Enrichment-based approaches<a class="anchor" aria-label="anchor" href="#enrichment-based-approaches"></a>
+</h2>
+<p>The <code><a href="../reference/GSEA_VariableAssociation.html">GSEA_VariableAssociation()</a></code> function evaluates how
+phenotypic variables are associated with <strong>gene set
+activity</strong>, using enrichment scores derived from gene expression
+statistics (B- or t-statistics). This allows users to understand whether
+a gene set is enriched or depleted in relation to different sample
+attributes.</p>
+<div class="section level3">
+<h3 id="outputs-1">Outputs<a class="anchor" aria-label="anchor" href="#outputs-1"></a>
+</h3>
+<p>The <code><a href="../reference/GSEA_VariableAssociation.html">GSEA_VariableAssociation()</a></code> function returns a list
+with two elements:</p>
+<ul>
+<li>
+<strong><code>data</code></strong>: A tidy data frame of GSEA
+results. For each variable contrast, this includes:
+<ul>
+<li>
+<strong>Contrast</strong>: The comparison performed (e.g., A - B, A
+- (B+C))</li>
+<li>
+<strong>Statistic</strong>: The metric used for gene ranking (either
+<em>t</em> or <em>B</em>)</li>
+<li>
+<strong>NES</strong>: Normalized Enrichment Score</li>
+<li>
+<strong>Adjusted p-value</strong>: Multiple-testing corrected
+p-value (e.g., Benjamini–Hochberg)</li>
+<li>
+<strong>Gene Set Name</strong>: The gene set being tested</li>
+</ul>
+</li>
+<li>
+<strong><code>plot</code></strong>: A <code>ggplot2</code> object
+showing the NES and significance of each contrast as a <strong>lollipop
+plot</strong>:
+<ul>
+<li>
+<strong>Point position</strong> reflects NES (directional
+enrichment)</li>
+<li>
+<strong>Point color</strong> reflects adjusted p-value
+significance</li>
+<li>
+<strong>Dashed lines</strong> represent contrasts with negative NES
+under the <strong>B statistic</strong>, indicating likely
+non-alteration</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="output-interpretation">Output Interpretation<a class="anchor" aria-label="anchor" href="#output-interpretation"></a>
+</h3>
+<p>Depending on the statistic used (<code>t</code> or <code>B</code>),
+the interpretation of results varies:</p>
+<ul>
+<li>
+<strong>Negative NES (Normalized Enrichment Score):</strong>
+<ul>
+<li>
+<strong>t statistic</strong>: A negative NES implies the gene set is
+<strong>depleted</strong> in over-expressed genes — i.e., genes in the
+set are under-expressed relative to others.</li>
+<li>
+<strong>B statistic</strong>: A negative NES suggests the gene set
+is <strong>less altered</strong> than most other genes — indicating a
+lack of strong expression change.</li>
+</ul>
+</li>
+<li>
+<strong>Dashed Lines in the Plot:</strong>
+<ul>
+<li>Dashed lines denote contrasts with <strong>negative NES</strong>
+using the <strong>B statistic</strong>, indicating gene sets that are
+putatively <em>not</em> altered.</li>
+</ul>
+</li>
+<li>
+<strong>Subtitle Differences in the Plot:</strong>
+<ul>
+<li>When using the <strong>B statistic</strong>, the plot subtitle is
+<strong>“Altered Contrasts”</strong>.</li>
+<li>When using the <strong>t statistic</strong>, the subtitle becomes
+<strong>“Enriched/Depleted Contrasts”</strong>.</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="example-exploring-gene-set-enrichment-by-variable">Example: Exploring Gene Set Enrichment by Variable<a class="anchor" aria-label="anchor" href="#example-exploring-gene-set-enrichment-by-variable"></a>
+</h3>
+<p>The following code evaluates how three phenotypic variables —
+<code>Condition</code>, <code>Researcher</code>, and
+<code>DaysToSequencing</code> — are associated with the
+<strong>HernandezSegura</strong> gene set:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/GSEA_VariableAssociation.html">GSEA_VariableAssociation</a></span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="va">counts_example</span>,</span>
+<span>  metadata <span class="op">=</span> <span class="va">metadata_example</span>,</span>
+<span>  cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Condition"</span>, <span class="st">"Researcher"</span>, <span class="st">"DaysToSequencing"</span><span class="op">)</span>,</span>
+<span>  mode <span class="op">=</span> <span class="st">"simple"</span>,</span>
+<span>  gene_set <span class="op">=</span> <span class="va">HernandezSegura_GeneSet</span>,</span>
+<span>  saturation_value <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  nonsignif_color <span class="op">=</span> <span class="st">"white"</span>,</span>
+<span>  signif_color <span class="op">=</span> <span class="st">"red"</span>,</span>
+<span>  sig_threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  widthlabels <span class="op">=</span> <span class="fl">30</span>,</span>
+<span>  labsize <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>  titlesize <span class="op">=</span> <span class="fl">14</span>,</span>
+<span>  pointSize <span class="op">=</span> <span class="fl">5</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## $plot</span></span></code></pre>
+<p><img src="Tutorial_DiscoveryMode_files/figure-html/GSEA_varassoc-1.png" width="60%"></p>
+<pre><code><span><span class="co">## </span></span>
+<span><span class="co">## $data</span></span>
+<span><span class="co">##            pathway         pval         padj    log2err         ES        NES</span></span>
+<span><span class="co">##             &lt;char&gt;        &lt;num&gt;        &lt;num&gt;      &lt;num&gt;      &lt;num&gt;      &lt;num&gt;</span></span>
+<span><span class="co">## 1: HernandezSegura 4.054712e-10 2.027356e-09 0.81403584 -0.6376777 -2.6518404</span></span>
+<span><span class="co">## 2: HernandezSegura 1.000000e+00 1.000000e+00 0.01197112  0.1098945  0.4331812</span></span>
+<span><span class="co">## 3: HernandezSegura 2.833357e-04 7.083392e-04 0.49849311  0.4485591  1.9590790</span></span>
+<span><span class="co">## 4: HernandezSegura 5.770535e-04 9.617559e-04 0.47727082 -0.4631808 -1.8972609</span></span>
+<span><span class="co">## 5: HernandezSegura 9.630623e-01 1.000000e+00 0.01542391  0.1689494  0.6760467</span></span>
+<span><span class="co">##     size  leadingEdge stat_used                  Contrast</span></span>
+<span><span class="co">##    &lt;int&gt;       &lt;list&gt;    &lt;char&gt;                    &lt;char&gt;</span></span>
+<span><span class="co">## 1:    52 CNTLN, D....         t Proliferative - Senescent</span></span>
+<span><span class="co">## 2:    52 P4HA2, S....         t                Ana - John</span></span>
+<span><span class="co">## 3:    52 NOL3, PL....         t           Ana - Francisca</span></span>
+<span><span class="co">## 4:    52 MEIS1, S....         t          Francisca - John</span></span>
+<span><span class="co">## 5:    52 BCL2L2, ....         t          DaysToSequencing</span></span></code></pre>
+</div>
+</div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside>
 </div>
 
 

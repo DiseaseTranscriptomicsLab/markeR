@@ -22,7 +22,7 @@ It supports categorical and numeric comparisons, statistical testing, Cohen's d 
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Tutorial_BenchmarkingMode.html">Benchmarking Mode Tutorial</a></li>
     <li><a class="dropdown-item" href="../articles/Tutorial_DiscoveryMode.html">Discovery Mode Tutorial</a></li>
-    <li><a class="dropdown-item" href="../articles/Tutorial_SignatureSimilarity.html">Signature Similarity Tutorial</a></li>
+    <li><a class="dropdown-item" href="../articles/Tutorial_GeneSetSimilarity.html">Gene Set Similarity Tutorial</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -87,7 +87,7 @@ It supports categorical and numeric comparisons, statistical testing, Cohen's d 
 
 
 <dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
-<dd><p>A data frame of normalized (non-transformed) counts where each row is a gene and each column is a sample.
+<dd><p>A data frame of Normalised (non-transformed) counts where each row is a gene and each column is a sample.
 Row names should contain gene names, and column names should contain sample identifiers. <strong>(Required)</strong></p></dd>
 
 
@@ -196,7 +196,7 @@ The first column should contain sample identifiers (i.e., the column names of <c
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Four methods are available:</p><ul><li><p><strong>ssGSEA</strong>: Uses the single-sample Gene Set Enrichment Analysis (ssGSEA) method to compute an enrichment score
 for each signature in each sample using an adaptation of the <code>gsva()</code> function from the <code>GSVA</code> package.</p></li>
-<li><p><strong>logmedian</strong>: Computes the score as the sum of the normalized (log2-median-centered) expression values of the
+<li><p><strong>logmedian</strong>: Computes the score as the sum of the Normalised (log2-median-centered) expression values of the
 signature genes divided by the number of genes in the signature.</p></li>
 <li><p><strong>ranking</strong>: Computes gene signature scores for each sample by ranking the expression of signature genes
 in the dataset and normalizing the score based on the total number of genes.</p></li>

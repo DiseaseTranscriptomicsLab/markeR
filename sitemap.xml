@@ -4,7 +4,7 @@
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/LICENSE.html</loc></url>
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_BenchmarkingMode.html</loc></url>
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_DiscoveryMode.html</loc></url>
-<url><loc>https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_SignatureSimilarity.html</loc></url>
+<url><loc>https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_GeneSetSimilarity.html</loc></url>
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/articles/index.html</loc></url>
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/authors.html</loc></url>
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/index.html</loc></url>
@@ -47,6 +47,8 @@
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/reference/create_contrast_column.html</loc></url>
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/reference/flatten_results.html</loc></url>
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/reference/generate_all_contrasts.html</loc></url>
+<url><loc>https://diseasetranscriptomicslab.github.io/markeR/reference/geneset_similarity.html</loc></url>
+<url><loc>https://diseasetranscriptomicslab.github.io/markeR/reference/genesets_example.html</loc></url>
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/reference/getRanking.html</loc></url>
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/reference/identify_variable_type.html</loc></url>
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/reference/index.html</loc></url>
@@ -59,7 +61,6 @@
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/reference/plotVolcano.html</loc></url>
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/reference/remove_division.html</loc></url>
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/reference/runGSEA.html</loc></url>
-<url><loc>https://diseasetranscriptomicslab.github.io/markeR/reference/signature_similarity.html</loc></url>
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/reference/ssGSEA_alternative.html</loc></url>
 <url><loc>https://diseasetranscriptomicslab.github.io/markeR/reference/wrap_title.html</loc></url>
 </urlset>
