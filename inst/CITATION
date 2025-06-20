@@ -1,0 +1,16 @@
+citHeader("To cite markeR in publications use:")
+
+bibentry(
+  bibtype = "Manual",
+  title = "markeR: an R Toolkit for Evaluating Gene Sets as Phenotypic Markers",
+  author = c(
+    person("Rita", "Martins-Silva", email = "rita.silva@gimm.pt", role = c("aut", "cre")),
+    person("Alexandre", "Kaizeler", role = "aut"),
+    person("Nuno L.", "Barbosa-Morais", email = "nuno.morais@gimm.pt", role = c("aut", "cre"))
+  ),
+  organization = "Gulbenkian Institute for Molecular Medicine, Faculdade de Medicina, Universidade de Lisboa",
+  address = "Lisbon, Portugal",
+  year = format(Sys.Date(), "%Y"),
+  note = "R package version 0.99.0",
+  url = "https://github.com/DiseaseTranscriptomicsLab/markeR"
+)
