@@ -63,3 +63,5 @@ Depends:
 URL: https://diseasetranscriptomicslab.github.io/markeR/,
      https://github.com/DiseaseTranscriptomicsLab/markeR
 BugReports: https://github.com/DiseaseTranscriptomicsLab/markeR/issues
+VignetteBuilder: knitr
+

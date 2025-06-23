@@ -108,11 +108,11 @@ CorrelationHeatmap <- function(data, metadata = NULL, genes, separate.by = NULL,
     leg_side <- "right"
     leg_direction <- "vertical"
     if (method == "spearman"){
-      title_leg <- "Spearman’s \nCorrelation \nCoefficient (ρ)"
+      title_leg <- "Spearman's \nCorrelation \nCoefficient"
     } else if (method == "pearson"){
-      title_leg <- "Pearson's  \nCorrelation \nCoefficient (r)"
+      title_leg <- "Pearson's  \nCorrelation \nCoefficient"
     } else if (method == "kendall"){
-      title_leg <- "Kendall's  \nCorrelation \nCoefficient (τ)"
+      title_leg <- "Kendall's  \nCorrelation \nCoefficient"
     }
 
   } else {

@@ -30,15 +30,6 @@
 #' @importFrom msigdbr msigdbr
 #' @importFrom scales squish
 #'
-#' @examples
-#' sig1 <- list(A = c("TP53", "BRCA1", "EGFR"))
-#' sig2 <- list(B = c("TP53", "MYC", "EGFR"), C = c("GATA3", "STAT3"))
-#'
-#' signature_similarity(
-#'   signatures = sig1,
-#'   other_user_signatures = sig2
-#' )
-#'
 #' @export
 geneset_similarity <- function(
     signatures,
@@ -213,28 +204,32 @@ geneset_similarity <- function(
   similarity_df <- do.call(rbind, similarity_list)
 
 
-  if (metric == "odds_ratio" ) {
-    similarity_df <- similarity_df %>%
-      dplyr::group_by(Compared_Signature) %>%
-      dplyr::filter(any(10^Score >= or_threshold, na.rm = TRUE)) %>%
-      dplyr::ungroup()
-  }
-
-
   if (metric == "odds_ratio") {
-    similarity_df <- similarity_df %>%
-      dplyr::mutate(
-        Label = ifelse(Pval <= pval_threshold, sprintf("%.1f", Score), "")
-      )
+    # Filter groups where any 10^Score >= threshold
+    keep_rows <- by(similarity_df, similarity_df$Compared_Signature, function(group) {
+      any(10^group$Score >= or_threshold, na.rm = TRUE)
+    })
+
+    kept_signatures <- names(keep_rows[keep_rows])
+    similarity_df <- similarity_df[similarity_df$Compared_Signature %in% kept_signatures, , drop = FALSE]
+
+    # Add Label column
+    similarity_df$Label <- ifelse(
+      similarity_df$Pval <= pval_threshold,
+      sprintf("%.1f", similarity_df$Score),
+      ""
+    )
   }
 
   if (metric == "jaccard" && jaccard_threshold > 0) {
-    similarity_df <- similarity_df %>%
-      dplyr::group_by(Compared_Signature) %>%
-      dplyr::filter(any(Score >= jaccard_threshold, na.rm = TRUE)) %>%
-      dplyr::ungroup()
-  }
+    # Filter groups where any Score >= threshold
+    keep_rows <- by(similarity_df, similarity_df$Compared_Signature, function(group) {
+      any(group$Score >= jaccard_threshold, na.rm = TRUE)
+    })
 
+    kept_signatures <- names(keep_rows[keep_rows])
+    similarity_df <- similarity_df[similarity_df$Compared_Signature %in% kept_signatures, , drop = FALSE]
+  }
 
   similarity_df$Reference_Signature <- sapply(similarity_df$Reference_Signature, function(x) wrap_title(x, width_text))
   similarity_df$Compared_Signature <- sapply(similarity_df$Compared_Signature, function(x) wrap_title(x, width_text))

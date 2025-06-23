@@ -20,7 +20,7 @@
 #' @param titlesize Numeric. Font size for the title text (default: 12).
 #' @param pointSize Numeric. Size of the points representing simulations (default: 2).
 #' @param labsize Numeric. Font size for axis labels (default: 10).
-#' @param modeA string specifying the level of detail for contrasts. Options are:
+#' @param mode A string specifying the level of detail for contrasts. Options are:
 #' - `"simple"`: Performs the minimal number of pairwise comparisons between individual group levels (e.g., A - B, A - C). Default.
 #' - `"medium"`: Includes comparisons between one group and the union of all other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
 #' - `"extensive"`: Allows for all possible algebraic combinations of group levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.

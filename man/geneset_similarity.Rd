@@ -68,13 +68,3 @@ Visualizes similarity between user-defined gene signatures and either
 other user-defined signatures or MSigDB gene sets, using either the Jaccard index
 or Fisher's Odds Ratio. Produces a heatmap of pairwise similarity metrics.
 }
-\examples{
-sig1 <- list(A = c("TP53", "BRCA1", "EGFR"))
-sig2 <- list(B = c("TP53", "MYC", "EGFR"), C = c("GATA3", "STAT3"))
-
-signature_similarity(
-  signatures = sig1,
-  other_user_signatures = sig2
-)
-
-}
