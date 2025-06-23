@@ -39,9 +39,9 @@ along with tools to compute performance metrics and visualize results.
     - [3.2 Enrichment-Based Approach](#32-enrichment-based-approach)  
   - [4. Visualisation and Evaluation](#4-visualisation-and-evaluation)  
   - [5. Individual Gene Exploration
-    (Optional)](#5-individual-gene-exploration-optional-but-recommended)  
+    (Optional)](#5-individual-gene-exploration-optional)  
   - [6. Compare with Reference Gene Sets
-    (Optional)](#6-optional-compare-with-reference-gene-sets)  
+    (Optional)](#6-compare-with-reference-gene-sets-optional)  
 - [Contact](#contact)
 
 ## Installation
@@ -59,11 +59,11 @@ devtools::install_github("DiseaseTranscriptomicsLab/markeR")
 The following tutorials are available:
 
 - [Benchmarking
-  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/benchmarking_tutorial.html)
+  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_BenchmarkingMode.html)
 - [Discovery
-  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/discovery_tutorial.html)
+  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_DiscoveryMode.html)
 - [Signature
-  Similarity](https://diseasetranscriptomicslab.github.io/markeR/articles/signaturesimilarity_tutorial.html)
+  Similarity](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_GeneSetSimilarity.html)
 
 ## Common Workflow
 
@@ -237,6 +237,8 @@ Filters can be applied based on similarity thresholds (e.g., minimum
 Jaccard, OR, or p-value).
 
 ------------------------------------------------------------------------
+
+## Contact
 
 📩 For any questions or concerns, feel free to reach out:
 
