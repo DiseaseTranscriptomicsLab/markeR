@@ -1,0 +1,43 @@
+name: Check Minimum R Version
+
+on:
+  workflow_dispatch:  # run manually
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  r-cmd-check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        r-version: ['3.5.0', '3.6.0', '4.0.0', '4.1.0', '4.2.0', '4.3.0', '4.4.0']
+
+    name: R CMD check (R ${{ matrix.r-version }})
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up R ${{ matrix.r-version }}
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.r-version }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev
+
+      - name: Install R dependencies
+        run: |
+          install.packages("remotes")
+          remotes::install_deps(dependencies = TRUE)
+        shell: Rscript {0}
+
+      - name: Run R CMD check
+        run: |
+          install.packages("rcmdcheck")
+          rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")
+        shell: Rscript {0}
