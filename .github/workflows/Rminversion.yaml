@@ -1,21 +1,21 @@
-name: Check Minimum R Version
+name: Test minimal R version
 
 on:
-  workflow_dispatch:  # run manually
   push:
-    branches: [main]
+    branches: [main, master]
   pull_request:
-    branches: [main]
+    branches: [main, master]
 
 jobs:
   r-cmd-check:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        r-version: ['3.5.0', '3.6.0', '4.0.0', '4.1.0', '4.2.0', '4.3.0', '4.4.0']
+        os: [ubuntu-latest]
+        r-version: ['3.5.0', '3.6.0', '4.0.0', '4.1.0', '4.2.0', '4.3.0', '4.4.0','4.5.0']
 
-    name: R CMD check (R ${{ matrix.r-version }})
+    name: R ${{ matrix.r-version }} on ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
@@ -25,21 +25,12 @@ jobs:
         with:
           r-version: ${{ matrix.r-version }}
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev
-
-      - name: Install R dependencies
-        run: |
-          options(repos = c(CRAN = "https://cloud.r-project.org"))
-          install.packages("remotes")
-          remotes::install_deps(dependencies = TRUE)
-        shell: Rscript {0}
+      - name: Install package dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: rcmdcheck
+          needs: check
 
       - name: Run R CMD check
-        run: |
-          options(repos = c(CRAN = "https://cloud.r-project.org"))
-          install.packages("rcmdcheck")
-          rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")
+        run: rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")
         shell: Rscript {0}
