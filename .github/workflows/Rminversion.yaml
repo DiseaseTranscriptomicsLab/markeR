@@ -39,6 +39,7 @@ jobs:
 
       - name: Run R CMD check
         run: |
+          options(repos = c(CRAN = "https://cloud.r-project.org"))
           install.packages("rcmdcheck")
           rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")
         shell: Rscript {0}
