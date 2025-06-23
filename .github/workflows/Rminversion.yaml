@@ -32,6 +32,7 @@ jobs:
 
       - name: Install R dependencies
         run: |
+          options(repos = c(CRAN = "https://cloud.r-project.org"))
           install.packages("remotes")
           remotes::install_deps(dependencies = TRUE)
         shell: Rscript {0}
