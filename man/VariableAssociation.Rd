@@ -2,140 +2,112 @@
 % Please edit documentation in R/VariableAssociation.R
 \name{VariableAssociation}
 \alias{VariableAssociation}
-\title{Visualize Statistical Associations Between Variables and a Target Score}
+\title{Variable Association Analysis}
 \usage{
 VariableAssociation(
-  df,
+  method = c("ssGSEA", "logmedian", "ranking", "GSEA"),
+  data,
+  metadata,
   cols,
-  target_var,
-  targetvar_lab = "Score",
+  gene_set,
+  mode = c("simple", "medium", "extensive"),
+  stat = NULL,
+  ignore_NAs = FALSE,
+  signif_color = "red",
+  nonsignif_color = "grey",
+  sig_threshold = 0.05,
+  saturation_value = NULL,
+  widthlabels = 18,
+  labsize = 10,
+  titlesize = 14,
+  pointSize = 5,
   discrete_colors = NULL,
   continuous_color = "#8C6D03",
   color_palette = "Set2",
-  sizeannot = 3,
-  ncol = NULL,
-  nrow = NULL,
-  numeric = "pearson",
-  categorical_bin = "t.test",
-  categorical_multi = "anova",
-  title = NULL,
-  titlesize = 14,
-  nonsignif_color = "grey",
-  signif_color = "red",
-  saturation_value = NULL,
-  sig_threshold = 0.05,
-  widthlabels = 18,
-  pointSize = 5,
-  widths = 1,
-  heights = 1
+  printplt = TRUE
 )
 }
 \arguments{
-\item{df}{A data frame containing the target variable and predictors.}
+\item{method}{Character string specifying the method to use. One of:
+\itemize{
+\item \code{"logmedian"}
+\item \code{"ssGSEA"}
+\item \code{"ranking"}
+\item \code{"GSEA"}
+}}
 
-\item{cols}{A character vector of predictor variables to include in the plots.}
+\item{data}{A matrix or data frame with gene expression data (genes as rows, samples as columns).}
 
-\item{target_var}{The dependent variable to be plotted.}
+\item{metadata}{A data frame containing sample metadata.}
 
-\item{targetvar_lab}{A string specifying the label for the target variable. Default is \code{"Score"}.}
+\item{cols}{Character vector of metadata column names to analyze.}
 
-\item{discrete_colors}{Optional. A named list specifying custom colors for categorical variables.
-Each element should be a named vector where names correspond to factor levels.}
+\item{gene_set}{A named list of gene sets:
+\itemize{
+\item For score-based methods: list of gene vectors.
+\item For GSEA: list of vectors (unidirectional) or data frames (bidirectional).
+}}
 
-\item{continuous_color}{The color for numeric variables in scatter plots. Default is \code{"#8C6D03"}.}
+\item{mode}{Contrast mode: \code{"simple"} (default), \code{"medium"}, or \code{"extensive"}.}
 
-\item{color_palette}{A color palette from RColorBrewer for categorical variables. Default is \code{"Set2"}.}
+\item{stat}{(GSEA only) Optional. Statistic for ranking genes (\code{"B"} or \code{"t"}). Auto-detected if \code{NULL}.}
 
-\item{sizeannot}{The font size for p-value annotations in plots. Default is \code{3}.}
+\item{ignore_NAs}{(GSEA only) Logical. If \code{TRUE}, rows with NA metadata are removed. Default: \code{FALSE}.}
 
-\item{ncol}{Number of columns in the arranged plot grid. If \code{NULL}, layout is auto-determined.}
+\item{signif_color}{Color used for significant associations (default: \code{"red"}).}
 
-\item{nrow}{Number of rows in the arranged plot grid. If \code{NULL}, layout is auto-determined.}
+\item{nonsignif_color}{Color used for non-significant associations (default: \code{"grey"}).}
 
-\item{numeric}{The correlation method for numeric predictors.
-Options: \code{"pearson"} (default), \code{"spearman"}, \code{"kendall"}.}
+\item{sig_threshold}{Numeric significance cutoff (default: \code{0.05}).}
 
-\item{categorical_bin}{The statistical test for binary categorical variables.
-Options: \code{"t.test"} (default) or \code{"wilcoxon"}.}
+\item{saturation_value}{Lower limit for p-value coloring (default: auto).}
 
-\item{categorical_multi}{The statistical test for multi-level categorical variables.
-Options: \code{"anova"} (default) or \code{"kruskal-wallis"}.}
+\item{widthlabels}{Integer for contrast label width before wrapping (default: \code{18}).}
 
-\item{title}{A string specifying the main title of the grid of plots.}
+\item{labsize}{Axis text size (default: \code{10}).}
 
-\item{titlesize}{Numeric; font size of the main title of the grid of plots (default = \code{14}).}
+\item{titlesize}{Plot title size (default: \code{14}).}
 
-\item{nonsignif_color}{A string specifying the color for the middle of the adjusted p-value gradient. Default is \code{"white"}. Lower limit correspond to the value of \code{sig_threshold}.}
+\item{pointSize}{Size of plot points (default: \code{5}).}
 
-\item{signif_color}{A string specifying the color for the low end of the adjusted p-value gradient until the value chosen for significance (\code{sig_threshold}). Default is \code{"blue"}.}
+\item{discrete_colors}{(Score-based only) Optional named list mapping factor levels to colors.}
 
-\item{saturation_value}{A numeric value specifying the lower limit of the adjusted p-value gradient, below which the color will correspond to \code{signif_color}. Default is the results' minimum, unless that
-value is above the sig_threshold; in that case, it is 0.001.}
+\item{continuous_color}{(Score-based only) Color for continuous variable points (default: \code{"#8C6D03"}).}
 
-\item{sig_threshold}{A numeric value specifying the threshold for significance visualization in the plot. Default: \code{0.05}.}
+\item{color_palette}{(Score-based only) ColorBrewer palette name for categorical variables (default: \code{"Set2"}).}
 
-\item{widthlabels}{An integer controlling the maximum width of contrast labels before text wrapping. Default: \code{18}.}
-
-\item{pointSize}{Numeric. The size of points in the lollipop plot (default is 5).}
-
-\item{widths}{Numerical vector of relative columns widths. Should be the same length as the number of variables provided. Default is that each plot has the same width.}
-
-\item{heights}{Numerical vector of relative columns heights  Should be the same length as the number of variables provided. Default is that each plot has the same height}
+\item{printplt}{Logical. If \code{TRUE}, plots are printed. Default: \code{TRUE}.}
 }
 \value{
-A named list with two elements:
+A list with method-specific results and ggplot2-based visualizations:
+
+\strong{For score-based methods (\code{logmedian}, \code{ssGSEA}, \code{ranking}):}
 \itemize{
-\item \code{plot}: A \code{ggarrange} object displaying the arranged statistical plots in a grid format.
-\item \code{data}: A named list containing the statistical test results for each variable, where each entry is a data frame with metric values and p-values.
+\item \code{Overall}: Data frame of effect sizes (Cohen's f) and p-values for each metadata variable.
+\item \code{Contrasts}: Data frame of Cohen’s d values and adjusted p-values for pairwise comparisons (based on \code{mode}).
+\item \code{plot}: A combined visualization including:
+\itemize{
+\item Lollipop plots of Cohen’s f,
+\item Distribution plots by variable (density or scatter),
+\item Lollipop plots of Cohen’s d for contrasts.
+}
+\item \code{plot_contrasts}: Lollipop plots of Cohen’s d effect sizes, colored by adjusted p-values (BH).
+\item \code{plot_overall}: Lollipop plot of Cohen’s f, colored by p-values.
+\item \code{plot_distributions}: List of distribution plots of scores by variable.
+}
+
+\strong{For GSEA-based method (\code{GSEA}):}
+\itemize{
+\item \code{data}: A data frame with GSEA results, including normalized enrichment scores (NES), adjusted p-values, and contrasts.
+\item \code{plot}: A ggplot2 lollipop plot of GSEA enrichment across contrasts.
 }
 }
 \description{
-Creates visual representations of statistical relationships between predictor variables
-and a target variable (\code{target_var}). The function generates scatter plots with regression
-lines for numeric variables and density plots for categorical variables, incorporating
-statistical test results from \code{compute_stat_tests()}.
+This unified function evaluates associations between gene expression and sample metadata
+using multiple methods: score-based (logmedian, ssGSEA, ranking) or GSEA-based association.
+The function returns statistical results and visualizations summarizing effect sizes and significance.
 }
-\details{
-\subsection{\strong{Plot Types}}{
-\itemize{
-\item \strong{Numeric Predictors}: Scatter plots with regression lines, annotated with correlation metrics.
-\item \strong{Categorical Predictors}: Density plots colored by factor levels, annotated with test statistics.
-}
+\section{Shared Arguments (All Methods)}{
+
 }
 
-\subsection{\strong{Variable Classification & Statistical Methods}}{
-\itemize{
-\item \strong{Numeric}: Continuous numeric or integer variables with more than 10 unique values.
-\itemize{
-\item Test: Pearson, Spearman, or Kendall correlation.
-}
-\item \strong{Categorical Bin}: Binary categorical variables (factors, characters, or integers with exactly 2 unique values).
-\itemize{
-\item Test: T-test or Wilcoxon rank-sum test.
-}
-\item \strong{Categorical Multi}: Categorical variables with more than 2 unique values (up to 10 levels recommended).
-\itemize{
-\item Test: ANOVA (default) or Kruskal-Wallis.
-\item If ANOVA is used, Tukey’s HSD post-hoc test is performed.
-\item A warning is issued if a categorical variable has more than 10 unique values.
-}
-}
-}
-
-\subsection{\strong{Color Customization}}{
-\itemize{
-\item \strong{Continuous Variables}: \code{continuous_color} specifies the color of scatter plot points.
-\item \strong{Categorical Variables}:
-\itemize{
-\item User can provide a named list (\code{discrete_colors}) with custom colors for factor levels.
-\item If \code{discrete_colors} is \code{NULL}, colors are chosen from an \code{RColorBrewer} palette (\code{color_palette}).
-}
-\item Each plot is annotated with the corresponding statistical test result (e.g., correlation coefficient,
-ANOVA F-value, t-test statistic) and p-values.
-\item If a categorical variable has more than 10 unique levels, a warning is issued.
-\item If \code{discrete_colors} is provided, it overrides \code{color_palette} for the specified variables.
-\item If \code{ncol} and \code{nrow} are \code{NULL}, the function automatically determines an optimal grid layout.
-}
-}
-}
-\keyword{internal}

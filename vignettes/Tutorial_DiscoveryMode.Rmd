@@ -115,14 +115,14 @@ Though artificial, these mimic potential **technical covariates**. Strong associ
 
 
 ```{r variableassoc_score_sen, fig.width=10, fig.height=7, out.width="100%", warning=FALSE, message=FALSE} 
-results_scoreassoc_bidirect <- Score_VariableAssociation(data = counts_example, 
+results_scoreassoc_bidirect <- VariableAssociation(data = counts_example, 
                           metadata = metadata_example, 
-                          cols = c("Condition","Researcher","DaysToSequencing"), 
-                          method="logmedian", 
+                          method = "logmedian",
+                          cols = c("Condition","Researcher","DaysToSequencing"),  
                           gene_set = HernandezSegura_GeneSet,
                           mode="extensive",
                           nonsignif_color = "white", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05,
-                          widthlabels=30, labsize=10, title=NULL, titlesize=14, pointSize=5, discrete_colors=NULL,
+                          widthlabels=30, labsize=10, titlesize=14, pointSize=5, discrete_colors=NULL,
                           continuous_color = "#8C6D03", color_palette = "Set2")
 
 results_scoreassoc_bidirect$Overall
@@ -169,9 +169,10 @@ Depending on the statistic used (`t` or `B`), the interpretation of results vari
 The following code evaluates how three phenotypic variables — `Condition`, `Researcher`, and `DaysToSequencing` — are associated with the **HernandezSegura** gene set:
 
 ```{r GSEA_varassoc, fig.width=6, fig.height=6, out.width="60%", warning=FALSE, message=FALSE}
-GSEA_VariableAssociation(
+VariableAssociation(
   data = counts_example,
   metadata = metadata_example,
+  method = "GSEA",
   cols = c("Condition", "Researcher", "DaysToSequencing"),
   mode = "simple",
   gene_set = HernandezSegura_GeneSet,

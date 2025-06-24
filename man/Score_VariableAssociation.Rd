@@ -59,8 +59,6 @@ in the dataset and normalizing the score based on the total number of genes.
 
 \item{labsize}{An integer controlling axis text size. Default: \code{10}.}
 
-\item{title}{A string specifying the plot title. Default: \code{NULL}.}
-
 \item{titlesize}{An integer specifying the title size. Default: \code{14}.}
 
 \item{pointSize}{A numeric value for point size in plots. Default: \code{5}.}
@@ -94,17 +92,4 @@ This function evaluates the association between gene expression scores and metad
 It uses linear modeling to get Cohen's F, and contrast-based comparisons for categorical variables to compute Cohen's D.
 The function generates plots summarizing the results.
 }
-\examples{
-data <- as.data.frame(abs(matrix(rnorm(1000), ncol = 10)))
-rownames(data) <- paste0("Gene", 1:100)  # Name columns as Gene1, Gene2, ..., Gene10
-colnames(data) <- paste0("Sample", 1:10)  # Name rows as Sample1, Sample2, ..., Sample100
-
-metadata <- data.frame(
-  sample = colnames(data),  # Sample ID matches the rownames of the data
-  Condition = rep(c("A", "B"), each = 50)  # Two conditions (A and B)
-)
-gene_set <- list(SampleSet = c("Gene1", "Gene2", "Gene3"))
-results <- Score_VariableAssociation(data, metadata, cols = "Condition", gene_set = gene_set)
-print(results$plot)
-
-}
+\keyword{internal}

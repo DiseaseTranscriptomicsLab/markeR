@@ -196,262 +196,116 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
 
 
 
-#' Visualize Statistical Associations Between Variables and a Target Score
+
+
+
+#' Variable Association Analysis
 #'
-#' Creates visual representations of statistical relationships between predictor variables
-#' and a target variable (`target_var`). The function generates scatter plots with regression
-#' lines for numeric variables and density plots for categorical variables, incorporating
-#' statistical test results from `compute_stat_tests()`.
+#' This unified function evaluates associations between gene expression and sample metadata
+#' using multiple methods: score-based (logmedian, ssGSEA, ranking) or GSEA-based association.
+#' The function returns statistical results and visualizations summarizing effect sizes and significance.
 #'
-#' ## **Plot Types**
-#' - **Numeric Predictors**: Scatter plots with regression lines, annotated with correlation metrics.
-#' - **Categorical Predictors**: Density plots colored by factor levels, annotated with test statistics.
+#' @param method Character string specifying the method to use. One of:
+#'   - `"logmedian"`
+#'   - `"ssGSEA"`
+#'   - `"ranking"`
+#'   - `"GSEA"`
 #'
-#' ## **Variable Classification & Statistical Methods**
-#' - **Numeric**: Continuous numeric or integer variables with more than 10 unique values.
-#'   - Test: Pearson, Spearman, or Kendall correlation.
-#' - **Categorical Bin**: Binary categorical variables (factors, characters, or integers with exactly 2 unique values).
-#'   - Test: T-test or Wilcoxon rank-sum test.
-#' - **Categorical Multi**: Categorical variables with more than 2 unique values (up to 10 levels recommended).
-#'   - Test: ANOVA (default) or Kruskal-Wallis.
-#'   - If ANOVA is used, Tukey’s HSD post-hoc test is performed.
-#'   - A warning is issued if a categorical variable has more than 10 unique values.
+#' @section Shared Arguments (All Methods):
+#' @param data A matrix or data frame with gene expression data (genes as rows, samples as columns).
+#' @param metadata A data frame containing sample metadata.
+#' @param cols Character vector of metadata column names to analyze.
+#' @param gene_set A named list of gene sets:
+#'   - For score-based methods: list of gene vectors.
+#'   - For GSEA: list of vectors (unidirectional) or data frames (bidirectional).
+#' @param mode Contrast mode: `"simple"` (default), `"medium"`, or `"extensive"`.
+#' @param signif_color Color used for significant associations (default: `"red"`).
+#' @param nonsignif_color Color used for non-significant associations (default: `"grey"`).
+#' @param sig_threshold Numeric significance cutoff (default: `0.05`).
+#' @param saturation_value Lower limit for p-value coloring (default: auto).
+#' @param widthlabels Integer for contrast label width before wrapping (default: `18`).
+#' @param labsize Axis text size (default: `10`).
+#' @param titlesize Plot title size (default: `14`).
+#' @param pointSize Size of plot points (default: `5`).
+#' @param printplt Logical. If `TRUE`, plots are printed. Default: `TRUE`.
+#' @param discrete_colors (Score-based only) Optional named list mapping factor levels to colors.
+#' @param continuous_color (Score-based only) Color for continuous variable points (default: `"#8C6D03"`).
+#' @param color_palette (Score-based only) ColorBrewer palette name for categorical variables (default: `"Set2"`).
+#' @param stat (GSEA only) Optional. Statistic for ranking genes (`"B"` or `"t"`). Auto-detected if `NULL`.
+#' @param ignore_NAs (GSEA only) Logical. If `TRUE`, rows with NA metadata are removed. Default: `FALSE`.
 #'
-#' ## **Color Customization**
-#' - **Continuous Variables**: `continuous_color` specifies the color of scatter plot points.
-#' - **Categorical Variables**:
-#'   - User can provide a named list (`discrete_colors`) with custom colors for factor levels.
-#'   - If `discrete_colors` is `NULL`, colors are chosen from an `RColorBrewer` palette (`color_palette`).
+#' @return A list with method-specific results and ggplot2-based visualizations:
 #'
-#' @param df A data frame containing the target variable and predictors.
-#' @param cols A character vector of predictor variables to include in the plots.
-#' @param target_var The dependent variable to be plotted.
-#' @param targetvar_lab A string specifying the label for the target variable. Default is `"Score"`.
-#' @param discrete_colors Optional. A named list specifying custom colors for categorical variables.
-#'   Each element should be a named vector where names correspond to factor levels.
-#' @param continuous_color The color for numeric variables in scatter plots. Default is `"#8C6D03"`.
-#' @param color_palette A color palette from RColorBrewer for categorical variables. Default is `"Set2"`.
-#' @param sizeannot The font size for p-value annotations in plots. Default is `3`.
-#' @param ncol Number of columns in the arranged plot grid. If `NULL`, layout is auto-determined.
-#' @param nrow Number of rows in the arranged plot grid. If `NULL`, layout is auto-determined.
-#' @param numeric The correlation method for numeric predictors.
-#'   Options: `"pearson"` (default), `"spearman"`, `"kendall"`.
-#' @param categorical_bin The statistical test for binary categorical variables.
-#'   Options: `"t.test"` (default) or `"wilcoxon"`.
-#' @param categorical_multi The statistical test for multi-level categorical variables.
-#'   Options: `"anova"` (default) or `"kruskal-wallis"`.
-#' @param title A string specifying the main title of the grid of plots.
-#' @param titlesize Numeric; font size of the main title of the grid of plots (default = `14`).
-#' @param signif_color A string specifying the color for the low end of the adjusted p-value gradient until the value chosen for significance (\code{sig_threshold}). Default is `"blue"`.
-#' @param nonsignif_color A string specifying the color for the middle of the adjusted p-value gradient. Default is `"white"`. Lower limit correspond to the value of \code{sig_threshold}.
-#' @param sig_threshold A numeric value specifying the threshold for significance visualization in the plot. Default: `0.05`.
-#' @param saturation_value A numeric value specifying the lower limit of the adjusted p-value gradient, below which the color will correspond to \code{signif_color}. Default is the results' minimum, unless that
-#' value is above the sig_threshold; in that case, it is 0.001.
-#' @param widthlabels An integer controlling the maximum width of contrast labels before text wrapping. Default: `18`.
-#' @param pointSize Numeric. The size of points in the lollipop plot (default is 5).
-#' @param widths Numerical vector of relative columns widths. Should be the same length as the number of variables provided. Default is that each plot has the same width.
-#' @param heights Numerical vector of relative columns heights  Should be the same length as the number of variables provided. Default is that each plot has the same height
+#' **For score-based methods (`logmedian`, `ssGSEA`, `ranking`):**
 #'
-#' @return A named list with two elements:
-#' \itemize{
-#'   \item \code{plot}: A `ggarrange` object displaying the arranged statistical plots in a grid format.
-#'   \item \code{data}: A named list containing the statistical test results for each variable, where each entry is a data frame with metric values and p-values.
-#' }
+#' - `Overall`: Data frame of effect sizes (Cohen's f) and p-values for each metadata variable.
+#' - `Contrasts`: Data frame of Cohen’s d values and adjusted p-values for pairwise comparisons (based on `mode`).
+#' - `plot`: A combined visualization including:
+#'     - Lollipop plots of Cohen’s f,
+#'     - Distribution plots by variable (density or scatter),
+#'     - Lollipop plots of Cohen’s d for contrasts.
+#' - `plot_contrasts`: Lollipop plots of Cohen’s d effect sizes, colored by adjusted p-values (BH).
+#' - `plot_overall`: Lollipop plot of Cohen’s f, colored by p-values.
+#' - `plot_distributions`: List of distribution plots of scores by variable.
 #'
-#' @details
-#' - Each plot is annotated with the corresponding statistical test result (e.g., correlation coefficient,
-#'   ANOVA F-value, t-test statistic) and p-values.
-#' - If a categorical variable has more than 10 unique levels, a warning is issued.
-#' - If `discrete_colors` is provided, it overrides `color_palette` for the specified variables.
-#' - If `ncol` and `nrow` are `NULL`, the function automatically determines an optimal grid layout.
+#' **For GSEA-based method (`GSEA`):**
 #'
-#' @import ggplot2 patchwork
-#' @importFrom ggpubr ggarrange annotate_figure
-#' @importFrom RColorBrewer brewer.pal
+#' - `data`: A data frame with GSEA results, including normalized enrichment scores (NES), adjusted p-values, and contrasts.
+#' - `plot`: A ggplot2 lollipop plot of GSEA enrichment across contrasts.
 #'
-#' @keywords internal
-VariableAssociation <- function(df, cols, target_var, targetvar_lab="Score",
-                                discrete_colors = NULL, continuous_color = "#8C6D03",
-                                color_palette = "Set2",
-                                sizeannot=3, ncol=NULL, nrow=NULL,
-                                numeric = "pearson",
-                                categorical_bin = "t.test",
-                                categorical_multi = "anova", title=NULL, titlesize=14,
-                                nonsignif_color = "grey", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, widthlabels=18, pointSize=5,
-                                widths=1,heights=1) {
+#' @export
+VariableAssociation <- function(method = c("ssGSEA", "logmedian", "ranking", "GSEA"),
+                                data, metadata, cols, gene_set, mode = c("simple", "medium", "extensive"),
+                                stat = NULL, ignore_NAs = FALSE,
+                                signif_color = "red", nonsignif_color = "grey", sig_threshold = 0.05,
+                                saturation_value = NULL, widthlabels = 18, labsize = 10, titlesize = 14,
+                                pointSize = 5,
+                                discrete_colors = NULL, continuous_color = "#8C6D03", color_palette = "Set2",
+                                printplt = TRUE) {
+  method <- match.arg(method)
+  mode <- match.arg(mode)
 
-  results <- compute_stat_tests(df, target_var, cols = cols,
-                                numeric =numeric,
-                                categorical_bin = categorical_bin,
-                                categorical_multi = categorical_multi)
+  if (method == "GSEA") {
+    result <- GSEA_VariableAssociation(
+      data = data,
+      metadata = metadata,
+      cols = cols,
+      stat = stat,
+      mode = mode,
+      gene_set = gene_set,
+      signif_color = signif_color,
+      nonsignif_color = nonsignif_color,
+      sig_threshold = sig_threshold,
+      saturation_value = saturation_value,
+      widthlabels = widthlabels,
+      labsize = labsize,
+      titlesize = titlesize,
+      pointSize = pointSize,
+      ignore_NAs = ignore_NAs
+    )
 
-  plot_list <- list()  # Store individual plots
-  variable_types <- identify_variable_type(df, cols = names(results))
-
-  for (var in names(results)) {
-    p <- NULL
-    test_results <- results[[var]]
-    test_results$metric <- as.numeric(test_results$metric)
-    test_results$p_value <- as.numeric(test_results$p_value)
-    test_results$contrast <- row.names(test_results)
-    test_results$contrast <- sapply(test_results$contrast, function(x) wrap_title(x, widthlabels))
-
-    # Adding p-value in parenthesis next to the metric
-    if (variable_types[var] == "Numeric") {
-      # Create a label for the metric with p-value in parentheses (e.g., "pearson: 4.56e-02 (p = 0.03)")
-      metric_label <- paste0(row.names(test_results), ": ", test_results$metric,
-                             " (p = ", test_results$p_value, ")")
-
-      p <- ggplot2::ggplot(df, ggplot2::aes_string(x = var, y = target_var)) +
-        ggplot2::geom_point(alpha = 0.6, size=4, color = continuous_color) +  # Use continuous_color
-        ggplot2::geom_smooth(method = "lm", col = "black", se = FALSE, size=2) +
-        # Place the label in the top-left corner using -Inf/Inf coordinates
-        ggplot2::annotate("text",
-                          x = -Inf, y = Inf,
-                          label = metric_label,
-                          hjust = -0.1, vjust = 1.1,
-                          size = sizeannot, color = "black") +
-        ggplot2::coord_cartesian(clip = "off") +  # Allow text outside the plot area
-        ggplot2::theme_classic() +
-        ggplot2::ggtitle(var) +
-        ggplot2::labs(y=targetvar_lab) +
-        ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"))
-
-    } else if (variable_types[var] %in% c("Categorical Bin")) {
-
-      # Combine multiple test results into one multiline label if needed
-      metric_labels <- paste(row.names(test_results), ": ", test_results$metric,
-                             " (p = ", test_results$p_value, ")", collapse = "\n")
-
-      # Check if user provided a custom named list for discrete colors
-      if (!is.null(discrete_colors) && var %in% names(discrete_colors)) {
-        # Use user-specified colors for the specific variable
-        colors <- discrete_colors[[var]]
-      } else {
-        num_levels <- length(unique(df[[var]]))
-        colors <- colorRampPalette(RColorBrewer::brewer.pal(8, color_palette))(num_levels)
-
-      }
-
-      p <-ggplot2:: ggplot(df, ggplot2::aes_string(x = target_var, fill = var)) +
-        ggplot2::geom_density(alpha = 0.6) +
-        ggplot2::scale_fill_manual(values = colors) +  # Apply custom discrete colors
-        # Place the label in the top-left corner
-        ggplot2::annotate("text",
-                          x = -Inf, y = Inf,
-                          label = metric_labels,
-                          hjust = -0.1, vjust = 1.1,
-                          size = sizeannot, color = "black" ) +
-        ggplot2::coord_cartesian(clip = "off") +
-        ggplot2::theme_classic() +
-        ggplot2::ggtitle(var) +
-        ggplot2::labs(x = targetvar_lab, y = "Density", fill="") +
-        ggplot2::theme(legend.position = "right",
-                       plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"))
-
-    } else if (variable_types[var] %in% c("Categorical Multi")){
-
-      # Check if user provided a custom named list for discrete colors
-      if (!is.null(discrete_colors) && var %in% names(discrete_colors)) {
-        # Use user-specified colors for the specific variable
-        colors <- discrete_colors[[var]]
-      } else {
-        num_levels <- length(unique(df[[var]]))
-        colors <- colorRampPalette(RColorBrewer::brewer.pal(8, color_palette))(num_levels)
-
-      }
-
-      density <- ggplot2::ggplot(df, ggplot2::aes_string(y = target_var, fill = var)) +
-        ggplot2::geom_density(alpha = 0.6) +
-        ggplot2::scale_fill_manual(values = colors) +
-        #ggplot2::coord_cartesian(clip = "off") +
-        ggplot2::theme_classic() +
-        ggplot2::labs(y = targetvar_lab, x = "", fill = "") +
-        ggplot2::theme(
-          legend.position = "right",
-          axis.title.x = ggplot2::element_blank(),
-          axis.text.x = ggplot2::element_blank(),
-          axis.ticks.x = ggplot2::element_blank(),
-          axis.line.x = ggplot2::element_blank()
-        )
-
-
-
-      if(is.null(saturation_value)){
-        if (min(test_results$p_value)>sig_threshold){
-          limit_pval <- 0.001
-        } else{
-          limit_pval <- min(test_results$p_value)
-        }
-
-      } else {
-        limit_pval <- saturation_value
-      }
-
-
-     lolli <-  ggplot2::ggplot(test_results, ggplot2::aes(x = metric, y = contrast, fill = -log10(p_value))) +
-        ggplot2::geom_segment(ggplot2::aes(
-          yend = contrast,
-          xend = 0
-        ), size = .5) +
-        ggplot2::geom_point(ggplot2::aes(
-          stroke = 1.2
-        ), shape = 21, size = pointSize) +
-        ggplot2::scale_linetype_identity() +
-        ggplot2::scale_color_identity() +
-        ggplot2::theme_minimal() +
-        ggplot2::theme(
-          plot.title = ggplot2::element_text(hjust = 0.5, face = "bold" ),
-          legend.position = "right"
-        ) +
-        ggplot2::scale_fill_gradient2(low = nonsignif_color,
-                                      mid = nonsignif_color,
-                                      high = signif_color,
-                                      midpoint = -log10(sig_threshold),
-                                      limits=c(0,-log10(limit_pval)),
-                                      na.value = signif_color)+
-       ggplot2::ggtitle(var) +
-       ylab("Contrasts") + xlab("Metrics")
-
-
-     lolli_adj <- lolli + theme(plot.margin = unit(c(0, 0, 0, 0), "cm"))
-     density_adj <- density + theme(plot.margin = unit(c(0,0,0,0), "cm"))
-
-     p <- (lolli_adj | density_adj) +
-       patchwork::plot_layout(guides = "collect", widths = c(0.8, 0.2)) &
-       ggplot2::theme(legend.position = "right")
-
-    }
-
-    if (!is.null(p)) {
-      plot_list[[var]] <- p
-    }
-
-
+  } else if (method %in% c("ssGSEA", "logmedian", "ranking")) {
+    result <- Score_VariableAssociation(
+      data = data,
+      metadata = metadata,
+      cols = cols,
+      method = method,
+      gene_set = gene_set,
+      mode = mode,
+      signif_color = signif_color,
+      nonsignif_color = nonsignif_color,
+      sig_threshold = sig_threshold,
+      saturation_value = saturation_value,
+      widthlabels = widthlabels,
+      labsize = labsize,
+      titlesize = titlesize,
+      pointSize = pointSize,
+      discrete_colors = discrete_colors,
+      continuous_color = continuous_color,
+      color_palette = color_palette,
+      printplt = printplt
+    )
   }
 
-  n <- length(plot_list)
-  if (is.null(ncol) && is.null(nrow)) {
-    ncol <- ceiling(sqrt(n))
-    nrow <- ceiling(n / ncol)
-  } else if (is.null(ncol)) {
-    ncol <- ceiling(n / nrow)
-  } else if (is.null(nrow)) {
-    nrow <- ceiling(n / ncol)
-  }
-
-  # Arrange the individual plots in a grid.
-  plt <- ggpubr::ggarrange(plotlist = plot_list,
-                   ncol = ncol,
-                   nrow = nrow,
-                   widths=widths,
-                   heights=heights)
-
-  if (!is.null(title)) plt <- ggpubr::annotate_figure(plt, top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize)))
-
-  print(plt)
-
-  invisible(list(plot=plt,
-                 data=results))
+  return(result)
 }
-

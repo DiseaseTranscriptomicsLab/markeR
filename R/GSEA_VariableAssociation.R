@@ -31,37 +31,14 @@
 #' @param pointSize Numeric. The size of points in the lollipop plot (default is 5).
 #' @param ignore_NAs Boolean (default: FALSE). Whether to ignore NAs in the metadata when fitting the linear model.
 #'                    If TRUE, rows with any NAs will be removed before analysis, leading to a loss of data to be fitted in the model.
+#' @param printplt Boolean specifying if plot is to be printed. Default: `TRUE`.
 #'
 #' @return A list with two elements:
 #'   - `data`: A data frame containing the GSEA results, including normalized enrichment scores (NES), adjusted p-values, and contrasts.
 #'   - `plot`: A ggplot2 object visualizing the GSEA results as a lollipop plot.
 #'
-#' @examples
-#' \dontrun{
-#' # Example usage with random data
-#' set.seed(42)  # For reproducibility
-#'
-#' # Create random gene expression data
-#' data <- matrix(rnorm(1000), ncol = 10)
-#'
-#' # Assign gene identifiers as row names (e.g., Gene1, Gene2, ...)
-#' rownames(data) <- paste0("Gene", 1:nrow(data))
-#'
-#' # Create metadata (e.g., group variable)
-#' metadata <- data.frame(group = rep(c("A", "B"), each = 5))
-#'
-#' # Define a gene set
-#' gene_set <- list(SampleSet = c("Gene1", "Gene2", "Gene3"))
-#'
-#' # Call the GSEA_VariableAssociation function
-#' results <- GSEA_VariableAssociation(data, metadata, cols = "group", gene_set = gene_set)
-#'
-#' # View results
-#' print(results$data)
-#' print(results$plot)
-#'}
-#' @export
-GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("simple","medium","extensive"), gene_set,nonsignif_color = "grey", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, widthlabels=18, labsize=10, titlesize=14, pointSize=5, ignore_NAs = FALSE) {
+#' @keywords internal
+GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("simple","medium","extensive"), gene_set,nonsignif_color = "grey", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, widthlabels=18, labsize=10, titlesize=14, pointSize=5, ignore_NAs = FALSE, printplt =TRUE) {
   mode <- match.arg(mode)
   metadata <- metadata[, cols %in% colnames(metadata), drop = FALSE]
 
@@ -189,8 +166,9 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
     )
 
 
+  if (printplt) print(plot)
 
-  return(list(plot=plot,
+  invisible(list(plot=plot,
               data=combined_results_toreturn))  # Return list if not in grid mode
 
 }

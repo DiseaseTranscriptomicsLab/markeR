@@ -118,7 +118,6 @@ create_contrast_column <- function(metadata, variable_name, contrast) {
 #' @param sig_threshold A numeric value specifying the significance threshold. Default: `0.05`.
 #' @param widthlabels An integer controlling contrast label wrapping. Default: `18`.
 #' @param labsize An integer controlling axis text size. Default: `10`.
-#' @param title A string specifying the plot title. Default: `NULL`.
 #' @param titlesize An integer specifying the title size. Default: `14`.
 #' @param pointSize A numeric value for point size in plots. Default: `5`.
 #' @param discrete_colors A named list mapping categorical variable levels to colors.
@@ -139,28 +138,13 @@ create_contrast_column <- function(metadata, variable_name, contrast) {
 #'   - `plot_overall`: Lollipop plot showing Cohen’s f effect sizes for each variable, colored by p-value.
 #'   - `plot_distributions`: List of density or scatter plots of the score across variable levels, depending on variable type.
 #'
-#' @examples
-#' data <- as.data.frame(abs(matrix(rnorm(1000), ncol = 10)))
-#' rownames(data) <- paste0("Gene", 1:100)  # Name columns as Gene1, Gene2, ..., Gene10
-#' colnames(data) <- paste0("Sample", 1:10)  # Name rows as Sample1, Sample2, ..., Sample100
-#'
-#' metadata <- data.frame(
-#'   sample = colnames(data),  # Sample ID matches the rownames of the data
-#'   Condition = rep(c("A", "B"), each = 50)  # Two conditions (A and B)
-#' )
-#' gene_set <- list(SampleSet = c("Gene1", "Gene2", "Gene3"))
-#' results <- Score_VariableAssociation(data, metadata, cols = "Condition", gene_set = gene_set)
-#' print(results$plot)
-#'
 #' @importFrom ggpubr ggarrange
 #' @importFrom ggpubr annotate_figure
 #' @import ggplot2
 #' @importFrom grid textGrob
 #' @importFrom grid gpar
 #'
-#' @export
-#'
-#'
+#' @keywords internal
 Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian","ssGSEA","ranking"), gene_set,
                                       mode=c("simple","medium","extensive"),
                                       nonsignif_color = "grey", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05,

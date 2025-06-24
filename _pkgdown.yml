@@ -39,10 +39,9 @@ reference:
       - plotGSEAenrichment
       - plotNESlollipop
       - plotCombinedGSEA
-  - title: "Variable Association"
+  - title: "Variable Association (Discovery Mode)"
     contents:
-      - Score_VariableAssociation
-      - GSEA_VariableAssociation
+      - VariableAssociation
   - title: "Visualization Functions"
     contents:
       - IndividualGenes_Violins
