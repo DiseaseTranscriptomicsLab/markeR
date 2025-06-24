@@ -328,14 +328,14 @@ covariates</strong>. Strong associations between these and the score
 could indicate <strong>batch effects</strong>, where technical variation
 may confound biological interpretation.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">results_scoreassoc_bidirect</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Score_VariableAssociation.html">Score_VariableAssociation</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
+<code class="sourceCode R"><span><span class="va">results_scoreassoc_bidirect</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/VariableAssociation.html">VariableAssociation</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
 <span>                          metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
-<span>                          cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Condition"</span>,<span class="st">"Researcher"</span>,<span class="st">"DaysToSequencing"</span><span class="op">)</span>, </span>
-<span>                          method<span class="op">=</span><span class="st">"logmedian"</span>, </span>
+<span>                          method <span class="op">=</span> <span class="st">"logmedian"</span>,</span>
+<span>                          cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Condition"</span>,<span class="st">"Researcher"</span>,<span class="st">"DaysToSequencing"</span><span class="op">)</span>,  </span>
 <span>                          gene_set <span class="op">=</span> <span class="va">HernandezSegura_GeneSet</span>,</span>
 <span>                          mode<span class="op">=</span><span class="st">"extensive"</span>,</span>
 <span>                          nonsignif_color <span class="op">=</span> <span class="st">"white"</span>, signif_color <span class="op">=</span> <span class="st">"red"</span>, saturation_value<span class="op">=</span><span class="cn">NULL</span>,sig_threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>                          widthlabels<span class="op">=</span><span class="fl">30</span>, labsize<span class="op">=</span><span class="fl">10</span>, title<span class="op">=</span><span class="cn">NULL</span>, titlesize<span class="op">=</span><span class="fl">14</span>, pointSize<span class="op">=</span><span class="fl">5</span>, discrete_colors<span class="op">=</span><span class="cn">NULL</span>,</span>
+<span>                          widthlabels<span class="op">=</span><span class="fl">30</span>, labsize<span class="op">=</span><span class="fl">10</span>, titlesize<span class="op">=</span><span class="fl">14</span>, pointSize<span class="op">=</span><span class="fl">5</span>, discrete_colors<span class="op">=</span><span class="cn">NULL</span>,</span>
 <span>                          continuous_color <span class="op">=</span> <span class="st">"#8C6D03"</span>, color_palette <span class="op">=</span> <span class="st">"Set2"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="Tutorial_DiscoveryMode_files/figure-html/variableassoc_score_sen-1.png" width="100%"></p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
@@ -463,9 +463,10 @@ putatively <em>not</em> altered.</li>
 <code>DaysToSequencing</code> — are associated with the
 <strong>HernandezSegura</strong> gene set:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/GSEA_VariableAssociation.html">GSEA_VariableAssociation</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/VariableAssociation.html">VariableAssociation</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">counts_example</span>,</span>
 <span>  metadata <span class="op">=</span> <span class="va">metadata_example</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"GSEA"</span>,</span>
 <span>  cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Condition"</span>, <span class="st">"Researcher"</span>, <span class="st">"DaysToSequencing"</span><span class="op">)</span>,</span>
 <span>  mode <span class="op">=</span> <span class="st">"simple"</span>,</span>
 <span>  gene_set <span class="op">=</span> <span class="va">HernandezSegura_GeneSet</span>,</span>
@@ -478,8 +479,9 @@ putatively <em>not</em> altered.</li>
 <span>  titlesize <span class="op">=</span> <span class="fl">14</span>,</span>
 <span>  pointSize <span class="op">=</span> <span class="fl">5</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## $plot</span></span></code></pre>
 <p><img src="Tutorial_DiscoveryMode_files/figure-html/GSEA_varassoc-1.png" width="60%"></p>
+<pre><code><span><span class="co">## $plot</span></span></code></pre>
+<p><img src="Tutorial_DiscoveryMode_files/figure-html/GSEA_varassoc-2.png" width="60%"></p>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## $data</span></span>
 <span><span class="co">##            pathway         pval         padj    log2err         ES        NES</span></span>
