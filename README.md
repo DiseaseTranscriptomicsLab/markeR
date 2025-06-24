@@ -30,6 +30,7 @@ along with tools to compute performance metrics and visualize results.
 
 - [Installation](#installation)  
 - [Tutorials](#tutorials)  
+- [Requirements](#requirements)
 - [Common Workflow](#common-workflow)
   - [1. Input Requirements](#1-input-requirements)  
   - [2. Select Mode of Analysis](#2-select-mode-of-analysis)  
@@ -64,6 +65,21 @@ The following tutorials are available:
   Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_DiscoveryMode.html)
 - [Signature
   Similarity](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_GeneSetSimilarity.html)
+
+## Requirements
+
+This package is officially supported on (based on a GitHub Actions
+workflow that tests against multiple `R` versions):
+
+- `R` `4.4.x`
+- `R` `4.5.x`
+
+⚠️ Compatibility with older R versions depends on the specific versions
+of dependencies installed. Older versions of `R` (including `R` `3.5.x`,
+`3.6.x`, `4.0.x`, `4.1.x`, `4.2.x`, and `4.3.x`) may work, but are not
+officially supported due to upstream dependency constraints. In some
+cases, installing older versions of dependencies (e.g., via `renv`,
+`CRAN` snapshots, or `checkpoint`) can restore compatibility.
 
 ## Common Workflow
 
