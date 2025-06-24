@@ -10,6 +10,12 @@
 [![Pkgdown](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://diseasetranscriptomicslab.github.io/markeR/)
 <!-- badges: end -->
 
+**markeR** provides a suite of methods for using gene sets (signatures)
+to quantify and evaluate the extent to which a given gene signature
+marks a specific phenotype from gene expression data. The package
+implements various scoring, enrichment and classification approaches,
+along with tools to compute performance metrics and visualize results.
+
 > **To cite markeR please use:**
 >
 > Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). *markeR: an R
@@ -18,11 +24,8 @@
 > de Lisboa, Lisbon, Portugal. R package version 0.9.1,
 > <https://github.com/DiseaseTranscriptomicsLab/markeR>.
 
-**markeR** provides a suite of methods for using gene sets (signatures)
-to quantify and evaluate the extent to which a given gene signature
-marks a specific phenotype from gene expression data. The package
-implements various scoring, enrichment and classification approaches,
-along with tools to compute performance metrics and visualize results.
+`inst/Paper/` — Contains all scripts and materials used in the original
+markeR paper to reproduce analyses and figures.
 
 ![](man/figures/Workflow.png)
 
