@@ -13,3 +13,4 @@
 ^tests/debug$
 ^tests/debug/
 ^tests/debug/.*$
+^markeR\.BiocCheck$
