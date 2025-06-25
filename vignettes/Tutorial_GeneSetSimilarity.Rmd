@@ -36,7 +36,7 @@ The function provides options to:
 * Filter by **odds ratio and p-value**, using `or_threshold` and `pval_threshold`  
 * Limit the number of top-matching reference signatures shown, using `num_sigs_toplot`  
 
----
+ 
 
 # Similarity via Jaccard Index
 

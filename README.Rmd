@@ -229,7 +229,7 @@ Filters can be applied based on similarity thresholds (e.g., minimum Jaccard, OR
 📩 For any questions or concerns, feel free to reach out:
 
 **Rita Martins-Silva**  
-Email: [rita.silva@gimm.pt](mailto:rita.silva@gimm.pt)
+Email: [rita.silva@medicina.ulisboa.pt](mailto:rita.silva@medicina.ulisboa.pt)
 
  
 [tutorial-benchmarking]: https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_BenchmarkingMode.html
