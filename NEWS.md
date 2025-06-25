@@ -1,3 +1,12 @@
+# markeR 0.9.2 (25 Jun, 2025)
+
+* Fixed broken links in README and vignettes
+* Added GitHub Actions workflows:
+  - `R-CMD-check` 
+  - Matrix-based check for minimal supported `R` versions
+* Unified `VariableAssociation()` function by modularly integrating `GSEA_VariableAssociation()` and `Score_VariableAssociation()`
+* Added scripts to fully reproduce all analyses from the original `markeR` manuscript (`inst/Paper`)
+
 # markeR 0.9.1 (20 Jun, 2025)
 
 * Added package logo  
