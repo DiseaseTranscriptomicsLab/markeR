@@ -18,7 +18,8 @@ Description:
     extent to which a given gene signature marks a specific phenotype. The package implements various 
     scoring, enrichment and classification approaches, along with tools to compute 
     performance metrics and visualize results, making it a valuable resource for transcriptomics research (bulk RNA-seq).
-License: MIT + file LICENSE
+License: Artistic-2.0
+biocViews: GeneExpression, Transcriptomics, Visualization, Software, GeneSetEnrichment, Classification
 Encoding: UTF-8
 Language: en-GB
 LazyData: true

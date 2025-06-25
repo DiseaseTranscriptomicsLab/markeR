@@ -258,8 +258,6 @@ set and identify whether specific genes drive the overall signal,
 Filters can be applied based on similarity thresholds (e.g., minimum
 Jaccard, OR, or p-value).
 
-------------------------------------------------------------------------
-
 ## Contact
 
 📩 For any questions or concerns, feel free to reach out:
