@@ -22,7 +22,7 @@ License: Artistic-2.0
 biocViews: GeneExpression, Transcriptomics, Visualization, Software, GeneSetEnrichment, Classification
 Encoding: UTF-8
 Language: en-GB
-LazyData: true
+LazyData: false
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Additional_repositories: https://bioconductor.org/packages/release/bioc
@@ -60,7 +60,7 @@ Suggests:
     roxygen2
 Config/testthat/edition: 3
 Depends: 
-    R (>= 3.5.0)
+    R (>= 4.5.0)
 URL: https://diseasetranscriptomicslab.github.io/markeR/,
      https://github.com/DiseaseTranscriptomicsLab/markeR
 BugReports: https://github.com/DiseaseTranscriptomicsLab/markeR/issues
