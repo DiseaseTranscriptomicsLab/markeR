@@ -214,7 +214,7 @@ plotVolcano <- function(DEResultsList, genes = NULL, N = NULL,
         # Combine non-empty subsets and shuffle
         if (length(combined) > 0) {
           plot_data <- do.call(rbind, combined)
-          set.seed(1234)  # for reproducibility
+          #set.seed(1234)  # for reproducibility
           plot_data <- plot_data[sample(nrow(plot_data)), ]
 
           # Add to plot

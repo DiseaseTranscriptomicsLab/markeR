@@ -80,7 +80,7 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
       DEGs_var <- calculateDE(data = data, metadata = metadata, variables = var, contrasts = contrasts)
       cont_vec <- c(cont_vec,contrasts)
     }
-    set.seed("20032025")
+    #set.seed("20032025")
     # Perform GSEA for each case
     GSEA_results <- runGSEA(DEGs_var, gene_sets = gene_set, stat=stat)
 
