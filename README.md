@@ -9,7 +9,7 @@
 [![R-CMD-check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml)
 [![Pkgdown](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://diseasetranscriptomicslab.github.io/markeR/)
 [![Minimal R
-Version](https://img.shields.io/badge/min%20R-4.4.0-blue.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/Rminversion.yaml)
+Version](https://img.shields.io/badge/min%20R-4.5.0-blue.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/Rminversion.yaml)
 
 <!-- badges: end -->
 
@@ -79,6 +79,9 @@ workflow that tests against multiple `R` versions):
 
 - `R` `4.4.x`
 - `R` `4.5.x`
+
+However, due to `Bioconductor` submission requirements, `R` version
+`4.5.0` is listed as required upon package installation.
 
 ⚠️ Compatibility with older R versions depends on the specific versions
 of dependencies installed. Older versions of `R` (including `R` `3.5.x`,
@@ -263,4 +266,4 @@ Jaccard, OR, or p-value).
 📩 For any questions or concerns, feel free to reach out:
 
 **Rita Martins-Silva**  
-Email: <rita.silva@gimm.pt>
+Email: <rita.silva@medicina.ulisboa.pt>
