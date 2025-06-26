@@ -76,7 +76,7 @@ plotGSEAenrichment <- function(GSEA_results, DEGList, gene_sets, widthTitle = 24
       stat_used <- gsea_row$stat_used
 
       # order ranks by stat used
-      ranks <- setNames(deg_df[,stat_used, drop=T], rownames(deg_df))
+      ranks <- setNames(deg_df[,stat_used, drop=TRUE], rownames(deg_df))
       ranks <- sort(ranks, decreasing = TRUE)
 
       nes_value <- round(gsea_row$NES, 2)

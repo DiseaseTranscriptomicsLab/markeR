@@ -58,7 +58,7 @@ plotPCA <- function(data, metadata=NULL, genes=NULL, scale=FALSE, center=TRUE, P
     genes <-  row.names(data)
   }
 
-  data <- data[row.names(data) %in% genes, , drop=F]
+  data <- data[row.names(data) %in% genes, , drop=FALSE]
 
   if (!nrow(data)>1) stop(paste0("Error: Number of genes should be >1; In your data you have only found the gene ",genes))
 

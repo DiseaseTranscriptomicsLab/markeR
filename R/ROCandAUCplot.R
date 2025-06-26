@@ -276,7 +276,7 @@ ROCandAUCplot <- function(data, metadata,
     auc_matrix <- stats::reshape(auc_values, idvar = "Gene", timevar = "Group", direction = "wide")
     colnames(auc_matrix) <- base::gsub("AUC\\.", "", colnames(auc_matrix))  # Remove "AUC." prefix
     rownames(auc_matrix) <- auc_matrix$Gene
-    auc_matrix <- auc_matrix[, -1, drop=F]  # Remove gene column
+    auc_matrix <- auc_matrix[, -1, drop=FALSE]  # Remove gene column
 
     # Convert to a numeric matrix
     auc_matrix <- as.matrix(auc_matrix)

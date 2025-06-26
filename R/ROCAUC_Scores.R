@@ -57,7 +57,7 @@ ROCAUC_Scores_Calculate <- function(data, metadata, gene_sets, method = c("logme
         colnames(df_subset)[colnames(df_subset)=="cohentest"] <- "group_roc"
 
         # Compute ROC curve
-        roc_curve <- pROC::roc(group_roc ~ score , data = df_subset, quiet=T)
+        roc_curve <- pROC::roc(group_roc ~ score , data = df_subset, quiet=TRUE)
         auc_value <- pROC::auc(roc_curve)
 
         # Flip AUC if needed (AUC must be >0.5 for meaningful interpretation)

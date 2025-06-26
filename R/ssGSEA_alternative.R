@@ -47,7 +47,7 @@
 #' }
 #'
 #' @keywords internal
-ssGSEA_alternative <- function(X, gene_sets, alpha = 0.25, scale = T, norm = F, single = T) {
+ssGSEA_alternative <- function(X, gene_sets, alpha = 0.25, scale = TRUE, norm = FALSE, single = TRUE) {
   row_names = rownames(X)
   num_genes = nrow(X)
   gene_sets = lapply(gene_sets, function(genes) { which(row_names %in% genes) })
