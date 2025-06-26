@@ -811,3 +811,10 @@ PlotScores(data = counts_example,
            titlesize = 12)  
 ```
 
+
+# Session Information
+
+```{r}
+sessionInfo()
+```
+

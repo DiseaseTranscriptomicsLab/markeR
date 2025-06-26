@@ -188,3 +188,8 @@ VariableAssociation(
  
 ```
  
+# Session Information
+
+```{r}
+sessionInfo()
+```
