@@ -299,6 +299,13 @@ PlotScores <- function(data, metadata, gene_sets,
 #' - **If `method != "all"`** and the variable is `NULL`, a density plot of the score distribution will be displayed.
 #' - **If `method != "all"`** and the variable is **numeric**, a scatter plot will be generated to show the relationship between the scores and the numeric variable.
 #'
+#' @return
+#' A `ggplot` or a `ggpubr::ggarrange` object depending on the input and parameters:
+#'
+#' - If `GroupingVariable` is `NULL`, returns a faceted grid of density plots (one per gene set).
+#' - If `GroupingVariable` is provided and `method != "all"`, returns a faceted grid of violin plots overlaid with jittered sample points and median bars, optionally annotated with Cohen’s d or f and p-values.
+#' - Each individual plot corresponds to one gene set score computed using the selected method.
+#'
 #' @import ggplot2
 #' @importFrom grid textGrob
 #' @importFrom grid gpar
