@@ -18,12 +18,16 @@
 #' @param ncol Integer; number of columns in the arranged PCA plots. Default is determined automatically.
 #' @param nrow Integer; number of rows in the arranged PCA plots. Default is determined automatically.
 #'
-#' @return An invisible list with two elements: \code{plt}, a ggplot2 or ggarrange object displaying the PCA plot;
-#' and \code{data}, a data frame containing PCA-transformed data and sample metadata (if not NULL).
 #'
 #' @details
 #' The function performs PCA using \code{prcomp()} and visualizes the results using \code{ggplot2}.
 #' If a metadata data frame is provided, it ensures the sample order matches between data and metadata.
+#'
+#' @return A list with two elements:
+#' \itemize{
+#'   \item \code{plt}: A ggplot2 or ggarrange object displaying the PCA plot.
+#'   \item \code{data}: A data frame containing PCA-transformed values and sample metadata (if available).
+#' }#'
 #'
 #' @examples
 #' \dontrun{
