@@ -44,6 +44,7 @@
 #' )
 #'
 #' results <- runGSEA(DEGList, gene_sets)
+#' print(results)
 #'
 #' @importFrom fgsea fgsea
 #' @export

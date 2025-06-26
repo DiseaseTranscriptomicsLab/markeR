@@ -30,10 +30,9 @@
 #' }#'
 #'
 #' @examples
-#' \dontrun{
 #' # Example dataset
 #' set.seed(123)
-#' data <- matrix(rnorm(1000), nrow=50, ncol=20)
+#' data <- abs(matrix(rnorm(1000), nrow=50, ncol=20))
 #' colnames(data) <- paste0("Sample", 1:20)
 #' rownames(data) <- paste0("Gene", 1:50)
 #'
@@ -41,8 +40,29 @@
 #'                        Group = rep(c("A", "B"), each = 10))
 #'
 #' # Basic PCA plot
-#' plotPCA(data, metadata, ColorVariable = "Group")
-#' }
+#' plotPCA(data, metadata, ColorVariable = "Group", pointSize = 10)
+#'
+#' set.seed(42)
+#' n_genes <- 100
+#' n_samples <- 10
+#'
+#' # Group A: samples 1–5, lower mean
+#' group_A <- matrix(rlnorm(n_genes * 5, meanlog = 1, sdlog = 0.3), nrow = n_genes)
+#'
+#' # Group B: samples 6–10, higher mean
+#' group_B <- matrix(rlnorm(n_genes * 5, meanlog = 2, sdlog = 0.3), nrow = n_genes)
+#'
+#' # Combine
+#' data <- cbind(group_A, group_B)
+#' colnames(data) <- paste0("Sample", 1:n_samples)
+#' rownames(data) <- paste0("Gene", 1:n_genes)
+#'
+#' # Metadata
+#' metadata <- data.frame(Sample = colnames(data),
+#'                        Group = rep(c("A", "B"), each = 5))
+#'
+#' # Plot PCA
+#' plotPCA(data, metadata, ColorVariable = "Group", pointSize = 10)
 #'
 #' @importFrom edgeR DGEList
 #' @importFrom stats prcomp
@@ -92,7 +112,7 @@ plotPCA <- function(data, metadata=NULL, genes=NULL, scale=FALSE, center=TRUE, P
     pc_x <- round(100*ev[pc[1]]/sum(ev),2)
     pc_y <- round(100*ev[pc[2]]/sum(ev),2)
 
-    plt <- ggplot2::ggplot(PCAcounts, ggplot2::aes_string(y = paste0("PC",pc[1]), x =  paste0("PC",pc[2])))
+    plt <- ggplot2::ggplot(PCAcounts, ggplot2::aes_string(y = paste0("PC",pc[2]), x =  paste0("PC",pc[1])))
 
 
     # Add jittered points, optionally colored by ColorVariable.Default: Brewer Pallette "Paired"

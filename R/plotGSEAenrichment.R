@@ -42,7 +42,7 @@
 #'
 #'
 #' # Generate the plot
-#' plot <- plotCombinedGSEA(GSEA_results, sig_threshold = 0.05, PointSize = 4)
+#' plot <- plotCombinedGSEA(GSEA_results, sig_threshold = 0.05, PointSize = 7)
 #' print(plot)
 #'
 #' @import ggplot2 ggpubr fgsea
