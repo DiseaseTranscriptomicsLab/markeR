@@ -18,11 +18,8 @@
 #' @param ncol Integer; number of columns in the arranged PCA plots. Default is determined automatically.
 #' @param nrow Integer; number of rows in the arranged PCA plots. Default is determined automatically.
 #'
-#' @return An invisible list containing:
-#' \describe{
-#'   \item{\code{plt}}{A ggplot2 or ggarrange object displaying the PCA plot.}
-#'   \item{\code{data}}{A data frame containing PCA-transformed data and sample metadata (if not NULL).}
-#' }
+#' @return An invisible list with two elements: \code{plt}, a ggplot2 or ggarrange object displaying the PCA plot;
+#' and \code{data}, a data frame containing PCA-transformed data and sample metadata (if not NULL).
 #'
 #' @details
 #' The function performs PCA using \code{prcomp()} and visualizes the results using \code{ggplot2}.
@@ -48,7 +45,6 @@
 #' @import ggplot2
 #' @importFrom ggpubr ggarrange
 #' @export
-#'
 plotPCA <- function(data, metadata=NULL, genes=NULL, scale=FALSE, center=TRUE, PCs=list(c(1,2)), ColorVariable=NULL,ColorValues=NULL,pointSize=5,legend_nrow=2, legend_position=c("bottom","top","right","left"),ncol=NULL, nrow=NULL){
 
   legend_position <- match.arg(legend_position)

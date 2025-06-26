@@ -48,11 +48,8 @@ plotPCA(
 \item{nrow}{Integer; number of rows in the arranged PCA plots. Default is determined automatically.}
 }
 \value{
-An invisible list containing:
-\describe{
-\item{\code{plt}}{A ggplot2 or ggarrange object displaying the PCA plot.}
-\item{\code{data}}{A data frame containing PCA-transformed data and sample metadata (if not NULL).}
-}
+An invisible list with two elements: \code{plt}, a ggplot2 or ggarrange object displaying the PCA plot;
+and \code{data}, a data frame containing PCA-transformed data and sample metadata (if not NULL).
 }
 \description{
 This function performs PCA on a given dataset and visualizes the results using ggplot2.

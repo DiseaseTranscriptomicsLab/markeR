@@ -4,7 +4,14 @@
 \alias{ssGSEA_alternative}
 \title{Alternative Implementation of Single-Sample Gene Set Enrichment Analysis (ssGSEA)}
 \usage{
-ssGSEA_alternative(X, gene_sets, alpha = 0.25, scale = T, norm = F, single = T)
+ssGSEA_alternative(
+  X,
+  gene_sets,
+  alpha = 0.25,
+  scale = TRUE,
+  norm = FALSE,
+  single = TRUE
+)
 }
 \arguments{
 \item{X}{A numeric matrix of gene expression values with rows representing genes and columns representing samples. Row names should correspond to gene identifiers.}
