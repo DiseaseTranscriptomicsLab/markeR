@@ -11,7 +11,7 @@ A numeric matrix with rows as genes (gene symbols) and columns as samples (sampl
 \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE63577}
 }
 \usage{
-counts_example
+data(counts_example)
 }
 \description{
 A numeric matrix containing filtered and normalized gene expression data from the Marthandan et al. (2016) study (GEO accession GSE63577).

@@ -19,7 +19,7 @@ A data frame with 45 rows and 6 columns:
 \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE63577}
 }
 \usage{
-metadata_example
+data(metadata_example)
 }
 \description{
 A data frame containing metadata for samples from the Marthandan et al. (2016) study (GEO code GSE63577).

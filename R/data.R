@@ -19,6 +19,7 @@
 #' @references  Marthandan S, Baumgart M, Priebe S, Groth M et al. Conserved Senescence Associated Genes and Pathways in Primary
 #' Human Fibroblasts Detected by RNA-Seq. PLoS One 2016;11(5):e0154531. PMID: 27140416
 #'
+#' @usage data(metadata_example)
 #' @keywords datasets
 "metadata_example"
 
@@ -42,7 +43,7 @@
 #' Foreskin Fibroblasts. *Biomed Res Int* 2015;2015:731938. PMID: 26339636
 #' @references Marthandan S, Baumgart M, Priebe S, Groth M et al. Conserved Senescence Associated Genes and Pathways in Primary Human Fibroblasts Detected by RNA-Seq.
 #' *PLoS One* 2016;11(5):e0154531. PMID: 27140416
-#'
+#' @usage data(counts_example)
 #' @keywords datasets
 "counts_example"
 
