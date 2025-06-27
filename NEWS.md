@@ -1,3 +1,9 @@
+# markeR 0.99.0 (2025-06-27)
+
+* Updated documentation and internal code to meet Bioconductor submission guidelines.
+* Fixed minor bugs across multiple functions.
+* Increased minimum `R` version requirement to `4.5.0` in accordance with Bioconductor policy.
+
 # markeR 0.9.2 (25 Jun, 2025)
 
 * Fixed broken links in README and vignettes
