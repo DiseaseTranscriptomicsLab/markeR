@@ -44,7 +44,6 @@
 #' )
 #'
 #' results <- runGSEA(DEGList, gene_sets)
-#' print(results)
 #'
 #' @importFrom fgsea fgsea
 #' @export
@@ -99,7 +98,7 @@ runGSEA <- function(DEGList, gene_sets, stat = NULL, ContrastCorrection=FALSE, n
         }
 
 
-        #set.seed("20032025")
+        set.seed("20032025")
         fgseaRes <- fgsea::fgsea(pathways = list(temp = gs_genes),
                                  stats = ranks,nPermSimple = nPermSimple)
 
@@ -113,7 +112,7 @@ runGSEA <- function(DEGList, gene_sets, stat = NULL, ContrastCorrection=FALSE, n
 
         # Sort ranks before running fgsea
         ranks_sorted <- sort(ranks, decreasing = TRUE)
-        #set.seed("20032025")
+        set.seed("20032025")
         fgseaRes <- fgsea::fgsea(pathways = list(temp = gs_genes),
                                  stats = ranks_sorted,nPermSimple = nPermSimple)
 

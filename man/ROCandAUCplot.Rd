@@ -90,29 +90,19 @@ Depending on the value of \code{plot_type}, it produces ROC plots (using \pkg{gg
 or AUC barplot (if \code{group_var} is \code{NULL}), or both arranged side-by-side (using \pkg{gridExtra}).
 }
 \examples{
-# Simulate positive gene expression data (genes as rows, samples as columns)
-set.seed(123)
-expr <- matrix(rexp(30, rate = 0.5), nrow = 3, ncol = 10) # 3 genes, 10 samples, >0
-rownames(expr) <- paste0("Gene", 1:3)
-colnames(expr) <- paste0("Sample", 1:10)
-
-# Simulate metadata with a condition (binary class) and a grouping variable
-metadata <- data.frame(
-  SampleID = colnames(expr),
-  Condition = rep(c("A", "B"), each = 5),
-  Group = rep(c("G1", "G2"), times = 5)
-)
-
-# Run ROCandAUCplot with both ROC and AUC plots for three genes
-ROCandAUCplot(
-  data = expr,
-  metadata = metadata,
-  genes = rownames(expr),
-  condition_var = "Condition",
-  class = "A",
-  plot_type = "all",
-  title = "Example ROC/AUC Plots",
-  roc_params = list(nrow=1)
-)
+\dontrun{
+  # Example: Generate both ROC plots and heatmap with custom parameters
+  result <- ROCandAUCplot(data = myData,
+                          metadata = myMetadata,
+                          genes = c("Gene1", "Gene2", "Gene3"),
+                          condition_var = "Genotype",
+                          class = "Mutant",
+                          group_var = "CellType",
+                          plot_type = "all",
+                          title = "My Custom Title",
+                          roc_params = list(ncol = 3),
+                          auc_params= list(limits = c(0.4, 1)),
+                          commomplot_params = list(widths = c(1, 1)))
+}
 
 }

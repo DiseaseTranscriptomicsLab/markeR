@@ -72,52 +72,25 @@ The heatmaps are then arranged in a grid layout.
 }
 \details{
 The function first calculates AUC scores for each gene signature using \code{ROCAUC_Scores_Calculate}. The resulting matrices are converted to a long format so that each cell in the heatmap can display the AUC value. A title for each heatmap is dynamically created.
+
 The heatmaps are then adjusted to display axis text and ticks only for the left-most column and bottom row, and combined into a grid layout. If neither \code{nrow} nor \code{ncol} are specified, the layout is automatically determined to best approximate a square grid.
 }
 \examples{
-# Example data
-data <- as.data.frame(abs(matrix(rnorm(1000), ncol = 10)))
-rownames(data) <- paste0("Gene", 1:100)  # Name columns as Gene1, Gene2, ..., Gene10
-colnames(data) <- paste0("Sample", 1:10)  # Name rows as Sample1, Sample2, ..., Sample100
-
-# Metadata with sample ID and condition
-metadata <- data.frame(
-  SampleID = colnames(data),  # Sample ID matches the colnames of the data
-  Condition = rep(c("A", "B"), each = 5)  # Two conditions (A and B)
-)
-
-# Example gene set
-gene_sets <- list(Signature1 = c("Gene1", "Gene2", "Gene3"),
-                  Signature2 = c("Gene2","Gene4","Gene10"),
-                  Signature3 = c("Gene6","Gene46","Gene13"))  # Example gene sets
-
-AUC_Scores(
-    data = data,
-    metadata = metadata,
+\dontrun{
+  result <- AUC_Scores(
+    data = gene_data,
+    metadata = sample_metadata,
     gene_sets = gene_sets,
     method = "ssGSEA",
     variable = "Condition",
-    nrow = 1,
-    ncol = NULL,
+    nrow = 2,
+    ncol = 3,
     limits = c(0, 1),
     widthTitle = 30,
     titlesize = 14,
     ColorValues = c("#F9F4AE", "#B44141")
   )
-
-
-AUC_Scores(
-  data = data,
-  metadata = metadata,
-  gene_sets = gene_sets,
-  method = "all",
-  variable = "Condition",
-  nrow = 1,
-  ncol = NULL,
-  limits = c(0, 1),
-  widthTitle = 30,
-  titlesize = 14,
-  ColorValues = c("#F9F4AE", "#B44141")
-)
+  print(result$plt)
+}
 
 }

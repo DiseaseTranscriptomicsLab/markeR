@@ -53,38 +53,19 @@ The function fits a linear model with \code{limma::lmFit} and applies empirical 
 }
 }
 \examples{
-# Simulate non-negative gene expression data (counts)
-set.seed(123)
-expr <- matrix(rpois(1000, lambda = 20), nrow = 100, ncol = 10)
-rownames(expr) <- paste0("gene", 1:100)
-colnames(expr) <- paste0("sample", 1:10)
+\dontrun{
+  # Create example data:
+  data <- matrix(rnorm(1000), nrow = 100, ncol = 10)
+  rownames(data) <- paste0("gene", 1:100)
+  colnames(data) <- paste0("sample", 1:10)
+  metadata <- data.frame(sample = colnames(data), X = rep(c("A", "B"), each = 5))
 
-# Simulate metadata with a group variable
-metadata <- data.frame(
- sample = colnames(expr),
- Group = rep(c("A", "B"), each = 5)
-)
+  # Example 1: Build design matrix from variables with a contrast:
+  de_res <- calculateDE(data, metadata, variables = "X", contrasts = "A-B")
 
-# Differential expression for Group A vs Group B using variables
-de_var <- calculateDE(
-  data = expr,
-  metadata = metadata,
-  variables = "Group",
-  contrasts = "A-B"
-)
-head(de_var[["A-B"]])
-
-# Build equivalent design matrix manually
-design <- model.matrix(~0 + Group, data = metadata)
-colnames(design) <- c("A","B")
-
-# Differential expression using the design matrix directly
-de_mat <- calculateDE(
-  data = expr,
-  metadata = metadata,
-  modelmat = design,
-  contrasts = "A-B"
-)
-head(de_mat[["A-B"]])
+  # Example 2: Supply a custom design matrix directly:
+  design <- model.matrix(~0 + X, data = metadata)
+  de_res3 <- calculateDE(data, metadata, variables = "X", design = design, contrasts = "A-B")
+}
 
 }

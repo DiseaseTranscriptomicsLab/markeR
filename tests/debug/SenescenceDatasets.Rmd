@@ -1,0 +1,861 @@
+---
+title: "Debugging"
+output: html_notebook
+---
+
+# Import Data
+
+```{r}
+corrcounts_merge <- readRDS("~/VersionControl/senescence_benchmarking/Data/corrcounts_merge.rds")
+metadata_merge <- readRDS("~/VersionControl/senescence_benchmarking/Data/metadata_merge.rds")
+SenescenceSignatures <- readRDS("~/VersionControl/senescence_benchmarking/CommonFiles/SenescenceSignatures_divided_newCellAge.RDS")
+```
+
+```{r}
+set.seed("123456")
+metadata_merge_corr <- metadata_merge
+metadata_merge_corr$random_cat <-  sample(c("A","B","C"), nrow(metadata_merge_corr), replace = T)
+metadata_merge_corr$random_numeric <- sample(0:100, nrow(metadata_merge_corr), replace = TRUE)
+metadata_merge_corr$Is_Senescent <- ifelse(metadata_merge_corr$Condition == "Senescent", "Senescent", "Non Senescent")
+
+```
+
+
+```{r}
+library(markeR)
+library(ggplot2)
+library(ggpubr)
+library(edgeR)
+library(effectsize)  # For eta_squared and Cohen's f calculation
+?markeR
+```
+
+# Scores 
+
+```{r}
+?CalculateScores
+```
+
+## Unidirectional
+```{r fig.width=12, fig.height=6}
+df_ssGSEA <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge, method = "ssGSEA", gene_sets = SenescenceSignatures)
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red  
+  "Radiation" = "#BDBDBD",  # Medium gray  
+  "DNA damage" = "#64B5F6",  # Brighter blue  
+  "Telomere shortening" = "#4FC3F7",  # Vivid sky blue  
+  "DNA demethylation" = "#BA68C8",  # Rich lavender  
+  "Oxidative stress" = "#FDD835",  # Strong yellow  
+  "Conditioned Medium" = "#F2994A",  # Warm orange  
+  "Oncogene" = "#81C784",  # Medium green  
+  "Lipid Accumulation" = "#E57373",  # Coral  
+  "Calcium influx" = "#26A69A",  # Deep teal  
+  "Plasma membrane dysruption" = "#D32F2F",  # Strong salmon  
+  "OSKM factors" = "#FFB74D",  # Bright peach  
+  "YAP KO" = "#9575CD"  # Deep pastel purple  
+)
+
+cellTypes_colors <- c(
+  "Fibroblast" = "#FF6961",   # Strong Pastel Red  
+  "Keratinocyte" = "#FFB347", # Strong Pastel Orange  
+  "Melanocyte" = "#FFD700",   # Strong Pastel Yellow  
+  "Endothelial" = "#77DD77",  # Strong Pastel Green  
+  "Neuronal" = "#779ECB",     # Strong Pastel Blue  
+  "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
+)
+
+cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the first that appears in the ggplot
+                    B=c("Proliferative","Quiescent"))
+
+PlotScores(ResultsList = df_ssGSEA, ColorVariable = "CellType", GroupingVariable="Condition",  method ="ssGSEA", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 6, nrow = 2, widthTitle=20, y_limits = NULL, legend_nrow = 2,cond_cohend=cond_cohend)
+
+```
+
+```{r fig.width=12, fig.height=6}
+df_logmedian <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge, method = "logmedian", gene_sets = SenescenceSignatures)
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red  
+  "Radiation" = "#BDBDBD",  # Medium gray  
+  "DNA damage" = "#64B5F6",  # Brighter blue  
+  "Telomere shortening" = "#4FC3F7",  # Vivid sky blue  
+  "DNA demethylation" = "#BA68C8",  # Rich lavender  
+  "Oxidative stress" = "#FDD835",  # Strong yellow  
+  "Conditioned Medium" = "#F2994A",  # Warm orange  
+  "Oncogene" = "#81C784",  # Medium green  
+  "Lipid Accumulation" = "#E57373",  # Coral  
+  "Calcium influx" = "#26A69A",  # Deep teal  
+  "Plasma membrane dysruption" = "#D32F2F",  # Strong salmon  
+  "OSKM factors" = "#FFB74D",  # Bright peach  
+  "YAP KO" = "#9575CD"  # Deep pastel purple  
+)
+
+cellTypes_colors <- c(
+  "Fibroblast" = "#FF6961",   # Strong Pastel Red  
+  "Keratinocyte" = "#FFB347", # Strong Pastel Orange  
+  "Melanocyte" = "#FFD700",   # Strong Pastel Yellow  
+  "Endothelial" = "#77DD77",  # Strong Pastel Green  
+  "Neuronal" = "#779ECB",     # Strong Pastel Blue  
+  "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
+)
+
+cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the first that appears in the ggplot
+                    B=c("Proliferative","Quiescent"))
+
+PlotScores(ResultsList = df_logmedian, ColorVariable = "CellType", GroupingVariable="Condition",  method ="logmedian", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 6, nrow = 2, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend)
+
+```
+
+```{r fig.width=12, fig.height=6}
+df_ranking <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge, method = "ranking", gene_sets = SenescenceSignatures)
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red  
+  "Radiation" = "#BDBDBD",  # Medium gray  
+  "DNA damage" = "#64B5F6",  # Brighter blue  
+  "Telomere shortening" = "#4FC3F7",  # Vivid sky blue  
+  "DNA demethylation" = "#BA68C8",  # Rich lavender  
+  "Oxidative stress" = "#FDD835",  # Strong yellow  
+  "Conditioned Medium" = "#F2994A",  # Warm orange  
+  "Oncogene" = "#81C784",  # Medium green  
+  "Lipid Accumulation" = "#E57373",  # Coral  
+  "Calcium influx" = "#26A69A",  # Deep teal  
+  "Plasma membrane dysruption" = "#D32F2F",  # Strong salmon  
+  "OSKM factors" = "#FFB74D",  # Bright peach  
+  "YAP KO" = "#9575CD"  # Deep pastel purple  
+)
+
+cellTypes_colors <- c(
+  "Fibroblast" = "#FF6961",   # Strong Pastel Red  
+  "Keratinocyte" = "#FFB347", # Strong Pastel Orange  
+  "Melanocyte" = "#FFD700",   # Strong Pastel Yellow  
+  "Endothelial" = "#77DD77",  # Strong Pastel Green  
+  "Neuronal" = "#779ECB",     # Strong Pastel Blue  
+  "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
+)
+
+cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the first that appears in the ggplot
+                    B=c("Proliferative","Quiescent"))
+
+PlotScores(ResultsList = df_ranking, ColorVariable = "CellType", GroupingVariable="Condition",  method ="ranking", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 6, nrow = 2, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend)
+
+```
+
+
+
+```{r fig.width=12, fig.height=8}
+
+plotlist <- list()
+
+for (sig in names(df_ssGSEA)){
+  
+  df_subset_ssGSEA <- df_ssGSEA[[sig]]
+  df_subset_logmedian <- df_logmedian[[sig]]
+  
+  df_subset_merge <- merge(df_subset_ssGSEA,df_subset_logmedian,by="sample")
+  
+  # Wrap the signature name using the helper function
+  wrapped_title <- wrap_title_aux(sig, width = 20)  
+  
+  plotlist[[sig]] <- ggplot2::ggplot(df_subset_merge, aes(x=score.x, y=score.y)) +
+    geom_point(size=4, alpha=0.8, fill="darkgrey", shape=21) +
+    theme_bw() +
+    xlab("ssGSEA Enrichment Score") +
+    ylab("Normalised Signature Score") +
+    ggtitle(wrapped_title) +
+    theme(plot.title = ggplot2::element_text(hjust = 0.5, size=10),
+          plot.subtitle = ggplot2::element_text(hjust = 0.5)) 
+  
+}
+
+ggpubr::ggarrange(plotlist=plotlist, nrow=3, ncol=4, align = "h")
+```
+
+## Bidirectional gene signatures
+
+Try scores with bidirectional signatures
+
+```{r}
+bidirectsigs <- readRDS("~/VersionControl/senescence_benchmarking/CommonFiles/SenescenceSignatures_complete_newCellAge.RDS")
+for (sig in names(bidirectsigs)){
+  sigdf <- bidirectsigs[[sig]]
+  sigdf <- sigdf[,1:2] # remove the third column, if applicable
+  if(any(sigdf[,2]=="not_reported")){
+    sigdf <- sigdf[,1]
+    bidirectsigs[[sig]] <- sigdf
+    next 
+  }
+  sigdf[,2] <- ifelse(sigdf[,2]=="enriched",1,-1)
+  bidirectsigs[[sig]] <- sigdf
+}
+bidirectsigs
+
+
+#saveRDS(bidirectsigs, "~/VersionControl/senescence_benchmarking/CommonFiles/SenescenceSignatures_complete_newCellAge_bidirect.RDS" )
+
+ 
+```
+
+```{r fig.width=8, fig.height=10}
+df_logmedian <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge, method = "logmedian", gene_sets = bidirectsigs)
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red  
+  "Radiation" = "#BDBDBD",  # Medium gray  
+  "DNA damage" = "#64B5F6",  # Brighter blue  
+  "Telomere shortening" = "#4FC3F7",  # Vivid sky blue  
+  "DNA demethylation" = "#BA68C8",  # Rich lavender  
+  "Oxidative stress" = "#FDD835",  # Strong yellow  
+  "Conditioned Medium" = "#F2994A",  # Warm orange  
+  "Oncogene" = "#81C784",  # Medium green  
+  "Lipid Accumulation" = "#E57373",  # Coral  
+  "Calcium influx" = "#26A69A",  # Deep teal  
+  "Plasma membrane dysruption" = "#D32F2F",  # Strong salmon  
+  "OSKM factors" = "#FFB74D",  # Bright peach  
+  "YAP KO" = "#9575CD"  # Deep pastel purple  
+)
+
+cellTypes_colors <- c(
+  "Fibroblast" = "#FF6961",   # Strong Pastel Red  
+  "Keratinocyte" = "#FFB347", # Strong Pastel Orange  
+  "Melanocyte" = "#FFD700",   # Strong Pastel Yellow  
+  "Endothelial" = "#77DD77",  # Strong Pastel Green  
+  "Neuronal" = "#779ECB",     # Strong Pastel Blue  
+  "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
+)
+
+cond_cohend <- list(A=c("Senescent"),
+                    B=c("Proliferative","Quiescent")
+                    ) # if no variable is defined, will be the first that appears in the ggplot 
+
+options(error=recover)
+PlotScores(data = corrcounts_merge, metadata = metadata_merge, method = "logmedian", gene_sets = bidirectsigs,  ColorVariable = "CellType", GroupingVariable="Condition",   ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 3, nrow = 3, widthTitle=20, limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend, compute_cohen=T)
+
+```
+
+
+```{r fig.width=8, fig.height=10}
+options(error=recover)
+PlotScores(data = corrcounts_merge, metadata = metadata_merge, method = "logmedian", gene_sets = bidirectsigs,  ColorVariable = "CellType", GroupingVariable="Condition",   ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 3, nrow = 3, widthTitle=20, limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = NULL, compute_cohen=T, pvalcalc = F)
+
+```
+
+```{r fig.width=8, fig.height=10}
+
+df_ssgsea <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge, method = "ssGSEA", gene_sets = bidirectsigs)
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red  
+  "Radiation" = "#BDBDBD",  # Medium gray  
+  "DNA damage" = "#64B5F6",  # Brighter blue  
+  "Telomere shortening" = "#4FC3F7",  # Vivid sky blue  
+  "DNA demethylation" = "#BA68C8",  # Rich lavender  
+  "Oxidative stress" = "#FDD835",  # Strong yellow  
+  "Conditioned Medium" = "#F2994A",  # Warm orange  
+  "Oncogene" = "#81C784",  # Medium green  
+  "Lipid Accumulation" = "#E57373",  # Coral  
+  "Calcium influx" = "#26A69A",  # Deep teal  
+  "Plasma membrane dysruption" = "#D32F2F",  # Strong salmon  
+  "OSKM factors" = "#FFB74D",  # Bright peach  
+  "YAP KO" = "#9575CD"  # Deep pastel purple  
+)
+
+cellTypes_colors <- c(
+  "Fibroblast" = "#FF6961",   # Strong Pastel Red  
+  "Keratinocyte" = "#FFB347", # Strong Pastel Orange  
+  "Melanocyte" = "#FFD700",   # Strong Pastel Yellow  
+  "Endothelial" = "#77DD77",  # Strong Pastel Green  
+  "Neuronal" = "#779ECB",     # Strong Pastel Blue  
+  "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
+)
+
+cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the first that appears in the ggplot
+                    B=c("Proliferative","Quiescent"))
+
+PlotScores(ResultsList = df_ssgsea, ColorVariable = "CellType", GroupingVariable="Condition",  method ="ssGSEA", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 3, nrow = 3, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend)
+
+```
+
+
+
+
+```{r fig.width=8, fig.height=10}
+
+df_ranking <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge, method = "ranking", gene_sets = bidirectsigs)
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red  
+  "Radiation" = "#BDBDBD",  # Medium gray  
+  "DNA damage" = "#64B5F6",  # Brighter blue  
+  "Telomere shortening" = "#4FC3F7",  # Vivid sky blue  
+  "DNA demethylation" = "#BA68C8",  # Rich lavender  
+  "Oxidative stress" = "#FDD835",  # Strong yellow  
+  "Conditioned Medium" = "#F2994A",  # Warm orange  
+  "Oncogene" = "#81C784",  # Medium green  
+  "Lipid Accumulation" = "#E57373",  # Coral  
+  "Calcium influx" = "#26A69A",  # Deep teal  
+  "Plasma membrane dysruption" = "#D32F2F",  # Strong salmon  
+  "OSKM factors" = "#FFB74D",  # Bright peach  
+  "YAP KO" = "#9575CD"  # Deep pastel purple  
+)
+
+cellTypes_colors <- c(
+  "Fibroblast" = "#FF6961",   # Strong Pastel Red  
+  "Keratinocyte" = "#FFB347", # Strong Pastel Orange  
+  "Melanocyte" = "#FFD700",   # Strong Pastel Yellow  
+  "Endothelial" = "#77DD77",  # Strong Pastel Green  
+  "Neuronal" = "#779ECB",     # Strong Pastel Blue  
+  "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
+)
+
+cond_cohend <- list(A=c("Senescent"), # if no variable is defined, will be the first that appears in the ggplot
+                    B=c("Proliferative","Quiescent"))
+
+PlotScores(ResultsList = df_ranking, ColorVariable = "CellType", GroupingVariable="Condition",  method ="ranking", ColorValues = cellTypes_colors, ConnectGroups=TRUE, ncol = 3, nrow = 3, widthTitle=20, y_limits = NULL, legend_nrow = 2,xlab=NULL, cond_cohend = cond_cohend)
+
+```
+
+
+
+Testing numeric variables
+
+```{r}
+metadata_merge_corr_2 <- metadata_merge_corr
+metadata_merge_corr_2$numeric_condition <- as.numeric(unclass(factor(metadata_merge_corr_2$Condition)))
+```
+
+
+```{r fig.width=8, fig.height=6} 
+options(error=recover)
+PlotScores(data = corrcounts_merge, 
+           metadata = metadata_merge_corr_2, 
+           method = "all", 
+           gene_sets = bidirectsigs,  
+           ColorVariable = NULL, 
+           Variable="numeric_condition",   
+           ColorValues = NULL, 
+           ConnectGroups = T, 
+           ncol = NULL, 
+           nrow = NULL, 
+           title = NULL,
+           widthTitle = 20, 
+           titlesize = 10, 
+           limits = NULL, 
+           legend_nrow = NULL, 
+           pointSize = 2,
+           xlab = "teste", 
+           labsize = 9, 
+           compute_cohen=TRUE, 
+           cond_cohend = NULL, 
+           pvalcalc = FALSE, 
+           mode = "simple",
+           widthlegend=22, 
+           sig_threshold=0.05, 
+           cohen_threshold=0.2,
+           PointSize=6,
+           colorPalette="Set3", 
+           cor="pearson")
+```
+
+
+## Heatmap and Volcano for Cohen's D
+
+```{r fig.width=15, fig.height=6}
+
+Scores_Overview_All <- PlotScores(data = corrcounts_merge, 
+           metadata = metadata_merge,  
+           gene_sets=bidirectsigs, 
+           Variable="Condition",  
+           method ="all",   
+           ncol = NULL, 
+           nrow = NULL, 
+           widthTitle=30, 
+           limits = NULL,   
+           title=NULL, 
+           titlesize = 12,
+           ColorValues = NULL,
+           mode = "extensive",
+           widthlegend=22, 
+           sig_threshold=0.05, 
+           cohend_threshold=0.6,
+           PointSize=4,
+           colorPalette="Set3")  
+ 
+
+
+```
+
+```{r fig.width=14, fig.height=12}
+Scores_Overview_All$heatmap 
+```
+
+```{r fig.width=13, fig.height=5}
+Scores_Overview_All$volcano
+```
+
+```{r fig.width=15, fig.height=12}
+
+PlotScores(data = corrcounts_merge, 
+           metadata = metadata_merge,  
+           gene_sets=bidirectsigs, 
+           GroupingVariable="Condition",  
+           method ="all",   
+           ncol = NULL, 
+           nrow = NULL, 
+           widthTitle=30, 
+           limits = NULL,   
+           title=NULL, 
+           titlesize = 12,
+           ColorValues = NULL,
+           mode = "simple")  
+ 
+
+```
+
+
+```{r fig.width=12, fig.height=24} 
+ plt2 <- ROC_Scores(data = corrcounts_merge, 
+           metadata = metadata_merge_corr, 
+           gene_sets=bidirectsigs, 
+           method = "logmedian", 
+           variable ="Condition",
+           colors = "pink", 
+           grid = TRUE, 
+           spacing_annotation=0.35, 
+           ncol=NULL, 
+           nrow=NULL,
+            mode = "simple",
+            widthTitle = 28) 
+
+plt2
+ 
+```
+
+
+
+```{r fig.width=12, fig.height=24} 
+ plt2 <- ROC_Scores(data = corrcounts_merge, 
+           metadata = metadata_merge_corr, 
+           gene_sets=bidirectsigs, 
+           method = "all", 
+           variable ="Condition",
+           colors = c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52"), 
+           grid = TRUE, 
+           spacing_annotation=0.35, 
+           ncol=NULL, 
+           nrow=NULL,
+            mode = "simple",
+            widthTitle = 28) 
+
+plt2
+ 
+```
+
+
+```{r fig.width=22, fig.height=25} 
+ plt <- ROC_Scores(data = corrcounts_merge, 
+           metadata = metadata_merge_corr, 
+           gene_sets=bidirectsigs, 
+           method = "all", 
+           variable ="Condition",
+           colors = c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52"), 
+           grid = TRUE, 
+           spacing_annotation=0.35, 
+           ncol=NULL, 
+           nrow=NULL,
+            mode = "extensive",
+            widthTitle = 28) 
+
+plt
+ 
+```
+
+
+```{r fig.width=12, fig.height=14}
+plt <- AUC_Scores(data = corrcounts_merge, metadata=metadata_merge_corr, gene_sets=bidirectsigs, method = "all", mode = "extensive", variable="Condition", nrow = NULL, ncol = NULL, limits = NULL, widthTitle = 28, titlesize = 12, ColorValues = c("#F9F4AE", "#B44141"), title = NULL) 
+
+plt
+```
+
+```{r fig.width=28, fig.height=4}
+plt <- AUC_Scores(data = corrcounts_merge, metadata=metadata_merge_corr, gene_sets=bidirectsigs, method = "all", variable="Condition", nrow = 1, ncol = NULL, limits = NULL, widthTitle = 28, titlesize = 12, ColorValues = c("#F9F4AE", "#B44141"), title = NULL) 
+
+plt
+```
+
+
+## Association with Variable
+
+If the user is investigating if a certain variable can be described from the score, and not already knowing that variable. More exploratory...
+
+- Define what each variable is: Numeric (includes integer if unique > 5), Categorical Bin (integer/string if unique == 2, logical), Categorical Multi (integer if unique < 5, string if unique > 2)
+- Define functions to calculate metrics based on different data types: 
+- Categorical Bin: t-test/wilcoxon
+- Categorical Multi: ANOVA / Kruskal-Wallis + Tukey's test 
+- Numeric : Pearson / Spearman / Kendall's Tau
+- Return a list:
+- One entry per variable
+- Method used
+- Data frame
+- Two columns: metric and p-value
+- One line per subvariable (if Numeric and Categorical Bin, only one line; for Categorical Multi, one per combination of variables); named rows
+- Plot results
+- If Numeric, scatter plot; metric on the top left corner
+- If Categorical, density plot, colored by the unique values of the variable; metrics (if one, or combinations of variables) in top left corner
+- Arrange in grid
+
+```{r}
+# metadata_corr <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge_corr, method = "ssGSEA", gene_sets = list(HernandezSegura_UP= SenescenceSignatures$`[UP]_HernandezSegura`))
+# metadata_corr <- metadata_corr$HernandezSegura_UP
+```
+
+```{r fig.width=14, fig.height=3}
+options(error=recover)
+VariableAssociation(df=metadata_corr, target_var="score", cols = c("Condition","Is_Senescent","random_cat","random_numeric"),
+                    discrete_colors = list(Is_Senescent=c("Senescent"="pink",
+                                                          "Non Senescent"="orange")), 
+                    continuous_color = "#8C6D03", 
+                    color_palette = "Set2", nrow=1, sizeannot=3, legend.position="right")
+```
+ 
+```{r fig.height=8, fig.width=8}
+Score_VariableAssociation(data=corrcounts_merge, metadata=metadata_merge_corr, cols = c("Condition","random_cat","random_numeric"), method="ranking", gene_set = list(HernandezSegura=bidirectsigs$HernandezSegura), mode = "extensive", nonsignif_color = "white", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, widthlabels=29, labsize=10, titlesize=14, pointSize=5)
+
+```
+ 
+ 
+```{r fig.height=4, fig.width=8}
+options(error=recover)
+Score_VariableAssociation(data=corrcounts_merge, metadata=metadata_merge_corr, cols = c( "random_numeric"), method="ranking", gene_set = list(HernandezSegura=bidirectsigs$HernandezSegura), mode = "extensive", nonsignif_color = "white", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, widthlabels=29, labsize=10, titlesize=14, pointSize=5)
+
+```
+
+
+## FDR
+
+```{r  fig.width=12, fig.height=18}
+options(error=recover)
+plt <- FDR_Simulation(data = corrcounts_merge,
+               metadata = metadata_merge_corr,
+               original_signatures = bidirectsigs,
+               gene_list = row.names(counts_example),
+               number_of_sims = 10,
+               title = "Marthandan et al. 2016",
+               widthTitle = 28,
+               Variable = "Condition",
+               titlesize = 12,
+               pointSize = 5,
+               labsize = 10,
+               mode = "simple",
+                ColorValues=NULL,
+               ncol=NULL, 
+               nrow=NULL ) 
+
+plt
+```
+
+# Individual Genes
+
+### Violin Expression Plots
+
+```{r fig.width=8, fig.height=6}
+
+
+senescence_triggers_colors <- c(
+  "none" = "#E57373",  # Soft red  
+  "Radiation" = "#BDBDBD",  # Medium gray  
+  "DNA damage" = "#64B5F6",  # Brighter blue  
+  "Telomere shortening" = "#4FC3F7",  # Vivid sky blue  
+  "DNA demethylation" = "#BA68C8",  # Rich lavender  
+  "Oxidative stress" = "#FDD835",  # Strong yellow  
+  "Conditioned Medium" = "#F2994A",  # Warm orange  
+  "Oncogene" = "#81C784",  # Medium green  
+  "Lipid Accumulation" = "#E57373",  # Coral  
+  "Calcium influx" = "#26A69A",  # Deep teal  
+  "Plasma membrane dysruption" = "#D32F2F",  # Strong salmon  
+  "OSKM factors" = "#FFB74D",  # Bright peach  
+  "YAP KO" = "#9575CD"  # Deep pastel purple  
+)
+
+
+IndividualGenes_Violins(data = corrcounts_merge, metadata = metadata_merge, genes = c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"), GroupingVariable = "Condition", plot=T, ncol=NULL, nrow=2, divide="CellType", invert_divide=FALSE,ColorValues=senescence_triggers_colors, pointSize=2, ColorVariable="SenescentType", title="Senescence", widthTitle=16,y_limits = NULL,legend_nrow=4, xlab="Condition",colorlab="") 
+```
+
+
+
+### Correlation Heatmap
+
+
+```{r fig.width=8, fig.height=4}
+options(error=recover)
+CorrelationHeatmap(data=corrcounts_merge, 
+                   metadata = metadata_merge, 
+                   genes=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"), 
+                   separate.by = "Condition", 
+                   method = "pearson",  
+                   colorlist = list(low = "#3F4193", mid = "#F9F4AE", high = "#B44141"),
+                   limits_colorscale = c(-1,0,1), 
+                   widthTitle = 16, 
+                   title = "test", 
+                   cluster_rows = TRUE, 
+                   cluster_columns = TRUE,  
+                   detailedresults = FALSE, 
+                   legend_position="right",
+                   titlesize=20)
+
+
+```
+
+
+
+
+### Expression Heatmaps
+
+```{r fig.width=10, fig.height=4}
+options(error=recover)
+
+annotation_colors <- list(
+  CellType = c(
+    "Fibroblast"   = "#FF6961",   # Strong Pastel Red  
+    "Keratinocyte" = "#FFB347",   # Strong Pastel Orange  
+    "Melanocyte"   = "#FFD700",   # Strong Pastel Yellow  
+    "Endothelial"  = "#77DD77",   # Strong Pastel Green  
+    "Neuronal"     = "#779ECB",   # Strong Pastel Blue  
+    "Mesenchymal"  = "#C27BA0"    # Strong Pastel Purple  
+  ),
+  Condition = c(
+    "Senescent"     = "#65AC7C",  # Example color: greenish
+    "Proliferative" = "#5F90D4",  # Example color: blueish
+    "Quiescent"     = "#EDA03E"   # Example color: orange
+  )
+)
+
+ExpressionHeatmap(data=corrcounts_merge, 
+                  metadata = metadata_merge, 
+                  genes=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"),  
+                  annotate.by = c("CellType","Condition"),
+                  annotation_colors = annotation_colors,
+                  colorlist = list(low = "#3F4193", mid = "#F9F4AE", high = "#B44141"),
+                  cluster_rows = TRUE, 
+                  cluster_columns = FALSE,
+                  title = "test", 
+                  titlesize = 20,
+                  legend_position = "right",
+                  scale_position="right")
+
+```
+
+
+
+### ROC/AUC 
+
+```{r fig.width=10, fig.height=4}
+
+cellTypes_colors <- c(
+  "Fibroblast" = "#FF6961",   # Strong Pastel Red  
+  "Keratinocyte" = "#FFB347", # Strong Pastel Orange  
+  "Melanocyte" = "#FFD700",   # Strong Pastel Yellow  
+  "Endothelial" = "#77DD77",  # Strong Pastel Green  
+  "Neuronal" = "#779ECB",     # Strong Pastel Blue  
+  "Mesenchymal" = "#C27BA0"   # Strong Pastel Purple  
+)
+
+ROCandAUCplot(corrcounts_merge, 
+              metadata_merge, 
+              condition_var = "Condition", 
+              class = "Senescent", 
+              genes=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"), 
+              group_var="CellType",
+              plot_type = "all",
+              heatmap_params = list(col = list( "#F9F4AE" ,"#B44141"),
+                                    limits = c(0.5,1),
+                                    cluster_rows=T),
+              roc_params = list(nrow=2,
+                                ncol=2,
+                                colors=cellTypes_colors),
+              commomplot_params = list(widths=c(0.5,0.5)))
+
+
+```
+
+### Cohen's d
+
+```{r}
+CohenDHeatmap(corrcounts_merge, 
+              metadata_merge, 
+              genes=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"),
+              condition_var = "Condition", 
+              class = "Senescent", 
+              group_var = "CellType",
+              title = NULL,
+              widthTitle = 16,
+              heatmap_params = list(col = list( "#F9F4AE" ,"#B44141"),
+                                    limits = NULL,
+                                    cluster_rows=T))
+```
+
+### PCA with genes from signature only
+
+```{r fig.width=8, fig.height=4}
+
+CellTypecols = c(
+  "Fibroblast"   = "#FF6961",   # Strong Pastel Red  
+  "Keratinocyte" = "#FFB347",   # Strong Pastel Orange  
+  "Melanocyte"   = "#FFD700",   # Strong Pastel Yellow  
+  "Endothelial"  = "#77DD77",   # Strong Pastel Green  
+  "Neuronal"     = "#779ECB",   # Strong Pastel Blue  
+  "Mesenchymal"  = "#C27BA0"    # Strong Pastel Purple  
+)
+
+sencols <- c(
+  "Senescent" = "#D32F2F",  # Strong salmon  
+  "Quiescent" = "#FFB74D",  # Bright peach  
+  "Proliferative" = "#9575CD"  # Deep pastel purple  
+)
+
+plotPCA(data=corrcounts_merge, 
+        metadata=metadata_merge, 
+        genes=c("CDKN1A", "CDKN2A", "GLB1","TP53","CCL2"), 
+        scale=FALSE, 
+        center=TRUE, 
+        PCs=list(c(1,2), c(2,3), c(3,4)), 
+        ColorVariable="Condition",
+        ColorValues=sencols,
+        pointSize=5,
+        legend_nrow=1, 
+        ncol=3, 
+        nrow=NULL)
+```
+
+
+# Enrichment-based
+
+## GSEA
+
+
+```{r}
+options(error=recover)
+degenes <- calculateDE(data=corrcounts_merge, 
+                       metadata=metadata_merge, 
+                       variables="Condition", 
+                       lmexpression = NULL, 
+                       modelmat = NULL, 
+                       contrasts = c("Senescent - Proliferative",
+                                     "Senescent - Quiescent",
+                                     "Proliferative - Quiescent")) 
+
+degenes
+```
+
+```{r fig.width=21, fig.height=6}
+options(error=recover)
+plotVolcano(DEResultsList=degenes, genes=bidirectsigs, N=NULL, x="logFC",y="-log10(adj.P.Val)", pointSize=2, color="pink", highlightcolor="darkblue", highlightcolor_upreg = "#038C65", highlightcolor_downreg = "#8C0303", nointerestcolor="grey",threshold_y=NULL, threshold_x=NULL, xlab=NULL, ylab=NULL, ncol=NULL, nrow=NULL, title=NULL,labsize=7,widthlabs=25, invert=T)
+
+```
+
+
+
+```{r}
+options(error=recover)
+GSEAresults <- runGSEA(degenes, bidirectsigs, stat = NULL)
+GSEAresults
+```
+
+
+```{r fig.width=25, fig.height=10}
+plotGSEAenrichment(GSEA_results=GSEAresults, DEGList=degenes, gene_sets=bidirectsigs, widthTitle=32,grid = T, titlesize = 10, nrow=3, ncol=9) 
+```
+
+```{r fig.width=18, fig.height=4}
+options(error=recover)
+plotNESlollipop(GSEA_results=GSEAresults, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "red",
+                grid = T, nrow = 1, ncol = NULL, widthlabels=28, title=NULL)
+
+```
+
+```{r fig.width=10, fig.height=4.5}
+plotCombinedGSEA(GSEAresults, sig_threshold = 0.05, PointSize=9, widthlegend = 26 )
+```
+
+
+
+
+## Association with Phenotype
+
+
+If the user is investigating if a certain variable can be described from the GSEA results, and not already knowing that variable. More exploratory...
+
+- For each variable, define all possible contrasts (e.g. if A,B,C, then consider A-B, A-C, B-C,A-(B+C)/2, etc...)
+- Use calculateDE without baseline and all possible contrasts
+- perform GSEA and collect all results in only one table
+- Plot all results in lollipop plots, y axis with all contrasts
+
+- One function to calculate all results; one to do the lollypop plot
+
+
+
+```{r fig.width=6, fig.height=6}
+options(error=recover)
+df_test <- GSEA_VariableAssociation(data=corrcounts_merge, 
+                                    metadata=metadata_merge_corr, 
+                                    cols=c("Condition","Is_Senescent","random_cat","random_numeric"), 
+                                    mode="extensive", 
+                                    gene_set=list(HernandezSegura=bidirectsigs$HernandezSegura),  saturation_value=0.000000001, nonsignif_color = "white", signif_color = "red",
+                                    sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+
+df_test$plot
+
+```
+
+
+
+```{r}
+# metadata_corr_1 <- CalculateScores(data = corrcounts_merge, metadata = metadata_merge_corr, method = "ssGSEA", gene_sets = list(HernandezSegura=bidirectsigs$HernandezSegura) )
+# metadata_corr <- metadata_corr_1$`HernandezSegura`
+# metadata_corr
+```
+
+```{r fig.width=5, fig.height=10}
+VariableAssociation(df=metadata_corr, cols=c("Condition","Is_Senescent","random_cat","random_numeric"), 
+                    target_var="score", targetvar_lab="Score",
+                    discrete_colors = list(Is_Senescent=c("Senescent"="pink",
+                                                          "Non Senescent"="orange")), 
+                    continuous_color = "#8C6D03",
+                    color_palette = "Set2",
+                    sizeannot=3, ncol=1, nrow=4,
+                    numeric = "pearson",
+                    categorical_bin = "t.test",
+                    categorical_multi = "anova", title=NULL, titlesize=14,
+                    nonsignif_color = "white", signif_color = "red", 
+                    saturation_value=NULL,sig_threshold = 0.05, widthlabels=14, pointSize=5, heights=c(0.3,0.2,0.3,0.2)) 
+```
+
+
+
+
+
+```{r fig.width=6, fig.height=5}
+options(error=recover)
+df_test <- GSEA_VariableAssociation(data=corrcounts_merge, 
+                                    metadata=metadata_merge_corr, 
+                                    cols=c("Condition" ), 
+                                    mode="medium", 
+                                    gene_set=list(HernandezSegura_UP=SenescenceSignatures$`[UP]_HernandezSegura` ), 
+                                    saturation_value=0.000000001, nonsignif_color = "white", signif_color = "red",
+                                    sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+
+df_test$plot
+
+df_test <- GSEA_VariableAssociation(data=corrcounts_merge, 
+                                    metadata=metadata_merge_corr, 
+                                    cols=c("Condition" ), 
+                                    mode="medium", 
+                                    gene_set=list( HernandezSegura_Bidirect_UP=subset(bidirectsigs$HernandezSegura, enrichment==1)), 
+                                    saturation_value=0.000000001, nonsignif_color = "white", signif_color = "red",
+                                    sig_threshold = 0.05, widthlabels=30, labsize=10, titlesize=14) 
+
+df_test$plot
+
+
+```

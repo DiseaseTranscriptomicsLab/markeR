@@ -69,6 +69,5 @@ gene_sets <- list(
 )
 
 results <- runGSEA(DEGList, gene_sets)
-print(results)
 
 }

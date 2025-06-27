@@ -24,7 +24,7 @@ You can also visit the \href{https://github.com/DiseaseTranscriptomicsLab/markeR
 for the latest updates and source code.
 }
 \author{
-\strong{Maintainer}: Rita Martins-Silva \email{rita.silva@medicina.ulisboa.pt} (\href{https://orcid.org/0000-0002-1067-7993}{ORCID})
+\strong{Maintainer}: Rita Martins-Silva \email{rita.silva@gimm.pt} (\href{https://orcid.org/0000-0002-1067-7993}{ORCID})
 
 Authors:
 \itemize{
