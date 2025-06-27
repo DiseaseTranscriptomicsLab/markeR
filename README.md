@@ -11,7 +11,7 @@
 [![Minimal R
 Version](https://img.shields.io/badge/min%20R-4.4.0-blue.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/Rminversion.yaml)
 [![Bioconductor
-Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml)
+Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/check-bioc.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/check-bioc.yml)
 
 <!-- badges: end -->
 
