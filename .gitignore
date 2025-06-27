@@ -12,4 +12,3 @@ renv.lock
 .obsidian/
 /inst/Paper/data/ 
 /inst/Paper/localjobs/ 
-markeR.BiocCheck/ 

@@ -10,13 +10,14 @@
 #' @param subcollection Optional. Subcategory within an MSigDB collection (e.g., `"CP:REACTOME"`). Use msigdbr::msigdbr_collections() for the available options.
 #' @param metric Character. Either "jaccard" or "odds_ratio".
 #' @param universe Character vector. Background gene universe. Required for odds ratio.
-#' @param or_threshold (only if method == "odds_ratio" only) Numeric. Minimum Odds Ratio required for a gene set to be included in the plot. Default is 1.
-#' @param pval_threshold (only if method == "odds_ratio" only) Numeric. Maximum adjusted p-value to show a label. Default is 0.05.
+#' @param or_threshold Numeric. Minimum Odds Ratio required for a gene set to be included in the plot. Default is 1.
+#' @param pval_threshold Numeric. Maximum adjusted p-value to show a label. Default is 0.05.
 #' @param limits Numeric vector of length 2. Limits for color scale.
 #' @param title_size Integer specifying the font size for the plot title. Default is `12`.
 #' @param color_values Character vector of colors used for the fill gradient. Default is `c("#F9F4AE", "#B44141")`.
 #' @param title Optional. Custom title for the plot. If `NULL`, the title defaults to `"Signature Overlap"`.
-#' @param jaccard_threshold (only if method == "jaccard" only) Numeric. Minimum Jaccard index required for a gene set to be included in the plot. Default is `0`.
+#' @param num_sigs_toplot Optional. Integer. Maximum number of comparison signatures (including user and MSigDB) to display.
+#' @param jaccard_threshold Numeric. Minimum Jaccard index required for a gene set to be included in the plot. Default is `0`.
 #' @param msig_subset Optional. Character vector of MSigDB gene set names to subset from the specified collection. Useful to restrict analysis to a specific set of pathways.
 #'                    If supplied, other filters will apply only to this subset. Use "collection = "all" to mix gene sets from different collections.
 #' @param width_text Integer. Character wrap width for labels.
@@ -28,38 +29,6 @@
 #' @importFrom tibble tibble
 #' @importFrom msigdbr msigdbr
 #' @importFrom scales squish
-#'
-#' @examples
-#' # Create two simple gene signatures
-#' sig1 <- c("TP53", "BRCA1", "MYC", "EGFR", "CDK2")
-#' sig2 <- c("ATXN2", "FUS", "MTOR", "CASP3")
-#' signatures <- list(SignatureA = sig1, SignatureB = sig2)
-#'
-#' # Compare the signatures using the Jaccard index
-#' plt <- geneset_similarity(
-#'   signatures = signatures,
-#'   metric = "jaccard",
-#'   collection = "H",
-#'   jaccard_threshold = 0.01
-#' )
-#'
-#' # Print the plot (will show a small heatmap)
-#' print(plt)
-#'
-#'
-#' # Odds ratio example (requires universe)
-#' gene_universe <- unique(c(
-#'   sig1, sig2,
-#'   msigdbr::msigdbr(species = "Homo sapiens", category = "C2")$gene_symbol
-#' ))
-#'
-#' plt_or <- geneset_similarity(
-#'   signatures = signatures,
-#'   metric = "odds_ratio",
-#'   universe = gene_universe,
-#'   collection = "H"
-#' )
-#' print(plt_or)
 #'
 #' @export
 geneset_similarity <- function(
@@ -75,6 +44,7 @@ geneset_similarity <- function(
     title_size = 12,
     color_values = c("#F9F4AE", "#B44141"),
     title = NULL,
+    num_sigs_toplot = NULL,
     jaccard_threshold = 0,
     msig_subset = NULL,
     width_text = 20,
@@ -122,6 +92,11 @@ geneset_similarity <- function(
   if (!is.null(title) && !is.character(title)) {
     stop("title must be a character string or NULL.")
   }
+
+  if (!is.null(num_sigs_toplot) && (!is.numeric(num_sigs_toplot) || num_sigs_toplot <= 0)) {
+    stop("num_sigs_toplot must be a positive numeric value or NULL.")
+  }
+
   if (!is.numeric(jaccard_threshold) || jaccard_threshold < 0 || jaccard_threshold > 1) {
     stop("jaccard_threshold must be a numeric value between 0 and 1.")
   }

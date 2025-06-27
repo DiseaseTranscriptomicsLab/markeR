@@ -91,34 +91,15 @@ A red dashed line marks the 95th percentile of the simulated distribution per me
 The function internally uses \code{CohenD_allConditions()} and \code{CohenF_allConditions()} depending on variable type.
 }
 \examples{
-# Simulate gene expression matrix (genes as rows, samples as columns)
-set.seed(444)
-expr <- as.data.frame(matrix(abs(rnorm(60)), nrow = 6, ncol = 10))
-rownames(expr) <- paste0("Gene", 1:6)
-colnames(expr) <- paste0("Sample", 1:10)
-
-# Simulate sample metadata with a categorical variable
-metadata <- data.frame(
-  sample = colnames(expr),
-  Condition = rep(c("A", "B"), each = 5),
-  stringsAsFactors = FALSE
-)
-
-# Define two gene signatures (as character vectors)
-signatures <- list(
-  Sig1 = c("Gene1", "Gene2", "Gene3"),
-  Sig2 = c("Gene4", "Gene5")
-)
-
-# Run FPR simulation (with fewer sims for speed in example)
+\dontrun{
 FPR_Simulation(
-  data = expr,
-  metadata = metadata,
-  original_signatures = signatures,
-  Variable = "Condition",
-  number_of_sims = 20,
-  title = "FPR Simulation Example",
-  pointSize = 3
+  data = expression_data,
+  metadata = sample_metadata,
+  original_signatures = my_signatures,
+  Variable = "condition",
+  number_of_sims = 100,
+  title_for_plot = "Simulation for FPR"
 )
+}
 
 }

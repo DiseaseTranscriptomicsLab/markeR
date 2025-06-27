@@ -37,39 +37,32 @@
 #'   }
 #'
 #' @examples
-#' # Simulate gene expression data (genes as rows, samples as columns)
-#' set.seed(1)
-#' expr <- matrix(rnorm(25), nrow = 5, ncol = 5)
-#' rownames(expr) <- paste0("Gene", 1:5)
-#' colnames(expr) <- paste0("Sample", 1:5)
+#' \dontrun{
+#' set.seed(123)
+#' data_matrix <- matrix(rnorm(100), nrow = 10, ncol = 10)
+#' rownames(data_matrix) <- paste0("Gene", 1:10)
+#' colnames(data_matrix) <- paste0("Sample", 1:10)
 #'
-#' # Simulate metadata for samples
-#' metadata <- data.frame(
-#'   Sample = colnames(expr),
-#'   Condition = rep(c("A", "B"), length.out = 5),
-#'   Batch = rep(c("X", "Y"), length.out = 5),
-#'   stringsAsFactors = FALSE
-#' )
+#' metadata <- data.frame(Sample = colnames(data_matrix),
+#'                        Condition = rep(c("A", "B"), each = 5),
+#'                        Batch = rep(c("X", "Y"), times = 5),
+#'                        stringsAsFactors = FALSE)
 #'
-#' # Define annotation colors for the metadata variables
-#' annotation_colors <- list(
-#'   Condition = c(A = "orange", B = "purple"),
-#'   Batch = c(X = "green", Y = "blue")
-#' )
+#' result <- ExpressionHeatmap(data_matrix, metadata, genes = rownames(data_matrix),
+#'                             annotate.by = c("Condition", "Batch"),
+#'                             annotation_colors = list(
+#'                               Condition = c(A = "red", B = "blue"),
+#'                               Batch = c(X = "green", Y = "purple")
+#'                             ),
+#'                             cluster_columns = FALSE,
+#'                             title = "Expression Heatmap",
+#'                             scale_position = "right",
+#'                             legend_position = "top",
+#'                             titlesize = 20)
 #'
-#' # Generate the expression heatmap
-#' ExpressionHeatmap(
-#'   data = expr,
-#'   metadata = metadata,
-#'   genes = rownames(expr),
-#'   annotate.by = c("Condition", "Batch"),
-#'   annotation_colors = annotation_colors,
-#'   cluster_columns = FALSE,
-#'   title = "Demo Expression Heatmap",
-#'   scale_position = "right",
-#'   legend_position = "top",
-#'   titlesize = 14
-#' )
+#' # To display the heatmap:
+#' result$plot
+#' }
 #'
 #' @importFrom grid gpar
 #' @importFrom ComplexHeatmap Heatmap

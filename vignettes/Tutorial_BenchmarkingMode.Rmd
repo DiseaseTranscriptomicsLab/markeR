@@ -60,8 +60,8 @@ data(metadata_example)
 
 set.seed("123456")
 
-metadata_example$Researcher <- sample(c("John","Ana","Francisca"),39, replace = TRUE)
-metadata_example$DaysToSequencing <- sample(c(1:20),39, replace = TRUE)
+metadata_example$Researcher <- sample(c("John","Ana","Francisca"),39, replace = T)
+metadata_example$DaysToSequencing <- sample(c(1:20),39, replace = T)
  
 head(metadata_example)
 ```
@@ -131,7 +131,7 @@ PlotScores(data = counts_example,
            limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
-           compute_cohen=TRUE,
+           compute_cohen=T,
            cond_cohend=cond_cohend,
            title="Marthandan et al. 2016",
            labsize=9, 
@@ -163,7 +163,7 @@ PlotScores(data = counts_example,
            limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
-           compute_cohen=TRUE,
+           compute_cohen=T,
            cond_cohend=cond_cohend,
            title="Marthandan et al. 2016",
            labsize=9, 
@@ -244,7 +244,7 @@ PlotScores(data = counts_example,
            limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
-           compute_cohen=TRUE,
+           compute_cohen=T,
            cond_cohend=cond_cohend,
            title="Marthandan et al. 2016",
            labsize=9, 
@@ -282,7 +282,7 @@ PlotScores(data = counts_example,
            limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
-           compute_cohen=TRUE,
+           compute_cohen=T,
            cond_cohend=cond_cohend,
            title="Marthandan et al. 2016",
            labsize=9, 
@@ -593,7 +593,7 @@ After running GSEA, the user can visualize enrichment plots using the `plotGSEAe
 plotGSEAenrichment(GSEA_results=GSEAresults, 
                    DEGList=DEGs, 
                    gene_sets=genesets_example, 
-                   widthTitle=40, grid = TRUE, titlesize = 10, nrow=1, ncol=3) 
+                   widthTitle=40, grid = T, titlesize = 10, nrow=1, ncol=3) 
 ```
 
 The `plotNESlollipop()` function creates lollipop plots for visualizing Gene Set Enrichment Analysis (GSEA) results. Each plot displays gene sets on the y-axis and Normalized Enrichment Scores (NES) on the x-axis, with a color gradient proportional to the adjusted p-value. The function supports multiple contrasts and includes options for customizing the color gradient, significance threshold, and plot layout. It can also arrange individual plots into a grid layout for comparative visualization.
@@ -681,7 +681,7 @@ IndividualGenes_Violins(data = counts_example,
                         metadata = metadata_example, 
                         genes = genesets_example$LiteratureMarkers$gene, 
                         GroupingVariable = "Condition", 
-                        plot=TRUE, 
+                        plot=T, 
                         ncol=NULL, 
                         nrow=1, 
                         divide=NULL, 
@@ -753,7 +753,7 @@ CohenD_IndividualGenes(counts_example,
                        group_var = NULL,  
                        params = list(colors = "#3B415B",
                                              limits = NULL,
-                                             cluster_rows=TRUE))
+                                             cluster_rows=T))
 ```
 
 The `plotPCA` function performs a PCA on the expression of a selected set of genes to understand if they explain enough variance in the data, allowing the user to test if the genes in the signature are sufficient to separate the group of interest (given by the `ColourVariable' parameter). While previous metrics assess discriminatory power quantitatively (e.g., AUC), PCA provides a complementary, unsupervised visualization that can help assess whether the gene signature is sufficient to visually separate groups of interest. Users can customize which principal components to display using the PCs argument and adjust layout, point size, and colour annotations for comparison across conditions.
@@ -804,17 +804,10 @@ PlotScores(data = counts_example,
            limits = NULL, 
            legend_nrow = 1, 
            pointSize=4,
-           compute_cohen=TRUE,
+           compute_cohen=T,
            cond_cohend=cond_cohend,
            title="Marthandan et al. 2016",
            labsize=9, 
            titlesize = 12)  
-```
-
-
-# Session Information
-
-```{r}
-sessionInfo()
 ```
 

@@ -20,8 +20,7 @@ knitr::opts_chunk$set(
 ![](https://img.shields.io/badge/status-development-yellowgreen)
 [![R-CMD-check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml)
 [![Pkgdown](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://diseasetranscriptomicslab.github.io/markeR/)
-[![Minimal R Version](https://img.shields.io/badge/min%20R-4.5.0-blue.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/Rminversion.yaml)
-[![Bioconductor Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml)
+[![Minimal R Version](https://img.shields.io/badge/min%20R-4.4.0-blue.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/Rminversion.yaml)
 
 <!-- badges: end -->
 
@@ -29,7 +28,7 @@ knitr::opts_chunk$set(
 
 > **To cite markeR please use:**
 >
->   Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). _markeR: an R Toolkit for Evaluating Gene Sets as Phenotypic Markers_. Gulbenkian Institute for Molecular Medicine, Faculdade de Medicina, Universidade de Lisboa, Lisbon, Portugal. R package version 0.99.0, https://github.com/DiseaseTranscriptomicsLab/markeR.
+>   Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). _markeR: an R Toolkit for Evaluating Gene Sets as Phenotypic Markers_. Gulbenkian Institute for Molecular Medicine, Faculdade de Medicina, Universidade de Lisboa, Lisbon, Portugal. R package version 0.9.2, https://github.com/DiseaseTranscriptomicsLab/markeR.
  
 `inst/Paper/` — Contains all scripts and materials used in the original markeR paper to reproduce analyses and figures.
 
@@ -75,8 +74,6 @@ This package is officially supported on (based on a GitHub Actions workflow that
 
 - `R` `4.4.x`
 - `R` `4.5.x` 
-
-However, due to `Bioconductor` submission requirements, `R` version `4.5.0` is listed as required upon package installation.
 
 ⚠️ Compatibility with older R versions depends on the specific versions of dependencies installed. Older versions of `R` (including `R` `3.5.x`, `3.6.x`, `4.0.x`, `4.1.x`, `4.2.x`, and `4.3.x`) may work, but are not officially supported due to upstream dependency constraints. In some cases, installing older versions of dependencies (e.g., via `renv`, `CRAN` snapshots, or `checkpoint`) can restore compatibility. 
 
@@ -225,14 +222,14 @@ To better understand the contribution of individual genes within a gene set and 
 
 Filters can be applied based on similarity thresholds (e.g., minimum Jaccard, OR, or p-value).
  
-
+---
 
 ## Contact 
 
 📩 For any questions or concerns, feel free to reach out:
 
 **Rita Martins-Silva**  
-Email: [rita.silva@medicina.ulisboa.pt](mailto:rita.silva@medicina.ulisboa.pt)
+Email: [rita.silva@gimm.pt](mailto:rita.silva@gimm.pt)
 
  
 [tutorial-benchmarking]: https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_BenchmarkingMode.html

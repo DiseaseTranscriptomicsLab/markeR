@@ -28,7 +28,7 @@ CorrelationHeatmap(
 columns to samples.}
 
 \item{metadata}{A data frame containing metadata. Required if \code{separate.by}
-is specified. The first column should be the sample ID.}
+is specified.}
 
 \item{genes}{A character vector of gene names to be included in the
 correlation analysis.}
@@ -109,35 +109,19 @@ corresponding to a different
 level of the grouping variable.
 }
 \examples{
-# Simulate gene expression data (genes as rows, samples as columns)
-set.seed(1)
-expr <- as.data.frame(matrix(runif(60, min = 0, max = 10), nrow = 6, ncol = 10))
-rownames(expr) <- paste0("Gene", 1:6)
-colnames(expr) <- paste0("Sample", 1:10)
+\dontrun{
+data_matrix <- matrix(rnorm(100), nrow = 10, ncol = 10)
+rownames(data_matrix) <- paste0("Gene", 1:10)
+colnames(data_matrix) <- paste0("Sample", 1:10)
 
-# Simulate metadata with a group variable
-metadata <- data.frame(
- SampleID = colnames(expr),
- Condition = rep(c("A", "B"), each = 5)
-)
+# Basic usage
+result <- CorrelationHeatmap2(data_matrix, genes = rownames(data_matrix))
 
-# Basic heatmap for selected genes
-res <- CorrelationHeatmap(
- data = expr,
- genes = rownames(expr)
-)
-
-# Heatmap separated by condition
-res_sep <- CorrelationHeatmap(
- data = expr,
- metadata = metadata,
- genes = rownames(expr),
- separate.by = "Condition"
-)
-
-
-
-
-
+# Using metadata to separate by condition
+metadata <- data.frame(Sample = colnames(data_matrix),
+                       Condition = rep(c("A", "B"), each = 5))
+result <- CorrelationHeatmap2(data_matrix, metadata, genes =
+rownames(data_matrix), separate.by = "Condition")
+}
 
 }

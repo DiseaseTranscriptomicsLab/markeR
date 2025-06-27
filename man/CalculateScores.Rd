@@ -73,40 +73,29 @@ The function returns a list containing the results of each method.
 }
 }
 \examples{
-# Simulate positive gene expression data (genes as rows, samples as columns)
-set.seed(42)
-expr <- as.data.frame(matrix(rexp(60, rate = 0.2), nrow = 6, ncol = 10))
-rownames(expr) <- paste0("Gene", 1:6)
-colnames(expr) <- paste0("Sample", 1:10)
+\dontrun{
+  # Assume 'gene_data' is your gene expression data frame and 'sample_metadata'
+  # is your metadata. Define a list of gene signatures as follows:
+  gene_sets <- list(
+    "Signature_A" = c("Gene1", "Gene5", "Gene10", "Gene20"),
+    "Signature_B" = c("Gene2", "Gene6", "Gene15", "Gene30")
+  )
 
-# Simulate metadata for samples
-metadata <- data.frame(
-  sample = colnames(expr),
-  Group = rep(c("A", "B"), each = 5)
-)
+  # Using the ssGSEA method:
+  scores_ssgsea <- calculate_signature_score(data = gene_data,
+                                             metadata = sample_metadata,
+                                             gene_sets = gene_sets,
+                                             method = "ssGSEA")
 
-# Define two simple gene sets
-gene_sets <- list(
-  Signature1 = c("Gene1", "Gene2", "Gene3"),
-  Signature2 = c("Gene4", "Gene5", "Gene6")
-)
+  # Using the logmedian method (default):
+  scores_logmedian <- calculate_signature_score(data = gene_data,
+                                                gene_sets = gene_sets)
 
-# Calculate logmedian scores
-scores_logmedian <- CalculateScores(
-  data = expr,
-  metadata = metadata,
-  gene_sets = gene_sets,
-  method = "logmedian"
-)
-head(scores_logmedian)
-
-# Calculate all score types
-scores_all <- CalculateScores(
-  data = expr,
-  metadata = metadata,
-  gene_sets = gene_sets,
-  method = "all"
-)
-lapply(scores_all, head)
+  # Using all methods:
+  scores_all <- calculate_signature_score(data = gene_data,
+                                          metadata = sample_metadata,
+                                          gene_sets = gene_sets,
+                                          method = "all")
+}
 
 }

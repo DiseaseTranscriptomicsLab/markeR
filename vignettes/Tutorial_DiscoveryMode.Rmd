@@ -60,8 +60,8 @@ data(metadata_example)
 
 set.seed("123456")
 
-metadata_example$Researcher <- sample(c("John","Ana","Francisca"),39, replace = TRUE)
-metadata_example$DaysToSequencing <- sample(c(1:20),39, replace = TRUE)
+metadata_example$Researcher <- sample(c("John","Ana","Francisca"),39, replace = T)
+metadata_example$DaysToSequencing <- sample(c(1:20),39, replace = T)
  
 head(metadata_example)
 ```
@@ -188,8 +188,3 @@ VariableAssociation(
  
 ```
  
-# Session Information
-
-```{r}
-sessionInfo()
-```

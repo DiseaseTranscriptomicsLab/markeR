@@ -57,7 +57,7 @@
 #'
 IndividualGenes_Violins <- function(data, metadata=NULL, genes,GroupingVariable, plot=TRUE, ncol=NULL, nrow=NULL, divide=NULL, invert_divide=FALSE, ColorValues=NULL, pointSize=2, ColorVariable=NULL,title=NULL, widthTitle=16,y_limits = NULL, legend_nrow = NULL,xlab=NULL, colorlab=NULL){
 
-  #set.seed("1234")
+  set.seed("1234")
 
   # Wrap the signature name using the helper function
   if (!is.null(title)) wrapped_title <- wrap_title(title, width = widthTitle)

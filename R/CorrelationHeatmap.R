@@ -11,7 +11,7 @@
 #' @param data A numeric counts data frame where rows correspond to genes and
 #' columns to samples.
 #' @param metadata A data frame containing metadata. Required if `separate.by`
-#' is specified. The first column should be the sample ID.
+#' is specified.
 #' @param genes A character vector of gene names to be included in the
 #' correlation analysis.
 #' @param separate.by A character string specifying a column in `metadata` to
@@ -67,37 +67,21 @@
 #'     }
 #'   }
 #'
-#'@examples
-#'# Simulate gene expression data (genes as rows, samples as columns)
-#'set.seed(1)
-#'expr <- as.data.frame(matrix(runif(60, min = 0, max = 10), nrow = 6, ncol = 10))
-#'rownames(expr) <- paste0("Gene", 1:6)
-#'colnames(expr) <- paste0("Sample", 1:10)
+#' @examples
+#' \dontrun{
+#' data_matrix <- matrix(rnorm(100), nrow = 10, ncol = 10)
+#' rownames(data_matrix) <- paste0("Gene", 1:10)
+#' colnames(data_matrix) <- paste0("Sample", 1:10)
 #'
-#'# Simulate metadata with a group variable
-#'metadata <- data.frame(
-#'  SampleID = colnames(expr),
-#'  Condition = rep(c("A", "B"), each = 5)
-#')
+#' # Basic usage
+#' result <- CorrelationHeatmap2(data_matrix, genes = rownames(data_matrix))
 #'
-#'# Basic heatmap for selected genes
-#'res <- CorrelationHeatmap(
-#'  data = expr,
-#'  genes = rownames(expr)
-#')
-#'
-#'# Heatmap separated by condition
-#'res_sep <- CorrelationHeatmap(
-#'  data = expr,
-#'  metadata = metadata,
-#'  genes = rownames(expr),
-#'  separate.by = "Condition"
-#')
-#'
-#'
-#'
-#'
-#'
+#' # Using metadata to separate by condition
+#' metadata <- data.frame(Sample = colnames(data_matrix),
+#'                        Condition = rep(c("A", "B"), each = 5))
+#' result <- CorrelationHeatmap2(data_matrix, metadata, genes =
+#' rownames(data_matrix), separate.by = "Condition")
+#' }
 #'
 #' @importFrom grid gpar
 #' @importFrom grid grid.text
@@ -193,14 +177,7 @@ CorrelationHeatmap <- function(data, metadata = NULL, genes, separate.by = NULL,
         warning(paste("Not enough samples for condition", cond, "to compute correlation. Skipping."))
         next
       }
-
-      data_nontransformed_subset <- data
       data_subset <- log2(data_subset)
-      if (any(is.nan(as.matrix(data_subset)))) {
-        stop("Data contains NaN values. Added a pseudocount of 0.1 to avoid NaNs in correlation calculation.")
-        data_subset <- log2(data_nontransformed_subset + 0.1)
-      }
-
       corrmat <- stats::cor(t(data_subset), method = method)
       df_data_merge[[cond]] <- corrmat
 
@@ -245,13 +222,7 @@ CorrelationHeatmap <- function(data, metadata = NULL, genes, separate.by = NULL,
 
   } else {
     # Single heatmap (no separate.by)
-    data_nontransformed <- data
     data <- log2(data)
-    if (any(is.nan(as.matrix(data)))) {
-      stop("Data contains NaN values. Added a pseudocount of 0.1 to avoid NaNs in correlation calculation.")
-      data <- log2(data_nontransformed + 0.1)
-    }
-
     corrmat <- stats::cor(t(data), method = method)
     ht <- create_heatmap(corrmat, direct=leg_direction, titleleg=title_leg)
     ht_drawn <- ComplexHeatmap::draw(ht,

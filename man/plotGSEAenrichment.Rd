@@ -68,7 +68,7 @@ NES = rnorm(3),
 
 
 # Generate the plot
-plot <- plotCombinedGSEA(GSEA_results, sig_threshold = 0.05, PointSize = 7)
+plot <- plotCombinedGSEA(GSEA_results, sig_threshold = 0.05, PointSize = 4)
 print(plot)
 
 }

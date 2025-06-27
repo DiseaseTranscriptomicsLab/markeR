@@ -174,7 +174,7 @@ plotNESlollipop <- function(GSEA_results,
       nrow <- ceiling(n / ncol)
     }
 
-    combined_plot <- ggpubr::ggarrange(plotlist = plot_list, ncol = ncol, nrow = nrow, align = "hv", common.legend = TRUE, legend = "right")
+    combined_plot <- ggpubr::ggarrange(plotlist = plot_list, ncol = ncol, nrow = nrow, align = "hv", common.legend = T, legend = "right")
     if (!is.null(title)) combined_plot <- ggpubr::annotate_figure(combined_plot,
                                                                   top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize)))
 

@@ -93,14 +93,6 @@ The first column should contain sample identifiers (i.e., the column names of \c
 
 \item{colorPalette}{Character. Name of RColorBrewer palette for coloring (default = \code{"Set3"}).}
 }
-\value{
-A \code{ggplot} or a \code{ggpubr::ggarrange} object depending on the input and parameters:
-\itemize{
-\item If \code{GroupingVariable} is \code{NULL}, returns a faceted grid of density plots (one per gene set).
-\item If \code{GroupingVariable} is provided and \code{method != "all"}, returns a faceted grid of violin plots overlaid with jittered sample points and median bars, optionally annotated with Cohen’s d or f and p-values.
-\item Each individual plot corresponds to one gene set score computed using the selected method.
-}
-}
 \description{
 This function computes and visualizes gene set enrichment scores using various methods, optionally comparing across groups or numeric variables.
 It supports categorical and numeric comparisons, statistical testing, Cohen's d effect sizes, and visualizations such as heatmaps and volcano plots.
