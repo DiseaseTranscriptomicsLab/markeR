@@ -65,8 +65,7 @@ geneset_similarity(
   signatures = list(Sig1 = signature1, Sig2 = signature2),
   other_user_signatures = signature_list,
   collection = "C2",
-  subcollection = "CP:KEGG_LEGACY",
-  num_sigs_toplot = NULL,
+  subcollection = "CP:KEGG_LEGACY", 
   jaccard_threshold = 0.05,
   msig_subset = NULL, 
   metric = "jaccard"
@@ -83,8 +82,7 @@ geneset_similarity(
   signatures = list(Sig1 = signature1, Sig2 = signature2),
   other_user_signatures = NULL,
   collection = "C2",
-  subcollection = "CP:KEGG_LEGACY",
-  num_sigs_toplot = NULL,
+  subcollection = "CP:KEGG_LEGACY", 
   jaccard_threshold = 0,
   msig_subset = c("KEGG_MTOR_SIGNALING_PATHWAY", "KEGG_APOPTOSIS", "NON_EXISTENT_PATHWAY"), 
   metric = "jaccard"
@@ -126,8 +124,7 @@ geneset_similarity(
   metric = "odds_ratio",
   universe = gene_universe,
   or_threshold = 1,
-  pval_threshold = 0.05,
-  num_sigs_toplot = 10,
+  pval_threshold = 0.05, 
   width_text=50
 )
 ```

@@ -13,3 +13,5 @@ renv.lock
 /inst/Paper/data/ 
 /inst/Paper/localjobs/ 
 markeR.BiocCheck/ 
+/doc/
+/Meta/
