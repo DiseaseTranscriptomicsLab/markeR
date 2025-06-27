@@ -17,7 +17,6 @@ geneset_similarity(
   title_size = 12,
   color_values = c("#F9F4AE", "#B44141"),
   title = NULL,
-  num_sigs_toplot = NULL,
   jaccard_threshold = 0,
   msig_subset = NULL,
   width_text = 20,
@@ -37,9 +36,9 @@ geneset_similarity(
 
 \item{universe}{Character vector. Background gene universe. Required for odds ratio.}
 
-\item{or_threshold}{Numeric. Minimum Odds Ratio required for a gene set to be included in the plot. Default is 1.}
+\item{or_threshold}{(only if method == "odds_ratio" only) Numeric. Minimum Odds Ratio required for a gene set to be included in the plot. Default is 1.}
 
-\item{pval_threshold}{Numeric. Maximum adjusted p-value to show a label. Default is 0.05.}
+\item{pval_threshold}{(only if method == "odds_ratio" only) Numeric. Maximum adjusted p-value to show a label. Default is 0.05.}
 
 \item{limits}{Numeric vector of length 2. Limits for color scale.}
 
@@ -49,9 +48,7 @@ geneset_similarity(
 
 \item{title}{Optional. Custom title for the plot. If \code{NULL}, the title defaults to \code{"Signature Overlap"}.}
 
-\item{num_sigs_toplot}{Optional. Integer. Maximum number of comparison signatures (including user and MSigDB) to display.}
-
-\item{jaccard_threshold}{Numeric. Minimum Jaccard index required for a gene set to be included in the plot. Default is \code{0}.}
+\item{jaccard_threshold}{(only if method == "jaccard" only) Numeric. Minimum Jaccard index required for a gene set to be included in the plot. Default is \code{0}.}
 
 \item{msig_subset}{Optional. Character vector of MSigDB gene set names to subset from the specified collection. Useful to restrict analysis to a specific set of pathways.
 If supplied, other filters will apply only to this subset. Use "collection = "all" to mix gene sets from different collections.}
@@ -67,4 +64,37 @@ A ggplot heatmap object.
 Visualizes similarity between user-defined gene signatures and either
 other user-defined signatures or MSigDB gene sets, using either the Jaccard index
 or Fisher's Odds Ratio. Produces a heatmap of pairwise similarity metrics.
+}
+\examples{
+# Create two simple gene signatures
+sig1 <- c("TP53", "BRCA1", "MYC", "EGFR", "CDK2")
+sig2 <- c("ATXN2", "FUS", "MTOR", "CASP3")
+signatures <- list(SignatureA = sig1, SignatureB = sig2)
+
+# Compare the signatures using the Jaccard index
+plt <- geneset_similarity(
+  signatures = signatures,
+  metric = "jaccard",
+  collection = "H",
+  jaccard_threshold = 0.01
+)
+
+# Print the plot (will show a small heatmap)
+print(plt)
+
+
+# Odds ratio example (requires universe)
+gene_universe <- unique(c(
+  sig1, sig2,
+  msigdbr::msigdbr(species = "Homo sapiens", category = "C2")$gene_symbol
+))
+
+plt_or <- geneset_similarity(
+  signatures = signatures,
+  metric = "odds_ratio",
+  universe = gene_universe,
+  collection = "H"
+)
+print(plt_or)
+
 }

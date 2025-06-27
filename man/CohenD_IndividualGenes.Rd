@@ -70,15 +70,43 @@ This function computes Cohen's d for each gene by comparing the expression value
 \pkg{ComplexHeatmap}. When \code{group_var} is not provided, all samples are treated as a single group.
 }
 \examples{
-\dontrun{
-  result <- CohenDHeatmap(data = myData,
-                          metadata = myMetadata,
-                          genes = c("Gene1", "Gene2", "Gene3"),
-                          condition_var = "Genotype",
-                          class = "Mutant",
-                          group_var = "CellType",
-                          title = "Cohen's d Heatmap",
-                          params = list(limits = c(-2, 2)))
-}
+# Simulate gene expression data (genes as rows, samples as columns)
+set.seed(101)
+expr <- matrix(abs(rnorm(40)), nrow = 4, ncol = 10)  # 4 genes, 10 samples, positive values
+rownames(expr) <- paste0("Gene", 1:4)
+colnames(expr) <- paste0("Sample", 1:10)
+
+# Simulate sample metadata with a binary condition and a group variable
+metadata <- data.frame(
+  Sample = colnames(expr),
+  Condition = rep(c("Case", "Control"), each = 5),
+  Group = rep(c("A", "B"), times = 5),
+  stringsAsFactors = FALSE
+)
+
+# 1. Cohen's d heatmap for all genes across groups
+CohenD_IndividualGenes(
+  data = expr,
+  metadata = metadata,
+  genes = rownames(expr),
+  condition_var = "Condition",
+  class = "Case",
+  group_var = "Group",
+  title = "Cohen's d Heatmap (Case vs Control)",
+  params = list(limits = c(0, 2))
+)
+
+# 2. Cohen's d barplot (single group across all samples)
+CohenD_IndividualGenes(
+  data = expr,
+  metadata = metadata,
+  genes = rownames(expr),
+  condition_var = "Condition",
+  class = "Case",
+  group_var = NULL,
+  title = "Cohen's d Barplot (All Samples)",
+  params = list(colors = c("#CCCCCC"))
+)
+
 
 }

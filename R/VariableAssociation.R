@@ -212,8 +212,8 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
 #'   - `"GSEA"`
 #'
 #' @section Shared Arguments (All Methods):
-#' @param data A matrix or data frame with gene expression data (genes as rows, samples as columns).
-#' @param metadata A data frame containing sample metadata.
+#' @param data A data frame with gene expression data (genes as rows, samples as columns).
+#' @param metadata A data frame containing sample metadata; the first column should be the sampleID.
 #' @param cols Character vector of metadata column names to analyze.
 #' @param gene_set A named list of gene sets:
 #'   - For score-based methods: list of gene vectors.

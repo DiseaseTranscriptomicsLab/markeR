@@ -109,28 +109,48 @@ Additionally, the function allows:
 }
 }
 \examples{
-\dontrun{
-# Create example data:
-data <- matrix(rnorm(1000), nrow = 100, ncol = 10)
-rownames(data) <- paste0("gene", 1:100)
-colnames(data) <- paste0("sample", 1:10)
-metadata <- data.frame(sample = colnames(data), X = rep(c("A", "B"), each = 5))
-
-# Example differential expression results (for two contrasts):
-de_results <- list(
-  Contrast1 = data.frame(logFC = rnorm(100), `-log10(adj.P.Val)` = runif(100, 0, 5),
-                         row.names = paste0("gene", 1:100)),
-  Contrast2 = data.frame(logFC = rnorm(100), `-log10(adj.P.Val)` = runif(100, 0, 5),
-                         row.names = paste0("gene", 1:100))
+# (Assumes you have already created `expr`, `metadata`, and run `calculateDE` as shown above)
+# For reference, here is the minimal workflow:
+set.seed(123)
+expr <- matrix(rpois(1000, lambda = 20), nrow = 100, ncol = 10)
+rownames(expr) <- paste0("gene", 1:100)
+colnames(expr) <- paste0("sample", 1:10)
+metadata <- data.frame(
+  sample = colnames(expr),
+  Group = rep(c("A", "B"), each = 5)
+)
+de_res <- calculateDE(
+  data = expr,
+  metadata = metadata,
+  variables = "Group",
+  contrasts = "A-B"
 )
 
-# Basic volcano plot grid with default settings:
-plotVolcano(de_results, genes = NULL, N = NULL,
-            x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
-            color = "#6489B4", highlightcolor = "#05254A", nointerestcolor = "#B7B7B7",
-            threshold_y = NULL, threshold_x = NULL,
-            xlab = NULL, ylab = NULL, ncol = NULL, nrow = NULL, title = "Volcano Plot Grid",
-            labsize = 10, widthlabs = 20, invert = FALSE)
-}
+# 1. Basic volcano plot (all genes)
+plotVolcano(
+  DEResultsList = de_res,
+  genes = NULL,
+  x = "logFC",
+  y = "-log10(adj.P.Val)",
+  pointSize = 2,
+  color = "#6489B4",
+  highlightcolor = "#05254A",
+  nointerestcolor = "#B7B7B7",
+  title = "Volcano Plot: A vs B"
+)
+
+# 2. Volcano plot highlighting a signature (e.g., top 5 upregulated genes)
+sig_genes <- rownames(de_res[["A-B"]])[order(de_res[["A-B"]]$logFC, decreasing = TRUE)[1:5]]
+plotVolcano(
+  DEResultsList = de_res,
+  genes = list(Signature = sig_genes),
+  x = "logFC",
+  y = "-log10(adj.P.Val)",
+  pointSize = 2,
+  color = "#6489B4",
+  highlightcolor = "#05254A",
+  nointerestcolor = "#B7B7B7",
+  title = "Volcano Plot: Highlight Signature"
+)
 
 }

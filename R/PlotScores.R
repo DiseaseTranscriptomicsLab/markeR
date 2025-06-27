@@ -135,6 +135,64 @@
 #'   - Produces density plots of signature scores.
 #'   - Uses a **single fill color** (`"#ECBD78"` by default or from `ColorValues`).
 #'
+#' @examples
+#' # Simulate positive gene expression data (genes as rows, samples as columns)
+#' set.seed(42)
+#' expr <- as.data.frame(matrix(rexp(60, rate = 0.2), nrow = 6, ncol = 10))  # values > 0
+#' rownames(expr) <- paste0("Gene", 1:6)
+#' colnames(expr) <- paste0("Sample", 1:10)
+#'
+#' # Simulate metadata for samples with categorical and numeric variables
+#' metadata <- data.frame(
+#'   sample = colnames(expr),
+#'   Group = rep(c("A", "B"), each = 5),
+#'   Age = seq(30, 75, length.out = 10)
+#' )
+#'
+#' # Define two simple gene sets
+#' gene_sets <- list(
+#'   Signature1 = c("Gene1", "Gene2", "Gene3"),
+#'   Signature2 = c("Gene4", "Gene5", "Gene6")
+#' )
+#'
+#' # 1. Categorical variable: Violin plot (logmedian)
+#' PlotScores(
+#'   data = expr,
+#'   metadata = metadata,
+#'   gene_sets = gene_sets,
+#'   method = "logmedian",
+#'   Variable = "Group"
+#' )
+#'
+#' # 2. Numeric variable: Scatter plot (logmedian)
+#' PlotScores(
+#'   data = expr,
+#'   metadata = metadata,
+#'   gene_sets = gene_sets,
+#'   method = "logmedian",
+#'   Variable = "Age"
+#' )
+#'
+#' # 3. No variable: Density plot (logmedian)
+#' PlotScores(
+#'   data = expr,
+#'   metadata = metadata,
+#'   gene_sets = gene_sets,
+#'   method = "logmedian"
+#' )
+
+#' # 4. All methods, categorical variable: Heatmap and volcano
+#' # (Returns a list with $heatmap and $volcano elements)
+#' all_plots <- PlotScores(
+#'   data = expr,
+#'   metadata = metadata,
+#'   gene_sets = gene_sets,
+#'   method = "all",
+#'   Variable = "Group"
+#' )
+#' # Print the heatmap and volcano plot if desired
+#' print(all_plots$heatmap)
+#' print(all_plots$volcano)
 #'
 #' @export
 PlotScores <- function(data, metadata, gene_sets,
@@ -146,6 +204,8 @@ PlotScores <- function(data, metadata, gene_sets,
                        widthlegend=22, sig_threshold=0.05, cohen_threshold=0.5, colorPalette="Set3", cor=c("pearson","spearman","kendall")) {
 
   method <- match.arg(method)
+  mode <- match.arg(mode)
+  cor <- match.arg(cor)
 
   type <- identify_variable_type(metadata, Variable)#[Variable]
 
@@ -298,6 +358,13 @@ PlotScores <- function(data, metadata, gene_sets,
 #' - **If `method != "all"`** and the variable is **categorical**, a violin plot for each signature will be displayed.
 #' - **If `method != "all"`** and the variable is `NULL`, a density plot of the score distribution will be displayed.
 #' - **If `method != "all"`** and the variable is **numeric**, a scatter plot will be generated to show the relationship between the scores and the numeric variable.
+#'
+#' @return
+#' A `ggplot` or a `ggpubr::ggarrange` object depending on the input and parameters:
+#'
+#' - If `GroupingVariable` is `NULL`, returns a faceted grid of density plots (one per gene set).
+#' - If `GroupingVariable` is provided and `method != "all"`, returns a faceted grid of violin plots overlaid with jittered sample points and median bars, optionally annotated with Cohen’s d or f and p-values.
+#' - Each individual plot corresponds to one gene set score computed using the selected method.
 #'
 #' @import ggplot2
 #' @importFrom grid textGrob
@@ -476,7 +543,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
             line2 <- wrap_title(paste0("p = ", round(p_val, 3)), width = widthTitle)
             subtitle <- paste(line1, line2, sep = "\n")
           } else {
-            subtitle <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results$effsize, 3)), width = widthTitle)
+            subtitle <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results, 3)), width = widthTitle)
           }
 
 
