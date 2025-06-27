@@ -42,7 +42,7 @@
 #'
 #'
 #' # Generate the plot
-#' plot <- plotCombinedGSEA(GSEA_results, sig_threshold = 0.05, PointSize = 4)
+#' plot <- plotCombinedGSEA(GSEA_results, sig_threshold = 0.05, PointSize = 7)
 #' print(plot)
 #'
 #' @import ggplot2 ggpubr fgsea
@@ -76,7 +76,7 @@ plotGSEAenrichment <- function(GSEA_results, DEGList, gene_sets, widthTitle = 24
       stat_used <- gsea_row$stat_used
 
       # order ranks by stat used
-      ranks <- setNames(deg_df[,stat_used, drop=T], rownames(deg_df))
+      ranks <- setNames(deg_df[,stat_used, drop=TRUE], rownames(deg_df))
       ranks <- sort(ranks, decreasing = TRUE)
 
       nes_value <- round(gsea_row$NES, 2)

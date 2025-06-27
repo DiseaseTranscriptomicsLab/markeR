@@ -36,9 +36,9 @@ VariableAssociation(
 \item \code{"GSEA"}
 }}
 
-\item{data}{A matrix or data frame with gene expression data (genes as rows, samples as columns).}
+\item{data}{A data frame with gene expression data (genes as rows, samples as columns).}
 
-\item{metadata}{A data frame containing sample metadata.}
+\item{metadata}{A data frame containing sample metadata; the first column should be the sampleID.}
 
 \item{cols}{Character vector of metadata column names to analyze.}
 

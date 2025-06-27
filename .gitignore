@@ -10,9 +10,8 @@
 docs
 renv.lock
 .obsidian/
-/inst/Paper/data/  
+/inst/Paper/data/ 
 /inst/Paper/localjobs/ 
 markeR.BiocCheck/ 
 /doc/
-/Meta/  
- 
+/Meta/

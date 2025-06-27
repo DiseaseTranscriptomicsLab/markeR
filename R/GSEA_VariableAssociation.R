@@ -37,6 +37,49 @@
 #'   - `data`: A data frame containing the GSEA results, including normalized enrichment scores (NES), adjusted p-values, and contrasts.
 #'   - `plot`: A ggplot2 object visualizing the GSEA results as a lollipop plot.
 #'
+#'
+#' @examples
+#' # Simulate gene expression data (genes as rows, samples as columns)
+#' set.seed(42)
+#' expr <- as.data.frame(matrix(rnorm(500), nrow = 50, ncol = 10))
+#' rownames(expr) <- paste0("Gene", 1:50)
+#' colnames(expr) <- paste0("Sample", 1:10)
+#'
+#' # Simulate metadata (categorical and continuous)
+#' metadata <- data.frame(
+#'   sampleID = paste0("Sample", 1:10),
+#'   Group = rep(c("A", "B"), each = 5),
+#'   Age = sample(20:60, 10),
+#'   row.names = colnames(expr)
+#' )
+#'
+#' # Define a toy gene set: one gene set only for discovery mode!
+#' gene_set <- list(
+#'   Signature1 = paste0("Gene", 1:10)
+#' )
+#'
+#' # Score-based association (e.g., logmedian)
+#' res_score <- VariableAssociation(
+#'   method = "logmedian",
+#'   data = expr,
+#'   metadata = metadata,
+#'   cols = c("Group", "Age"),
+#'   gene_set = gene_set
+#' )
+#' print(res_score$Overall)
+#' print(res_score$plot)
+#'
+#' # GSEA-based association (if GSEA_VariableAssociation is available)
+#' # res_gsea <- VariableAssociation(
+#' #   method = "GSEA",
+#' #   data = expr,
+#' #   metadata = metadata,
+#' #   cols = "Group",
+#' #   gene_set = gene_set
+#' # )
+#' # print(res_gsea$data)
+#' print(res_score$plot)
+#'
 #' @keywords internal
 GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("simple","medium","extensive"), gene_set,nonsignif_color = "grey", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, widthlabels=18, labsize=10, titlesize=14, pointSize=5, ignore_NAs = FALSE, printplt =TRUE) {
   mode <- match.arg(mode)
@@ -80,7 +123,7 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("si
       DEGs_var <- calculateDE(data = data, metadata = metadata, variables = var, contrasts = contrasts)
       cont_vec <- c(cont_vec,contrasts)
     }
-    set.seed("20032025")
+    #set.seed("20032025")
     # Perform GSEA for each case
     GSEA_results <- runGSEA(DEGs_var, gene_sets = gene_set, stat=stat)
 

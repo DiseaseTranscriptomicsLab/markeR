@@ -36,7 +36,7 @@ The function provides options to:
 * Filter by **odds ratio and p-value**, using `or_threshold` and `pval_threshold`  
 * Limit the number of top-matching reference signatures shown, using `num_sigs_toplot`  
 
----
+ 
 
 # Similarity via Jaccard Index
 
@@ -72,7 +72,7 @@ geneset_similarity(
 )
 ```
 
----
+
 
 ## Example 2: Restrict comparison to a custom subset of MSigDB
 
@@ -89,7 +89,7 @@ geneset_similarity(
 )
 ```
 
----
+
 
 # Similarity via Log Odds Ratio
 
@@ -104,7 +104,7 @@ The log odds ratio (logOR) provides a statistically grounded alternative for ass
 
 > **Note**: When using `metric = "odds_ratio"`, the `universe` parameter **must** be supplied.
 
----
+
 
 ## Example 3:  Compare against user-defined and MSigDB gene sets
 
@@ -129,5 +129,9 @@ geneset_similarity(
 )
 ```
 
----
 
+# Session Information
+
+```{r}
+sessionInfo()
+```

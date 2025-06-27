@@ -360,7 +360,7 @@ compute_cohen_d <- function(dfScore, variable, quantitative_var="score", mode = 
     y <- dfScore_subset[dfScore_subset[["cohentest"]] == group2, quantitative_var, drop = TRUE]
 
     d <- cohen_d(x, y)
-    set.seed("03042025")
+    #set.seed("03042025")
     p_val <- t.test(x, y, var.equal = TRUE)$p.value
 
     results <- rbind(results, data.frame(Group1 = group1, Group2 = group2,
