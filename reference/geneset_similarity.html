@@ -11,7 +11,7 @@ or Fisher's Odds Ratio. Produces a heatmap of pairwise similarity metrics."><met
 
     <a class="navbar-brand me-2" href="../index.html">markeR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,7 +69,6 @@ or Fisher's Odds Ratio. Produces a heatmap of pairwise similarity metrics.</p>
 <span>  title_size <span class="op">=</span> <span class="fl">12</span>,</span>
 <span>  color_values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#F9F4AE"</span>, <span class="st">"#B44141"</span><span class="op">)</span>,</span>
 <span>  title <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  num_sigs_toplot <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  jaccard_threshold <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  msig_subset <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  width_text <span class="op">=</span> <span class="fl">20</span>,</span>
@@ -106,11 +105,11 @@ or Fisher's Odds Ratio. Produces a heatmap of pairwise similarity metrics.</p>
 
 
 <dt id="arg-or-threshold">or_threshold<a class="anchor" aria-label="anchor" href="#arg-or-threshold"></a></dt>
-<dd><p>Numeric. Minimum Odds Ratio required for a gene set to be included in the plot. Default is 1.</p></dd>
+<dd><p>(only if method == "odds_ratio" only) Numeric. Minimum Odds Ratio required for a gene set to be included in the plot. Default is 1.</p></dd>
 
 
 <dt id="arg-pval-threshold">pval_threshold<a class="anchor" aria-label="anchor" href="#arg-pval-threshold"></a></dt>
-<dd><p>Numeric. Maximum adjusted p-value to show a label. Default is 0.05.</p></dd>
+<dd><p>(only if method == "odds_ratio" only) Numeric. Maximum adjusted p-value to show a label. Default is 0.05.</p></dd>
 
 
 <dt id="arg-limits">limits<a class="anchor" aria-label="anchor" href="#arg-limits"></a></dt>
@@ -129,12 +128,8 @@ or Fisher's Odds Ratio. Produces a heatmap of pairwise similarity metrics.</p>
 <dd><p>Optional. Custom title for the plot. If <code>NULL</code>, the title defaults to <code>"Signature Overlap"</code>.</p></dd>
 
 
-<dt id="arg-num-sigs-toplot">num_sigs_toplot<a class="anchor" aria-label="anchor" href="#arg-num-sigs-toplot"></a></dt>
-<dd><p>Optional. Integer. Maximum number of comparison signatures (including user and MSigDB) to display.</p></dd>
-
-
 <dt id="arg-jaccard-threshold">jaccard_threshold<a class="anchor" aria-label="anchor" href="#arg-jaccard-threshold"></a></dt>
-<dd><p>Numeric. Minimum Jaccard index required for a gene set to be included in the plot. Default is <code>0</code>.</p></dd>
+<dd><p>(only if method == "jaccard" only) Numeric. Minimum Jaccard index required for a gene set to be included in the plot. Default is <code>0</code>.</p></dd>
 
 
 <dt id="arg-msig-subset">msig_subset<a class="anchor" aria-label="anchor" href="#arg-msig-subset"></a></dt>
@@ -155,6 +150,45 @@ If supplied, other filters will apply only to this subset. Use "collection = "al
     <p>A ggplot heatmap object.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Create two simple gene signatures</span></span></span>
+<span class="r-in"><span><span class="va">sig1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"TP53"</span>, <span class="st">"BRCA1"</span>, <span class="st">"MYC"</span>, <span class="st">"EGFR"</span>, <span class="st">"CDK2"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">sig2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ATXN2"</span>, <span class="st">"FUS"</span>, <span class="st">"MTOR"</span>, <span class="st">"CASP3"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">signatures</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>SignatureA <span class="op">=</span> <span class="va">sig1</span>, SignatureB <span class="op">=</span> <span class="va">sig2</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Compare the signatures using the Jaccard index</span></span></span>
+<span class="r-in"><span><span class="va">plt</span> <span class="op">&lt;-</span> <span class="fu">geneset_similarity</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  signatures <span class="op">=</span> <span class="va">signatures</span>,</span></span>
+<span class="r-in"><span>  metric <span class="op">=</span> <span class="st">"jaccard"</span>,</span></span>
+<span class="r-in"><span>  collection <span class="op">=</span> <span class="st">"H"</span>,</span></span>
+<span class="r-in"><span>  jaccard_threshold <span class="op">=</span> <span class="fl">0.01</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Print the plot (will show a small heatmap)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">plt</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="geneset_similarity-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Odds ratio example (requires universe)</span></span></span>
+<span class="r-in"><span><span class="va">gene_universe</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">sig1</span>, <span class="va">sig2</span>,</span></span>
+<span class="r-in"><span>  <span class="fu">msigdbr</span><span class="fu">::</span><span class="fu"><a href="https://igordot.github.io/msigdbr/reference/msigdbr.html" class="external-link">msigdbr</a></span><span class="op">(</span>species <span class="op">=</span> <span class="st">"Homo sapiens"</span>, category <span class="op">=</span> <span class="st">"C2"</span><span class="op">)</span><span class="op">$</span><span class="va">gene_symbol</span></span></span>
+<span class="r-in"><span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The `category` argument of `msigdbr()` is deprecated as of msigdbr 10.0.0.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Please use the `collection` argument instead.</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">plt_or</span> <span class="op">&lt;-</span> <span class="fu">geneset_similarity</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  signatures <span class="op">=</span> <span class="va">signatures</span>,</span></span>
+<span class="r-in"><span>  metric <span class="op">=</span> <span class="st">"odds_ratio"</span>,</span></span>
+<span class="r-in"><span>  universe <span class="op">=</span> <span class="va">gene_universe</span>,</span></span>
+<span class="r-in"><span>  collection <span class="op">=</span> <span class="st">"H"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">plt_or</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="geneset_similarity-2.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

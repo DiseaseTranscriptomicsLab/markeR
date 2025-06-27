@@ -9,7 +9,7 @@ It automatically determines the appropriate ranking statistic based on the gene 
 
     <a class="navbar-brand me-2" href="../index.html">markeR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -120,6 +120,27 @@ The result includes the standard <code>fgsea</code> output plus two additional c
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu">runGSEA</span><span class="op">(</span><span class="va">DEGList</span>, <span class="va">gene_sets</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Contrast1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              pathway      pval      padj    log2err         ES        NES  size</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;char&gt;     &lt;num&gt;     &lt;num&gt;      &lt;num&gt;      &lt;num&gt;      &lt;num&gt; &lt;int&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1: UnidirectionalSet 0.3307623 0.6395349 0.03034641  0.6701031  1.1274282     3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2:  BidirectionalSet 0.6395349 0.6395349 0.02005829 -0.5195836 -0.9041766     3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     leadingEdge stat_used</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          &lt;list&gt;    &lt;char&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1: Gene20, ....         B</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2: Gene10, ....         t</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Contrast2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              pathway      pval      padj    log2err        ES      NES  size</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;char&gt;     &lt;num&gt;     &lt;num&gt;      &lt;num&gt;     &lt;num&gt;    &lt;num&gt; &lt;int&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1: UnidirectionalSet 0.2864551 0.2864551 0.03604949 0.6738975 1.187215     3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2:  BidirectionalSet 0.1589155 0.2864551 0.05025059 0.7268263 1.313960     3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    leadingEdge stat_used</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;list&gt;    &lt;char&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:      Gene20         B</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2:       Gene2         t</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

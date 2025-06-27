@@ -9,7 +9,7 @@ It supports categorical and numeric comparisons, statistical testing, Cohen's d 
 
     <a class="navbar-brand me-2" href="../index.html">markeR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -192,6 +192,12 @@ The first column should contain sample identifiers (i.e., the column names of <c
 <dd><p>Character. Name of RColorBrewer palette for coloring (default = <code>"Set3"</code>).</p></dd>
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
+    <p>A <code>ggplot</code> or a <code><a href="https://rpkgs.datanovia.com/ggpubr/reference/ggarrange.html" class="external-link">ggpubr::ggarrange</a></code> object depending on the input and parameters:</p><ul><li><p>If <code>GroupingVariable</code> is <code>NULL</code>, returns a faceted grid of density plots (one per gene set).</p></li>
+<li><p>If <code>GroupingVariable</code> is provided and <code>method != "all"</code>, returns a faceted grid of violin plots overlaid with jittered sample points and median bars, optionally annotated with Cohen’s d or f and p-values.</p></li>
+<li><p>Each individual plot corresponds to one gene set score computed using the selected method.</p></li>
+</ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Four methods are available:</p><ul><li><p><strong>ssGSEA</strong>: Uses the single-sample Gene Set Enrichment Analysis (ssGSEA) method to compute an enrichment score

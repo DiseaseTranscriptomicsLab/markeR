@@ -15,7 +15,7 @@ design, specific coefficient indices may be provided via coefs to extract the co
 
     <a class="navbar-brand me-2" href="../index.html">markeR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -121,20 +121,53 @@ leading to a loss of data to be fitted in the model. Only applicable if <code>va
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span>  <span class="co"># Create example data:</span></span></span>
-<span class="r-in"><span>  <span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">1000</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">100</span>, ncol <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"gene"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">100</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"sample"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>sample <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span>, X <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">5</span><span class="op">)</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Simulate non-negative gene expression data (counts)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">expr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Poisson.html" class="external-link">rpois</a></span><span class="op">(</span><span class="fl">1000</span>, lambda <span class="op">=</span> <span class="fl">20</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">100</span>, ncol <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">expr</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"gene"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">expr</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"sample"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span>  <span class="co"># Example 1: Build design matrix from variables with a contrast:</span></span></span>
-<span class="r-in"><span>  <span class="va">de_res</span> <span class="op">&lt;-</span> <span class="fu">calculateDE</span><span class="op">(</span><span class="va">data</span>, <span class="va">metadata</span>, variables <span class="op">=</span> <span class="st">"X"</span>, contrasts <span class="op">=</span> <span class="st">"A-B"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Simulate metadata with a group variable</span></span></span>
+<span class="r-in"><span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span> sample <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">expr</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span> Group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span>  <span class="co"># Example 2: Supply a custom design matrix directly:</span></span></span>
-<span class="r-in"><span>  <span class="va">design</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/model.matrix.html" class="external-link">model.matrix</a></span><span class="op">(</span><span class="op">~</span><span class="fl">0</span> <span class="op">+</span> <span class="va">X</span>, data <span class="op">=</span> <span class="va">metadata</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="va">de_res3</span> <span class="op">&lt;-</span> <span class="fu">calculateDE</span><span class="op">(</span><span class="va">data</span>, <span class="va">metadata</span>, variables <span class="op">=</span> <span class="st">"X"</span>, design <span class="op">=</span> <span class="va">design</span>, contrasts <span class="op">=</span> <span class="st">"A-B"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span><span class="co"># Differential expression for Group A vs Group B using variables</span></span></span>
+<span class="r-in"><span><span class="va">de_var</span> <span class="op">&lt;-</span> <span class="fu">calculateDE</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">expr</span>,</span></span>
+<span class="r-in"><span>  metadata <span class="op">=</span> <span class="va">metadata</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="st">"Group"</span>,</span></span>
+<span class="r-in"><span>  contrasts <span class="op">=</span> <span class="st">"A-B"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">de_var</span><span class="op">[[</span><span class="st">"A-B"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              logFC  AveExpr         t      P.Value  adj.P.Val          B</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gene99   0.8089957 4.271457  3.872148 0.0002292632 0.02292632  0.3805475</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gene100  0.5616097 4.169432  2.789276 0.0066981874 0.33490937 -2.6692684</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gene97   0.5475480 4.203882  2.573807 0.0120392169 0.33719450 -3.1834675</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gene6    0.5345671 4.265823  2.530691 0.0134877800 0.33719450 -3.2822572</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gene85   0.4461708 4.300741  2.194267 0.0313245769 0.57725317 -4.0041349</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gene48  -0.4401609 4.364642 -2.090269 0.0399956221 0.57725317 -4.2091717</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Build equivalent design matrix manually</span></span></span>
+<span class="r-in"><span><span class="va">design</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/model.matrix.html" class="external-link">model.matrix</a></span><span class="op">(</span><span class="op">~</span><span class="fl">0</span> <span class="op">+</span> <span class="va">Group</span>, data <span class="op">=</span> <span class="va">metadata</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">design</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>,<span class="st">"B"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Differential expression using the design matrix directly</span></span></span>
+<span class="r-in"><span><span class="va">de_mat</span> <span class="op">&lt;-</span> <span class="fu">calculateDE</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">expr</span>,</span></span>
+<span class="r-in"><span>  metadata <span class="op">=</span> <span class="va">metadata</span>,</span></span>
+<span class="r-in"><span>  modelmat <span class="op">=</span> <span class="va">design</span>,</span></span>
+<span class="r-in"><span>  contrasts <span class="op">=</span> <span class="st">"A-B"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">de_mat</span><span class="op">[[</span><span class="st">"A-B"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              logFC  AveExpr         t      P.Value  adj.P.Val          B</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gene99   0.8089957 4.271457  3.872148 0.0002292632 0.02292632  0.3805475</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gene100  0.5616097 4.169432  2.789276 0.0066981874 0.33490937 -2.6692684</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gene97   0.5475480 4.203882  2.573807 0.0120392169 0.33719450 -3.1834675</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gene6    0.5345671 4.265823  2.530691 0.0134877800 0.33719450 -3.2822572</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gene85   0.4461708 4.300741  2.194267 0.0313245769 0.57725317 -4.0041349</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gene48  -0.4401609 4.364642 -2.090269 0.0399956221 0.57725317 -4.2091717</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

@@ -21,7 +21,7 @@ an automatic grid is computed.'><meta property="og:image" content="https://disea
 
     <a class="navbar-brand me-2" href="../index.html">markeR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -212,29 +212,51 @@ are provided. The individual plots are arranged into a grid using <code><a href=
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Create example data:</span></span></span>
-<span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">1000</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">100</span>, ncol <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"gene"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">100</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"sample"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>sample <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span>, X <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">5</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Example differential expression results (for two contrasts):</span></span></span>
-<span class="r-in"><span><span class="va">de_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  Contrast1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>logFC <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span>, `-log10(adj.P.Val)` <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">0</span>, <span class="fl">5</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>                         row.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"gene"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">100</span><span class="op">)</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  Contrast2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>logFC <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span>, `-log10(adj.P.Val)` <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">0</span>, <span class="fl">5</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>                         row.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"gene"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">100</span><span class="op">)</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># (Assumes you have already created `expr`, `metadata`, and run `calculateDE` as shown above)</span></span></span>
+<span class="r-in"><span><span class="co"># For reference, here is the minimal workflow:</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">expr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Poisson.html" class="external-link">rpois</a></span><span class="op">(</span><span class="fl">1000</span>, lambda <span class="op">=</span> <span class="fl">20</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">100</span>, ncol <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">expr</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"gene"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">expr</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"sample"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  sample <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">expr</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">de_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="calculateDE.html">calculateDE</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">expr</span>,</span></span>
+<span class="r-in"><span>  metadata <span class="op">=</span> <span class="va">metadata</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="st">"Group"</span>,</span></span>
+<span class="r-in"><span>  contrasts <span class="op">=</span> <span class="st">"A-B"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Basic volcano plot grid with default settings:</span></span></span>
-<span class="r-in"><span><span class="fu">plotVolcano</span><span class="op">(</span><span class="va">de_results</span>, genes <span class="op">=</span> <span class="cn">NULL</span>, N <span class="op">=</span> <span class="cn">NULL</span>,</span></span>
-<span class="r-in"><span>            x <span class="op">=</span> <span class="st">"logFC"</span>, y <span class="op">=</span> <span class="st">"-log10(adj.P.Val)"</span>, pointSize <span class="op">=</span> <span class="fl">2</span>,</span></span>
-<span class="r-in"><span>            color <span class="op">=</span> <span class="st">"#6489B4"</span>, highlightcolor <span class="op">=</span> <span class="st">"#05254A"</span>, nointerestcolor <span class="op">=</span> <span class="st">"#B7B7B7"</span>,</span></span>
-<span class="r-in"><span>            threshold_y <span class="op">=</span> <span class="cn">NULL</span>, threshold_x <span class="op">=</span> <span class="cn">NULL</span>,</span></span>
-<span class="r-in"><span>            xlab <span class="op">=</span> <span class="cn">NULL</span>, ylab <span class="op">=</span> <span class="cn">NULL</span>, ncol <span class="op">=</span> <span class="cn">NULL</span>, nrow <span class="op">=</span> <span class="cn">NULL</span>, title <span class="op">=</span> <span class="st">"Volcano Plot Grid"</span>,</span></span>
-<span class="r-in"><span>            labsize <span class="op">=</span> <span class="fl">10</span>, widthlabs <span class="op">=</span> <span class="fl">20</span>, invert <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span><span class="co"># 1. Basic volcano plot (all genes)</span></span></span>
+<span class="r-in"><span><span class="fu">plotVolcano</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  DEResultsList <span class="op">=</span> <span class="va">de_res</span>,</span></span>
+<span class="r-in"><span>  genes <span class="op">=</span> <span class="cn">NULL</span>,</span></span>
+<span class="r-in"><span>  x <span class="op">=</span> <span class="st">"logFC"</span>,</span></span>
+<span class="r-in"><span>  y <span class="op">=</span> <span class="st">"-log10(adj.P.Val)"</span>,</span></span>
+<span class="r-in"><span>  pointSize <span class="op">=</span> <span class="fl">2</span>,</span></span>
+<span class="r-in"><span>  color <span class="op">=</span> <span class="st">"#6489B4"</span>,</span></span>
+<span class="r-in"><span>  highlightcolor <span class="op">=</span> <span class="st">"#05254A"</span>,</span></span>
+<span class="r-in"><span>  nointerestcolor <span class="op">=</span> <span class="st">"#B7B7B7"</span>,</span></span>
+<span class="r-in"><span>  title <span class="op">=</span> <span class="st">"Volcano Plot: A vs B"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plotVolcano-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># 2. Volcano plot highlighting a signature (e.g., top 5 upregulated genes)</span></span></span>
+<span class="r-in"><span><span class="va">sig_genes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">de_res</span><span class="op">[[</span><span class="st">"A-B"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">de_res</span><span class="op">[[</span><span class="st">"A-B"</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">logFC</span>, decreasing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="fu">plotVolcano</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  DEResultsList <span class="op">=</span> <span class="va">de_res</span>,</span></span>
+<span class="r-in"><span>  genes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Signature <span class="op">=</span> <span class="va">sig_genes</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  x <span class="op">=</span> <span class="st">"logFC"</span>,</span></span>
+<span class="r-in"><span>  y <span class="op">=</span> <span class="st">"-log10(adj.P.Val)"</span>,</span></span>
+<span class="r-in"><span>  pointSize <span class="op">=</span> <span class="fl">2</span>,</span></span>
+<span class="r-in"><span>  color <span class="op">=</span> <span class="st">"#6489B4"</span>,</span></span>
+<span class="r-in"><span>  highlightcolor <span class="op">=</span> <span class="st">"#05254A"</span>,</span></span>
+<span class="r-in"><span>  nointerestcolor <span class="op">=</span> <span class="st">"#B7B7B7"</span>,</span></span>
+<span class="r-in"><span>  title <span class="op">=</span> <span class="st">"Volcano Plot: Highlight Signature"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plotVolcano-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="index.html">markeR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -81,7 +81,7 @@
 <p><strong>markeR</strong> provides a suite of methods for using gene sets (signatures) to quantify and evaluate the extent to which a given gene signature marks a specific phenotype from gene expression data. The package implements various scoring, enrichment and classification approaches, along with tools to compute performance metrics and visualize results.</p>
 <blockquote>
 <p><strong>To cite markeR please use:</strong></p>
-<p>Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). <em>markeR: an R Toolkit for Evaluating Gene Sets as Phenotypic Markers</em>. Gulbenkian Institute for Molecular Medicine, Faculdade de Medicina, Universidade de Lisboa, Lisbon, Portugal. R package version 0.9.2, <a href="https://github.com/DiseaseTranscriptomicsLab/markeR" class="external-link uri">https://github.com/DiseaseTranscriptomicsLab/markeR</a>.</p>
+<p>Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). <em>markeR: an R Toolkit for Evaluating Gene Sets as Phenotypic Markers</em>. Gulbenkian Institute for Molecular Medicine, Faculdade de Medicina, Universidade de Lisboa, Lisbon, Portugal. R package version 0.99.0, <a href="https://github.com/DiseaseTranscriptomicsLab/markeR" class="external-link uri">https://github.com/DiseaseTranscriptomicsLab/markeR</a>.</p>
 </blockquote>
 <p><code>inst/Paper/</code> — Contains all scripts and materials used in the original markeR paper to reproduce analyses and figures.</p>
 <p><img src="reference/figures/Workflow.png"></p>
@@ -160,6 +160,7 @@
 <code>R</code> <code>4.5.x</code>
 </li>
 </ul>
+<p>However, due to <code>Bioconductor</code> submission requirements, <code>R</code> version <code>4.5.0</code> is listed as required upon package installation.</p>
 <p>⚠️ Compatibility with older R versions depends on the specific versions of dependencies installed. Older versions of <code>R</code> (including <code>R</code> <code>3.5.x</code>, <code>3.6.x</code>, <code>4.0.x</code>, <code>4.1.x</code>, <code>4.2.x</code>, and <code>4.3.x</code>) may work, but are not officially supported due to upstream dependency constraints. In some cases, installing older versions of dependencies (e.g., via <code>renv</code>, <code>CRAN</code> snapshots, or <code>checkpoint</code>) can restore compatibility.</p>
 </div>
 <div class="section level2">
@@ -295,7 +296,6 @@ A data frame with annotations for each sample, with the sample ID in the first c
 <li><p><strong>Log Odds Ratio (logOR)</strong>: Computes enrichment using a user-defined gene universe and Fisher’s exact test.</p></li>
 </ul>
 <p>Filters can be applied based on similarity thresholds (e.g., minimum Jaccard, OR, or p-value).</p>
-<hr>
 </div>
 </div>
 <div class="section level2">
@@ -303,7 +303,7 @@ A data frame with annotations for each sample, with the sample ID in the first c
 </h2>
 <p>📩 For any questions or concerns, feel free to reach out:</p>
 <p><strong>Rita Martins-Silva</strong><br>
-Email: <a href="mailto:rita.silva@gimm.pt" class="email">rita.silva@gimm.pt</a></p>
+Email: <a href="mailto:rita.silva@medicina.ulisboa.pt" class="email">rita.silva@medicina.ulisboa.pt</a></p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
@@ -317,8 +317,7 @@ Email: <a href="mailto:rita.silva@gimm.pt" class="email">rita.silva@gimm.pt</a><
 <div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
-<li><a href="LICENSE.html">Full license</a></li>
-<li><small><a href="https://opensource.org/licenses/mit-license.php" class="external-link">MIT</a> + file <a href="LICENSE-text.html">LICENSE</a></small></li>
+<li><a href="https://www.r-project.org/Licenses/Artistic-2.0" class="external-link">Artistic-2.0</a></li>
 </ul>
 </div>
 
@@ -344,7 +343,8 @@ Email: <a href="mailto:rita.silva@gimm.pt" class="email">rita.silva@gimm.pt</a><
 <ul class="list-unstyled">
 <li><a href="https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
 <li><a href="https://diseasetranscriptomicslab.github.io/markeR/"><img src="https://img.shields.io/badge/docs-pkgdown-blue.svg" alt="Pkgdown"></a></li>
-<li><a href="https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/Rminversion.yaml" class="external-link"><img src="https://img.shields.io/badge/min%20R-4.4.0-blue.svg" alt="Minimal R Version"></a></li>
+<li><a href="https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/Rminversion.yaml" class="external-link"><img src="https://img.shields.io/badge/min%20R-4.5.0-blue.svg" alt="Minimal R Version"></a></li>
+<li><a href="https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml" class="external-link"><img src="https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg" alt="Bioconductor Check"></a></li>
 </ul>
 </div>
 
