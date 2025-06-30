@@ -7,11 +7,11 @@
 
 ![](https://img.shields.io/badge/status-development-yellowgreen)
 [![R-CMD-check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml)
+[![Bioconductor
+Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml)
 [![Pkgdown](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://diseasetranscriptomicslab.github.io/markeR/)
 [![Minimal R
 Version](https://img.shields.io/badge/min%20R-4.4.0-blue.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/Rminversion.yaml)
-[![Bioconductor
-Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/check-bioc.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/check-bioc.yml)
 
 <!-- badges: end -->
 
