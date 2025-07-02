@@ -22,7 +22,11 @@
 #' @param width_text Integer. Character wrap width for labels.
 #' @param na_color Character. Color for NA values in the heatmap. Default is `"grey90"`.
 #'
-#' @return A ggplot heatmap object.
+#' @return Invisibly returns a list containing:
+#'   \describe{
+#'     \item{\code{plot}}{The \pkg{ggplot2} object of the similarity heatmap.}
+#'     \item{\code{data}}{The data frame object containing the similarity scores aper pair of gene sets.}
+#'   }
 #'
 #' @import ggplot2
 #' @importFrom tibble tibble
@@ -259,6 +263,8 @@ geneset_similarity <- function(
     similarity_df <- similarity_df[similarity_df$Compared_Signature %in% kept_signatures, , drop = FALSE]
   }
 
+  data <- similarity_df
+
   similarity_df$Reference_Signature <- sapply(similarity_df$Reference_Signature, function(x) wrap_title(x, width_text))
   similarity_df$Compared_Signature <- sapply(similarity_df$Compared_Signature, function(x) wrap_title(x, width_text))
 
@@ -288,5 +294,8 @@ geneset_similarity <- function(
       plot.title = element_text(hjust = 0.5, size = title_size)
     )
 
-  return(plt)
+  plt
+
+  invisible(list(plot=plt,
+                 data=data))
 }
