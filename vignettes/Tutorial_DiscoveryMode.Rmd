@@ -7,6 +7,14 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  dev = "png",
+  dpi = 72, 
+  fig.retina = 1
+)
+```
+
 This vignette provides a comprehensive introduction to the **markeR** package, focusing on its **Discovery Mode**. The discovery mode was designed for users who are interested in quantifying a known, robust gene set in a given dataset to explore associations with other phenotypic or clinical variables. This approach is particularly suited to hypothesis generation where the phenotype marked by the gene set is of known biological or clinical relevance.
  
 # Installation 

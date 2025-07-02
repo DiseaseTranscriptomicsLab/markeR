@@ -15,4 +15,9 @@
 ^tests/debug/.*$
 ^markeR\.BiocCheck$
 ^doc$
+^inst/doc$
 ^Meta$
+^.*\\.Rhistory$
+^.*\\.RData$
+^\\.github$
+^\\.git$
