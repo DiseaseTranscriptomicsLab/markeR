@@ -3,7 +3,6 @@
 * Updated documentation and internal code to meet Bioconductor submission guidelines.
 * Fixed minor bugs across multiple functions.
 * Added unit tests using `testthat` for all exported functions.
-* Increased minimum `R` version requirement to `4.5.0` in accordance with Bioconductor policy.
 * Reduced size of demo data to improve package loading time and final size.
 
 # markeR 0.9.2 (25 Jun, 2025)
