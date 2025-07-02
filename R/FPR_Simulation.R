@@ -343,12 +343,12 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable, gene_l
     p <- ggplot2::ggplot() +
       geom_jitter(data = final_df[final_df$type == "Simulated",],
                   aes(y = cohen, x = method, color = type),
-                  width = 0.3, size = pointSize, alpha = 0.5) +
+                  width = 0.3, height = 0,size = pointSize, alpha = 0.5) +
       geom_violin(data = final_df, aes(y = cohen, x = method),
                   fill = "#F0F0F0", color = "black", alpha = 0.5) +
       geom_jitter(data = final_df[final_df$type == "Original",],
                   aes(y = cohen, x = method, color = type),
-                  width = 0.3, size = pointSize, alpha = 1) +
+                  width = 0.3, height = 0, size = pointSize, alpha = 1) +
       geom_text(data = all_max,
                 aes(x = method, y = y, label = label),
                 size = 3,
