@@ -170,6 +170,9 @@ geneset_similarity <- function(
       gsets <- gsets[names(gsets) %in% msig_subset]
     }
 
+  } else {
+
+    gsets <- c()
   }
 
   if (is.null(other_user_signatures)) {
