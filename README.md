@@ -7,11 +7,13 @@
 
 ![](https://img.shields.io/badge/status-development-yellowgreen)
 [![R-CMD-check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml)
-[![Bioconductor
-Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml)
 [![Pkgdown](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://diseasetranscriptomicslab.github.io/markeR/)
 [![Minimal R
 Version](https://img.shields.io/badge/min%20R-4.4.0-blue.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/Rminversion.yaml)
+[![Bioconductor
+Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml)
+[![codecov](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR/branch/main/graph/badge.svg)](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR)
+ 
 
 <!-- badges: end -->
 
@@ -26,7 +28,7 @@ along with tools to compute performance metrics and visualize results.
 > Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). *markeR: an R
 > Toolkit for Evaluating Gene Sets as Phenotypic Markers*. Gulbenkian
 > Institute for Molecular Medicine, Faculdade de Medicina, Universidade
-> de Lisboa, Lisbon, Portugal. R package version 0.99.0,
+> de Lisboa, Lisbon, Portugal. R package version 0.9.3,
 > <https://github.com/DiseaseTranscriptomicsLab/markeR>.
 
 `inst/Paper/` — Contains all scripts and materials used in the original

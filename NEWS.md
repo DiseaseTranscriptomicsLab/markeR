@@ -1,7 +1,9 @@
-# markeR 0.99.0 (2025-06-27)
+# markeR 0.9.3 (2025-07-2)
 
 * Updated documentation and internal code to meet Bioconductor submission guidelines.
-* Fixed minor bugs across multiple functions. 
+* Fixed minor bugs across multiple functions.
+* Added unit tests using `testthat` for all exported functions.
+* Reduced size of demo data to improve package loading time and final size. 
 
 # markeR 0.9.2 (25 Jun, 2025)
 

@@ -2,11 +2,18 @@
 title: "Gene Set Similarity Tutorial"
 output: rmarkdown::html_document
 vignette: >
-  %\VignetteIndexEntry{Introduction to markeR}
+  %\VignetteIndexEntry{Gene Set Similarity Tutorial}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  dev = "png",
+  dpi = 72, 
+  fig.retina = 1 
+)
+```
 # Installation 
 
 The user can install the development version of markeR from [GitHub](https://github.com/) with:

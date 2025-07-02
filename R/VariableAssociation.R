@@ -127,6 +127,9 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
   }
 
   results <- list()
+  if (is.null(cols)) {
+    cols <- setdiff(names(df), target_var)  # Use all columns except the target variable
+  }
   variable_types <- identify_variable_type(df, cols = cols)
 
   for (var in names(variable_types)) {

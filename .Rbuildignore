@@ -11,8 +11,11 @@
 ^pkgdown$
 ^inst/Paper(/.*)?$
 ^tests/debug$
-^tests/debug/
-^tests/debug/.*$
 ^markeR\.BiocCheck$
 ^doc$
 ^Meta$
+^.*\\.Rhistory$
+^.*\\.RData$
+^\\.github$
+^\\.git$
+

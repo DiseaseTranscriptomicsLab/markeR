@@ -2,10 +2,18 @@
 title: "Discovery Mode Tutorial"
 output: rmarkdown::html_document
 vignette: >
-  %\VignetteIndexEntry{Introduction to markeR}
+  %\VignetteIndexEntry{Discovery Mode Tutorial}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  dev = "png",
+  dpi = 72, 
+  fig.retina = 1
+)
+```
 
 This vignette provides a comprehensive introduction to the **markeR** package, focusing on its **Discovery Mode**. The discovery mode was designed for users who are interested in quantifying a known, robust gene set in a given dataset to explore associations with other phenotypic or clinical variables. This approach is particularly suited to hypothesis generation where the phenotype marked by the gene set is of known biological or clinical relevance.
  
@@ -43,7 +51,7 @@ library(markeR)
 # Load example gene sets
 data("genesets_example")
 HernandezSegura_GeneSet <- list(HernandezSegura=genesets_example$HernandezSegura)
-print(HernandezSegura_GeneSet) 
+head(HernandezSegura_GeneSet) 
 ```
 
 ```{r loaddata}
@@ -114,7 +122,7 @@ We also include two synthetic phenotypic variables:
 Though artificial, these mimic potential **technical covariates**. Strong associations between these and the score could indicate **batch effects**, where technical variation may confound biological interpretation.
 
 
-```{r variableassoc_score_sen, fig.width=10, fig.height=7, out.width="100%", warning=FALSE, message=FALSE} 
+```{r variableassoc_score_sen, fig.width=7, fig.height=7, out.width="100%", warning=FALSE, message=FALSE} 
 results_scoreassoc_bidirect <- VariableAssociation(data = counts_example, 
                           metadata = metadata_example, 
                           method = "logmedian",

@@ -2,11 +2,19 @@
 title: "Benchmarking Mode Tutorial"
 output: rmarkdown::html_document
 vignette: >
-  %\VignetteIndexEntry{Introduction to markeR}
+  %\VignetteIndexEntry{Benchmarking Mode Tutorial}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
   
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  dev = "png",
+  dpi = 72, 
+  fig.retina = 1
+)
+```
+
 This vignette provides a comprehensive introduction to the **markeR** package, focusing on its **Benchmarking Mode**. This mode is designed to evaluate the performance of gene signatures in quantifying specific biological states or phenotypes, such as disease states or cellular conditions. It allows users to assess the robustness and reliability of gene signatures across various conditions, providing a standardized framework for benchmarking.
  
 # Installation 
@@ -43,7 +51,7 @@ library(markeR)
 ```{r loadsig} 
 # Load example gene sets
 data("genesets_example")
-print(genesets_example) 
+lapply(genesets_example, head, n = 10)
 ```
 
 ```{r loaddata}
@@ -456,14 +464,7 @@ Below is an example usage of `plotVolcano` that visualizes differential expressi
 These examples illustrate how users can customise the output plot to highlight biologically meaningful patterns or focus on specific gene sets.
 
 
-```{r volcanos_DEGs, fig.width=4, fig.height=3, out.width="40%", warning=FALSE, message=FALSE}
-# Plot Differentially Expressed Genes:
-plotVolcano(DEGs, genes = NULL, N = NULL,
-            x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
-            color = "#6489B4", highlightcolor = "#05254A", nointerestcolor = "#B7B7B7",
-            threshold_y = NULL, threshold_x = NULL,
-            xlab = NULL, ylab = NULL, ncol = NULL, nrow = NULL, title = "Marthandan et al. 2016",
-            labsize = 8, widthlabs = 25, invert = FALSE)
+```{r volcanos_DEGs, fig.width=4, fig.height=3, out.width="40%", warning=FALSE, message=FALSE} 
 
 # Color Interesting Genes:
 plotVolcano(DEGs, genes = NULL, N = NULL,
@@ -723,7 +724,7 @@ The `ROCandAUCplot` function evaluates the discriminatory power of individual ge
 * For ease of interpretation, the directionality of the comparison is adjusted so that the AUC is always >=0.5, showing only discriminatory power rather than directionality.
 
 ```{r rocAUCexample, fig.width=10, fig.height=4, out.width="100%", warning=FALSE, message=FALSE}
-options(error=recover)
+ 
 ROCandAUCplot(counts_example, 
               metadata_example, 
               condition_var = "Condition", 

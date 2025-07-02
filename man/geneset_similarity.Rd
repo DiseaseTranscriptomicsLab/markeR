@@ -58,7 +58,11 @@ If supplied, other filters will apply only to this subset. Use "collection = "al
 \item{na_color}{Character. Color for NA values in the heatmap. Default is \code{"grey90"}.}
 }
 \value{
-A ggplot heatmap object.
+Invisibly returns a list containing:
+\describe{
+\item{\code{plot}}{The \pkg{ggplot2} object of the similarity heatmap.}
+\item{\code{data}}{The data frame object containing the similarity scores aper pair of gene sets.}
+}
 }
 \description{
 Visualizes similarity between user-defined gene signatures and either

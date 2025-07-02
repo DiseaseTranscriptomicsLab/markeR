@@ -28,10 +28,18 @@
 #' @param ColorValues Named vector of colors for plot points, typically `Original` and `Simulated`. If `NULL`, default colors are used.
 #' @param ncol Integer. Number of columns for arranging signature plots in a grid layout. If `NULL`, layout is auto-calculated.
 #' @param nrow Integer. Number of rows for arranging signature plots in a grid layout. If `NULL`, layout is auto-calculated.
-
+#'
 #' @return Invisibly returns the combined `ggplot` object showing observed vs simulated effect sizes.
 #' One violin plot is generated per signature and contrast. Observed values are highlighted and compared
 #' to the simulated distribution. Significance (adjusted p-value ≤ 0.05) is indicated by point shape.
+#'
+#' @return Invisibly returns a list containing:
+#'   \describe{
+#'     \item{\code{plot}}{A combined `ggplot`using `ggarrange`; one violin plot is generated per signature and contrast.
+#'     Observed values are highlighted and compared to the simulated distribution.
+#'     Significance (adjusted p-value ≤ 0.05) is indicated by point shape.}
+#'     \item{\code{data}}{A list of data frames, one for each signature, containing the original and simulated effect sizes.}
+#'   }
 #'
 #' @details
 #' The function supports both categorical and numeric variables:
@@ -147,6 +155,7 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable, gene_l
 
   # Create a list to store plots (one per signature)
   plot_list <- list()
+  data_list <- list()
   signature_names <- names(results)
 
   for (sig in signature_names) {
@@ -343,12 +352,12 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable, gene_l
     p <- ggplot2::ggplot() +
       geom_jitter(data = final_df[final_df$type == "Simulated",],
                   aes(y = cohen, x = method, color = type),
-                  width = 0.3, size = pointSize, alpha = 0.5) +
+                  width = 0.3, height = 0,size = pointSize, alpha = 0.5) +
       geom_violin(data = final_df, aes(y = cohen, x = method),
                   fill = "#F0F0F0", color = "black", alpha = 0.5) +
       geom_jitter(data = final_df[final_df$type == "Original",],
                   aes(y = cohen, x = method, color = type),
-                  width = 0.3, size = pointSize, alpha = 1) +
+                  width = 0.3, height = 0, size = pointSize, alpha = 1) +
       geom_text(data = all_max,
                 aes(x = method, y = y, label = label),
                 size = 3,
@@ -367,6 +376,7 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable, gene_l
       scale_color_manual(values = ColorValues)
 
     plot_list[[sig]] <- p  # ADD THIS LINE to collect each plot
+    data_list[[sig]] <- final_df
 
   }  # ADD THIS LINE to close the for-loop over signatures
 
@@ -399,5 +409,8 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable, gene_l
     top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize))
   )
 
-  return(combined_plot)
+  combined_plot
+
+  invisible(list(plot=combined_plot,
+            data = data_list))
 }
