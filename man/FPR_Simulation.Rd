@@ -69,6 +69,14 @@ Default is all genes in \code{data}.}
 Invisibly returns the combined \code{ggplot} object showing observed vs simulated effect sizes.
 One violin plot is generated per signature and contrast. Observed values are highlighted and compared
 to the simulated distribution. Significance (adjusted p-value ≤ 0.05) is indicated by point shape.
+
+Invisibly returns a list containing:
+\describe{
+\item{\code{plot}}{A combined \code{ggplot}using \code{ggarrange}; one violin plot is generated per signature and contrast.
+Observed values are highlighted and compared to the simulated distribution.
+Significance (adjusted p-value ≤ 0.05) is indicated by point shape.}
+\item{\code{data}}{A list of data frames, one for each signature, containing the original and simulated effect sizes.}
+}
 }
 \description{
 This function simulates false positive rates (FPR) by generating simulated gene signatures and comparing
