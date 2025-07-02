@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">markeR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,8 @@ was performed using kallisto (v0.44.0). Genes with low expression (mean count &l
 calculated with <code><a href="https://rdrr.io/pkg/edgeR/man/calcNormFactors.html" class="external-link">edgeR::calcNormFactors</a></code>, and log2-transformed values were obtained via <code><a href="https://rdrr.io/pkg/limma/man/voom.html" class="external-link">limma::voom</a></code>.</p>
 <p>Intermediate time points for HFF and MRC5 cell lines were excluded, resulting in a final dataset with 45 high-quality samples across proliferative, quiescent,
 and senescent conditions.</p>
+<p>For illustration and package size reduction, genes with variance in the bottom 10% across samples were removed,
+retaining the 90% most variable genes in the dataset.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

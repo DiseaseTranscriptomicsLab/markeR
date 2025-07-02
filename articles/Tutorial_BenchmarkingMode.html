@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">markeR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -147,7 +147,7 @@ of markeR.</li>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Load example gene sets</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"genesets_example"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">genesets_example</span><span class="op">)</span> </span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">genesets_example</span>, <span class="va">head</span>, n <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## $HernandezSegura</span></span>
 <span><span class="co">##        gene enrichment</span></span>
 <span><span class="co">## 1    ACADVL          1</span></span>
@@ -160,86 +160,10 @@ of markeR.</li>
 <span><span class="co">## 8     C2CD5         -1</span></span>
 <span><span class="co">## 9     CCND1          1</span></span>
 <span><span class="co">## 10    CHMP5          1</span></span>
-<span><span class="co">## 11    CNTLN         -1</span></span>
-<span><span class="co">## 12   CREBBP         -1</span></span>
-<span><span class="co">## 13     DDA1          1</span></span>
-<span><span class="co">## 14     DGKA          1</span></span>
-<span><span class="co">## 15   DYNLT3          1</span></span>
-<span><span class="co">## 16    EFNB3         -1</span></span>
-<span><span class="co">## 17  FAM214B          1</span></span>
-<span><span class="co">## 18     GBE1          1</span></span>
-<span><span class="co">## 19     GDNF          1</span></span>
-<span><span class="co">## 20    GSTM4         -1</span></span>
-<span><span class="co">## 21     ICE1         -1</span></span>
-<span><span class="co">## 22    KCTD3         -1</span></span>
-<span><span class="co">## 23     KLC1          1</span></span>
-<span><span class="co">## 24    MEIS1         -1</span></span>
-<span><span class="co">## 25   MT-CYB          1</span></span>
-<span><span class="co">## 26     NFIA         -1</span></span>
-<span><span class="co">## 27     NOL3          1</span></span>
-<span><span class="co">## 28    P4HA2          1</span></span>
-<span><span class="co">## 29    PATZ1         -1</span></span>
-<span><span class="co">## 30    PCIF1         -1</span></span>
-<span><span class="co">## 31   PDLIM4          1</span></span>
-<span><span class="co">## 32    PDS5B         -1</span></span>
-<span><span class="co">## 33     PLK3          1</span></span>
-<span><span class="co">## 34   PLXNA3          1</span></span>
-<span><span class="co">## 35   POFUT2          1</span></span>
-<span><span class="co">## 36    RAI14          1</span></span>
-<span><span class="co">## 37    RHNO1         -1</span></span>
-<span><span class="co">## 38     SCOC          1</span></span>
-<span><span class="co">## 39  SLC10A3          1</span></span>
-<span><span class="co">## 40  SLC16A3          1</span></span>
-<span><span class="co">## 41      SMO         -1</span></span>
-<span><span class="co">## 42   SPATA6         -1</span></span>
-<span><span class="co">## 43    SPIN4         -1</span></span>
-<span><span class="co">## 44    STAG1         -1</span></span>
-<span><span class="co">## 45    SUSD6          1</span></span>
-<span><span class="co">## 46    TAF13          1</span></span>
-<span><span class="co">## 47  TMEM87B          1</span></span>
-<span><span class="co">## 48   TOLLIP          1</span></span>
-<span><span class="co">## 49   TRDMT1         -1</span></span>
-<span><span class="co">## 50  TSPAN13          1</span></span>
-<span><span class="co">## 51     UFM1          1</span></span>
-<span><span class="co">## 52   USP6NL         -1</span></span>
-<span><span class="co">## 53   ZBTB7A          1</span></span>
-<span><span class="co">## 54    ZC3H4         -1</span></span>
-<span><span class="co">## 55   ZNHIT1          1</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $REACTOME_CELLULAR_SENESCENCE</span></span>
-<span><span class="co">##   [1] "CDC27"    "E2F2"     "SCMH1"    "MRE11"    "MAP2K3"   "MAPK9"   </span></span>
-<span><span class="co">##   [7] "ANAPC4"   "MAP2K4"   "MAP4K4"   "RPS6KA2"  "UBE2D1"   "EED"     </span></span>
-<span><span class="co">##  [13] "MAP2K7"   "TNRC6C"   "MAPKAPK5" "ANAPC5"   "TNRC6A"   "TINF2"   </span></span>
-<span><span class="co">##  [19] "AGO1"     "CDC23"    "CABIN1"   "MAPK1"    "HIRA"     "TNRC6B"  </span></span>
-<span><span class="co">##  [25] "E2F1"     "RBBP7"    "MAPK3"    "ACD"      "NBN"      "CCNE1"   </span></span>
-<span><span class="co">##  [31] "FZR1"     "ERF"      "CDK6"     "H2AZ2"    "EZH2"     "MAPK8"   </span></span>
-<span><span class="co">##  [37] "UBE2S"    "MAP2K6"   "NFKB1"    "MAPK10"   "ANAPC15"  "CDKN1B"  </span></span>
-<span><span class="co">##  [43] "PHC1"     "ASF1A"    "MAPK14"   "E2F3"     "LMNB1"    "RAD50"   </span></span>
-<span><span class="co">##  [49] "TFDP2"    "MAPKAPK3" "IL1A"     "RPS6KA1"  "UBN1"     "RNF2"    </span></span>
-<span><span class="co">##  [55] "CDKN2C"   "CDK2"     "H1-3"     "H1-1"     "H2BC11"   "CDKN1A"  </span></span>
-<span><span class="co">##  [61] "ID1"      "AGO3"     "POT1"     "CDKN2D"   "CDC16"    "H3-3B"   </span></span>
-<span><span class="co">##  [67] "KDM6B"    "TERF2"    "CCNA1"    "PHC2"     "AGO4"     "ETS1"    </span></span>
-<span><span class="co">##  [73] "CDK4"     "MDM2"     "IL6"      "TXN"      "HMGA1"    "RB1"     </span></span>
-<span><span class="co">##  [79] "MINK1"    "TP53"     "ANAPC11"  "CBX8"     "CBX4"     "RPS27A"  </span></span>
-<span><span class="co">##  [85] "CCNA2"    "H2BC1"    "TERF1"    "CDKN2B"   "CDKN2A"   "ATM"     </span></span>
-<span><span class="co">##  [91] "HMGA2"    "UBC"      "VENTX"    "ANAPC1"   "TNIK"     "MOV10"   </span></span>
-<span><span class="co">##  [97] "ETS2"     "H2BC5"    "H4C8"     "RBBP4"    "MAPKAPK2" "H3-3A"   </span></span>
-<span><span class="co">## [103] "IGFBP7"   "ANAPC10"  "ANAPC16"  "MAPK7"    "TERF2IP"  "H3-4"    </span></span>
-<span><span class="co">## [109] "BMI1"     "H1-4"     "STAT3"    "CXCL8"    "UBE2E1"   "UBB"     </span></span>
-<span><span class="co">## [115] "FOS"      "IFNB1"    "CEBPB"    "KAT5"     "RELA"     "PHC3"    </span></span>
-<span><span class="co">## [121] "CBX2"     "UBE2C"    "CCNE2"    "ANAPC2"   "CDC26"    "RPS6KA3" </span></span>
-<span><span class="co">## [127] "JUN"      "SUZ12"    "H2AC6"    "H2BC4"    "EHMT1"    "EP400"   </span></span>
-<span><span class="co">## [133] "H3C13"    "CBX6"     "H2AC20"   "H1-5"     "H2BC21"   "H2BC13"  </span></span>
-<span><span class="co">## [139] "MAPK11"   "SP1"      "H1-2"     "H2AX"     "H1-0"     "ANAPC7"  </span></span>
-<span><span class="co">## [145] "H2AC7"    "H2BC26"   "H4C3"     "H3C12"    "H4C11"    "H3C4"    </span></span>
-<span><span class="co">## [151] "MAP3K5"   "H4C16"    "H2BC12"   "TFDP1"    "MDM4"     "H3C14"   </span></span>
-<span><span class="co">## [157] "H3C15"    "RING1"    "EHMT2"    "UBA52"    "H2AJ"     "H4C15"   </span></span>
-<span><span class="co">## [163] "H4C14"    "H4C12"    "H2BC14"   "H2BC8"    "H3C8"     "H2AB1"   </span></span>
-<span><span class="co">## [169] "H2BC6"    "H4C6"     "H2BC17"   "H3C6"     "H4C13"    "H3C11"   </span></span>
-<span><span class="co">## [175] "H2BC9"    "H3C1"     "H4C9"     "H2AC14"   "H2BC3"    "H4C5"    </span></span>
-<span><span class="co">## [181] "H2AC8"    "H4C4"     "H2BC7"    "H3C7"     "H2AC4"    "H2BC10"  </span></span>
-<span><span class="co">## [187] "H4C1"     "H4C2"     "H3C10"    "MIR24-2"  "MIR24-1"  "H3C2"    </span></span>
-<span><span class="co">## [193] "H3C3"     "H2AC18"   "H2AC19"  </span></span>
+<span><span class="co">##  [1] "CDC27"   "E2F2"    "SCMH1"   "MRE11"   "MAP2K3"  "MAPK9"   "ANAPC4" </span></span>
+<span><span class="co">##  [8] "MAP2K4"  "MAP4K4"  "RPS6KA2"</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## $LiteratureMarkers</span></span>
 <span><span class="co">##     gene enrichment</span></span>
@@ -374,12 +298,12 @@ gene sets (signatures).</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">df_Scores</span><span class="op">$</span><span class="va">REACTOME_CELLULAR_SENESCENCE</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##       sample       score      DatasetID   CellType     Condition</span></span>
-<span><span class="co">## 1 SRR1660534 -0.05098427 Marthandan2016 Fibroblast     Senescent</span></span>
-<span><span class="co">## 2 SRR1660535 -0.05497976 Marthandan2016 Fibroblast     Senescent</span></span>
-<span><span class="co">## 3 SRR1660536 -0.03370396 Marthandan2016 Fibroblast     Senescent</span></span>
-<span><span class="co">## 4 SRR1660537 -0.02091467 Marthandan2016 Fibroblast Proliferative</span></span>
-<span><span class="co">## 5 SRR1660538 -0.01089274 Marthandan2016 Fibroblast Proliferative</span></span>
-<span><span class="co">## 6 SRR1660539 -0.01012807 Marthandan2016 Fibroblast Proliferative</span></span>
+<span><span class="co">## 1 SRR1660534 -0.06074782 Marthandan2016 Fibroblast     Senescent</span></span>
+<span><span class="co">## 2 SRR1660535 -0.06410952 Marthandan2016 Fibroblast     Senescent</span></span>
+<span><span class="co">## 3 SRR1660536 -0.04015762 Marthandan2016 Fibroblast     Senescent</span></span>
+<span><span class="co">## 4 SRR1660537 -0.01926335 Marthandan2016 Fibroblast Proliferative</span></span>
+<span><span class="co">## 5 SRR1660538 -0.01133686 Marthandan2016 Fibroblast Proliferative</span></span>
+<span><span class="co">## 6 SRR1660539 -0.00950118 Marthandan2016 Fibroblast Proliferative</span></span>
 <span><span class="co">##         SenescentType                     Treatment Researcher DaysToSequencing</span></span>
 <span><span class="co">## 1 Telomere shortening PD72 (Replicative senescence)        Ana                6</span></span>
 <span><span class="co">## 2 Telomere shortening PD72 (Replicative senescence)        Ana               18</span></span>
@@ -780,7 +704,6 @@ based on the associated p‑value.</p>
 <span>               ColorValues<span class="op">=</span><span class="cn">NULL</span>,</span>
 <span>               ncol<span class="op">=</span><span class="cn">NULL</span>, </span>
 <span>               nrow<span class="op">=</span><span class="fl">1</span> <span class="op">)</span> </span></code></pre></div>
-<p><img src="Tutorial_BenchmarkingMode_files/figure-html/FDRSim-1.png" width="100%"></p>
 </div>
 </div>
 <div class="section level2">
@@ -836,11 +759,11 @@ cells?</strong></p>
 <span>                    contrasts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Senescent - Proliferative"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">DEGs</span><span class="op">$</span><span class="va">`Senescent-Proliferative`</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,<span class="op">]</span></span></code></pre></div>
 <pre><code><span><span class="co">##            logFC  AveExpr         t      P.Value    adj.P.Val        B</span></span>
-<span><span class="co">## CCND2   3.816674 4.406721 12.393130 2.747202e-15 2.435712e-12 24.70982</span></span>
-<span><span class="co">## MKI67  -3.581174 6.605339 -9.197510 2.007135e-11 4.992097e-10 15.96203</span></span>
-<span><span class="co">## PTCHD4  3.398914 3.556007 10.740867 2.318137e-13 3.002118e-11 20.35906</span></span>
-<span><span class="co">## KIF20A -3.365481 5.934893 -9.728709 4.176398e-12 1.844336e-10 17.51106</span></span>
-<span><span class="co">## CDC20  -3.304602 6.104079 -9.801724 3.375212e-12 1.657492e-10 17.72110</span></span></code></pre>
+<span><span class="co">## CCND2   3.816674 4.406721 12.379571 2.944841e-15 2.349757e-12 24.64395</span></span>
+<span><span class="co">## MKI67  -3.581174 6.605339 -9.187514 2.110510e-11 4.769568e-10 15.91258</span></span>
+<span><span class="co">## PTCHD4  3.398914 3.556007 10.729126 2.461327e-13 2.868691e-11 20.30116</span></span>
+<span><span class="co">## KIF20A -3.365481 5.934893 -9.718104 4.406643e-12 1.771710e-10 17.45858</span></span>
+<span><span class="co">## CDC20  -3.304602 6.104079 -9.791031 3.562991e-12 1.592176e-10 17.66821</span></span></code></pre>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Example 2: Supply a custom design matrix directly.</span></span>
 <span><span class="co"># Here, the design matrix is created externally (using no intercept, for instance).</span></span>
@@ -853,11 +776,11 @@ cells?</strong></p>
 <span>                     contrasts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Senescent - Proliferative"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">DEGs2</span><span class="op">$</span><span class="va">`Senescent-Proliferative`</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,<span class="op">]</span></span></code></pre></div>
 <pre><code><span><span class="co">##            logFC  AveExpr         t      P.Value    adj.P.Val        B</span></span>
-<span><span class="co">## CCND2   3.816674 4.406721 12.393130 2.747202e-15 2.435712e-12 24.70982</span></span>
-<span><span class="co">## MKI67  -3.581174 6.605339 -9.197510 2.007135e-11 4.992097e-10 15.96203</span></span>
-<span><span class="co">## PTCHD4  3.398914 3.556007 10.740867 2.318137e-13 3.002118e-11 20.35906</span></span>
-<span><span class="co">## KIF20A -3.365481 5.934893 -9.728709 4.176398e-12 1.844336e-10 17.51106</span></span>
-<span><span class="co">## CDC20  -3.304602 6.104079 -9.801724 3.375212e-12 1.657492e-10 17.72110</span></span></code></pre>
+<span><span class="co">## CCND2   3.816674 4.406721 12.379571 2.944841e-15 2.349757e-12 24.64395</span></span>
+<span><span class="co">## MKI67  -3.581174 6.605339 -9.187514 2.110510e-11 4.769568e-10 15.91258</span></span>
+<span><span class="co">## PTCHD4  3.398914 3.556007 10.729126 2.461327e-13 2.868691e-11 20.30116</span></span>
+<span><span class="co">## KIF20A -3.365481 5.934893 -9.718104 4.406643e-12 1.771710e-10 17.45858</span></span>
+<span><span class="co">## CDC20  -3.304602 6.104079 -9.791031 3.562991e-12 1.592176e-10 17.66821</span></span></code></pre>
 <p>After running differential expression analysis (for example, using
 the <code>calculateDE</code> function), the user can visualize their
 results with the <code>plotVolcano</code> function. This function
@@ -899,15 +822,6 @@ arranged by contrast and signature.</li>
 highlight biologically meaningful patterns or focus on specific gene
 sets.</p>
 <div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Plot Differentially Expressed Genes:</span></span>
-<span><span class="fu"><a href="../reference/plotVolcano.html">plotVolcano</a></span><span class="op">(</span><span class="va">DEGs</span>, genes <span class="op">=</span> <span class="cn">NULL</span>, N <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>            x <span class="op">=</span> <span class="st">"logFC"</span>, y <span class="op">=</span> <span class="st">"-log10(adj.P.Val)"</span>, pointSize <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>            color <span class="op">=</span> <span class="st">"#6489B4"</span>, highlightcolor <span class="op">=</span> <span class="st">"#05254A"</span>, nointerestcolor <span class="op">=</span> <span class="st">"#B7B7B7"</span>,</span>
-<span>            threshold_y <span class="op">=</span> <span class="cn">NULL</span>, threshold_x <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>            xlab <span class="op">=</span> <span class="cn">NULL</span>, ylab <span class="op">=</span> <span class="cn">NULL</span>, ncol <span class="op">=</span> <span class="cn">NULL</span>, nrow <span class="op">=</span> <span class="cn">NULL</span>, title <span class="op">=</span> <span class="st">"Marthandan et al. 2016"</span>,</span>
-<span>            labsize <span class="op">=</span> <span class="fl">8</span>, widthlabs <span class="op">=</span> <span class="fl">25</span>, invert <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="Tutorial_BenchmarkingMode_files/figure-html/volcanos_DEGs-1.png" width="40%"></p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Color Interesting Genes:</span></span>
 <span><span class="fu"><a href="../reference/plotVolcano.html">plotVolcano</a></span><span class="op">(</span><span class="va">DEGs</span>, genes <span class="op">=</span> <span class="cn">NULL</span>, N <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>            x <span class="op">=</span> <span class="st">"logFC"</span>, y <span class="op">=</span> <span class="st">"-log10(adj.P.Val)"</span>, pointSize <span class="op">=</span> <span class="fl">2</span>,</span>
@@ -915,8 +829,8 @@ sets.</p>
 <span>            threshold_y <span class="op">=</span> <span class="fl">0.0001</span>, threshold_x <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>            xlab <span class="op">=</span> <span class="cn">NULL</span>, ylab <span class="op">=</span> <span class="cn">NULL</span>, ncol <span class="op">=</span> <span class="cn">NULL</span>, nrow <span class="op">=</span> <span class="cn">NULL</span>, title <span class="op">=</span> <span class="st">"Marthandan et al. 2016"</span>,</span>
 <span>            labsize <span class="op">=</span> <span class="fl">8</span>, widthlabs <span class="op">=</span> <span class="fl">25</span>, invert <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="Tutorial_BenchmarkingMode_files/figure-html/volcanos_DEGs-2.png" width="40%"></p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/volcanos_DEGs-1.png" width="40%"></p>
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Annotate Top and Bottom N Genes:</span></span>
 <span><span class="fu"><a href="../reference/plotVolcano.html">plotVolcano</a></span><span class="op">(</span><span class="va">DEGs</span>, genes <span class="op">=</span> <span class="cn">NULL</span>, N <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>            x <span class="op">=</span> <span class="st">"logFC"</span>, y <span class="op">=</span> <span class="st">"-log10(adj.P.Val)"</span>, pointSize <span class="op">=</span> <span class="fl">2</span>,</span>
@@ -924,8 +838,8 @@ sets.</p>
 <span>            threshold_y <span class="op">=</span> <span class="cn">NULL</span>, threshold_x <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>            xlab <span class="op">=</span> <span class="cn">NULL</span>, ylab <span class="op">=</span> <span class="cn">NULL</span>, ncol <span class="op">=</span> <span class="cn">NULL</span>, nrow <span class="op">=</span> <span class="cn">NULL</span>, title <span class="op">=</span> <span class="st">"Marthandan et al. 2016"</span>,</span>
 <span>            labsize <span class="op">=</span> <span class="fl">8</span>, widthlabs <span class="op">=</span> <span class="fl">25</span>, invert <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="Tutorial_BenchmarkingMode_files/figure-html/volcanos_DEGs-3.png" width="40%"></p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<p><img src="Tutorial_BenchmarkingMode_files/figure-html/volcanos_DEGs-2.png" width="40%"></p>
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Change order: signatures in columns, contrast in rows</span></span>
 <span><span class="fu"><a href="../reference/plotVolcano.html">plotVolcano</a></span><span class="op">(</span><span class="va">DEGs</span>, genes <span class="op">=</span> <span class="va">genesets_example</span>, </span>
 <span>            N <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -959,7 +873,7 @@ for linear modelling.</p>
 consistent: the statistics reflect always the expected change in
 expression associated with a 1-unit increase in the variable (e.g., one
 day, one unit of dosage, “Senescent” to “Proliferative”, etc).</p>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">design</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/model.matrix.html" class="external-link">model.matrix</a></span><span class="op">(</span><span class="op">~</span><span class="fl">1</span> <span class="op">+</span> <span class="va">DaysToSequencing</span>, data <span class="op">=</span> <span class="va">metadata_example</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">DEGs_continuous1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculateDE.html">calculateDE</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>,</span>
@@ -968,12 +882,12 @@ day, one unit of dosage, “Senescent” to “Proliferative”, etc).</p>
 <span>                                contrasts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"DaysToSequencing"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Warning in limma::makeContrasts(contrasts = contrasts, levels = design_matrix):</span></span>
 <span><span class="co">## Renaming (Intercept) to Intercept</span></span></code></pre>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">DEGs_continuous1</span><span class="op">$</span><span class="va">DaysToSequencing</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>,<span class="op">]</span></span></code></pre></div>
 <pre><code><span><span class="co">##                logFC  AveExpr         t   P.Value adj.P.Val         B</span></span>
-<span><span class="co">## RNA45SN2 -0.07628608 7.712585 -1.626674 0.1117361 0.9997685 -6.018805</span></span>
-<span><span class="co">## RNA18SN2  0.06743439 9.577467  1.554171 0.1280974 0.9997685 -6.129426</span></span>
-<span><span class="co">## RNA18SN3  0.06743439 9.577467  1.554171 0.1280974 0.9997685 -6.129426</span></span></code></pre>
+<span><span class="co">## RNA45SN2 -0.07628608 7.712585 -1.625668 0.1119602 0.9997783 -5.988570</span></span>
+<span><span class="co">## RNA18SN2  0.06743439 9.577467  1.553201 0.1283381 0.9997783 -6.099036</span></span>
+<span><span class="co">## RNA18SN3  0.06743439 9.577467  1.553201 0.1283381 0.9997783 -6.099036</span></span></code></pre>
 <p>This usage of the <code>modelmat</code> argument allows the user to
 combine categorical and numeric variables in a fully customized design
 matrix. In the example below:</p>
@@ -991,7 +905,7 @@ Senescent and Control conditions.</li>
 <p>This approach is useful when modeling continuous effects alongside
 group comparisons, and it provides complete flexibility in specifying
 the design.</p>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Manually construct the design matrix</span></span>
 <span><span class="va">model_matrix</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/model.matrix.html" class="external-link">model.matrix</a></span><span class="op">(</span><span class="op">~</span> <span class="va">DaysToSequencing</span> <span class="op">+</span> <span class="va">Condition</span>, data <span class="op">=</span> <span class="va">metadata_example</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">model_matrix</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"(Intercept)"</span>, <span class="st">"DaysToSequencing"</span>, <span class="st">"Senescent"</span><span class="op">)</span></span>
@@ -1003,21 +917,21 @@ the design.</p>
 <span><span class="co"># Access results for each coefficient</span></span>
 <span><span class="va">DEGs_continuous2</span><span class="op">$</span><span class="va">`(Intercept)`</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span></span></code></pre></div>
 <pre><code><span><span class="co">##           logFC  AveExpr         t      P.Value    adj.P.Val         B</span></span>
-<span><span class="co">## FN1    13.23994 13.21879  74.04645 1.265799e-43 3.210740e-43  89.73456</span></span>
-<span><span class="co">## EEF1A1 12.94192 12.85091 179.29631 1.402180e-58 9.033979e-57 121.69861</span></span>
-<span><span class="co">## GAPDH  12.71139 12.53188 147.86006 2.586838e-55 5.583501e-54 115.21324</span></span></code></pre>
-<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<span><span class="co">## FN1    13.23994 13.21879  73.96021 1.569180e-43 3.711997e-43  89.51149</span></span>
+<span><span class="co">## EEF1A1 12.94192 12.85091 179.01981 1.901624e-58 1.114438e-56 121.27052</span></span>
+<span><span class="co">## GAPDH  12.71139 12.53188 147.65172 3.433305e-55 6.719561e-54 114.84594</span></span></code></pre>
+<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">DEGs_continuous2</span><span class="op">$</span><span class="va">DaysToSequencing</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span></span></code></pre></div>
 <pre><code><span><span class="co">##                logFC  AveExpr         t    P.Value adj.P.Val         B</span></span>
-<span><span class="co">## RNA45SN2 -0.08056063 7.712585 -1.689209 0.09914647 0.9853746 -6.052523</span></span>
-<span><span class="co">## RNA18SN2  0.06598991 9.577467  1.490666 0.14407989 0.9853746 -6.355482</span></span>
-<span><span class="co">## RNA18SN3  0.06598991 9.577467  1.490666 0.14407989 0.9853746 -6.355482</span></span></code></pre>
-<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<span><span class="co">## RNA45SN2 -0.08056063 7.712585 -1.687353 0.09952278 0.9846604 -6.035003</span></span>
+<span><span class="co">## RNA18SN2  0.06598991 9.577467  1.489026 0.14452696 0.9846604 -6.337271</span></span>
+<span><span class="co">## RNA18SN3  0.06598991 9.577467  1.489026 0.14452696 0.9846604 -6.337271</span></span></code></pre>
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">DEGs_continuous2</span><span class="op">$</span><span class="va">Senescent</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span></span></code></pre></div>
-<pre><code><span><span class="co">##            logFC  AveExpr         t      P.Value    adj.P.Val        B</span></span>
-<span><span class="co">## CCND2   3.863054 4.406721 12.344742 4.643461e-15 4.865503e-12 24.20437</span></span>
-<span><span class="co">## MKI67  -3.655159 6.605339 -9.296026 1.907736e-11 5.010329e-10 16.02834</span></span>
-<span><span class="co">## PTCHD4  3.453362 3.556007 10.774059 2.907380e-13 3.864144e-11 20.14942</span></span></code></pre>
+<pre><code><span><span class="co">##            logFC  AveExpr        t      P.Value    adj.P.Val        B</span></span>
+<span><span class="co">## CCND2   3.863054 4.406721 12.33101 4.977309e-15 4.693603e-12 24.13824</span></span>
+<span><span class="co">## MKI67  -3.655159 6.605339 -9.28576 2.007809e-11 4.809931e-10 15.97848</span></span>
+<span><span class="co">## PTCHD4  3.453362 3.556007 10.76209 3.088396e-13 3.703704e-11 20.09121</span></span></code></pre>
 </div>
 </div>
 <div class="section level3">
@@ -1064,7 +978,7 @@ contrasts” instead of “For each contrast, is there any signature that is
 significant”). If <code>FALSE</code>, the function only corrects for the
 number of gene sets.</p></li>
 </ul>
-<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">GSEAresults</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/runGSEA.html">runGSEA</a></span><span class="op">(</span>DEGList <span class="op">=</span> <span class="va">DEGs</span>, </span>
 <span>                       gene_sets <span class="op">=</span> <span class="va">genesets_example</span>,</span>
 <span>                       stat <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -1074,14 +988,14 @@ number of gene sets.</p></li>
 <pre><code><span><span class="co">## $`Senescent-Proliferative`</span></span>
 <span><span class="co">##                         pathway         pval         padj   log2err        ES</span></span>
 <span><span class="co">##                          &lt;char&gt;        &lt;num&gt;        &lt;num&gt;     &lt;num&gt;     &lt;num&gt;</span></span>
-<span><span class="co">## 1:              HernandezSegura 5.728568e-10 1.718570e-09 0.8012156 0.6376777</span></span>
-<span><span class="co">## 2: REACTOME_CELLULAR_SENESCENCE 2.457757e-03 3.686636e-03 0.2972329 0.3807095</span></span>
-<span><span class="co">## 3:            LiteratureMarkers 2.013284e-02 2.013284e-02 0.1461515 0.7068136</span></span>
+<span><span class="co">## 1:              HernandezSegura 5.423426e-10 1.627028e-09 0.8012156 0.6263553</span></span>
+<span><span class="co">## 2: REACTOME_CELLULAR_SENESCENCE 1.300152e-02 1.950229e-02 0.1269498 0.3687292</span></span>
+<span><span class="co">## 3:            LiteratureMarkers 2.454243e-02 2.454243e-02 0.1323085 0.6948634</span></span>
 <span><span class="co">##         NES  size  leadingEdge stat_used</span></span>
 <span><span class="co">##       &lt;num&gt; &lt;int&gt;       &lt;list&gt;    &lt;char&gt;</span></span>
-<span><span class="co">## 1: 2.647154    52 CNTLN, D....         t</span></span>
-<span><span class="co">## 2: 1.570456   137 H1-2, H2....         B</span></span>
-<span><span class="co">## 3: 1.667541     7 LMNB1, M....         t</span></span></code></pre>
+<span><span class="co">## 1: 2.651419    52 CNTLN, D....         t</span></span>
+<span><span class="co">## 2: 1.453025   128 H1-2, H2....         B</span></span>
+<span><span class="co">## 3: 1.650689     7 LMNB1, M....         t</span></span></code></pre>
 <p>Depending on the statistic used, the interpretation of the plots
 changes:</p>
 <ol style="list-style-type: decimal">
@@ -1123,7 +1037,7 @@ visualization.</li>
 <code>nrow</code>/<code>ncol</code>: Specifies the grid layout for
 arranging plots.</li>
 </ul>
-<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotGSEAenrichment.html">plotGSEAenrichment</a></span><span class="op">(</span>GSEA_results<span class="op">=</span><span class="va">GSEAresults</span>, </span>
 <span>                   DEGList<span class="op">=</span><span class="va">DEGs</span>, </span>
 <span>                   gene_sets<span class="op">=</span><span class="va">genesets_example</span>, </span>
@@ -1137,7 +1051,7 @@ p-value. The function supports multiple contrasts and includes options
 for customizing the color gradient, significance threshold, and plot
 layout. It can also arrange individual plots into a grid layout for
 comparative visualization.</p>
-<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotNESlollipop.html">plotNESlollipop</a></span><span class="op">(</span>GSEA_results<span class="op">=</span><span class="va">GSEAresults</span>, </span>
 <span>                saturation_value<span class="op">=</span><span class="cn">NULL</span>, </span>
 <span>                nonsignif_color <span class="op">=</span> <span class="st">"#F4F4F4"</span>, </span>
@@ -1162,7 +1076,7 @@ multiple contrasts. Each point represents a pathway, with:</p>
 <p>This function helps compare enrichment results when the number of
 contrasts and the number of pathways is high, scenario of which the
 example herein is not too representative.</p>
-<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotCombinedGSEA.html">plotCombinedGSEA</a></span><span class="op">(</span><span class="va">GSEAresults</span>, sig_threshold <span class="op">=</span> <span class="fl">0.05</span>, PointSize<span class="op">=</span><span class="fl">6</span>, widthlegend <span class="op">=</span> <span class="fl">26</span> <span class="op">)</span></span></code></pre></div>
 <p><img src="Tutorial_BenchmarkingMode_files/figure-html/GSEA_volcano-1.png" width="100%"></p>
 <div class="section level4">
@@ -1224,7 +1138,7 @@ samples. Samples are annotated by a chosen condition, and expression
 values are color-scaled for easy visual comparison. Clustering options
 and customizable color palettes allow for flexible and informative
 visualization.</p>
-<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">annotation_colors</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span> </span>
 <span>  Condition <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"Senescent"</span>     <span class="op">=</span> <span class="st">"#65AC7C"</span>,  <span class="co"># Example color: greenish</span></span>
@@ -1252,7 +1166,7 @@ and grouping (x axis, <code>GroupingVariable</code>) and color variables
 (<code>ColorVariable</code> and <code>ColorValues</code>) from the
 metadata allow for additional stratification and insight. Customization
 options include layout, point size, colors, and axis labeling.</p>
-<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">senescence_triggers_colors</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="st">"none"</span> <span class="op">=</span> <span class="st">"#E57373"</span>,  <span class="co"># Soft red   </span></span>
 <span>  <span class="st">"Telomere shortening"</span> <span class="op">=</span> <span class="st">"#4FC3F7"</span>  <span class="co"># Vivid sky blue  </span></span>
@@ -1284,7 +1198,7 @@ patterns within the senescence signature. Correlations can be computed
 separately for different conditions, and the heatmap is fully
 customizable with options for clustering, color scaling, and correlation
 method (e.g., Spearman or Pearson).</p>
-<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/CorrelationHeatmap.html">CorrelationHeatmap</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">counts_example</span>, </span>
 <span>                   metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
 <span>                   genes<span class="op">=</span><span class="va">genesets_example</span><span class="op">$</span><span class="va">LiteratureMarkers</span><span class="op">$</span><span class="va">gene</span>, </span>
@@ -1321,9 +1235,8 @@ AUC values will be displayed in a barplot.</p>
 adjusted so that the AUC is always &gt;=0.5, showing only discriminatory
 power rather than directionality.</li>
 </ul>
-<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>error<span class="op">=</span><span class="va">recover</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/ROCandAUCplot.html">ROCandAUCplot</a></span><span class="op">(</span><span class="va">counts_example</span>, </span>
+<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ROCandAUCplot.html">ROCandAUCplot</a></span><span class="op">(</span><span class="va">counts_example</span>, </span>
 <span>              <span class="va">metadata_example</span>, </span>
 <span>              condition_var <span class="op">=</span> <span class="st">"Condition"</span>, </span>
 <span>              class <span class="op">=</span> <span class="st">"Senescent"</span>, </span>
@@ -1349,7 +1262,7 @@ another metadata variable. Results are visualized as a heatmap, with
 customizable color scales and clustering options for easy interpretation
 of effect sizes across genes. If <code>group_var</code> is not
 specified, the function will return a barplot instead.</p>
-<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/CohenD_IndividualGenes.html">CohenD_IndividualGenes</a></span><span class="op">(</span><span class="va">counts_example</span>, </span>
 <span>                       <span class="va">metadata_example</span>, </span>
 <span>                       genes<span class="op">=</span><span class="va">genesets_example</span><span class="op">$</span><span class="va">LiteratureMarkers</span><span class="op">$</span><span class="va">gene</span>,</span>
@@ -1371,7 +1284,7 @@ the gene signature is sufficient to visually separate groups of
 interest. Users can customize which principal components to display
 using the PCs argument and adjust layout, point size, and colour
 annotations for comparison across conditions.</p>
-<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">annotation_colors</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>  </span>
 <span>  <span class="st">"Senescent"</span>     <span class="op">=</span> <span class="st">"#65AC7C"</span>,  <span class="co"># Example color: greenish</span></span>
 <span>  <span class="st">"Proliferative"</span> <span class="op">=</span> <span class="st">"#5F90D4"</span>  <span class="co"># Example color: blueish </span></span>
@@ -1414,7 +1327,7 @@ the research question, and complemented with both score distributions,
 enrichment analyses, and individual gene behaviour. Notably, scoring
 with just these three genes yielded results similar (or, even, slightly
 better) to the full <code>LiteratureMarkers</code> set.</p>
-<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">GeneSets_Example_DrivingGenes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>LiteratureMarkers<span class="op">=</span><span class="va">genesets_example</span><span class="op">$</span><span class="va">LiteratureMarkers</span>,</span>
 <span>                                          LiteratureMarkers_subset<span class="op">=</span><span class="va">genesets_example</span><span class="op">$</span><span class="va">LiteratureMarkers</span><span class="op">[</span><span class="va">genesets_example</span><span class="op">$</span><span class="va">LiteratureMarkers</span><span class="op">$</span><span class="va">gene</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"LMNB1"</span>, <span class="st">"MKI67"</span>,<span class="st">"GLB1"</span><span class="op">)</span>,<span class="op">]</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">GeneSets_Example_DrivingGenes</span><span class="op">)</span></span></code></pre></div>
@@ -1433,7 +1346,7 @@ better) to the full <code>LiteratureMarkers</code> set.</p>
 <span><span class="co">## 3  GLB1          1</span></span>
 <span><span class="co">## 6 LMNB1         -1</span></span>
 <span><span class="co">## 7 MKI67         -1</span></span></code></pre>
-<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/PlotScores.html">PlotScores</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
 <span>           metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
 <span>           gene_sets <span class="op">=</span>  <span class="va">GeneSets_Example_DrivingGenes</span>,</span>
@@ -1459,7 +1372,7 @@ better) to the full <code>LiteratureMarkers</code> set.</p>
 <div class="section level2">
 <h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
-<div class="sourceCode" id="cb66"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## R version 4.5.1 (2025-06-13)</span></span>
 <span><span class="co">## Platform: x86_64-pc-linux-gnu</span></span>
@@ -1482,7 +1395,7 @@ better) to the full <code>LiteratureMarkers</code> set.</p>
 <span><span class="co">## [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## other attached packages:</span></span>
-<span><span class="co">## [1] markeR_0.99.0</span></span>
+<span><span class="co">## [1] markeR_0.9.3</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## loaded via a namespace (and not attached):</span></span>
 <span><span class="co">##   [1] pROC_1.18.5           gridExtra_2.3         rlang_1.1.6          </span></span>
@@ -1498,16 +1411,16 @@ better) to the full <code>LiteratureMarkers</code> set.</p>
 <span><span class="co">##  [31] parallel_4.5.1        cluster_2.1.8.1       R6_2.6.1             </span></span>
 <span><span class="co">##  [34] stringi_1.8.7         bslib_0.9.0           RColorBrewer_1.1-3   </span></span>
 <span><span class="co">##  [37] limma_3.64.1          car_3.1-3             jquerylib_0.1.4      </span></span>
-<span><span class="co">##  [40] Rcpp_1.0.14           assertthat_0.2.1      iterators_1.0.14     </span></span>
+<span><span class="co">##  [40] Rcpp_1.1.0            assertthat_0.2.1      iterators_1.0.14     </span></span>
 <span><span class="co">##  [43] knitr_1.50            parameters_0.26.0     IRanges_2.42.0       </span></span>
 <span><span class="co">##  [46] splines_4.5.1         Matrix_1.7-3          tidyselect_1.2.1     </span></span>
 <span><span class="co">##  [49] abind_1.4-8           yaml_2.3.10           doParallel_1.0.17    </span></span>
 <span><span class="co">##  [52] codetools_0.2-20      curl_6.4.0            lattice_0.22-7       </span></span>
 <span><span class="co">##  [55] tibble_3.3.0          plyr_1.8.9            withr_3.0.2          </span></span>
-<span><span class="co">##  [58] bayestestR_0.16.0     evaluate_1.0.4        desc_1.4.3           </span></span>
+<span><span class="co">##  [58] bayestestR_0.16.1     evaluate_1.0.4        desc_1.4.3           </span></span>
 <span><span class="co">##  [61] circlize_0.4.16       pillar_1.10.2         ggpubr_0.6.1         </span></span>
 <span><span class="co">##  [64] carData_3.0-5         foreach_1.5.2         stats4_4.5.1         </span></span>
-<span><span class="co">##  [67] insight_1.3.0         generics_0.1.4        S4Vectors_0.46.0     </span></span>
+<span><span class="co">##  [67] insight_1.3.1         generics_0.1.4        S4Vectors_0.46.0     </span></span>
 <span><span class="co">##  [70] ggplot2_3.5.2         scales_1.4.0          glue_1.8.0           </span></span>
 <span><span class="co">##  [73] tools_4.5.1           data.table_1.17.6     fgsea_1.34.0         </span></span>
 <span><span class="co">##  [76] locfit_1.5-9.12       ggsignif_0.6.4        babelgene_22.9       </span></span>
