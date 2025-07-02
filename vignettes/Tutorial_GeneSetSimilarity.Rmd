@@ -2,7 +2,7 @@
 title: "Gene Set Similarity Tutorial"
 output: rmarkdown::html_document
 vignette: >
-  %\VignetteIndexEntry{Introduction to markeR}
+  %\VignetteIndexEntry{Gene Set Similarity Tutorial}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

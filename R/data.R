@@ -35,6 +35,9 @@
 #' Intermediate time points for HFF and MRC5 cell lines were excluded, resulting in a final dataset with 45 high-quality samples across proliferative, quiescent,
 #' and senescent conditions.
 #'
+#' For illustration and package size reduction, genes with variance in the bottom 10% across samples were removed,
+#' retaining the 90% most variable genes in the dataset.
+#'
 #' @format A numeric matrix with rows as genes (gene symbols) and columns as samples (sample IDs).
 #'
 #' @source \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE63577}
@@ -46,7 +49,6 @@
 #' @usage data(counts_example)
 #' @keywords datasets
 "counts_example"
-
 
 #' Example Gene Sets for Cellular Senescence
 #'

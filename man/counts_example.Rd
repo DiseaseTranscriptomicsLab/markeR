@@ -24,6 +24,9 @@ calculated with \code{edgeR::calcNormFactors}, and log2-transformed values were 
 
 Intermediate time points for HFF and MRC5 cell lines were excluded, resulting in a final dataset with 45 high-quality samples across proliferative, quiescent,
 and senescent conditions.
+
+For illustration and package size reduction, genes with variance in the bottom 10\% across samples were removed,
+retaining the 90\% most variable genes in the dataset.
 }
 \references{
 Marthandan S, Priebe S, Baumgart M, Groth M et al. Similarities in Gene Expression Profiles during In Vitro Aging of Primary Human Embryonic Lung and

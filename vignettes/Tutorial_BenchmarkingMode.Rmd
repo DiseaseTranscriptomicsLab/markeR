@@ -2,7 +2,7 @@
 title: "Benchmarking Mode Tutorial"
 output: rmarkdown::html_document
 vignette: >
-  %\VignetteIndexEntry{Introduction to markeR}
+  %\VignetteIndexEntry{Benchmarking Mode Tutorial}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -724,7 +724,7 @@ The `ROCandAUCplot` function evaluates the discriminatory power of individual ge
 * For ease of interpretation, the directionality of the comparison is adjusted so that the AUC is always >=0.5, showing only discriminatory power rather than directionality.
 
 ```{r rocAUCexample, fig.width=10, fig.height=4, out.width="100%", warning=FALSE, message=FALSE}
-options(error=recover)
+ 
 ROCandAUCplot(counts_example, 
               metadata_example, 
               condition_var = "Condition", 
