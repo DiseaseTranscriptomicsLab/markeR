@@ -18,4 +18,4 @@
 ^.*\\.RData$
 ^\\.github$
 ^\\.git$
-
+^codecov\.yml$
