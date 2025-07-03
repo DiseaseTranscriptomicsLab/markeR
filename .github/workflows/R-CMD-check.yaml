@@ -57,3 +57,8 @@ jobs:
           remotes::install_cran("covr", repos = "https://cloud.r-project.org")
           covr::codecov()
         shell: Rscript {0}
+
+      - name: Upload coverage reports to Codecov
+          uses: codecov/codecov-action@v5
+          with:
+            token: ${{ secrets.CODECOV_TOKEN }}
