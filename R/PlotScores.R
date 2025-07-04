@@ -537,9 +537,9 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
           cohen_d_results <- cohen_d(x, y)
 
           if (pvalcalc) {
-            ttest_results <- rstatix::t_test(df, formula = score ~ GroupingVariable)
+            ttest_results <- rstatix::t_test(df, formula = as.formula(paste("score ~", GroupingVariable)))
             p_val <- ttest_results$p[1]
-            line1 <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results$effsize, 3)), width = widthTitle)
+            line1 <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results, 3)), width = widthTitle)
             line2 <- wrap_title(paste0("p = ", round(p_val, 3)), width = widthTitle)
             subtitle <- paste(line1, line2, sep = "\n")
           } else {
