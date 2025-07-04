@@ -1,4 +1,4 @@
-# markeR 0.9.3 (2025-07-2)
+# markeR 0.9.3 (2025-07-3)
 
 * Updated documentation and internal code to meet Bioconductor submission guidelines.
 * Fixed minor bugs across multiple functions.

@@ -51,7 +51,10 @@ jobs:
 
       - name: Test coverage
         if: runner.os == 'Linux' && matrix.config.r == 'release'
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
-          install.packages("covr")
-          covr::codecov()
+          install.packages("remotes", repos = "https://cloud.r-project.org")
+          remotes::install_cran("covr", repos = "https://cloud.r-project.org")
+          covr::codecov(token = Sys.getenv("CODECOV_TOKEN"))
         shell: Rscript {0}

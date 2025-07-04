@@ -225,6 +225,55 @@ test_that("CohenF_allConditions returns correct structure and value", {
   expect_equal(as.numeric(fval), manual_f, tolerance = 1e-10)
 })
 
+test_that("PlotScores calculates p-values and cohen's d for categorical variables", {
+  set.seed(42)
+  expr <- as.data.frame(matrix(rexp(60, rate = 0.2), nrow = 6, ncol = 10))
+  rownames(expr) <- paste0("Gene", 1:6)
+  colnames(expr) <- paste0("Sample", 1:10)
+  metadata <- data.frame(
+    sample = colnames(expr),
+    Group = rep(c("A", "B"), each = 5),
+    Age = seq(30, 75, length.out = 10)
+  )
+  gene_sets <- list(
+    Signature1 = c("Gene1", "Gene2", "Gene3"),
+    Signature2 = c("Gene4", "Gene5", "Gene6")
+  )
+  plt <- PlotScores(
+    data = expr,
+    metadata = metadata,
+    gene_sets = gene_sets,
+    method = "logmedian",
+    Variable = "Group",
+    pvalcalc = TRUE,
+    compute_cohen =TRUE
+  )
+  expect_true(inherits(plt, "gg"))
+})
 
 
-
+test_that("PlotScores calculates p-values and cohen's f for numeric variables", {
+  set.seed(43)
+  expr <- as.data.frame(matrix(rexp(60, rate = 0.2), nrow = 6, ncol = 10))
+  rownames(expr) <- paste0("Gene", 1:6)
+  colnames(expr) <- paste0("Sample", 1:10)
+  metadata <- data.frame(
+    sample = colnames(expr),
+    Group = rep(c("A", "B"), each = 5),
+    Age = seq(30, 75, length.out = 10)
+  )
+  gene_sets <- list(
+    Signature1 = c("Gene1", "Gene2", "Gene3"),
+    Signature2 = c("Gene4", "Gene5", "Gene6")
+  )
+  plt <- PlotScores(
+    data = expr,
+    metadata = metadata,
+    gene_sets = gene_sets,
+    method = "logmedian",
+    Variable = "Age",
+    pvalcalc = TRUE,
+    compute_cohen =TRUE
+  )
+  expect_true(inherits(plt, "gg"))
+})

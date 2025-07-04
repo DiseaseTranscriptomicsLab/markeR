@@ -12,9 +12,8 @@
 Version](https://img.shields.io/badge/min%20R-4.4.0-blue.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/Rminversion.yaml)
 [![Bioconductor
 Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml)
-[![codecov](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR/branch/main/graph/badge.svg)](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR)
+[![codecov](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR/graph/badge.svg?token=7T1I4JCJG6)](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR)
  
-
 <!-- badges: end -->
 
 **markeR** provides a suite of methods for using gene sets (signatures)

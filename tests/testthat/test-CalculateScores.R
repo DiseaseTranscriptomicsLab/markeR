@@ -65,3 +65,28 @@ test_that("CalculateScores handles bidirectional gene set for logmedian", {
   expect_true("score" %in% colnames(scores$BiSig))
   expect_equal(nrow(scores$BiSig), 10)
 })
+
+
+test_that("CalculateScores handles bidirectional gene set for ssGSEA", {
+  set.seed(1)
+  expr <- as.data.frame(matrix(abs(rnorm(60, 5, 2)), nrow = 6, ncol = 10))
+  rownames(expr) <- paste0("Gene", 1:6)
+  colnames(expr) <- paste0("Sample", 1:10)
+  sig <- data.frame(Gene = c("Gene1", "Gene2", "Gene3", "Gene4"), Direction = c(1,1,-1,-1))
+  gene_sets <- list(BiSig = sig)
+  scores <- CalculateScores(expr, NULL, gene_sets, method = "ssGSEA")
+  expect_true("score" %in% colnames(scores$BiSig))
+  expect_equal(nrow(scores$BiSig), 10)
+})
+
+test_that("CalculateScores handles bidirectional gene set for ranking", {
+  set.seed(1)
+  expr <- as.data.frame(matrix(abs(rnorm(60, 5, 2)), nrow = 6, ncol = 10))
+  rownames(expr) <- paste0("Gene", 1:6)
+  colnames(expr) <- paste0("Sample", 1:10)
+  sig <- data.frame(Gene = c("Gene1", "Gene2", "Gene3", "Gene4"), Direction = c(1,1,-1,-1))
+  gene_sets <- list(BiSig = sig)
+  scores <- CalculateScores(expr, NULL, gene_sets, method = "ranking")
+  expect_true("score" %in% colnames(scores$BiSig))
+  expect_equal(nrow(scores$BiSig), 10)
+})
