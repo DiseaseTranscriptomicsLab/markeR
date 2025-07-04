@@ -13,7 +13,7 @@ Version](https://img.shields.io/badge/min%20R-4.4.0-blue.svg)](https://github.co
 [![Bioconductor
 Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml)
 [![codecov](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR/graph/badge.svg?token=7T1I4JCJG6)](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR)
-
+ 
 <!-- badges: end -->
 
 **markeR** provides a suite of methods for using gene sets (signatures)
@@ -84,7 +84,8 @@ workflow that tests against multiple `R` versions):
 - `R` `4.5.x`
 
 However, due to `Bioconductor` submission requirements, `R` version
-`4.5.0` is listed as required upon package installation.
+`4.5.0` will be listed as required upon package installation in future
+releases.
 
 ⚠️ Compatibility with older R versions depends on the specific versions
 of dependencies installed. Older versions of `R` (including `R` `3.5.x`,
