@@ -57,11 +57,11 @@ knitr::opts_chunk$set(
 
 ## Installation 
 
-The user can install the development version of markeR from [GitHub](https://github.com/) with:
+The latest development release of markeR from [GitHub](https://github.com/) can be installed with:
    
 ``` r
 # install.packages("devtools")
-devtools::install_github("DiseaseTranscriptomicsLab/markeR")
+devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
 ```
 
 ## Tutorials

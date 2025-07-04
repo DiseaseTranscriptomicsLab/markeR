@@ -13,7 +13,7 @@ Version](https://img.shields.io/badge/min%20R-4.4.0-blue.svg)](https://github.co
 [![Bioconductor
 Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml)
 [![codecov](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR/graph/badge.svg?token=7T1I4JCJG6)](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR)
- 
+
 <!-- badges: end -->
 
 **markeR** provides a suite of methods for using gene sets (signatures)
@@ -56,12 +56,12 @@ markeR paper to reproduce analyses and figures.
 
 ## Installation
 
-The user can install the development version of markeR from
-[GitHub](https://github.com/) with:
+The latest development release of markeR from
+[GitHub](https://github.com/) can be installed with:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("DiseaseTranscriptomicsLab/markeR")
+devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
 ```
 
 ## Tutorials
