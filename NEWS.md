@@ -1,3 +1,6 @@
+# markeR 0.9.X (?? ??, ????)
+* Added `VisualiseIndividualGenes()` wrapper to unify individual gene visualisation functions (`ExpressionHeatmap`, `ROCandAUCplot`, etc.) under a single, user-friendly interface.
+
 # markeR 0.9.4 (09 Jul, 2025)
 
 * Minor bug fix: corrected p-value rounding in `PlotScores`
