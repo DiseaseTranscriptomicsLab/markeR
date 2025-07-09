@@ -520,12 +520,12 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 #             paste0("p = ", round(rounded_p, 3))
 #           }
 
-          line1 <- wrap_title(paste0("Cohen's d = ", format(cohen_d_results, digits=3)), width = widthTitle)
-          line2 <- wrap_title(paste0("p = ", format(p_val, digits=3)), width = widthTitle)
+          line1 <- wrap_title(paste0("Cohen's d = ", format(signif(cohen_d_results, digits=3), scientific = TRUE)), width = widthTitle)
+          line2 <- wrap_title(paste0("p = ", format(signif(p_val, digits=3), scientific = TRUE)), width = widthTitle)
           subtitle <- paste(line1, line2, sep = "\n")
 
         } else {
-          subtitle <- wrap_title(paste0("Cohen's d = ", format(cohen_d_results, digits=3)), width = widthTitle)
+          subtitle <- wrap_title(paste0("Cohen's d = ", format(signif(cohen_d_results, digits=3), scientific = TRUE)), width = widthTitle)
         }
 
 
@@ -558,12 +558,11 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 #               paste0("p = ", round(rounded_p, 3))
 #             }
 
-
-            line1 <- wrap_title(paste0("Cohen's d = ", format(cohen_d_results, digits=3)), width = widthTitle)
-            line2 <- wrap_title(paste0("p = ", format(p_val, digits=3)), width = widthTitle)
+            line1 <- wrap_title(paste0("Cohen's d = ", format(signif(cohen_d_results, digits = 3), scientific = TRUE)), width = widthTitle)
+            line2 <- wrap_title(paste0("p = ", format(signif(p_val, digits = 3), scientific = TRUE)), width = widthTitle)
             subtitle <- paste(line1, line2, sep = "\n")
           } else {
-            subtitle <- wrap_title(paste0("Cohen's d = ", format(cohen_d_results,  digits=3)), width = widthTitle)
+            subtitle <- wrap_title(paste0("Cohen's d = ", format(signif(cohen_d_results, digits = 3), scientific = TRUE)), width = widthTitle)
           }
 
 
@@ -588,11 +587,12 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
             # }
 
 
-            line1 <- wrap_title(paste0("Cohen's f = ", format(results_var["Cohen_f"], digits=3)), width = widthTitle)
-            line2 <- wrap_title(paste0("p = ", format(results_var["P_Value"], digits=3)), width = widthTitle)
+
+            line1 <- wrap_title(paste0("Cohen's f = ", format(signif(results_var["Cohen_f"], digits = 3), scientific = TRUE)), width = widthTitle)
+            line2 <- wrap_title(paste0("p = ", format(signif(results_var["P_Value"], digits = 3), scientific = TRUE)), width = widthTitle)
             subtitle <- paste(line1, line2, sep = "\n")
           } else {
-            subtitle <- wrap_title(paste0("Cohen's f = ", format(results_var["Cohen_f"], digits=3)), width = widthTitle)
+            subtitle <- wrap_title(paste0("Cohen's f = ", format(signif(results_var["Cohen_f"], digits = 3), scientific = TRUE)), width = widthTitle)
           }
 
         }
@@ -861,12 +861,12 @@ PlotScores_Numeric <- function(data,
       results_var <- compute_cohens_f_pval(model, type)
 
       if (pvalcalc) {
-        line1 <- wrap_title(paste0("Cohen's f = ", format(results_var["Cohen_f"], digits=3)), width = widthTitle)
-        line2 <- wrap_title(paste0("p = ", format(results_var["P_Value"], digits=3)), width = widthTitle)
+        line1 <- wrap_title(paste0("Cohen's f = ", format(signif(results_var["Cohen_f"], digits=3), scientific = TRUE)), width = widthTitle)
+        line2 <- wrap_title(paste0("p = ", format(signif(results_var["P_Value"], digits=3), scientific = TRUE)), width = widthTitle)
         subtitle <- paste(line1, line2, sep = "\n")
 
       } else {
-        subtitle <- wrap_title(paste0("Cohen's f = ", format(results_var["Cohen_f"], digits=3)), width = widthTitle)
+        subtitle <- wrap_title(paste0("Cohen's f = ", format(signif(results_var["Cohen_f"], digits=3), scientific = TRUE)), width = widthTitle)
       }
 
     } else {
