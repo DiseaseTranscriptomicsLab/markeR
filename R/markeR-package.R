@@ -10,6 +10,7 @@
 #'   \item Score-based signature quantification (e.g., median-centered, ssGSEA, ranking)
 #'   \item Enrichment analysis using GSEA
 #'   \item Visualization of gene expression, scores, and enrichment results
+#'   \item Assessment of gene set similarity
 #' }
 #'
 #' @seealso

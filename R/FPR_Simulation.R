@@ -409,7 +409,7 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable, gene_l
     top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize))
   )
 
-  combined_plot
+  print(combined_plot)
 
   invisible(list(plot=combined_plot,
             data = data_list))

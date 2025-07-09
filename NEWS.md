@@ -1,4 +1,8 @@
-# markeR 0.9.3 (2025-07-3)
+# markeR 0.9.4 (09 Jul, 2025)
+
+* Minor bug fix: corrected p-value rounding in `PlotScores`
+
+# markeR 0.9.3 (03 Jul, 2025)
 
 * Updated documentation and internal code to meet Bioconductor submission guidelines.
 * Fixed minor bugs across multiple functions.
