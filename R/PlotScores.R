@@ -511,21 +511,21 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
           df$cohen <- ifelse(df[, GroupingVariable] %in% cond_cohend[[1]], names(cond_cohend)[1], names(cond_cohend)[2])
           ttest_results <- rstatix::t_test(df, formula = score ~ cohen)
           p_val <- ttest_results$p[1]
+#
+#           # Round p-value, but avoid printing 0
+#           rounded_p <- signif(p_val, 3)  # or use signif for scientific notation
+#           formatted_p <- if (rounded_p < 0.001) {
+#             "p < 0.001"
+#           } else {
+#             paste0("p = ", round(rounded_p, 3))
+#           }
 
-          # Round p-value, but avoid printing 0
-          rounded_p <- signif(p_val, 3)  # or use signif for scientific notation
-          formatted_p <- if (rounded_p < 0.001) {
-            "p < 0.001"
-          } else {
-            paste0("p = ", round(rounded_p, 3))
-          }
-
-          line1 <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results, 3)), width = widthTitle)
-          line2 <- wrap_title(formatted_p, width = widthTitle)
+          line1 <- wrap_title(paste0("Cohen's d = ", format(cohen_d_results, digits=3)), width = widthTitle)
+          line2 <- wrap_title(paste0("p = ", format(p_val, digits=3)), width = widthTitle)
           subtitle <- paste(line1, line2, sep = "\n")
 
         } else {
-          subtitle <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results, 3)), width = widthTitle)
+          subtitle <- wrap_title(paste0("Cohen's d = ", format(cohen_d_results, digits=3)), width = widthTitle)
         }
 
 
@@ -549,21 +549,21 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
           if (pvalcalc) {
             ttest_results <- rstatix::t_test(df, formula = as.formula(paste("score ~", GroupingVariable)))
             p_val <- ttest_results$p[1]
+#
+#             # Round p-value, but avoid printing 0
+#             rounded_p <- signif(p_val, 3)  # or use signif for scientific notation
+#             formatted_p <- if (rounded_p < 0.001) {
+#               "p < 0.001"
+#             } else {
+#               paste0("p = ", round(rounded_p, 3))
+#             }
 
-            # Round p-value, but avoid printing 0
-            rounded_p <- signif(p_val, 3)  # or use signif for scientific notation
-            formatted_p <- if (rounded_p < 0.001) {
-              "p < 0.001"
-            } else {
-              paste0("p = ", round(rounded_p, 3))
-            }
 
-
-            line1 <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results, 3)), width = widthTitle)
-            line2 <- wrap_title(paste0("p = ", formatted_p), width = widthTitle)
+            line1 <- wrap_title(paste0("Cohen's d = ", format(cohen_d_results, digits=3)), width = widthTitle)
+            line2 <- wrap_title(paste0("p = ", format(p_val, digits=3)), width = widthTitle)
             subtitle <- paste(line1, line2, sep = "\n")
           } else {
-            subtitle <- wrap_title(paste0("Cohen's d = ", round(cohen_d_results, 3)), width = widthTitle)
+            subtitle <- wrap_title(paste0("Cohen's d = ", format(cohen_d_results,  digits=3)), width = widthTitle)
           }
 
 
@@ -579,20 +579,20 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 
           if (pvalcalc) {
 
-            # Round p-value, but avoid printing 0
-            rounded_p <- round(results_var["Cohen_f"], 3)  # or use signif for scientific notation
-            formatted_p <- if (rounded_p < 0.001) {
-              "p < 0.001"
-            } else {
-              paste0("p = ", round(rounded_p, 3))
-            }
+            # # Round p-value, but avoid printing 0
+            # rounded_p <- round(results_var["Cohen_f"], 3)  # or use signif for scientific notation
+            # formatted_p <- if (rounded_p < 0.001) {
+            #   "p < 0.001"
+            # } else {
+            #   paste0("p = ", round(rounded_p, 3))
+            # }
 
 
-            line1 <- wrap_title(paste0("Cohen's f = ", formatted_p), width = widthTitle)
-            line2 <- wrap_title(paste0("p = ", round(results_var["P_Value"], 3)), width = widthTitle)
+            line1 <- wrap_title(paste0("Cohen's f = ", format(results_var["Cohen_f"], digits=3)), width = widthTitle)
+            line2 <- wrap_title(paste0("p = ", format(results_var["P_Value"], digits=3)), width = widthTitle)
             subtitle <- paste(line1, line2, sep = "\n")
           } else {
-            subtitle <- wrap_title(paste0("Cohen's f = ", round(results_var["Cohen_f"], 3)), width = widthTitle)
+            subtitle <- wrap_title(paste0("Cohen's f = ", format(results_var["Cohen_f"], digits=3)), width = widthTitle)
           }
 
         }
@@ -861,12 +861,12 @@ PlotScores_Numeric <- function(data,
       results_var <- compute_cohens_f_pval(model, type)
 
       if (pvalcalc) {
-        line1 <- wrap_title(paste0("Cohen's f = ", round(results_var["Cohen_f"], 3)), width = widthTitle)
-        line2 <- wrap_title(paste0("p = ", round(results_var["P_Value"], 3)), width = widthTitle)
+        line1 <- wrap_title(paste0("Cohen's f = ", format(results_var["Cohen_f"], digits=3)), width = widthTitle)
+        line2 <- wrap_title(paste0("p = ", format(results_var["P_Value"], digits=3)), width = widthTitle)
         subtitle <- paste(line1, line2, sep = "\n")
 
       } else {
-        subtitle <- wrap_title(paste0("Cohen's f = ", round(results_var["Cohen_f"], 3)), width = widthTitle)
+        subtitle <- wrap_title(paste0("Cohen's f = ", format(results_var["Cohen_f"], digits=3)), width = widthTitle)
       }
 
     } else {
