@@ -2,109 +2,146 @@
 % Please edit documentation in R/VisualiseIndividualGenes.R
 \name{VisualiseIndividualGenes}
 \alias{VisualiseIndividualGenes}
-\title{Visualize Individual Genes' Expression Using Various Methods}
+\title{VisualiseIndividualGenes: Wrapper for Visualising Individual Genes in Gene Sets}
 \usage{
-VisualiseIndividualGenes(
-  data,
-  metadata,
-  genes,
-  method = c("violins", "expr_heatmap", "corr_heatmap", "roc", "effectsize", "all"),
-  plot = TRUE,
-  GroupingVariable = NULL,
-  ColorVariable = NULL,
-  ColorValues = NULL,
-  pointSize = 2,
-  title = NULL,
-  widthTitle = 16,
-  y_limits = NULL,
-  legend_nrow = NULL,
-  ncol = NULL,
-  nrow = NULL,
-  divide = NULL,
-  invert_divide = FALSE,
-  xlab = NULL,
-  colorlab = NULL
-)
+VisualiseIndividualGenes(type, data, genes, metadata = NULL, ...)
 }
 \arguments{
-\item{data}{A data frame where rows correspond to genes and columns correspond to samples.
-The row names should be gene identifiers.}
+\item{type}{Character. Specifies the type of plot to generate.
+Must be one of:
+\describe{
+\item{"violin"}{Violin plots of individual gene expression by group.}
+\item{"correlation"}{Correlation heatmap of selected genes.}
+\item{"expression"}{Expression heatmap of selected genes.}
+\item{"roc"}{ROC plots for classification performance of individual genes.}
+\item{"auc"}{AUC plots for classification performance of individual genes.}
+\item{"rocauc"}{ROC and AUC plots for classification performance of individual genes.}
+\item{"cohend"}{Effect size (Cohen's D) heatmap of individual genes.}
+\item{"pca"}{PCA plot of selected genes.}
+}}
 
-\item{metadata}{A data frame containing sample metadata. The first column should contain
-sample identifiers matching the column names of \code{data}.}
+\item{data}{Required. Expression data matrix or data frame, with samples as rows and genes as columns.}
 
-\item{genes}{A character vector of gene names to be plotted. If more than 20 genes are provided, a warning is issued.}
+\item{genes}{Required. Character vector of gene names to include in the visualisation.}
 
-\item{method}{A character string specifying which visualization method to use.
-Options are \code{"violins"}, \code{"expr_heatmap"}, \code{"corr_heatmap"}, \code{"roc"}, \code{"effectsize"}, or \code{"all"}.
-Default is \code{"violins"}. If \code{"all"} is selected, all methods will be applied.}
+\item{metadata}{Optional. Data frame with sample metadata, required for some plot types (e.g., violin, roc, cohend).}
 
-\item{plot}{A logical value indicating whether to display the generated plots (\code{TRUE}) or not (\code{FALSE}).
-Default is \code{TRUE}.}
-
-\item{GroupingVariable}{A character string specifying the column name in \code{metadata} to be used
-for grouping samples on the x-axis in violin plots.}
-
-\item{ColorVariable}{A character string specifying the column name in \code{metadata} used
-to color the points in violin plots.}
-
-\item{ColorValues}{An optional named vector mapping unique values of \code{ColorVariable} to specific colors.}
-
-\item{pointSize}{A numeric value specifying the size of jittered points in violin plots. Default is \code{2}.}
-
-\item{title}{An optional character string specifying the title of the plot.}
-
-\item{widthTitle}{An optional integer specifying the maximum width of the title before inserting line breaks. Default is \code{16}.}
-
-\item{y_limits}{A numeric vector of length 2 specifying the limits of the y-axis in violin plots.
-If \code{NULL}, the y-axis is adjusted automatically. Default is \code{NULL}.}
-
-\item{legend_nrow}{A numeric value specifying the number of rows in the legend for violin plots.
-If \code{NULL}, the default number of rows is determined automatically.}
-
-\item{ncol}{An optional numeric value specifying the number of columns in the grid layout for violin plots.
-If \code{NULL}, it is automatically determined.}
-
-\item{nrow}{An optional numeric value specifying the number of rows in the grid layout for violin plots.
-If \code{NULL}, it is automatically determined.}
-
-\item{divide}{A character string specifying a column in \code{metadata} used to divide the violin plots into facets.
-Default is \code{NULL}.}
-
-\item{invert_divide}{A logical value indicating whether to invert the facet layout of violin plots.
-Default is \code{FALSE}.}
-
-\item{xlab}{An optional character string specifying the label for the x-axis in violin plots.
-Default is the name of \code{GroupingVariable}.}
-
-\item{colorlab}{An optional character string specifying the legend title for the color variable.
-Default is \code{NULL}.}
+\item{...}{Additional arguments passed to the specific plotting function.}
 }
 \value{
-A named list where each selected method (e.g., \code{"violins"}, \code{"expr_heatmap"}, etc.) is a key.
-Each element in this list is itself a named list with the following structure:
-\describe{
-\item{\code{data}}{A data frame or matrix containing the transformed data used for plotting, formatted according to the selected method.}
-\item{\code{plot}}{The generated plot object (e.g., a ggplot2 object) corresponding to the visualization.}
-\item{\code{aux}}{Additional parameters, specific of each method.}
-}
-If \code{plot = TRUE}, the plots are also displayed in the output.
+The output of the specific plotting function called, usually a ggplot or ComplexHeatmap object,
+often wrapped in a list with additional data.
 }
 \description{
-This function provides multiple visualization methods for analyzing individual genes
-from an expression dataset. Users can generate violin plots, expression heatmaps,
-correlation heatmaps, ROC curves, and effect size plots.
+This wrapper function helps explore individual gene behavior within a gene set used in \code{markeR}.
+It dispatches to specific visualisation functions based on \code{plot_type}, supporting various plot types:
+heatmaps, violin plots, correlation analysis, PCA, ROC/AUC, and effect size heatmaps.
 }
-\details{
-This function calls multiple sub-functions based on the selected visualization method:
-\itemize{
-\item \code{IndividualGenes_Violins()}: Generates violin plots for gene expression (log2 transformed).
-\item \code{IndividualGenes_ExprHeatmap()}: Creates a heatmap of expression values.
-\item \code{IndividualGenes_CorrHeatmap()}: Computes and visualizes a correlation heatmap.
-\item \code{IndividualGenes_ROC()}: Plots receiver operating characteristic (ROC) curves.
-\item \code{IndividualGenes_EffectSize()}: Computes and visualizes effect sizes.
+\section{Additional required arguments (passed via \code{...}) per \code{plot_type}}{
+
+\describe{
+\item{violin}{Requires \code{GroupingVariable} (column name in \code{metadata} for grouping).}
+\item{roc, auc, rocauc}{Requires \code{condition_var} (metadata column with condition labels) and \code{class} (positive class label).}
+\item{cohend}{Requires \code{condition_var} and \code{class} (same as roc).}
+\item{correlation, expression, pca}{No additional mandatory arguments required.}
+}
 }
 
-The function returns a list of plots. If \code{method = "all"}, all available visualizations are included.
+\examples{
+# Example data
+set.seed(123)
+expr_data <- matrix(rexp(1000, rate = 1), nrow = 50, ncol = 20)
+rownames(expr_data) <- paste0("Gene", 1:50)
+colnames(expr_data) <- paste0("Sample", 1:20)
+
+sample_info <- data.frame(
+  SampleID = colnames(expr_data),
+  Condition = rep(c("A", "B"), each = 10),
+  Diagnosis = rep(c("Disease", "Control"), each = 10),
+  stringsAsFactors = FALSE
+)
+rownames(sample_info) <- sample_info$SampleID
+
+selected_genes <- row.names(expr_data)[1:5]
+
+# Violin plot
+VisualiseIndividualGenes(
+  type = "violin",
+  data = expr_data,
+  metadata = sample_info,
+  genes = selected_genes,
+  GroupingVariable = "Condition",
+  nrow=1
+)
+VisualiseIndividualGenes(
+  type = "correlation",
+  data = expr_data,
+  genes = selected_genes
+)
+
+# Expression heatmap
+VisualiseIndividualGenes(
+  type = "expression",
+  data = expr_data,
+  genes = selected_genes
+)
+
+# PCA plot
+VisualiseIndividualGenes(
+  type = "pca",
+  data = expr_data,
+  genes = selected_genes,
+  metadata = sample_info,
+  ColorVariable="Condition"
+
+)
+
+# ROC plot
+VisualiseIndividualGenes(
+  type = "roc",
+  data = expr_data,
+  metadata = sample_info,
+  genes = selected_genes,
+  condition_var = "Diagnosis",
+  class = "Disease"
+
+)
+
+# AUC plot
+VisualiseIndividualGenes(
+  type = "auc",
+  data = expr_data,
+  metadata = sample_info,
+  genes = selected_genes,
+  condition_var = "Diagnosis",
+  class = "Disease"
+)
+
+# ROC&AUC plot
+VisualiseIndividualGenes(
+  type = "rocauc",
+  data = expr_data,
+  metadata = sample_info,
+  genes = selected_genes,
+  condition_var = "Diagnosis",
+  class = "Disease"
+)
+
+# Cohen's D plot
+VisualiseIndividualGenes(
+  type = "cohend",
+  data = expr_data,
+  metadata = sample_info,
+  genes = selected_genes,
+  condition_var = "Diagnosis",
+  class = "Disease"
+)
+
+
+
 }
-\keyword{internal}
+\seealso{
+\code{\link{IndividualGenes_Violins}}, \code{\link{CorrelationHeatmap}},
+\code{\link{ExpressionHeatmap}}, \code{\link{ROCandAUCplot}},
+\code{\link{CohenD_IndividualGenes}}, \code{\link{plotPCA}}
+}

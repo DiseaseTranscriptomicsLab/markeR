@@ -92,9 +92,11 @@ NES = rnorm(3),
 
 # Generate individual plots without grid
 plot_list <- plotNESlollipop(GSEA_results)
+plot_list
 
 # Generate combined grid of plots with custom title
 combined_plot <- plotNESlollipop(GSEA_results, grid = TRUE,
 title = "GSEA Results Overview", titlesize = 14)
+combined_plot
 
 }

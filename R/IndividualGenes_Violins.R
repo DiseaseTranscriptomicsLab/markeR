@@ -61,7 +61,7 @@ IndividualGenes_Violins <- function(data, metadata=NULL, genes,GroupingVariable,
 
   # Wrap the signature name using the helper function
   if (!is.null(title)) wrapped_title <- wrap_title(title, width = widthTitle)
-
+  data <- as.data.frame(data)
   datasub <- data[row.names(data) %in% genes,]
   n <- nrow(data[row.names(data) %in% genes,])
 

@@ -44,6 +44,7 @@ reference:
       - VariableAssociation
   - title: "Visualization Functions"
     contents:
+      - VisualiseIndividualGenes
       - IndividualGenes_Violins
       - CorrelationHeatmap
       - ExpressionHeatmap

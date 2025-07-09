@@ -668,6 +668,28 @@ ExpressionHeatmap(data=counts_example,
                   scale_position="right")
 ```
 
+To standardize the visualisation of individual genes across multiple analyses, we created a wrapper function called `VisualiseIndividualGenes`. This function consolidates several internal plotting functions, including `ExpressionHeatmap` and other listed below, into a single, user-friendly interface.
+
+The output remains consistent with the individual functions, but users can specify the desired type (i.e., "expression", "correlation","violin", "roc", "auc", "rocauc", "cohend", "pca"), and the wrapper automatically dispatches to the correct function with the appropriate parameters. This design simplifies and unifies the workflow for exploring gene-level patterns across various analysis types. 
+
+```{r example_exprheatmap2, fig.width=8, fig.height=3, out.width="70%", warning=FALSE, message=FALSE}
+VisualiseIndividualGenes(type="expression",
+                  data=counts_example, 
+                  metadata = metadata_example, 
+                  genes=genesets_example$LiteratureMarkers$gene,  
+                  annotate.by = c("Condition"),
+                  annotation_colors = annotation_colors,
+                  colorlist = list(low = "#3F4193", mid = "#F9F4AE", high = "#B44141"),
+                  cluster_rows = TRUE, 
+                  cluster_columns = FALSE,
+                  title = "Senescence Genes", 
+                  titlesize = 20,
+                  legend_position = "right",
+                  scale_position="right")
+```
+
+
+
 The `IndividualGenes_Violins` function creates violin plots to visualize the expression distributions of selected senescence genes across conditions. Jittered points represent individual samples, and grouping (x axis, `GroupingVariable`) and color variables (`ColorVariable` and `ColorValues`) from the metadata allow for additional stratification and insight. Customization options include layout, point size, colors, and axis labeling.
 
 ```{r exampleviolins, fig.width=10, fig.height=3, out.width="100%", warning=FALSE, message=FALSE}
