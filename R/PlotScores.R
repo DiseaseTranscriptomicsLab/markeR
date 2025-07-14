@@ -202,7 +202,7 @@ PlotScores <- function(data, metadata, gene_sets,
                        widthTitle = 20, titlesize = 12, limits = NULL, legend_nrow = NULL, pointSize = 4,
                        xlab = NULL, labsize = 10, compute_cohen=TRUE, cond_cohend = NULL, pvalcalc = FALSE, mode = c("simple","medium","extensive"),
                        widthlegend=22, sig_threshold=0.05, cohen_threshold=0.5, colorPalette="Set3", cor=c("pearson","spearman","kendall")) {
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   method <- match.arg(method)
   mode <- match.arg(mode)
   cor <- match.arg(cor)
@@ -378,7 +378,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
                                    widthTitle = 10, titlesize = 12, limits = NULL, legend_nrow = NULL, pointSize = 2,
                                    xlab = NULL, labsize = 10, compute_cohen=TRUE, cond_cohend = NULL, pvalcalc = FALSE, mode = c("simple","medium","extensive"),
                                    widthlegend=22, cohen_threshold=0.6, colorPalette="Set3") {
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   method <- match.arg(method)
 
   ResultsList <- CalculateScores(data = data,
@@ -745,7 +745,7 @@ PlotScores_Numeric <- function(data,
                                pvalcalc = FALSE,
                                colorPalette = "Set3",
                                cor = c("pearson","spearman","kendall")) {
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   method <- match.arg(method)
 
 

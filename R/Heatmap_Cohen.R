@@ -187,7 +187,7 @@ Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, wi
 #'
 #' @keywords internal
 CohenD_allConditions <- function(data, metadata, gene_sets, variable, mode = c("simple","medium","extensive")) {
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   # Step 1: Check if variable exists in metadata
   if (!variable %in% colnames(metadata)) {
     stop(paste("Error: Variable", variable, "not found in metadata."))
@@ -444,7 +444,7 @@ flatten_results <- function(nested_list) {
 #'
 #' @keywords internal
 CohenF_allConditions <- function(data, metadata, gene_sets, variable ) {
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   # Step 1: Check if variable exists in metadata
   if (!variable %in% colnames(metadata)) {
     stop(paste("Error: Variable", variable, "not found in metadata."))

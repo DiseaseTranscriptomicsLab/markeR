@@ -108,7 +108,7 @@ ROCandAUCplot <- function(data, metadata,
                           roc_params = list(),     # ROC-specific parameters
                           auc_params= list(),
                           commomplot_params = list()) {  # Additional parameters for combined plots
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   # If genes are not specified, use all available genes
   if (is.null(genes)) {
     genes <- rownames(data)

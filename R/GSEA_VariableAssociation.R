@@ -82,6 +82,7 @@
 #'
 #' @keywords internal
 GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL, mode=c("simple","medium","extensive"), gene_set,nonsignif_color = "grey", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05, widthlabels=18, labsize=10, titlesize=14, pointSize=5, ignore_NAs = FALSE, printplt =TRUE) {
+  data <- as.data.frame(data) # Ensure data is a data frame
   mode <- match.arg(mode)
   metadata <- metadata[, cols %in% colnames(metadata), drop = FALSE]
 

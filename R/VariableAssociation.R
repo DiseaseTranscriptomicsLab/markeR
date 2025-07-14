@@ -267,7 +267,7 @@ VariableAssociation <- function(method = c("ssGSEA", "logmedian", "ranking", "GS
                                 printplt = TRUE) {
   method <- match.arg(method)
   mode <- match.arg(mode)
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   if (method == "GSEA") {
     result <- GSEA_VariableAssociation(
       data = data,

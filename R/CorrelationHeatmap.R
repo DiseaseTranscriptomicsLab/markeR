@@ -116,7 +116,7 @@ CorrelationHeatmap <- function(data, metadata = NULL, genes, separate.by = NULL,
                                show_row_names=TRUE,
                                show_column_names=TRUE) {
 
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   # Choose legend position: "side" (vertical) or "top" (horizontal)
   legend_position <- match.arg(legend_position)
   method <- match.arg(method)

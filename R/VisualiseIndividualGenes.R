@@ -133,7 +133,7 @@
 #' @export
 VisualiseIndividualGenes <- function(type, data, genes, metadata = NULL, ...) {
   args <- list(...)
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   # Define required additional arguments for each plot type (besides data, genes, metadata)
   required_args <- list(
     violin      = c("GroupingVariable"),

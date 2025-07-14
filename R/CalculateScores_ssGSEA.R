@@ -21,6 +21,7 @@
 #' @keywords internal
 
 CalculateScores_ssGSEA <- function(data, metadata = NULL, gene_sets) {
+  data <- as.data.frame(data) # Ensure data is a data frame
   ResultsList <- list()
 
   for (sig in names(gene_sets)) {
@@ -89,6 +90,7 @@ CalculateScores_ssGSEA <- function(data, metadata = NULL, gene_sets) {
 #'}
 #' @keywords internal
 CalculateScores_ssGSEA_unidirectional <- function(data, signature) {
+  data <- as.data.frame(data) # Ensure data is a data frame
   ResultsList <- list()
 
   siglist <- list(signature)
@@ -150,6 +152,7 @@ CalculateScores_ssGSEA_unidirectional <- function(data, signature) {
 #'}
 #' @keywords internal
 CalculateScores_ssGSEA_bidirectional <- function(data, signature) {
+  data <- as.data.frame(data) # Ensure data is a data frame
   ResultsList <- list()
 
   mtx <- log2(data)

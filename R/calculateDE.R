@@ -70,7 +70,7 @@
 #' @export
 calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL, contrasts = NULL, ignore_NAs = FALSE) {
 
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   remove_prefix <- function(colnames_vector, prefixes) {
     for (prefix in prefixes) {
       new_colnames <- gsub(paste0("^", prefix), "", colnames_vector)

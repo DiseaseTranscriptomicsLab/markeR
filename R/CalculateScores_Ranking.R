@@ -45,7 +45,7 @@
 #'}
 #' @keywords internal
 CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   ResultsList <- list()
 
   if (!is.data.frame(data)) stop("Error: data must be a data frame")
@@ -147,7 +147,7 @@ CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
 #'}
 #' @keywords internal
 getRanking <- function(data, sample, geneset) {
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   expressiongene <- data[, sample]  # Isolate one sample and get the expression of all genes
   names(expressiongene) <- row.names(data)  # Name vector
   expressiongene <- expressiongene[order(expressiongene, decreasing = FALSE)]  # Order from least to most expressed
