@@ -46,7 +46,7 @@ It supports multiple contrasts and can combine individual plots into a grid layo
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Create a Lollipop Plot for GSEA Results</h1>
-      <small class="dont-index">Source: <a href="https://github.com/DiseaseTranscriptomicsLab/markeR/blob/v0.9.4/R/plotNESlollipop.R" class="external-link"><code>R/plotNESlollipop.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/DiseaseTranscriptomicsLab/markeR/blob/main/R/plotNESlollipop.R" class="external-link"><code>R/plotNESlollipop.R</code></a></small>
       <div class="d-none name"><code>plotNESlollipop.Rd</code></div>
     </div>
 
@@ -174,10 +174,19 @@ Pathway names are wrapped using the <code>wrap_title</code> function to fit with
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Generate individual plots without grid</span></span></span>
 <span class="r-in"><span><span class="va">plot_list</span> <span class="op">&lt;-</span> <span class="fu">plotNESlollipop</span><span class="op">(</span><span class="va">GSEA_results</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">plot_list</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Contrast1</span>
+<span class="r-plt img"><img src="plotNESlollipop-1.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $Contrast2</span>
+<span class="r-plt img"><img src="plotNESlollipop-2.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Generate combined grid of plots with custom title</span></span></span>
 <span class="r-in"><span><span class="va">combined_plot</span> <span class="op">&lt;-</span> <span class="fu">plotNESlollipop</span><span class="op">(</span><span class="va">GSEA_results</span>, grid <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
 <span class="r-in"><span>title <span class="op">=</span> <span class="st">"GSEA Results Overview"</span>, titlesize <span class="op">=</span> <span class="fl">14</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">combined_plot</span></span></span>
+<span class="r-plt img"><img src="plotNESlollipop-3.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
