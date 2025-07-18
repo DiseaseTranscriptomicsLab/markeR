@@ -70,7 +70,7 @@
 #' @importFrom ggpubr ggarrange
 #' @export
 plotPCA <- function(data, metadata=NULL, genes=NULL, scale=FALSE, center=TRUE, PCs=list(c(1,2)), ColorVariable=NULL,ColorValues=NULL,pointSize=5,legend_nrow=2, legend_position=c("bottom","top","right","left"),ncol=NULL, nrow=NULL){
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   legend_position <- match.arg(legend_position)
 
   if (is.null(metadata) & !is.null(ColorVariable)) stop("ColorVariable only available when metadata is specified.")

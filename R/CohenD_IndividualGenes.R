@@ -97,7 +97,7 @@ CohenD_IndividualGenes <- function(data, metadata,
                           title = NULL,
                           titlesize = 16,
                           params = list()) {
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   # If genes are not specified, use all available genes
   if (is.null(genes)) {
     genes <- rownames(data)

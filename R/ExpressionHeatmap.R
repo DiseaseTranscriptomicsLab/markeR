@@ -88,7 +88,7 @@ ExpressionHeatmap <- function(data, metadata = NULL, genes, annotate.by = NULL,
                               legend_position = c("top", "right", "bottom"),
                               show_row_names=TRUE,
                               show_column_names=FALSE) {
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   # Ensure the scale_position and legend_position arguments are matched correctly
   scale_position <- match.arg(scale_position)
   legend_position <- match.arg(legend_position)

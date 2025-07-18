@@ -152,6 +152,7 @@ Score_VariableAssociation <- function(data, metadata, cols, method=c("logmedian"
                                       continuous_color = "#8C6D03", color_palette = "Set2", printplt =TRUE){
   method <- match.arg(method)  # Validate method input
   mode <- match.arg(mode)
+  data <- as.data.frame(data) # Ensure data is a data frame
   # calculate scores for a given metric
   df_ranking <- CalculateScores(data = data, metadata = metadata, method = method, gene_sets = gene_set)[[1]] # if more than one gene set is provided, only results for the first one will be returned
 

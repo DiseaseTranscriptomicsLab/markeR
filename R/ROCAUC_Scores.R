@@ -26,7 +26,7 @@ ROCAUC_Scores_Calculate <- function(data, metadata, gene_sets, method = c("logme
 
   method <- match.arg(method)
   mode <- match.arg(mode)
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   if (method != "all") {
     listScores <- list(CalculateScores(data = data, metadata = metadata, gene_sets = gene_sets, method = method))
     names(listScores) <- method
@@ -129,7 +129,7 @@ ROCAUC_Scores_Calculate <- function(data, metadata, gene_sets, method = c("logme
 #'
 ROC_Scores <- function(data, metadata, gene_sets, method = c("logmedian","ssGSEA","ranking","all"), variable,
                        colors = c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52"), grid = TRUE, spacing_annotation=0.3, ncol=NULL, nrow=NULL, mode=c("simple","medium","extensive"), widthTitle = 18, title=NULL, titlesize=12) {
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   data_ROCAUC <- ROCAUC_Scores_Calculate(data = data, metadata = metadata, gene_sets = gene_sets, method = method, variable = variable, mode = mode)
 
   plot_list <- list()
@@ -333,7 +333,7 @@ ROC_Scores <- function(data, metadata, gene_sets, method = c("logmedian","ssGSEA
 #'
 #' @export
 AUC_Scores <- function(data, metadata, gene_sets, method = c("logmedian", "ssGSEA", "ranking", "all"), mode = c("simple","medium","extensive"), variable, nrow = NULL, ncol = NULL, limits = NULL, widthTitle = 22, titlesize = 12, ColorValues = c("#F9F4AE", "#B44141"), title = NULL) {
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   # Calculate the AUC scores using the given method
   auc_list <- ROCAUC_Scores_Calculate(data = data, metadata = metadata, gene_sets = gene_sets, method = method, variable = variable, mode = mode)
 

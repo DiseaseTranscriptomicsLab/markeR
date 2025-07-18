@@ -92,7 +92,7 @@
 #'
 #' @export
 CalculateScores <- function(data, metadata, gene_sets, method = c("ssGSEA", "logmedian","ranking", "all")) {
-
+  data <- as.data.frame(data) # Ensure data is a data frame
   method <- match.arg(method)  # Validate method input
 
   if (!is.data.frame(data)) stop("Error: data must be a data-frame")

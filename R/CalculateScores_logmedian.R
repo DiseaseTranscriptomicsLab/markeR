@@ -35,6 +35,7 @@
 #' }
 #' @keywords internal
 CalculateScores_logmedian <- function(data, metadata = NULL, gene_sets) {
+  data <- as.data.frame(data) # Ensure data is a data frame
   ResultsList <- list()
 
   for (sig in names(gene_sets)) {
@@ -83,6 +84,7 @@ CalculateScores_logmedian <- function(data, metadata = NULL, gene_sets) {
 #' @return A named vector with log-median-centered scores per sample.
 #' @keywords internal
 calculateScore_logmedian_bidirectional <- function(data, signature) {
+  data <- as.data.frame(data) # Ensure data is a data frame
   signature[, 2] <- as.numeric(signature[, 2])
 
   if (!all(unique(signature[, 2]) %in% c(-1, 1))) {
@@ -122,6 +124,7 @@ calculateScore_logmedian_bidirectional <- function(data, signature) {
 #' @return A named vector with log-median-centered scores per sample.
 #' @keywords internal
 calculateScore_logmedian_unidirectional <- function(data, signature) {
+  data <- as.data.frame(data) # Ensure data is a data frame
   if (is.data.frame(signature)) signature <- as.vector(signature[, 1])
 
   data_subset <- na.omit(subset(log2(data + 1), row.names(data) %in% signature))
