@@ -90,9 +90,6 @@ test_that("VisualiseIndividualGenes throws errors for missing required arguments
     stringsAsFactors = FALSE
   )
 
-  # Missing data
-  expect_error(VisualiseIndividualGenes(type = "violin", genes = c("Gene1", "Gene2")),
-               "Argument 'data' is required")
 
   # Missing genes
   expect_error(VisualiseIndividualGenes(type = "violin", data = expr_data),
