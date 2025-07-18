@@ -31,7 +31,7 @@ knitr::opts_chunk$set(
 
 > **To cite markeR please use:**
 >
->   Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). _markeR: an R Toolkit for Evaluating Gene Sets as Phenotypic Markers_. Gulbenkian Institute for Molecular Medicine, Faculdade de Medicina, Universidade de Lisboa, Lisbon, Portugal. R package version 0.9.5, https://github.com/DiseaseTranscriptomicsLab/markeR.
+>   Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). _markeR: an R Toolkit for Evaluating Gene Sets as Phenotypic Markers_. Gulbenkian Institute for Molecular Medicine, Faculdade de Medicina, Universidade de Lisboa, Lisbon, Portugal. R package version 0.99.0, https://github.com/DiseaseTranscriptomicsLab/markeR.
  
 `inst/Paper/` — Contains all scripts and materials used in the original markeR paper to reproduce analyses and figures.
 
