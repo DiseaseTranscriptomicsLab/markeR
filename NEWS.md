@@ -1,3 +1,7 @@
+# markeR 0.99.0 (18 Jul, 2025)
+
+* First submission to Bioconductor
+
 # markeR 0.9.5 (18 Jul, 2025)
 
 * Added `VisualiseIndividualGenes()` wrapper to unify individual gene visualisation functions (`ExpressionHeatmap`, `ROCandAUCplot`, etc.) under a single, user-friendly interface.
