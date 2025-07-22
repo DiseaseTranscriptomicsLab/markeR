@@ -3,6 +3,7 @@
 .Rdata
 .httr-oauth
 .DS_Store
+*.DS_Store
 .quarto
 /renv/
 /tests/debug/
