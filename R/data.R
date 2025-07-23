@@ -3,6 +3,7 @@
 #' A data frame containing metadata for samples from the Marthandan et al.
 #' (2016) study (GEO code GSE63577).
 #'
+#' @docType data
 #' @format A data frame with 45 rows and 6 columns:
 #' \describe{
 #'   \item{sampleID}{Unique sample identifier.}
@@ -50,7 +51,7 @@
 #' For illustration and package size reduction, genes with variance in the
 #' bottom 10% across samples were removed, retaining the 90% most variable genes
 #' in the dataset.
-#'
+#' @docType data
 #' @format A numeric matrix with rows as genes (gene symbols) and columns as
 #'   samples (sample IDs).
 #'
@@ -69,7 +70,7 @@
 "counts_example"
 
 #' Example Gene Sets for Cellular Senescence
-#'
+#' @docType data
 #' @format A named list of length 3:
 #' \describe{
 #'   \item{Literature_Senescence}{Character vector of gene symbols. A small,
