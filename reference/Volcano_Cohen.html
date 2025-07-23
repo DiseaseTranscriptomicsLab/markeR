@@ -82,25 +82,16 @@ faceted by contrast.</p>
 
 
 <dl><dt id="arg-cohenlist">cohenlist<a class="anchor" aria-label="anchor" href="#arg-cohenlist"></a></dt>
-<dd><p>A named list where each element corresponds to a gene
-signature. Output of <code>CohenD_allConditions</code>. Each signature element is a list
-with three components:</p><dl><dt>CohenD</dt>
-<dd><p>A data frame where rows are methods and columns are group
-contrasts (formatted as "Group1:Group2"),
-containing the computed Cohen\'s d effect sizes.</p></dd>
-
-<dt>PValue</dt>
-<dd><p>A data frame with the same structure as <code>CohenD</code>
-containing the corresponding p-values.</p></dd>
-
-<dt>padj</dt>
-<dd><p>A data frame with the same structure as <code>PValue</code>
+<dd><p>A named list from <code>CohenD_allConditions</code>. Each element
+is a list with:</p><ul><li><p><code>CohenD</code>: A data frame where rows are methods and columns are group
+contrasts (formatted as "Group1:Group2"), containing the computed Cohen's d
+effect sizes.</p></li>
+<li><p><code>PValue</code>: A data frame with the same structure as <code>CohenD</code>
+containing the corresponding p-values.</p></li>
+<li><p><code>padj</code>: A data frame with the same structure as <code>PValue</code>
 containing the corresponding p-values corrected using the BH method,
-for all signatures and contrasts,
-and by method.</p></dd>
-
-
-</dl></dd>
+for all signatures and contrasts, and by method.</p></li>
+</ul></dd>
 
 
 <dt id="arg-titlesize">titlesize<a class="anchor" aria-label="anchor" href="#arg-titlesize"></a></dt>

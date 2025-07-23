@@ -74,12 +74,10 @@ contain sample names. <strong>(Optional)</strong></p></dd>
 
 
 <dt id="arg-gene-sets">gene_sets<a class="anchor" aria-label="anchor" href="#arg-gene-sets"></a></dt>
-<dd><p>A named list of gene sets. <strong>(Required)</strong></p><ul><li><p><strong>Unidirectional gene sets</strong>: Provide a named list where each element is a
-vector of gene names.</p></li>
-<li><p><strong>Bidirectional gene sets</strong>: Provide a named list where each element is a data frame.</p><ul><li><p>The <strong>first column</strong> should contain gene names.</p></li>
-<li><p>The <strong>second column</strong> should indicate the expected direction of enrichment
-(1 for upregulated genes, -1 for downregulated genes).</p></li>
-</ul></li>
+<dd><p>A named list of gene sets. <strong>(Required)</strong>
+For unidirectional gene sets, provide a named list where each element is a vector of gene names.
+For bidirectional gene sets, provide a named list where each element is a data frame with two columns:</p><ul><li><p>The first column: gene names.</p></li>
+<li><p>The second column: expected direction (1 for upregulated, -1 for downregulated).</p></li>
 </ul></dd>
 
 </dl></div>
