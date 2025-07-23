@@ -71,28 +71,33 @@ contrasts of a given categorical variable.</p>
 
 
 <dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
-<dd><p>A matrix or data frame of gene expression data (genes as rows, samples as columns).</p></dd>
+<dd><p>A matrix or data frame of gene expression data (genes as rows,
+samples as columns).</p></dd>
 
 
 <dt id="arg-metadata">metadata<a class="anchor" aria-label="anchor" href="#arg-metadata"></a></dt>
-<dd><p>A data frame containing sample metadata, including the grouping variable.</p></dd>
+<dd><p>A data frame containing sample metadata, including the
+grouping variable.</p></dd>
 
 
 <dt id="arg-gene-sets">gene_sets<a class="anchor" aria-label="anchor" href="#arg-gene-sets"></a></dt>
-<dd><p>A named list of gene sets, where each entry is a character vector of gene names.</p></dd>
+<dd><p>A named list of gene sets, where each entry is a character
+vector of gene names.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
-<dd><p>A character string specifying the score calculation method. Options: <code>"logmedian"</code>, <code>"ssGSEA"</code>, <code>"ranking"</code>, or <code>"all"</code>.</p></dd>
+<dd><p>A character string specifying the score calculation method.
+Options: <code>"logmedian"</code>, <code>"ssGSEA"</code>, <code>"ranking"</code>, or <code>"all"</code>.</p></dd>
 
 
 <dt id="arg-variable">variable<a class="anchor" aria-label="anchor" href="#arg-variable"></a></dt>
-<dd><p>A character string specifying the categorical variable for group comparisons.#'</p></dd>
+<dd><p>A character string specifying the categorical variable for
+group comparisons.#'</p></dd>
 
 
 <dt id="arg-mode">mode<a class="anchor" aria-label="anchor" href="#arg-mode"></a></dt>
-<dd><p>A string specifying the level of detail for contrasts.
-Options are:</p><ul><li><p><code>"simple"</code>: Pairwise comparisons (e.g., A - B).</p></li>
+<dd><p>A string specifying the level of detail for contrasts. Options
+are:</p><ul><li><p><code>"simple"</code>: Pairwise comparisons (e.g., A - B).</p></li>
 <li><p><code>"medium"</code>: Pairwise comparisons plus comparisons against the mean of other groups.</p></li>
 <li><p><code>"extensive"</code>: All possible groupwise contrasts, ensuring balance in the number of terms on each side.</p></li>
 </ul></dd>
@@ -100,7 +105,8 @@ Options are:</p><ul><li><p><code>"simple"</code>: Pairwise comparisons (e.g., A 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A named list containing ROC curve data and AUC values for each method, signature, and contrast.</p>
+    <p>A named list containing ROC curve data and AUC values for each
+method, signature, and contrast.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
