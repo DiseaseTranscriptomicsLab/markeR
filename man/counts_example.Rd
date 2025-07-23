@@ -12,7 +12,7 @@ samples (sample IDs).
 \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE63577}
 }
 \usage{
-data(counts_example)
+counts_example
 }
 \description{
 A numeric matrix containing filtered and normalized gene expression data from

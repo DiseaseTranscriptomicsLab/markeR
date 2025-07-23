@@ -17,7 +17,7 @@ A gene set from Hernandez-Segura et al. (2017), with directionality (+1 or -1).}
 }
 }
 \usage{
-data(genesets_example)
+genesets_example
 }
 \description{
 Example Gene Sets for Cellular Senescence

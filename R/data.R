@@ -3,7 +3,6 @@
 #' A data frame containing metadata for samples from the Marthandan et al.
 #' (2016) study (GEO code GSE63577).
 #'
-#' @docType data
 #' @format A data frame with 45 rows and 6 columns:
 #' \describe{
 #'   \item{sampleID}{Unique sample identifier.}
@@ -26,7 +25,6 @@
 #'   Senescence Associated Genes and Pathways in Primary Human Fibroblasts
 #'   Detected by RNA-Seq. PLoS One 2016;11(5):e0154531. PMID: 27140416
 #'
-#' @usage data(metadata_example)
 #' @keywords datasets
 "metadata_example"
 
@@ -51,7 +49,7 @@
 #' For illustration and package size reduction, genes with variance in the
 #' bottom 10% across samples were removed, retaining the 90% most variable genes
 #' in the dataset.
-#' @docType data
+#'
 #' @format A numeric matrix with rows as genes (gene symbols) and columns as
 #'   samples (sample IDs).
 #'
@@ -65,12 +63,12 @@
 #'   Senescence Associated Genes and Pathways in Primary Human Fibroblasts
 #'   Detected by RNA-Seq.
 #' *PLoS One* 2016;11(5):e0154531. PMID: 27140416
-#' @usage data(counts_example)
+#'
 #' @keywords datasets
 "counts_example"
 
 #' Example Gene Sets for Cellular Senescence
-#' @docType data
+#'
 #' @format A named list of length 3:
 #' \describe{
 #'   \item{Literature_Senescence}{Character vector of gene symbols. A small,
@@ -82,11 +80,10 @@
 #'   A gene set from Hernandez-Segura et al. (2017), with directionality (+1 or -1).}
 #' }
 #'
-#' @usage data(genesets_example)
-#' @keywords datasets
 #' @references Hernandez-Segura A, de Jong TV, Melov S, Guryev V, Campisi J,
 #'   Demaria M. Unmasking Transcriptional Heterogeneity in Senescent Cells.
 #' *Curr Biol.* 2017 Sep 11;27(17):2652-2660.e4. doi: 10.1016/j.cub.2017.07.033.
 #' Epub 2017 Aug 30. PMID: 28844647; PMCID: PMC5788810.
+#' @keywords datasets
 "genesets_example"
 
