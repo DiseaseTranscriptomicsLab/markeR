@@ -42,11 +42,11 @@
 #'   (samples) should be displayed.
 #'
 #'
-#' @return A list containing:
-#'   \describe{
-#'     \item{data}{The scaled expression matrix (Z-scores).}
-#'     \item{plot}{The generated ComplexHeatmap object.}
-#'   }
+#' @return Invisibly returns a list with:
+#' \describe{
+#'   \item{data}{Scaled expression matrix (Z-scores).}
+#'   \item{plot}{Generated ComplexHeatmap object.}
+#' }
 #'
 #' @examples
 #' # Simulate gene expression data (genes as rows, samples as columns)
@@ -130,8 +130,7 @@ ExpressionHeatmap <- function(data, metadata = NULL, genes, annotate.by = NULL,
   data <- data[rownames(data) %in% genes, , drop = FALSE]
 
   # Ensure metadata is provided if annotate.by is specified
-  if (!is.null(annotate.by) && is.null(metadata)) stop("annotate.by is
-                                                       specified but metadata is NULL.")
+  if (!is.null(annotate.by) && is.null(metadata)) stop("annotate.by is specified but metadata is NULL.")
 
   # Ensure metadata matches sample order if provided
   if (!is.null(metadata)) {

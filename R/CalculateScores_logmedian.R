@@ -9,14 +9,12 @@
 #' provided, the resulting scores will be merged with metadata.
 #' @param gene_sets A named list representing gene sets. **(Required)**
 #'
-#' - **Unidirectional gene sets:** Each element should be a vector of gene
-#' names representing a signature.
-#'   - The names of the list elements serve as labels for the signatures.
-#' - **Bidirectional gene sets:** Each element should be a data frame with:
-#'   - The **first column** containing gene names.
-#'   - The **second column** specifying the expected direction of enrichment:
-#'     - `1` for upregulated genes.
-#'     - `-1` for downregulated genes.
+#' - **Unidirectional gene sets:** Each element should be a vector of gene names representing a signature.
+#'   The names of the list elements serve as labels for the signatures.
+#'
+#' - **Bidirectional gene sets:** Each element should be a data frame with two columns:
+#'   - First column: gene names.
+#'   - Second column: expected direction of enrichment (1 for upregulated, -1 for downregulated).
 #'
 #' @return A list of data frames containing log-median scores for each
 #'  signature.

@@ -79,12 +79,6 @@ grid layout. If \code{NULL}, layout is auto-calculated.}
 layout. If \code{NULL}, layout is auto-calculated.}
 }
 \value{
-Invisibly returns the combined \code{ggplot} object showing observed vs
-simulated effect sizes. One violin plot is generated per signature and
-contrast. Observed values are highlighted and compared to the simulated
-distribution. Significance (adjusted p-value \eqn{<=} 0.05) is indicated by
-point shape.
-
 Invisibly returns a list containing:
 \describe{
 \item{\code{plot}}{A combined \code{ggplot}using \code{ggarrange}; one violin plot is

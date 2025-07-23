@@ -7,20 +7,16 @@
 VisualiseIndividualGenes(type, data, genes, metadata = NULL, ...)
 }
 \arguments{
-\item{type}{Character. Specifies the type of plot to generate.
-Must be one of:
-\describe{
-\item{"violin"}{Violin plots of individual gene expression by group.}
-\item{"correlation"}{Correlation heatmap of selected genes.}
-\item{"expression"}{Expression heatmap of selected genes.}
-\item{"roc"}{ROC plots for classification performance of individual
-genes.}
-\item{"auc"}{AUC plots for classification performance of individual
-genes.}
-\item{"rocauc"}{ROC and AUC plots for classification performance of
-individual genes.}
-\item{"cohend"}{Effect size (Cohen's D) heatmap of individual genes.}
-\item{"pca"}{PCA plot of selected genes.}
+\item{type}{Character. Specifies the type of plot to generate. Must be one of:
+\itemize{
+\item \code{"violin"}: Violin plots of individual gene expression by group
+\item \code{"correlation"}: Correlation heatmap of selected genes
+\item \code{"expression"}: Expression heatmap of selected genes
+\item \code{"roc"}: ROC plots for classification performance of individual genes
+\item \code{"auc"}: AUC plots for classification performance of individual genes
+\item \code{"rocauc"}: Combined ROC and AUC plots
+\item \code{"cohend"}: Effect size (Cohen's D) heatmap
+\item \code{"pca"}: PCA plot of selected genes
 }}
 
 \item{data}{Required. Expression data matrix or data frame, with samples as

@@ -6,20 +6,17 @@
 #' Each point represents a method-signature pair,
 #' faceted by contrast.
 #'
-#' @param cohenlist A named list where each element corresponds to a gene
-#' signature. Output of `CohenD_allConditions`. Each signature element is a list
-#' with three components:
-#' \describe{
-#'   \item{CohenD}{A data frame where rows are methods and columns are group
-#'   contrasts (formatted as "Group1:Group2"),
-#'   containing the computed Cohen\'s d effect sizes.}
-#'   \item{PValue}{A data frame with the same structure as \code{CohenD}
-#'   containing the corresponding p-values.}
-#'   \item{padj}{A data frame with the same structure as \code{PValue}
+#' @param cohenlist A named list from \code{CohenD_allConditions}. Each element
+#'   is a list with:
+#'   - \code{CohenD}: A data frame where rows are methods and columns are group
+#'   contrasts (formatted as "Group1:Group2"), containing the computed Cohen's d
+#'   effect sizes.
+#'   - \code{PValue}: A data frame with the same structure as \code{CohenD}
+#'   containing the corresponding p-values.
+#'   - \code{padj}: A data frame with the same structure as \code{PValue}
 #'   containing the corresponding p-values corrected using the BH method,
-#'   for all signatures and contrasts,
-#'   and by method.}
-#' }
+#'   for all signatures and contrasts, and by method.
+#'
 #' @param titlesize Integer. Size of the facet strip titles. Default is 12.
 #' @param ColorValues Character vector of colors used to distinguish signatures.
 #' If NULL, colors are automatically generated.
@@ -46,15 +43,15 @@
 #' @importFrom RColorBrewer brewer.pal
 #' @keywords internal
 Volcano_Cohen <- function(cohenlist,
-                           titlesize = 12,
-                           ColorValues = NULL,
-                           title = NULL,
-                           widthlegend = 22,
+                          titlesize = 12,
+                          ColorValues = NULL,
+                          title = NULL,
+                          widthlegend = 22,
                           pointSize = 3,
-                           sig_threshold = 0.05,
+                          sig_threshold = 0.05,
                           cohen_threshold = 0.5,
-                           colorPalette = "Set3",
-                           nrow=NULL, ncol=NULL) {
+                          colorPalette = "Set3",
+                          nrow=NULL, ncol=NULL) {
 
   cohentype <- ifelse("CohenD" %in% names(cohenlist[[1]]), "d",
                       ifelse("CohenF" %in% names(cohenlist[[1]]), "f", NULL))
@@ -99,11 +96,11 @@ Volcano_Cohen <- function(cohenlist,
     ColorValues <- colorRampPalette(RColorBrewer::brewer.pal(12, colorPalette))(
       length(unique(final_df$signature)))
   } else {
-      if (!is.null(ColorValues[["volcano"]])) {
-        ColorValues <- ColorValues[["volcano"]]
-      } else {
-        ColorValues <- ColorValues[[2]]
-      }
+    if (!is.null(ColorValues[["volcano"]])) {
+      ColorValues <- ColorValues[["volcano"]]
+    } else {
+      ColorValues <- ColorValues[[2]]
+    }
 
   }
 
@@ -140,11 +137,11 @@ Volcano_Cohen <- function(cohenlist,
     ) +
     ggplot2::ggtitle(if (!is.null(title)) title else
       ifelse(cohentype=="d","Cohen's d Volcano Plot", "Cohen's f Volcano Plot")
-      )+
+    )+
     ggplot2::scale_x_continuous(limits = c(0, NA)) +  # Set x-axis to start at 0
     ggplot2::scale_y_continuous(limits = c(0, NA))
   # Set y-axis to start at the minimum value of -log10(padj)
-    #ggplot2::scale_y_continuous(limits = c(min(-log10(final_df$padj)), NA))
+  #ggplot2::scale_y_continuous(limits = c(min(-log10(final_df$padj)), NA))
 
 
   return(list(plt=plt))

@@ -44,11 +44,6 @@
 #' @param nrow Integer. Number of rows for arranging signature plots in a grid
 #'   layout. If `NULL`, layout is auto-calculated.
 #'
-#' @return Invisibly returns the combined `ggplot` object showing observed vs
-#'   simulated effect sizes. One violin plot is generated per signature and
-#'   contrast. Observed values are highlighted and compared to the simulated
-#'   distribution. Significance (adjusted p-value \eqn{<=} 0.05) is indicated by
-#'   point shape.
 #'
 #' @return Invisibly returns a list containing:
 #'   \describe{

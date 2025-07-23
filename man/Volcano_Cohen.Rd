@@ -19,19 +19,17 @@ Volcano_Cohen(
 )
 }
 \arguments{
-\item{cohenlist}{A named list where each element corresponds to a gene
-signature. Output of \code{CohenD_allConditions}. Each signature element is a list
-with three components:
-\describe{
-\item{CohenD}{A data frame where rows are methods and columns are group
-contrasts (formatted as "Group1:Group2"),
-containing the computed Cohen\'s d effect sizes.}
-\item{PValue}{A data frame with the same structure as \code{CohenD}
-containing the corresponding p-values.}
-\item{padj}{A data frame with the same structure as \code{PValue}
+\item{cohenlist}{A named list from \code{CohenD_allConditions}. Each element
+is a list with:
+\itemize{
+\item \code{CohenD}: A data frame where rows are methods and columns are group
+contrasts (formatted as "Group1:Group2"), containing the computed Cohen's d
+effect sizes.
+\item \code{PValue}: A data frame with the same structure as \code{CohenD}
+containing the corresponding p-values.
+\item \code{padj}: A data frame with the same structure as \code{PValue}
 containing the corresponding p-values corrected using the BH method,
-for all signatures and contrasts,
-and by method.}
+for all signatures and contrasts, and by method.
 }}
 
 \item{titlesize}{Integer. Size of the facet strip titles. Default is 12.}

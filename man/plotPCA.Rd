@@ -64,7 +64,7 @@ A list with two elements:
 \item \code{plt}: A ggplot2 or ggarrange object displaying the PCA plot.
 \item \code{data}: A data frame containing PCA-transformed values and
 sample metadata (if available).
-}#'
+}
 }
 \description{
 This function performs PCA on a given dataset and visualizes the results

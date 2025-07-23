@@ -71,10 +71,10 @@ should be displayed.}
 (samples) should be displayed.}
 }
 \value{
-A list containing:
+Invisibly returns a list with:
 \describe{
-\item{data}{The scaled expression matrix (Z-scores).}
-\item{plot}{The generated ComplexHeatmap object.}
+\item{data}{Scaled expression matrix (Z-scores).}
+\item{plot}{Generated ComplexHeatmap object.}
 }
 }
 \description{

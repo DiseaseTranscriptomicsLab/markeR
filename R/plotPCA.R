@@ -39,7 +39,7 @@
 #'   \item \code{plt}: A ggplot2 or ggarrange object displaying the PCA plot.
 #'   \item \code{data}: A data frame containing PCA-transformed values and
 #'   sample metadata (if available).
-#' }#'
+#' }
 #'
 #' @examples
 #' # Example dataset
@@ -89,16 +89,14 @@ plotPCA <- function(data, metadata=NULL, genes=NULL, scale=FALSE, center=TRUE,
   data <- as.data.frame(data) # Ensure data is a data frame
   legend_position <- match.arg(legend_position)
 
-  if (is.null(metadata) & !is.null(ColorVariable)) stop("ColorVariable only
-                                                        available when metadata is specified.")
+  if (is.null(metadata) & !is.null(ColorVariable)) stop("ColorVariable only available when metadata is specified.")
   if (is.null(genes)){
     genes <-  row.names(data)
   }
 
   data <- data[row.names(data) %in% genes, , drop=FALSE]
 
-  if (!nrow(data)>1) stop(paste0("Error: Number of genes should be >1;
-                                 In your data you have only found the gene ",genes))
+  if (!nrow(data)>1) stop(paste0("Error: Number of genes should be >1; In your data you have only found the gene ",genes))
 
   # Ensure metadata matches sample order if provided
   if (!is.null(metadata)) {
@@ -118,8 +116,7 @@ plotPCA <- function(data, metadata=NULL, genes=NULL, scale=FALSE, center=TRUE,
   PCAcounts <- PCAdata$x
   PCAcounts <- as.data.frame(PCAcounts)
 
-  if (nPCs > ncol(PCAcounts)) stop("Error: Number of genes too low for number of
-                                   chosen PCs. Please reduce number of PCs.")
+  if (nPCs > ncol(PCAcounts)) stop("Error: Number of genes too low for number of chosen PCs. Please reduce number of PCs.")
 
   PCAcounts <-  cbind(PCAcounts[,1:nPCs],y$samples)
 

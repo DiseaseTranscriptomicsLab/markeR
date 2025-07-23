@@ -14,15 +14,11 @@ samples, and values correspond to gene expression levels. \strong{(Required)}}
 contain sample names. \strong{(Optional)}}
 
 \item{gene_sets}{A named list of gene sets. \strong{(Required)}
+For unidirectional gene sets, provide a named list where each element is a vector of gene names.
+For bidirectional gene sets, provide a named list where each element is a data frame with two columns:
 \itemize{
-\item \strong{Unidirectional gene sets}: Provide a named list where each element is a
-vector of gene names.
-\item \strong{Bidirectional gene sets}: Provide a named list where each element is a data frame.
-\itemize{
-\item The \strong{first column} should contain gene names.
-\item The \strong{second column} should indicate the expected direction of enrichment
-(1 for upregulated genes, -1 for downregulated genes).
-}
+\item The first column: gene names.
+\item The second column: expected direction (1 for upregulated, -1 for downregulated).
 }}
 }
 \value{

@@ -6,21 +6,16 @@
 #' supporting various plot types: heatmaps, violin plots, correlation analysis,
 #' PCA, ROC/AUC, and effect size heatmaps.
 #'
-#' @param type Character. Specifies the type of plot to generate.
-#'   Must be one of:
-#'   \describe{
-#'     \item{"violin"}{Violin plots of individual gene expression by group.}
-#'     \item{"correlation"}{Correlation heatmap of selected genes.}
-#'     \item{"expression"}{Expression heatmap of selected genes.}
-#'     \item{"roc"}{ROC plots for classification performance of individual
-#'     genes.}
-#'     \item{"auc"}{AUC plots for classification performance of individual
-#'     genes.}
-#'     \item{"rocauc"}{ROC and AUC plots for classification performance of
-#'     individual genes.}
-#'     \item{"cohend"}{Effect size (Cohen's D) heatmap of individual genes.}
-#'     \item{"pca"}{PCA plot of selected genes.}
-#'   }
+#' @param type Character. Specifies the type of plot to generate. Must be one of:
+#'   - `"violin"`: Violin plots of individual gene expression by group
+#'   - `"correlation"`: Correlation heatmap of selected genes
+#'   - `"expression"`: Expression heatmap of selected genes
+#'   - `"roc"`: ROC plots for classification performance of individual genes
+#'   - `"auc"`: AUC plots for classification performance of individual genes
+#'   - `"rocauc"`: Combined ROC and AUC plots
+#'   - `"cohend"`: Effect size (Cohen's D) heatmap
+#'   - `"pca"`: PCA plot of selected genes
+#'
 #' @param data Required. Expression data matrix or data frame, with samples as
 #' rows and genes as columns.
 #' @param genes Required. Character vector of gene names to include in the

@@ -150,8 +150,7 @@ CohenD_IndividualGenes <- function(data, metadata,
   # If group_var is provided, ensure it exists; otherwise, treat all samples as one group.
   if (!is.null(group_var)) {
     if (!group_var %in% colnames(metadata)) {
-      stop(paste("Error: The specified group_var", group_var, "is not found in
-                 the metadata."))
+      stop(paste("Error: The specified group_var", group_var, "is not found in the metadata."))
     }
     groups <- unique(data_merge[[group_var]])
   } else {

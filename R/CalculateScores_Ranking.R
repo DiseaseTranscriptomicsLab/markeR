@@ -8,14 +8,13 @@
 #'  samples, and values correspond to gene expression levels. **(Required)**
 #'@param metadata A data frame containing sample metadata. The first column must
 #'  contain sample names. **(Optional)**
-#'@param gene_sets A named list of gene sets. **(Required)**
-#'
-#' - **Unidirectional gene sets**: Provide a named list where each element is a
-#' vector of gene names.
-#' - **Bidirectional gene sets**: Provide a named list where each element is a data frame.
-#'   - The **first column** should contain gene names.
-#'   - The **second column** should indicate the expected direction of enrichment
-#'   (1 for upregulated genes, -1 for downregulated genes).
+#' @param gene_sets A named list of gene sets. **(Required)**
+#'   For unidirectional gene sets, provide a named list where each element is a vector of gene names.
+#'   For bidirectional gene sets, provide a named list where each element is a data frame with two columns:
+#'   \itemize{
+#'     \item The first column: gene names.
+#'     \item The second column: expected direction (1 for upregulated, -1 for downregulated).
+#'   }
 #'
 #'@return A named list of data frames, where each data frame contains:
 #' - `sample`: Sample name.
