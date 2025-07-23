@@ -4,18 +4,24 @@
 #' Area Under the Curve (AUC) values for gene signature scores across different
 #' contrasts of a given categorical variable.
 #'
-#' @param data A matrix or data frame of gene expression data (genes as rows, samples as columns).
-#' @param metadata A data frame containing sample metadata, including the grouping variable.
-#' @param gene_sets A named list of gene sets, where each entry is a character vector of gene names.
-#' @param method A character string specifying the score calculation method. Options: `"logmedian"`, `"ssGSEA"`, `"ranking"`, or `"all"`.
-#' @param variable A character string specifying the categorical variable for group comparisons.#'
-#' @param mode A string specifying the level of detail for contrasts.
-#' Options are:
+#' @param data A matrix or data frame of gene expression data (genes as rows,
+#'   samples as columns).
+#' @param metadata A data frame containing sample metadata, including the
+#'   grouping variable.
+#' @param gene_sets A named list of gene sets, where each entry is a character
+#'   vector of gene names.
+#' @param method A character string specifying the score calculation method.
+#'   Options: `"logmedian"`, `"ssGSEA"`, `"ranking"`, or `"all"`.
+#' @param variable A character string specifying the categorical variable for
+#'   group comparisons.#'
+#' @param mode A string specifying the level of detail for contrasts. Options
+#'   are:
 #' - `"simple"`: Pairwise comparisons (e.g., A - B).
 #' - `"medium"`: Pairwise comparisons plus comparisons against the mean of other groups.
 #' - `"extensive"`: All possible groupwise contrasts, ensuring balance in the number of terms on each side.
 #'
-#' @return A named list containing ROC curve data and AUC values for each method, signature, and contrast.
+#' @return A named list containing ROC curve data and AUC values for each
+#'   method, signature, and contrast.
 #'
 #' @importFrom pROC roc auc
 #' @importFrom stats as.formula
@@ -76,36 +82,49 @@ ROCAUC_Scores_Calculate <- function(data, metadata, gene_sets, method = c("logme
 
 
 
-#' Plot ROC Curves for Gene Signature Scores
+#'Plot ROC Curves for Gene Signature Scores
 #'
-#' This function generates ROC curve plots for different gene signatures across multiple scoring methods.
+#'This function generates ROC curve plots for different gene signatures across
+#'multiple scoring methods.
 #'
-#' @param data A matrix or data frame of gene expression data.
-#' @param metadata A data frame containing sample metadata.
-#' @param gene_sets A named list of gene sets.
-#' @param method A character string specifying the scoring method(s) (`"logmedian"`, `"ssGSEA"`, `"ranking"`, or `"all"`).
-#' @param variable A character string specifying the categorical variable for group comparisons.
-#' @param colors A named vector specifying colors for each method. Only one color is allowed, if method != "all".
-#' Default colors are `c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52")`.
-#' @param grid Logical; if `TRUE`, arranges plots in a grid.
-#' @param spacing_annotation numeric value specifying the spacing between labels of AUC values. Default is 0.3.
-#' @param mode A string specifying the level of detail for contrasts. Options are:
-#' - `"simple"`: Performs the minimal number of pairwise comparisons between individual group levels (e.g., A - B, A - C). Default.
-#' - `"medium"`: Includes comparisons between one group and the union of all other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
-#' - `"extensive"`: Allows for all possible algebraic combinations of group levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.
-#' @param ncol Optional numeric value specifying the number of columns in the grid layout for the combined plots.
-#'   If `NULL`, there will be as many columns as contrasts. If this number is 1, then a near-square grid is computed.
-#' @param nrow Optional numeric value specifying the number of rows in the grid layout.
-#' If `NULL`, there will be as many columns as gene sets. If this number is 1, then a near-square grid is computed.
-#' @param widthTitle Optional integer specifying the maximum width of the title before inserting line breaks.
-#'   Titles break at `_`, `-`, or `:` where possible, or at the exact width if no such character is found.
-#'   Default is `18`.
-#' @param titlesize An integer specifying the text size for each of the heatmap titles. Default is 12.
-#' @param title Title for the grid of plots.
-#' @return A `ggplot2` or `ggarrange` object containing the ROC curve plots.
+#'@param data A matrix or data frame of gene expression data.
+#'@param metadata A data frame containing sample metadata.
+#'@param gene_sets A named list of gene sets.
+#'@param method A character string specifying the scoring method(s)
+#'  (`"logmedian"`, `"ssGSEA"`, `"ranking"`, or `"all"`).
+#'@param variable A character string specifying the categorical variable for
+#'  group comparisons.
+#'@param colors A named vector specifying colors for each method. Only one color
+#'  is allowed, if method != "all". Default colors are `c(logmedian = "#3E5587",
+#'  ssGSEA = "#B65285", ranking = "#B68C52")`.
+#'@param grid Logical; if `TRUE`, arranges plots in a grid.
+#'@param spacing_annotation numeric value specifying the spacing between labels
+#'  of AUC values. Default is 0.3.
+#'@param mode A string specifying the level of detail for contrasts. Options
+#'  are:
+#' - `"simple"`: Performs the minimal number of pairwise comparisons between
+#' individual group levels (e.g., A - B, A - C). Default.
+#' - `"medium"`: Includes comparisons between one group and the union of all
+#' other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
+#' - `"extensive"`: Allows for all possible algebraic combinations of group
+#' levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.
+#'@param ncol Optional numeric value specifying the number of columns in the
+#'  grid layout for the combined plots. If `NULL`, there will be as many columns
+#'  as contrasts. If this number is 1, then a near-square grid is computed.
+#'@param nrow Optional numeric value specifying the number of rows in the grid
+#'  layout. If `NULL`, there will be as many columns as gene sets. If this
+#'  number is 1, then a near-square grid is computed.
+#'@param widthTitle Optional integer specifying the maximum width of the title
+#'  before inserting line breaks. Titles break at `_`, `-`, or `:` where
+#'  possible, or at the exact width if no such character is found. Default is
+#'  `18`.
+#'@param titlesize An integer specifying the text size for each of the heatmap
+#'  titles. Default is 12.
+#'@param title Title for the grid of plots.
+#'@return A `ggplot2` or `ggarrange` object containing the ROC curve plots.
 #'
-#' @importFrom ggplot2 ggplot geom_line aes labs theme scale_color_manual
-#' @importFrom ggpubr annotate_figure ggarrange
+#'@importFrom ggplot2 ggplot geom_line aes labs theme scale_color_manual
+#'@importFrom ggpubr annotate_figure ggarrange
 #'
 #'@examples
 #' # Example data
@@ -125,12 +144,29 @@ ROCAUC_Scores_Calculate <- function(data, metadata, gene_sets, method = c("logme
 #' # Call ROC_Scores function
 #' ROC_Scores(data, metadata, gene_sets, method = "ssGSEA", variable = "Condition")
 #'
-#' @export
+#'@export
 #'
-ROC_Scores <- function(data, metadata, gene_sets, method = c("logmedian","ssGSEA","ranking","all"), variable,
-                       colors = c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52"), grid = TRUE, spacing_annotation=0.3, ncol=NULL, nrow=NULL, mode=c("simple","medium","extensive"), widthTitle = 18, title=NULL, titlesize=12) {
+ROC_Scores <- function(data,
+                       metadata,
+                       gene_sets,
+                       method = c("logmedian","ssGSEA","ranking","all"),
+                       variable,
+                       colors = c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52"),
+                       grid = TRUE,
+                       spacing_annotation=0.3,
+                       ncol=NULL,
+                       nrow=NULL,
+                       mode=c("simple","medium","extensive"),
+                       widthTitle = 18,
+                       title=NULL,
+                       titlesize=12) {
   data <- as.data.frame(data) # Ensure data is a data frame
-  data_ROCAUC <- ROCAUC_Scores_Calculate(data = data, metadata = metadata, gene_sets = gene_sets, method = method, variable = variable, mode = mode)
+  data_ROCAUC <- ROCAUC_Scores_Calculate(data = data,
+                                         metadata = metadata,
+                                         gene_sets = gene_sets,
+                                         method = method,
+                                         variable = variable,
+                                         mode = mode)
 
   plot_list <- list()
 
@@ -144,7 +180,8 @@ ROC_Scores <- function(data, metadata, gene_sets, method = c("logmedian","ssGSEA
       for (method_name in names(data_ROCAUC)) {  # Iterate over methods
 
         if (length(names(data_ROCAUC)) == 1){
-          if (is.na(colors[method_name])) names(colors) <- method_name #if the user changed the color to only one, not named
+          #if the user changed the color to only one, not named
+          if (is.na(colors[method_name])) names(colors) <- method_name
         }
 
 
@@ -170,7 +207,10 @@ ROC_Scores <- function(data, metadata, gene_sets, method = c("logmedian","ssGSEA
       p <- ggplot2::ggplot(combined_df, ggplot2::aes(x = FPR, y = TPR, color = Method)) +
         ggplot2::geom_line(size = 1) +  # Plot all ROC curves on the same plot
         ggplot2::scale_color_manual(values = colors) +  # Ensure correct color mapping for each method
-        ggplot2::labs(title = wrap_title(signature,widthTitle), subtitle= wrap_title(contrast,widthTitle), x = "False Positive Rate", y = "True Positive Rate") +
+        ggplot2::labs(title = wrap_title(signature,widthTitle),
+                      subtitle= wrap_title(contrast,widthTitle),
+                      x = "False Positive Rate",
+                      y = "True Positive Rate") +
         ggplot2::theme_classic() +
         ggplot2::theme(legend.position = "none") + # Remove the default legend
         ggplot2::geom_abline(linetype = "dashed", color = "gray") +
@@ -181,10 +221,13 @@ ROC_Scores <- function(data, metadata, gene_sets, method = c("logmedian","ssGSEA
       auc_texts <- data.frame(Method = names(auc_values),
                               AUC = unlist(auc_values),
                               x = rep(1, length(auc_values)),  # Place all text at x = 1 (right edge)
-                              y = seq(0.05, spacing_annotation, length.out = length(auc_values)))  # Adjust the vertical positions
+                              y = seq(0.05, spacing_annotation,
+                                      length.out = length(auc_values)))  # Adjust the vertical positions
 
       p <- p + ggplot2::geom_label(data = auc_texts,
-                                  ggplot2::aes(x = x, y = y, label = paste0("AUC ", Method, " = ", round(AUC, 2), ""), color = Method),
+                                  ggplot2::aes(x = x, y = y,
+                                               label = paste0("AUC ", Method, " = ", round(AUC, 2), ""),
+                                               color = Method),
                                   size = 3,
                                   vjust = 0,  # Adjust vertical position
                                   hjust = 1,  # Adjust horizontal position to align to the right
@@ -234,7 +277,9 @@ ROC_Scores <- function(data, metadata, gene_sets, method = c("logmedian","ssGSEA
     }
     # Add the title to the grid if provided
     if (!is.null(title)) {
-      combined_plot <- ggpubr::annotate_figure(combined_plot, top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize + 2)))
+      combined_plot <- ggpubr::annotate_figure(combined_plot,
+                                               top = grid::textGrob(title,
+                                                                    gp = grid::gpar(cex = 1.3, fontsize = titlesize + 2)))
     }
 
      return(combined_plot)
@@ -246,41 +291,57 @@ ROC_Scores <- function(data, metadata, gene_sets, method = c("logmedian","ssGSEA
 
 #' Generate Heatmaps for AUC Scores using ggplot2
 #'
-#' This function computes AUC scores for multiple gene signatures and scoring methods, and generates a heatmap
-#' for each gene signature. The heatmap displays the AUC scores, with the contrasts as rows and methods as columns.
+#' This function computes AUC scores for multiple gene signatures and scoring
+#' methods, and generates a heatmap for each gene signature. The heatmap
+#' displays the AUC scores, with the contrasts as rows and methods as columns.
 #' The heatmaps are then arranged in a grid layout.
 #'
-#' @param data A data frame of gene expression data with genes as rows and samples as columns.
-#'   Row names should contain gene names and column names sample identifiers.
-#' @param metadata A data frame of sample metadata. The first column must contain sample
-#'   identifiers matching those in \code{data}.
+#' @param data A data frame of gene expression data with genes as rows and
+#'   samples as columns. Row names should contain gene names and column names
+#'   sample identifiers.
+#' @param metadata A data frame of sample metadata. The first column must
+#'   contain sample identifiers matching those in \code{data}.
 #' @param gene_sets A named list of gene sets.
-#' @param method A character string specifying the scoring method(s) (`"logmedian"`, `"ssGSEA"`, `"ranking"`, or `"all"`).
-#' @param mode A string specifying the level of detail for contrasts.
-#' Options are:
+#' @param method A character string specifying the scoring method(s)
+#'   (`"logmedian"`, `"ssGSEA"`, `"ranking"`, or `"all"`).
+#' @param mode A string specifying the level of detail for contrasts. Options
+#'   are:
 #' - `"simple"`: Pairwise comparisons (e.g., A - B).
 #' - `"medium"`: Pairwise comparisons plus comparisons against the mean of other groups.
-#' - `"extensive"`: All possible groupwise contrasts, ensuring balance in the number of terms on each side.
-#' @param variable A string specifying the grouping variable in \code{metadata} used for computing AUC comparisons.
-#' @param nrow Optional. An integer specifying the number of rows in the heatmap grid. If \code{NULL}, the number of rows
-#'   is computed automatically.
-#' @param ncol Optional. An integer specifying the number of columns in the heatmap grid. If \code{NULL}, the number of columns
-#'   is computed automatically.
-#' @param limits Optional. A numeric vector of length 2 specifying the color scale limits (e.g., \code{c(min, max)}). If \code{NULL},
-#'   the limits are determined from the data.
-#' @param widthTitle An integer specifying the width used for wrapping gene set signature names in the heatmap titles. Default is 22.
-#' @param titlesize An integer specifying the text size for each of the heatmap titles. Default is 12.
-#' @param ColorValues A character vector specifying the colors for the gradient fill in the heatmaps. Default is \code{c("#F9F4AE", "#B44141")}.
+#' - `"extensive"`: All possible groupwise contrasts, ensuring balance in the
+#' number of terms on each side.
+#' @param variable A string specifying the grouping variable in \code{metadata}
+#'   used for computing AUC comparisons.
+#' @param nrow Optional. An integer specifying the number of rows in the heatmap
+#'   grid. If \code{NULL}, the number of rows is computed automatically.
+#' @param ncol Optional. An integer specifying the number of columns in the
+#'   heatmap grid. If \code{NULL}, the number of columns is computed
+#'   automatically.
+#' @param limits Optional. A numeric vector of length 2 specifying the color
+#'   scale limits (e.g., \code{c(min, max)}). If \code{NULL}, the limits are
+#'   determined from the data.
+#' @param widthTitle An integer specifying the width used for wrapping gene set
+#'   signature names in the heatmap titles. Default is 22.
+#' @param titlesize An integer specifying the text size for each of the heatmap
+#'   titles. Default is 12.
+#' @param ColorValues A character vector specifying the colors for the gradient
+#'   fill in the heatmaps. Default is \code{c("#F9F4AE", "#B44141")}.
 #' @param title Title for the grid of plots.
 #' @return A list with two elements:
 #' \describe{
 #'   \item{plt}{A combined heatmap arranged in a grid using \code{ggpubr::ggarrange}.}
-#'   \item{data}{A list containing the AUC scores for each gene signature, as computed by \code{ROCAUC_Scores_Calculate}.}
+#'   \item{data}{A list containing the AUC scores for each gene signature,
+#'   as computed by \code{ROCAUC_Scores_Calculate}.}
 #' }
 #'
-#' @details
-#' The function first calculates AUC scores for each gene signature using \code{ROCAUC_Scores_Calculate}. The resulting matrices are converted to a long format so that each cell in the heatmap can display the AUC value. A title for each heatmap is dynamically created.
-#' The heatmaps are then adjusted to display axis text and ticks only for the left-most column and bottom row, and combined into a grid layout. If neither \code{nrow} nor \code{ncol} are specified, the layout is automatically determined to best approximate a square grid.
+#' @details The function first calculates AUC scores for each gene signature
+#'   using \code{ROCAUC_Scores_Calculate}. The resulting matrices are converted
+#'   to a long format so that each cell in the heatmap can display the AUC
+#'   value. A title for each heatmap is dynamically created. The heatmaps are
+#'   then adjusted to display axis text and ticks only for the left-most column
+#'   and bottom row, and combined into a grid layout. If neither \code{nrow} nor
+#'   \code{ncol} are specified, the layout is automatically determined to best
+#'   approximate a square grid.
 #'
 #' @examples
 #' # Example data
@@ -328,14 +389,22 @@ ROC_Scores <- function(data, metadata, gene_sets, method = c("logmedian","ssGSEA
 #'   ColorValues = c("#F9F4AE", "#B44141")
 #' )
 #'
-#' @importFrom ggplot2 ggplot geom_tile geom_text labs scale_fill_gradientn theme_minimal element_text element_blank element_line margin
+#' @importFrom ggplot2 ggplot geom_tile geom_text labs scale_fill_gradientn
+#'   theme_minimal element_text element_blank element_line margin
 #' @importFrom ggpubr ggarrange
 #'
 #' @export
-AUC_Scores <- function(data, metadata, gene_sets, method = c("logmedian", "ssGSEA", "ranking", "all"), mode = c("simple","medium","extensive"), variable, nrow = NULL, ncol = NULL, limits = NULL, widthTitle = 22, titlesize = 12, ColorValues = c("#F9F4AE", "#B44141"), title = NULL) {
+AUC_Scores <- function(data, metadata, gene_sets,
+                       method = c("logmedian", "ssGSEA", "ranking", "all"),
+                       mode = c("simple","medium","extensive"), variable,
+                       nrow = NULL, ncol = NULL, limits = NULL, widthTitle = 22,
+                       titlesize = 12, ColorValues = c("#F9F4AE", "#B44141"),
+                       title = NULL) {
   data <- as.data.frame(data) # Ensure data is a data frame
   # Calculate the AUC scores using the given method
-  auc_list <- ROCAUC_Scores_Calculate(data = data, metadata = metadata, gene_sets = gene_sets, method = method, variable = variable, mode = mode)
+  auc_list <- ROCAUC_Scores_Calculate(data = data, metadata = metadata,
+                                      gene_sets = gene_sets, method = method,
+                                      variable = variable, mode = mode)
 
   heatmaps <- list()
 

@@ -26,56 +26,81 @@ IndividualGenes_Violins(
 )
 }
 \arguments{
-\item{data}{A data frame containing gene expression values with row names as gene names and column names as sample IDs. \strong{(Required)}}
+\item{data}{A data frame containing gene expression values with row names as
+gene names and column names as sample IDs. \strong{(Required)}}
 
-\item{metadata}{An optional data frame containing sample metadata. The first column must match the sample IDs from \code{data}. \strong{(Optional)}}
+\item{metadata}{An optional data frame containing sample metadata. The first
+column must match the sample IDs from \code{data}. \strong{(Optional)}}
 
 \item{genes}{A character vector of gene names to be plotted.  \strong{(Required)}}
 
-\item{GroupingVariable}{A character string specifying the column in \code{metadata} used for grouping samples on the x-axis. \strong{(Required)}}
+\item{GroupingVariable}{A character string specifying the column in
+\code{metadata} used for grouping samples on the x-axis. \strong{(Required)}}
 
-\item{plot}{A logical value indicating whether to print the plot. If \code{FALSE}, only the output list is returned. Default is \code{TRUE}. \strong{(Optional)}}
+\item{plot}{A logical value indicating whether to print the plot. If \code{FALSE},
+only the output list is returned. Default is \code{TRUE}. \strong{(Optional)}}
 
-\item{ncol}{An optional numeric value specifying the number of columns in the facet grid. If not provided, it is computed automatically. Only applicable if \code{divide} is \code{NULL}. \strong{(Optional)}}
+\item{ncol}{An optional numeric value specifying the number of columns in the
+facet grid. If not provided, it is computed automatically. Only applicable
+if \code{divide} is \code{NULL}. \strong{(Optional)}}
 
-\item{nrow}{An optional numeric value specifying the number of rows in the facet grid. If not provided, it is computed automatically. Only applicable if \code{divide} is \code{NULL}. \strong{(Optional)}}
+\item{nrow}{An optional numeric value specifying the number of rows in the
+facet grid. If not provided, it is computed automatically. Only applicable
+if \code{divide} is \code{NULL}. \strong{(Optional)}}
 
-\item{divide}{An optional character string specifying a column in \code{metadata} to be used for facetting, besides faceting by genes. \strong{(Optional)}}
+\item{divide}{An optional character string specifying a column in \code{metadata}
+to be used for facetting, besides faceting by genes. \strong{(Optional)}}
 
-\item{invert_divide}{A logical value indicating whether to invert the facet layout, when \code{divide} is being used. Default is \code{FALSE}, corresponding to genes in the rows. \strong{(Optional)}}
+\item{invert_divide}{A logical value indicating whether to invert the facet
+layout, when \code{divide} is being used. Default is \code{FALSE}, corresponding to
+genes in the rows. \strong{(Optional)}}
 
-\item{ColorValues}{An optional named vector mapping unique values of \code{ColorVariable} to specific colors. If \code{NULL}, a default Brewer palette ("Paired") is used. \strong{(Optional)}}
+\item{ColorValues}{An optional named vector mapping unique values of
+\code{ColorVariable} to specific colors. If \code{NULL}, a default Brewer palette
+("Paired") is used. \strong{(Optional)}}
 
-\item{pointSize}{A numeric value specifying the size of the points in the plot. Default is \code{2}. \strong{(Optional)}}
+\item{pointSize}{A numeric value specifying the size of the points in the
+plot. Default is \code{2}. \strong{(Optional)}}
 
-\item{ColorVariable}{A character string specifying a metadata column used for coloring points. Default is \code{NULL}. \strong{(Optional)}}
+\item{ColorVariable}{A character string specifying a metadata column used for
+coloring points. Default is \code{NULL}. \strong{(Optional)}}
 
-\item{title}{A character string specifying the title of the plot. Default is \code{NULL}. \strong{(Optional)}}
+\item{title}{A character string specifying the title of the plot. Default is
+\code{NULL}. \strong{(Optional)}}
 
-\item{widthTitle}{A numeric value specifying the maximum width of the title before inserting line breaks. \strong{(Optional)}}
+\item{widthTitle}{A numeric value specifying the maximum width of the title
+before inserting line breaks. \strong{(Optional)}}
 
-\item{y_limits}{A numeric vector of length 2 specifying the limits of the y-axis. If \code{NULL} (default), the y-axis is adjusted automatically. \strong{(Optional)}}
+\item{y_limits}{A numeric vector of length 2 specifying the limits of the
+y-axis. If \code{NULL} (default), the y-axis is adjusted automatically.
+\strong{(Optional)}}
 
-\item{legend_nrow}{A numeric value specifying the number of rows in the legend. Default is \code{NULL}. \strong{(Optional)}}
+\item{legend_nrow}{A numeric value specifying the number of rows in the
+legend. Default is \code{NULL}. \strong{(Optional)}}
 
-\item{xlab}{A character string specifying the x-axis label. If \code{NULL}, it defaults to \code{GroupingVariable}. \strong{(Optional)}}
+\item{xlab}{A character string specifying the x-axis label. If \code{NULL}, it
+defaults to \code{GroupingVariable}. \strong{(Optional)}}
 
-\item{colorlab}{A character string specifying the legend title for colors. Default is an empty string. \strong{(Optional)}}
+\item{colorlab}{A character string specifying the legend title for colors.
+Default is an empty string. \strong{(Optional)}}
 }
 \value{
-A list containing:
-\item{plot}{A ggplot2 object representing the facetted violin plots.}
-\item{data}{A data frame used for plotting, including transformed expression values (log2) and metadata.}
+A list containing: \item{plot}{A ggplot2 object representing the
+facetted violin plots.} \item{data}{A data frame used for plotting,
+including transformed expression values (log2) and metadata.}
 }
 \description{
-This function creates violin plots of gene expression data with jittered points and optional faceting.
-It allows visualization of individual gene expression distributions across sample groups.
+This function creates violin plots of gene expression data with jittered
+points and optional faceting. It allows visualization of individual gene
+expression distributions across sample groups.
 }
 \details{
-The function processes the gene expression data, filters for the specified genes, and transforms expression values using \code{log2()}.
-A violin plot with jittered points is generated using \code{ggplot2}. A median summary is added as a crossbar. If \code{divide} is provided,
-facets are created using \code{ggh4x::facet_grid2()}.
-Color customization is available via \code{ColorVariable} and \code{ColorValues}.
+The function processes the gene expression data, filters for the
+specified genes, and transforms expression values using \code{log2()}. A violin
+plot with jittered points is generated using \code{ggplot2}. A median summary is
+added as a crossbar. If \code{divide} is provided, facets are created using
+\code{ggh4x::facet_grid2()}. Color customization is available via \code{ColorVariable}
+and \code{ColorValues}.
 }
 \examples{
 # Example dataset

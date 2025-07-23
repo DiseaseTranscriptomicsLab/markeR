@@ -1,71 +1,63 @@
-#' CorrelationHeatmap: Generate correlation heatmaps with optional grouping
+#'CorrelationHeatmap: Generate correlation heatmaps with optional grouping
 #'
-#' This function generates correlation heatmaps using the `ComplexHeatmap`
-#' package. It allows users
-#' to compute correlation matrices for a set of genes and visualize them in a
-#' heatmap. If a grouping
-#' variable is provided (`separate.by`), multiple heatmaps are created, each
-#' corresponding to a different
-#' level of the grouping variable.
+#'This function generates correlation heatmaps using the `ComplexHeatmap`
+#'package. It allows users to compute correlation matrices for a set of genes
+#'and visualize them in a heatmap. If a grouping variable is provided
+#'(`separate.by`), multiple heatmaps are created, each corresponding to a
+#'different level of the grouping variable.
 #'
-#' @param data A numeric counts data frame where rows correspond to genes and
-#' columns to samples.
-#' @param metadata A data frame containing metadata. Required if `separate.by`
-#' is specified. The first column should be the sample ID.
-#' @param genes A character vector of gene names to be included in the
-#' correlation analysis.
-#' @param separate.by A character string specifying a column in `metadata` to
-#' separate heatmaps by (e.g., "Condition").
-#' @param method Correlation method: `"pearson"` (default), `"spearman"`, or
-#' `"kendall"`.
-#' @param colorlist A named list specifying the colors for the heatmap (`low`,
-#' `mid`, `high`), corresponding to the limits of the colorscale.
-#' @param limits_colorscale A numeric vector of length 3 defining the limits
-#' for the color scale (default: min, 0, max).
-#' @param widthTitle Numeric value controlling the width of the plot title.
-#' Default is `16`.
-#' @param title A string specifying the main title of the heatmap(s).
-#' @param cluster_rows Logical; whether to cluster rows (default = `TRUE`).
-#' @param cluster_columns Logical; whether to cluster columns (default =
-#' `TRUE`).
-#' @param detailedresults Logical; if `TRUE`, additional analysis results are
-#' stored in the output list (default = `FALSE`).
-#' @param legend_position Character; position of the legend (`"right"` - default -
-#' or `"top"`).
-#' @param titlesize Numeric; font size of the heatmap title (default = `20`).
-#' @param show_row_names A character string specifying whether row names (genes) should be displayed.
-#' @param show_column_names A character string specifying whether column names (samples) should be displayed.
+#'@param data A numeric counts data frame where rows correspond to genes and
+#'  columns to samples.
+#'@param metadata A data frame containing metadata. Required if `separate.by` is
+#'  specified. The first column should be the sample ID.
+#'@param genes A character vector of gene names to be included in the
+#'  correlation analysis.
+#'@param separate.by A character string specifying a column in `metadata` to
+#'  separate heatmaps by (e.g., "Condition").
+#'@param method Correlation method: `"pearson"` (default), `"spearman"`, or
+#'  `"kendall"`.
+#'@param colorlist A named list specifying the colors for the heatmap (`low`,
+#'  `mid`, `high`), corresponding to the limits of the colorscale.
+#'@param limits_colorscale A numeric vector of length 3 defining the limits for
+#'  the color scale (default: min, 0, max).
+#'@param widthTitle Numeric value controlling the width of the plot title.
+#'  Default is `16`.
+#'@param title A string specifying the main title of the heatmap(s).
+#'@param cluster_rows Logical; whether to cluster rows (default = `TRUE`).
+#'@param cluster_columns Logical; whether to cluster columns (default = `TRUE`).
+#'@param detailedresults Logical; if `TRUE`, additional analysis results are
+#'  stored in the output list (default = `FALSE`).
+#'@param legend_position Character; position of the legend (`"right"` - default
+#'  - or `"top"`).
+#'@param titlesize Numeric; font size of the heatmap title (default = `20`).
+#'@param show_row_names A character string specifying whether row names (genes)
+#'  should be displayed.
+#'@param show_column_names A character string specifying whether column names
+#'  (samples) should be displayed.
 #'
-#' @return A list containing:
-#'   \describe{
-#'     \item{`data`}{Correlation matrices for each condition (or a single matrix
-#'      if `separate.by = NULL`).}
-#'     \item{`plot`}{The generated heatmap object(s).}
-#'     \item{`aux`}{A list containing additional analysis results if
-#'     `detailedresults = TRUE`.
-#'       \describe{
-#'         \item{If `separate.by` is specified:}{
-#'           A list where each element corresponds to a different condition.
-#'           Each sublist contains:
-#'           \itemize{
-#'             \item `method`: The correlation method used.
-#'             \item `corrmatrix`: The computed correlation matrix for that
-#'             condition.
-#'             \item `metadata`: The subset of metadata corresponding to the
-#'             condition.
-#'             \item `heatmap`: The `ComplexHeatmap` object before being drawn.
-#'           }
-#'         }
-#'         \item{If `separate.by = NULL` (single heatmap case):}{
-#'           A list containing:
-#'           \itemize{
-#'             \item `method`: The correlation method.
-#'             \item `corrmatrix`: The computed correlation matrix.
-#'           }
-#'         }
-#'       }
-#'     }
-#'   }
+#'@return A list containing:
+#' \describe{
+#'   \item{`data`}{Correlation matrices for each condition (or a single matrix if
+#'   `separate.by = NULL`).}
+#'   \item{`plot`}{The generated heatmap object(s).}
+#'   \item{`aux`}{A list containing additional analysis results if
+#'   `detailedresults = TRUE`.}
+#' }
+#'
+#'  If `separate.by` is specified, the `aux` list contains one element per
+#'  condition. Each element is a list with:
+#' \itemize{
+#'   \item `method`: The correlation method used.
+#'   \item `corrmatrix`: The computed correlation matrix for that condition.
+#'   \item `metadata`: The subset of metadata corresponding to the condition.
+#'   \item `heatmap`: The `ComplexHeatmap` object before being drawn.
+#' }
+#'
+#'  If `separate.by = NULL` (single heatmap case), the `aux` list contains:
+#' \itemize{
+#'   \item `method`: The correlation method.
+#'   \item `corrmatrix`: The computed correlation matrix.
+#' }
 #'
 #'@examples
 #'# Simulate gene expression data (genes as rows, samples as columns)
@@ -99,20 +91,22 @@
 #'
 #'
 #'
-#' @importFrom grid gpar
-#' @importFrom grid grid.text
-#' @importFrom grid unit
-#' @importFrom ComplexHeatmap Heatmap
-#' @importFrom ComplexHeatmap draw
-#' @importFrom circlize colorRamp2
-#' @importFrom stats cor
+#'@importFrom grid gpar
+#'@importFrom grid grid.text
+#'@importFrom grid unit
+#'@importFrom ComplexHeatmap Heatmap
+#'@importFrom ComplexHeatmap draw
+#'@importFrom circlize colorRamp2
+#'@importFrom stats cor
 #'
-#' @export
+#'@export
 CorrelationHeatmap <- function(data, metadata = NULL, genes, separate.by = NULL,
-                                method = c("pearson","spearman","kendall"), colorlist = list(low = "blue", mid = "white", high = "red"),
+                                method = c("pearson","spearman","kendall"),
+                               colorlist = list(low = "blue", mid = "white", high = "red"),
                                 limits_colorscale = NULL, widthTitle = 16, title = NULL,
                                 cluster_rows = TRUE, cluster_columns = TRUE,
-                                detailedresults = FALSE, legend_position = c("right", "top"), titlesize=20,
+                                detailedresults = FALSE,
+                               legend_position = c("right", "top"), titlesize=20,
                                show_row_names=TRUE,
                                show_column_names=TRUE) {
 
@@ -190,21 +184,24 @@ CorrelationHeatmap <- function(data, metadata = NULL, genes, separate.by = NULL,
       data_subset <- data[, samples, drop = FALSE]
       # Check if there are at least 2 samples to compute correlation
       if (ncol(data_subset) < 2) {
-        warning(paste("Not enough samples for condition", cond, "to compute correlation. Skipping."))
+        warning(paste("Not enough samples for condition", cond,
+                      "to compute correlation. Skipping."))
         next
       }
 
       data_nontransformed_subset <- data
       data_subset <- log2(data_subset)
       if (any(is.nan(as.matrix(data_subset)))) {
-        stop("Data contains NaN values. Added a pseudocount of 0.1 to avoid NaNs in correlation calculation.")
+        stop("Data contains NaN values. Added a pseudocount of 0.1
+             to avoid NaNs in correlation calculation.")
         data_subset <- log2(data_nontransformed_subset + 0.1)
       }
 
       corrmat <- stats::cor(t(data_subset), method = method)
       df_data_merge[[cond]] <- corrmat
 
-      ht <- create_heatmap(corrmat, annot_title = cond, direct=leg_direction, titleleg=title_leg)
+      ht <- create_heatmap(corrmat, annot_title = cond, direct=leg_direction,
+                           titleleg=title_leg)
       heatmap_list[[cond]] <- ht
 
       if (detailedresults) {
@@ -248,7 +245,8 @@ CorrelationHeatmap <- function(data, metadata = NULL, genes, separate.by = NULL,
     data_nontransformed <- data
     data <- log2(data)
     if (any(is.nan(as.matrix(data)))) {
-      stop("Data contains NaN values. Added a pseudocount of 0.1 to avoid NaNs in correlation calculation.")
+      stop("Data contains NaN values. Added a pseudocount of 0.1 to avoid NaNs in
+           correlation calculation.")
       data <- log2(data_nontransformed + 0.1)
     }
 

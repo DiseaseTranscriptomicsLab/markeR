@@ -1,45 +1,71 @@
-#' Generate Heatmaps for Cohen\'s d Effect Sizes using ggplot2
+#' Generate Heatmaps for Cohen's d Effect Sizes using ggplot2
 #'
-#' This function computes Cohen\'s d effect sizes and corresponding p-values for multiple gene signatures and produces individual heatmaps. Each heatmap displays cell text showing the Cohen\'s d value along with its p-value. The heatmaps are then arranged in a grid layout.
+#' This function computes Cohen's d effect sizes and corresponding p-values for
+#' multiple gene signatures and produces individual heatmaps. Each heatmap
+#' displays cell text showing the Cohen's d value along with its p-value. The
+#' heatmaps are then arranged in a grid layout.
 #'
-#' @param cohenlist A named list where each element corresponds to a gene signature. Output of `CohenD_allConditions`. Each signature element is a list with three components:
+#' @param cohenlist A named list where each element corresponds to a gene
+#'   signature. Output of `CohenD_allConditions`. Each signature element is a
+#'   list with three components:
 #' \describe{
-#'   \item{CohenD}{A data frame where rows are methods and columns are group contrasts (formatted as \"Group1:Group2\"),
+#'   \item{CohenD}{A data frame where rows are methods and columns are group contrasts
+#'   (formatted as "Group1:Group2"),
 #'   containing the computed Cohen\'s d effect sizes.}
-#'   \item{PValue}{A data frame with the same structure as \code{CohenD} containing the corresponding p-values.}
-#'   \item{padj}{A data frame with the same structure as \code{PValue} containing the corresponding p-values corrected using the BH method, for all signatures and contrasts,
+#'   \item{PValue}{A data frame with the same structure as \code{CohenD} containing
+#'   the corresponding p-values.}
+#'   \item{padj}{A data frame with the same structure as \code{PValue} containing the
+#'   corresponding p-values corrected using the BH method, for all signatures and contrasts,
 #'   and by method.}
 #' }
-#' @param nrow Optional. An integer specifying the number of rows in the heatmap grid. If \code{NULL}, the number of rows
-#'   is computed automatically.
-#' @param ncol Optional. An integer specifying the number of columns in the heatmap grid. If \code{NULL}, the number of columns
-#'   is computed automatically.
-#' @param limits Optional. A numeric vector of length 2 specifying the color scale limits (e.g., \code{c(min, max)}). If \code{NULL},
-#'   the limits are determined from the data.
-#' @param widthTitle An integer specifying the width used for wrapping gene set signature names in the heatmap titles. Default is 22.
-#' @param titlesize An integer specifying the text size for each of the heatmap titles. Default is 12.
-#' @param ColorValues A character vector specifying the colors for the gradient fill in the heatmaps. Default is \code{c("#F9F4AE", "#B44141")}.
+#' @param nrow Optional. An integer specifying the number of rows in the heatmap
+#'   grid. If \code{NULL}, the number of rows is computed automatically.
+#' @param ncol Optional. An integer specifying the number of columns in the
+#'   heatmap grid. If \code{NULL}, the number of columns is computed
+#'   automatically.
+#' @param limits Optional. A numeric vector of length 2 specifying the color
+#'   scale limits (e.g., \code{c(min, max)}). If \code{NULL}, the limits are
+#'   determined from the data.
+#' @param widthTitle An integer specifying the width used for wrapping gene set
+#'   signature names in the heatmap titles. Default is 22.
+#' @param titlesize An integer specifying the text size for each of the heatmap
+#'   titles. Default is 12.
+#' @param ColorValues A character vector specifying the colors for the gradient
+#'   fill in the heatmaps. Default is \code{c("#F9F4AE", "#B44141")}.
 #' @param title Title for the grid of plots.
 #' @return A list with two elements:
 #' \describe{
 #'   \item{plt}{A combined heatmap arranged in a grid using \code{ggpubr::ggarrange}.}
-#'   \item{data}{A list containing the Cohen\'s d effect sizes and p-values for each gene signature, as computed by \code{CohenD_allConditions}.}
+#'   \item{data}{A list containing the Cohen\'s d effect sizes and p-values for each
+#'   gene signature, as computed by \code{CohenD_allConditions}.}
 #' }
 #'
-#' @details
-#' The function first calculates Cohen\'s d effect sizes and corresponding p-values for each gene signature using \code{CohenD_allConditions} (assumed to be defined elsewhere in the package). The resulting matrices are converted to a long format so that each cell in the heatmap can display the Cohen\'s d value and its associated p-value (formatted as \code{Cohen\'s d (p-value)}).
+#' @details The function first calculates Cohen\'s d effect sizes and
+#' corresponding p-values for each gene signature using
+#' \code{CohenD_allConditions} (assumed to be defined elsewhere in the package).
+#' The resulting matrices are converted to a long format so that each cell in
+#' the heatmap can display the Cohen\'s d value and its associated p-value
+#' (formatted as \code{Cohen\'s d (p-value)}).
 #'
-#' The heatmaps are then adjusted to display axis text and ticks only for the left-most column and bottom row, and combined into a grid layout. If neither \code{nrow} nor \code{ncol} are specified, the layout is automatically determined to best approximate a square grid.
+#' The heatmaps are then adjusted to display axis text and ticks only for the
+#' left-most column and bottom row, and combined into a grid layout. If neither
+#' \code{nrow} nor \code{ncol} are specified, the layout is automatically
+#' determined to best approximate a square grid.
 #'
-#' @seealso \code{\link{CohenD_allConditions}}, \code{\link{CohenF_allConditions}}
+#' @seealso \code{\link{CohenD_allConditions}},
+#'   \code{\link{CohenF_allConditions}}
 #'
-#' @importFrom ggplot2 ggplot geom_tile geom_text labs scale_fill_gradientn theme_minimal element_text element_blank element_line margin
+#' @importFrom ggplot2 ggplot geom_tile geom_text labs scale_fill_gradientn
+#'   theme_minimal element_text element_blank element_line margin
 #' @importFrom ggpubr ggarrange
 #'
 #' @keywords internal
-Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, widthTitle = 22, titlesize = 12, ColorValues = NULL,title=NULL ) {
+Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL,
+                          widthTitle = 22, titlesize = 12, ColorValues = NULL,
+                          title=NULL ) {
 
-  cohentype <- ifelse("CohenD" %in% names(cohenlist[[1]]), "d", ifelse("CohenF" %in% names(cohenlist[[1]]), "f", NULL))
+  cohentype <- ifelse("CohenD" %in% names(cohenlist[[1]]), "d",
+                      ifelse("CohenF" %in% names(cohenlist[[1]]), "f", NULL))
 
   heatmaps <- list()
 
@@ -77,7 +103,8 @@ Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, wi
     )
 
     # Generate text labels
-    long_data$label <- paste0(sprintf("%.2f", long_data$Cohen), "\n(", format.pval(long_data$PValue, digits = 1), ")")
+    long_data$label <- paste0(sprintf("%.2f", long_data$Cohen), "\n(",
+                              format.pval(long_data$PValue, digits = 1), ")")
 
     # Wrap the signature title using an internal helper function
     signature_title <- wrap_title(signature, widthTitle)
@@ -89,7 +116,8 @@ Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, wi
       ggplot2::geom_tile() +
       ggplot2::geom_text(aes(label = label), color = "black", size = 3) +
       ggplot2::scale_fill_gradientn(colors = ColorValues, limits = limits) +
-      ggplot2::labs(title = signature_title, x = NULL, y = NULL, fill = ifelse(cohentype=="d", "|Cohen\'s d|", "|Cohen\'s f|")) +
+      ggplot2::labs(title = signature_title, x = NULL, y = NULL, fill =
+                      ifelse(cohentype=="d", "|Cohen\'s d|", "|Cohen\'s f|")) +
       ggplot2::theme_bw() +
       ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
                      plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize) )
@@ -137,7 +165,8 @@ Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, wi
     widths = widths
   )
 
-  plt <- ggpubr::annotate_figure(plt, top = grid::textGrob(title, gp = grid::gpar(cex = 1.3, fontsize = titlesize+2)))
+  plt <- ggpubr::annotate_figure(plt, top = grid::textGrob(title,
+                                                           gp = grid::gpar(cex = 1.3, fontsize = titlesize+2)))
 
 
   return(list(plt = plt, data = cohenlist))
@@ -149,29 +178,41 @@ Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, wi
 
 #' Compute Cohen\'s d for All Gene Signatures Across Conditions
 #'
-#' Computes Cohen\'s d effect sizes and corresponding p-values for all gene signatures using scores calculated
-#' by various methods. The function first computes gene signature scores using \code{CalculateScores} with the "all"
-#' option, flattens the results, and then computes pairwise comparisons for a specified grouping variable.
+#' Computes Cohen\'s d effect sizes and corresponding p-values for all gene
+#' signatures using scores calculated by various methods. The function first
+#' computes gene signature scores using \code{CalculateScores} with the "all"
+#' option, flattens the results, and then computes pairwise comparisons for a
+#' specified grouping variable.
 #'
-#' @param data A data frame of gene expression data, with genes as rows and samples as columns.
-#' @param metadata A data frame containing sample metadata. The first column should contain sample identifiers matching
-#'   the column names of \code{data}.
-#' @param gene_sets A named list of gene sets. For unidirectional gene sets, each element is a vector of gene names;
-#'   for bidirectional gene sets, each element is a data frame where the first column contains gene names and the second
-#'   column indicates the expected direction (1 for upregulated, -1 for downregulated).
-#' @param variable A string specifying the grouping variable in \code{metadata} used to compare scores between conditions.
-#' @param mode A string specifying the level of detail for contrasts.
-#' Options are:
+#' @param data A data frame of gene expression data, with genes as rows and
+#'   samples as columns.
+#' @param metadata A data frame containing sample metadata. The first column
+#'   should contain sample identifiers matching the column names of \code{data}.
+#' @param gene_sets A named list of gene sets. For unidirectional gene sets,
+#'   each element is a vector of gene names; for bidirectional gene sets, each
+#'   element is a data frame where the first column contains gene names and the
+#'   second column indicates the expected direction (1 for upregulated, -1 for
+#'   downregulated).
+#' @param variable A string specifying the grouping variable in \code{metadata}
+#'   used to compare scores between conditions.
+#' @param mode A string specifying the level of detail for contrasts. Options
+#'   are:
 #' - `"simple"`: Pairwise comparisons (e.g., A - B).
-#' - `"medium"`: Pairwise comparisons plus comparisons against the mean of other groups.
-#' - `"extensive"`: All possible groupwise contrasts, ensuring balance in the number of terms on each side.
+#' - `"medium"`: Pairwise comparisons plus comparisons against the mean of other
+#' groups.
+#' - `"extensive"`: All possible groupwise contrasts, ensuring balance in the
+#' number of terms on each side.
 #'
-#' @return A named list where each element corresponds to a gene signature. Each signature element is a list with three components:
+#' @return A named list where each element corresponds to a gene signature. Each
+#'   signature element is a list with three components:
 #' \describe{
-#'   \item{CohenD}{A data frame where rows are methods and columns are group contrasts (formatted as \"Group1:Group2\"),
+#'   \item{CohenD}{A data frame where rows are methods and columns are group
+#'   contrasts (formatted as \"Group1:Group2\"),
 #'   containing the computed Cohen\'s d effect sizes.}
-#'   \item{PValue}{A data frame with the same structure as \code{CohenD} containing the corresponding p-values.}
-#'   \item{padj}{A data frame with the same structure as \code{PValue} containing the corresponding p-values corrected using the BH method, for all signatures and contrasts,
+#'   \item{PValue}{A data frame with the same structure as \code{CohenD} containing
+#'   the corresponding p-values.}
+#'   \item{padj}{A data frame with the same structure as \code{PValue} containing
+#'   the corresponding p-values corrected using the BH method, for all signatures and contrasts,
 #'   and by method.}
 #' }
 #'
@@ -186,7 +227,8 @@ Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL, wi
 #' }
 #'
 #' @keywords internal
-CohenD_allConditions <- function(data, metadata, gene_sets, variable, mode = c("simple","medium","extensive")) {
+CohenD_allConditions <- function(data, metadata, gene_sets, variable,
+                                 mode = c("simple","medium","extensive")) {
   data <- as.data.frame(data) # Ensure data is a data frame
   # Step 1: Check if variable exists in metadata
   if (!variable %in% colnames(metadata)) {
@@ -194,7 +236,8 @@ CohenD_allConditions <- function(data, metadata, gene_sets, variable, mode = c("
   }
 
   # Step 2: Compute scores for all methods and signatures
-  listScores <- CalculateScores(data = data, metadata = metadata, gene_sets = gene_sets, method = "all")
+  listScores <- CalculateScores(data = data, metadata = metadata,
+                                gene_sets = gene_sets, method = "all")
 
   # Step 3: Flatten into a data frame with method & signature columns
   dfScores <- flatten_results(listScores)
@@ -219,11 +262,10 @@ CohenD_allConditions <- function(data, metadata, gene_sets, variable, mode = c("
       df_method <- df_subset[df_subset$method == method, ]
 
       # Compute Cohen\'s d and p-values
-      cohen_results <- compute_cohen_d(df_method, variable, quantitative_var = "score", mode=mode)
+      cohen_results <- compute_cohen_d(df_method, variable,
+                                       quantitative_var = "score", mode=mode)
 
       # Convert to named vectors (column names = comparisons)
-      # cohen_d_results[[method]] <- setNames(cohen_results$CohenD, paste0(cohen_results$Group1, " - ", cohen_results$Group2))
-      # p_value_results[[method]] <- setNames(cohen_results$PValue, paste0(cohen_results$Group1, " - ", cohen_results$Group2))
       cohen_d_results[[method]] <- setNames(cohen_results$CohenD, cohen_results$contrast)
       p_value_results[[method]] <- setNames(cohen_results$PValue, cohen_results$contrast)
     }
@@ -246,7 +288,8 @@ CohenD_allConditions <- function(data, metadata, gene_sets, variable, mode = c("
       if (!method %in% names(all_pvalues)) {
         all_pvalues[[method]] <- c()
       }
-      all_pvalues[[method]] <- c(all_pvalues[[method]], as.vector(result_list[[signature]]$PValue[method, ]))
+      all_pvalues[[method]] <- c(all_pvalues[[method]],
+                                 as.vector(result_list[[signature]]$PValue[method, ]))
     }
   }
 
@@ -266,7 +309,8 @@ CohenD_allConditions <- function(data, metadata, gene_sets, variable, mode = c("
 
       # Assign adjusted p-values in order
       num_vals <- length(result_list[[signature]]$PValue[method, ])
-      padj_matrix[method, ] <- all_padj[[method]][index_tracker[[method]]:(index_tracker[[method]] + num_vals - 1)]
+      padj_matrix[method, ] <- all_padj[[method]][index_tracker[[method]]:
+                                                    (index_tracker[[method]] + num_vals - 1)]
 
       # Update index tracker
       index_tracker[[method]] <- index_tracker[[method]] + num_vals
@@ -283,14 +327,16 @@ CohenD_allConditions <- function(data, metadata, gene_sets, variable, mode = c("
 
 #' Compute Cohen\'s d Effect Size
 #'
-#' Computes the absolute Cohen\'s d effect size between two numeric vectors. This function returns
-#' the absolute value of the difference in means divided by the pooled standard deviation.
+#' Computes the absolute Cohen\'s d effect size between two numeric vectors.
+#' This function returns the absolute value of the difference in means divided
+#' by the pooled standard deviation.
 #'
 #' @param x A numeric vector representing the values for group 1.
 #' @param y A numeric vector representing the values for group 2.
 #'
-#' @return A numeric value representing Cohen\'s d. Returns NA if either group has fewer than two observations
-#'   or if the pooled standard deviation is zero.
+#' @return A numeric value representing Cohen\'s d. Returns NA if either group
+#'   has fewer than two observations or if the pooled standard deviation is
+#'   zero.
 #'
 #' @keywords internal
 cohen_d <- function(x, y) {
@@ -304,19 +350,23 @@ cohen_d <- function(x, y) {
   pooled_sd <- sqrt(((n1 - 1) * s1^2 + (n2 - 1) * s2^2) / (n1 + n2 - 2))
   if (pooled_sd == 0) return(NA)
   d <- (m1 - m2) / pooled_sd
-  #d <- abs(d) # dor this application we don't need the direction of the classification, just if it works
+  # for this application we don't need the direction of the classification, just if it works
+  #d <- abs(d)
   return(d)
 }
 
 
 #' Compute Pairwise Cohen\'s d and P-Values
 #'
-#' Computes Cohen\'s d effect sizes and corresponding p-values for all pairwise comparisons of a grouping variable
-#' in a data frame.
+#' Computes Cohen\'s d effect sizes and corresponding p-values for all pairwise
+#' comparisons of a grouping variable in a data frame.
 #'
-#' @param dfScore A data frame containing at least one numeric column and a grouping variable. Output from flatten_results.
-#' @param variable A string specifying the name of the categorical grouping column in \code{dfScore}.
-#' @param quantitative_var A string specifying the name of the numeric column (default is \code{"score"}).
+#' @param dfScore A data frame containing at least one numeric column and a
+#'   grouping variable. Output from flatten_results.
+#' @param variable A string specifying the name of the categorical grouping
+#'   column in \code{dfScore}.
+#' @param quantitative_var A string specifying the name of the numeric column
+#'   (default is \code{"score"}).
 #'
 #' @return A data frame with the following columns:
 #' \describe{
@@ -327,7 +377,8 @@ cohen_d <- function(x, y) {
 #' }
 #'
 #' @keywords internal
-compute_cohen_d <- function(dfScore, variable, quantitative_var="score", mode = c("simple","medium","extensive")) {
+compute_cohen_d <- function(dfScore, variable, quantitative_var="score",
+                            mode = c("simple","medium","extensive")) {
 
   # Get unique group values
   unique_groups <- unique(dfScore[[variable]])
@@ -348,23 +399,26 @@ compute_cohen_d <- function(dfScore, variable, quantitative_var="score", mode = 
   combs <- remove_division(combs)
 
   for (pair in combs) {
-
-    dfScore_subset <- create_contrast_column(dfScore, variable, pair) # subsets metadata and adds new column "cohentest" with the two parts of the contrast
+    # subsets metadata and adds new column "cohentest" with the two parts of the contrast
+    dfScore_subset <- create_contrast_column(dfScore, variable, pair)
     group1 <- levels(dfScore_subset$cohentest)[1]
     group2 <- levels(dfScore_subset$cohentest)[2]
 
     # group1 <- unique(dfScore_subset$cohentest)[1]
     # group2 <- unique(dfScore_subset$cohentest)[2]
 
-    x <- dfScore_subset[dfScore_subset[["cohentest"]] == group1, quantitative_var, drop = TRUE]
-    y <- dfScore_subset[dfScore_subset[["cohentest"]] == group2, quantitative_var, drop = TRUE]
+    x <- dfScore_subset[dfScore_subset[["cohentest"]] == group1,
+                        quantitative_var, drop = TRUE]
+    y <- dfScore_subset[dfScore_subset[["cohentest"]] == group2,
+                        quantitative_var, drop = TRUE]
 
     d <- cohen_d(x, y)
     #set.seed("03042025")
     p_val <- t.test(x, y, var.equal = TRUE)$p.value
 
     results <- rbind(results, data.frame(Group1 = group1, Group2 = group2,
-                                         CohenD = d, PValue = p_val, contrast = pair, stringsAsFactors = FALSE))
+                                         CohenD = d, PValue = p_val,
+                                         contrast = pair, stringsAsFactors = FALSE))
   }
 
   return(results)
@@ -374,13 +428,16 @@ compute_cohen_d <- function(dfScore, variable, quantitative_var="score", mode = 
 
 #' Flatten a Nested List of Results into a Data Frame
 #'
-#' Converts a nested list (where the first level is a method, the second level is a gene signature,
-#' and the third level is a data frame) into a single data frame. Additional columns for method and signature
-#' are added to the data frame.
+#' Converts a nested list (where the first level is a method, the second level
+#' is a gene signature, and the third level is a data frame) into a single data
+#' frame. Additional columns for method and signature are added to the data
+#' frame.
 #'
-#' @param nested_list A nested list with structure: \code{list(method = list(signature = data.frame(...)))}.
+#' @param nested_list A nested list with structure: \code{list(method =
+#'   list(signature = data.frame(...)))}.
 #'
-#' @return A data frame combining all the nested data frames, with added columns \code{method} and \code{signature}.
+#' @return A data frame combining all the nested data frames, with added columns
+#'   \code{method} and \code{signature}.
 #'
 #'
 #' @keywords internal
@@ -420,26 +477,37 @@ flatten_results <- function(nested_list) {
 
 #' Compute Cohen's f for All Gene Signatures Across a Categorical Variable
 #'
-#' Computes Cohen's f effect sizes and corresponding p-values for all gene signatures using scores calculated
-#' by multiple methods. The function first computes gene signature scores using \code{CalculateScores} with the "all"
-#' option, flattens the results, and fits linear models using the specified variable to estimate effect sizes.
+#' Computes Cohen's f effect sizes and corresponding p-values for all gene
+#' signatures using scores calculated by multiple methods. The function first
+#' computes gene signature scores using \code{CalculateScores} with the "all"
+#' option, flattens the results, and fits linear models using the specified
+#' variable to estimate effect sizes.
 #'
-#' This function is designed for use with categorical variables, where the goal is to evaluate the overall group effect
-#' (e.g., using ANOVA) across multiple levels.
+#' This function is designed for use with categorical variables, where the goal
+#' is to evaluate the overall group effect (e.g., using ANOVA) across multiple
+#' levels.
 #'
-#' @param data A data frame of gene expression data, with genes as rows and samples as columns.
-#' @param metadata A data frame containing sample metadata. The first column should contain sample identifiers matching
-#'   the column names of \code{data}.
-#' @param gene_sets A named list of gene sets. For unidirectional gene sets, each element is a vector of gene names;
-#'   for bidirectional gene sets, each element is a data frame where the first column contains gene names and the second
-#'   column indicates the expected direction (1 for upregulated, -1 for downregulated).
-#' @param variable A string specifying the categorical variable in \code{metadata} used to model the gene signature scores.
-#' @return A named list where each element corresponds to a gene signature. Each signature element is a list with three components:
+#' @param data A data frame of gene expression data, with genes as rows and
+#'   samples as columns.
+#' @param metadata A data frame containing sample metadata. The first column
+#'   should contain sample identifiers matching the column names of \code{data}.
+#' @param gene_sets A named list of gene sets. For unidirectional gene sets,
+#'   each element is a vector of gene names; for bidirectional gene sets, each
+#'   element is a data frame where the first column contains gene names and the
+#'   second column indicates the expected direction (1 for upregulated, -1 for
+#'   downregulated).
+#' @param variable A string specifying the categorical variable in
+#'   \code{metadata} used to model the gene signature scores.
+#' @return A named list where each element corresponds to a gene signature. Each
+#'   signature element is a list with three components:
 #' \describe{
-#'   \item{CohenF}{A data frame where rows are scoring methods and columns are the variable used in the linear model (usually one column),
+#'   \item{CohenF}{A data frame where rows are scoring methods and columns are
+#'   the variable used in the linear model (usually one column),
 #'   containing the computed Cohen's f effect size.}
-#'   \item{PValue}{A data frame of the corresponding raw p-values from the linear model for each method.}
-#'   \item{padj}{A data frame of adjusted p-values (Benjamini-Hochberg method) across signatures and contrasts, per method.}
+#'   \item{PValue}{A data frame of the corresponding raw p-values from the
+#'   linear model for each method.}
+#'   \item{padj}{A data frame of adjusted p-values (Benjamini-Hochberg method)
+#'   across signatures and contrasts, per method.}
 #' }
 #'
 #' @keywords internal
@@ -454,7 +522,8 @@ CohenF_allConditions <- function(data, metadata, gene_sets, variable ) {
   type <- identify_variable_type(metadata, variable)[variable]
 
   # Step 2: Compute scores for all methods and signatures
-  listScores <- CalculateScores(data = data, metadata = metadata, gene_sets = gene_sets, method = "all")
+  listScores <- CalculateScores(data = data, metadata = metadata,
+                                gene_sets = gene_sets, method = "all")
 
   # Step 3: Flatten into a data frame with method & signature columns
   dfScores <- flatten_results(listScores)
@@ -480,7 +549,8 @@ CohenF_allConditions <- function(data, metadata, gene_sets, variable ) {
 
       # for each variable, fit a linear model between the score and that variable
 
-      #Without scaling, the coefficient represents the change in score per unit increase in the variable (if numeric, the unit of the variable. Makes sense to not scale...)
+      #Without scaling, the coefficient represents the change in score per unit
+      # increase in the variable (if numeric, the unit of the variable. Makes sense to not scale...)
       model <- lm(score ~ get(variable), data = df_method)
       results_var <- compute_cohens_f_pval(model, type)
 
@@ -507,7 +577,8 @@ CohenF_allConditions <- function(data, metadata, gene_sets, variable ) {
       if (!method %in% names(all_pvalues)) {
         all_pvalues[[method]] <- c()
       }
-      all_pvalues[[method]] <- c(all_pvalues[[method]], as.vector(result_list[[signature]]$PValue[method, ]))
+      all_pvalues[[method]] <- c(all_pvalues[[method]],
+                                 as.vector(result_list[[signature]]$PValue[method, ]))
     }
   }
 

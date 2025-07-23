@@ -12,11 +12,13 @@ cohen_d(x, y)
 \item{y}{A numeric vector representing the values for group 2.}
 }
 \value{
-A numeric value representing Cohen\'s d. Returns NA if either group has fewer than two observations
-or if the pooled standard deviation is zero.
+A numeric value representing Cohen\'s d. Returns NA if either group
+has fewer than two observations or if the pooled standard deviation is
+zero.
 }
 \description{
-Computes the absolute Cohen\'s d effect size between two numeric vectors. This function returns
-the absolute value of the difference in means divided by the pooled standard deviation.
+Computes the absolute Cohen\'s d effect size between two numeric vectors.
+This function returns the absolute value of the difference in means divided
+by the pooled standard deviation.
 }
 \keyword{internal}

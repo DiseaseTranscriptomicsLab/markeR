@@ -27,8 +27,8 @@ CorrelationHeatmap(
 \item{data}{A numeric counts data frame where rows correspond to genes and
 columns to samples.}
 
-\item{metadata}{A data frame containing metadata. Required if \code{separate.by}
-is specified. The first column should be the sample ID.}
+\item{metadata}{A data frame containing metadata. Required if \code{separate.by} is
+specified. The first column should be the sample ID.}
 
 \item{genes}{A character vector of gene names to be included in the
 correlation analysis.}
@@ -42,8 +42,8 @@ separate heatmaps by (e.g., "Condition").}
 \item{colorlist}{A named list specifying the colors for the heatmap (\code{low},
 \code{mid}, \code{high}), corresponding to the limits of the colorscale.}
 
-\item{limits_colorscale}{A numeric vector of length 3 defining the limits
-for the color scale (default: min, 0, max).}
+\item{limits_colorscale}{A numeric vector of length 3 defining the limits for
+the color scale (default: min, 0, max).}
 
 \item{widthTitle}{Numeric value controlling the width of the plot title.
 Default is \code{16}.}
@@ -52,61 +52,55 @@ Default is \code{16}.}
 
 \item{cluster_rows}{Logical; whether to cluster rows (default = \code{TRUE}).}
 
-\item{cluster_columns}{Logical; whether to cluster columns (default =
-\code{TRUE}).}
+\item{cluster_columns}{Logical; whether to cluster columns (default = \code{TRUE}).}
 
 \item{detailedresults}{Logical; if \code{TRUE}, additional analysis results are
 stored in the output list (default = \code{FALSE}).}
 
-\item{legend_position}{Character; position of the legend (\code{"right"} - default -
-or \code{"top"}).}
+\item{legend_position}{Character; position of the legend (\code{"right"} - default
+\itemize{
+\item or \code{"top"}).
+}}
 
 \item{titlesize}{Numeric; font size of the heatmap title (default = \code{20}).}
 
-\item{show_row_names}{A character string specifying whether row names (genes) should be displayed.}
+\item{show_row_names}{A character string specifying whether row names (genes)
+should be displayed.}
 
-\item{show_column_names}{A character string specifying whether column names (samples) should be displayed.}
+\item{show_column_names}{A character string specifying whether column names
+(samples) should be displayed.}
 }
 \value{
 A list containing:
 \describe{
-\item{\code{data}}{Correlation matrices for each condition (or a single matrix
-if \code{separate.by = NULL}).}
+\item{\code{data}}{Correlation matrices for each condition (or a single matrix if
+\code{separate.by = NULL}).}
 \item{\code{plot}}{The generated heatmap object(s).}
 \item{\code{aux}}{A list containing additional analysis results if
-\code{detailedresults = TRUE}.
-\describe{
-\item{If \code{separate.by} is specified:}{
-A list where each element corresponds to a different condition.
-Each sublist contains:
+\code{detailedresults = TRUE}.}
+}
+
+If \code{separate.by} is specified, the \code{aux} list contains one element per
+condition. Each element is a list with:
 \itemize{
 \item \code{method}: The correlation method used.
-\item \code{corrmatrix}: The computed correlation matrix for that
-condition.
-\item \code{metadata}: The subset of metadata corresponding to the
-condition.
+\item \code{corrmatrix}: The computed correlation matrix for that condition.
+\item \code{metadata}: The subset of metadata corresponding to the condition.
 \item \code{heatmap}: The \code{ComplexHeatmap} object before being drawn.
 }
-}
-\item{If \code{separate.by = NULL} (single heatmap case):}{
-A list containing:
+
+If \code{separate.by = NULL} (single heatmap case), the \code{aux} list contains:
 \itemize{
 \item \code{method}: The correlation method.
 \item \code{corrmatrix}: The computed correlation matrix.
 }
 }
-}
-}
-}
-}
 \description{
 This function generates correlation heatmaps using the \code{ComplexHeatmap}
-package. It allows users
-to compute correlation matrices for a set of genes and visualize them in a
-heatmap. If a grouping
-variable is provided (\code{separate.by}), multiple heatmaps are created, each
-corresponding to a different
-level of the grouping variable.
+package. It allows users to compute correlation matrices for a set of genes
+and visualize them in a heatmap. If a grouping variable is provided
+(\code{separate.by}), multiple heatmaps are created, each corresponding to a
+different level of the grouping variable.
 }
 \examples{
 # Simulate gene expression data (genes as rows, samples as columns)

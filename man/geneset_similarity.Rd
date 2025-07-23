@@ -24,49 +24,69 @@ geneset_similarity(
 )
 }
 \arguments{
-\item{signatures}{A named list of character vectors representing reference gene signatures.}
+\item{signatures}{A named list of character vectors representing reference
+gene signatures.}
 
-\item{other_user_signatures}{Optional. A named list of character vectors representing other user-defined signatures to compare against.}
+\item{other_user_signatures}{Optional. A named list of character vectors
+representing other user-defined signatures to compare against.}
 
-\item{collection}{Optional. MSigDB collection name (e.g., \code{"H"} for hallmark, \code{"C2"} for curated gene sets). Use msigdbr::msigdbr_collections() for the available options.}
+\item{collection}{Optional. MSigDB collection name (e.g., \code{"H"} for hallmark,
+\code{"C2"} for curated gene sets). Use msigdbr::msigdbr_collections() for the
+available options.}
 
-\item{subcollection}{Optional. Subcategory within an MSigDB collection (e.g., \code{"CP:REACTOME"}). Use msigdbr::msigdbr_collections() for the available options.}
+\item{subcollection}{Optional. Subcategory within an MSigDB collection (e.g.,
+\code{"CP:REACTOME"}). Use msigdbr::msigdbr_collections() for the available
+options.}
 
 \item{metric}{Character. Either "jaccard" or "odds_ratio".}
 
-\item{universe}{Character vector. Background gene universe. Required for odds ratio.}
+\item{universe}{Character vector. Background gene universe. Required for odds
+ratio.}
 
-\item{or_threshold}{(only if method == "odds_ratio" only) Numeric. Minimum Odds Ratio required for a gene set to be included in the plot. Default is 1.}
+\item{or_threshold}{(only if method == "odds_ratio" only) Numeric. Minimum
+Odds Ratio required for a gene set to be included in the plot. Default is
+1.}
 
-\item{pval_threshold}{(only if method == "odds_ratio" only) Numeric. Maximum adjusted p-value to show a label. Default is 0.05.}
+\item{pval_threshold}{(only if method == "odds_ratio" only) Numeric. Maximum
+adjusted p-value to show a label. Default is 0.05.}
 
 \item{limits}{Numeric vector of length 2. Limits for color scale.}
 
-\item{title_size}{Integer specifying the font size for the plot title. Default is \code{12}.}
+\item{title_size}{Integer specifying the font size for the plot title.
+Default is \code{12}.}
 
-\item{color_values}{Character vector of colors used for the fill gradient. Default is \code{c("#F9F4AE", "#B44141")}.}
+\item{color_values}{Character vector of colors used for the fill gradient.
+Default is \code{c("#F9F4AE", "#B44141")}.}
 
-\item{title}{Optional. Custom title for the plot. If \code{NULL}, the title defaults to \code{"Signature Overlap"}.}
+\item{title}{Optional. Custom title for the plot. If \code{NULL}, the title
+defaults to \code{"Signature Overlap"}.}
 
-\item{jaccard_threshold}{(only if method == "jaccard" only) Numeric. Minimum Jaccard index required for a gene set to be included in the plot. Default is \code{0}.}
+\item{jaccard_threshold}{(only if method == "jaccard" only) Numeric. Minimum
+Jaccard index required for a gene set to be included in the plot. Default
+is \code{0}.}
 
-\item{msig_subset}{Optional. Character vector of MSigDB gene set names to subset from the specified collection. Useful to restrict analysis to a specific set of pathways.
-If supplied, other filters will apply only to this subset. Use "collection = "all" to mix gene sets from different collections.}
+\item{msig_subset}{Optional. Character vector of MSigDB gene set names to
+subset from the specified collection. Useful to restrict analysis to a
+specific set of pathways. If supplied, other filters will apply only to
+this subset. Use "collection = "all" to mix gene sets from different
+collections.}
 
 \item{width_text}{Integer. Character wrap width for labels.}
 
-\item{na_color}{Character. Color for NA values in the heatmap. Default is \code{"grey90"}.}
+\item{na_color}{Character. Color for NA values in the heatmap. Default is
+\code{"grey90"}.}
 }
 \value{
 Invisibly returns a list containing:
 \describe{
 \item{\code{plot}}{The \pkg{ggplot2} object of the similarity heatmap.}
-\item{\code{data}}{The data frame object containing the similarity scores aper pair of gene sets.}
+\item{\code{data}}{The data frame object containing the similarity
+scores aper pair of gene sets.}
 }
 }
 \description{
-Visualizes similarity between user-defined gene signatures and either
-other user-defined signatures or MSigDB gene sets, using either the Jaccard index
+Visualizes similarity between user-defined gene signatures and either other
+user-defined signatures or MSigDB gene sets, using either the Jaccard index
 or Fisher's Odds Ratio. Produces a heatmap of pairwise similarity metrics.
 }
 \examples{

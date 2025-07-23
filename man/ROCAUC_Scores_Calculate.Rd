@@ -14,18 +14,23 @@ ROCAUC_Scores_Calculate(
 )
 }
 \arguments{
-\item{data}{A matrix or data frame of gene expression data (genes as rows, samples as columns).}
+\item{data}{A matrix or data frame of gene expression data (genes as rows,
+samples as columns).}
 
-\item{metadata}{A data frame containing sample metadata, including the grouping variable.}
+\item{metadata}{A data frame containing sample metadata, including the
+grouping variable.}
 
-\item{gene_sets}{A named list of gene sets, where each entry is a character vector of gene names.}
+\item{gene_sets}{A named list of gene sets, where each entry is a character
+vector of gene names.}
 
-\item{method}{A character string specifying the score calculation method. Options: \code{"logmedian"}, \code{"ssGSEA"}, \code{"ranking"}, or \code{"all"}.}
+\item{method}{A character string specifying the score calculation method.
+Options: \code{"logmedian"}, \code{"ssGSEA"}, \code{"ranking"}, or \code{"all"}.}
 
-\item{variable}{A character string specifying the categorical variable for group comparisons.#'}
+\item{variable}{A character string specifying the categorical variable for
+group comparisons.#'}
 
-\item{mode}{A string specifying the level of detail for contrasts.
-Options are:
+\item{mode}{A string specifying the level of detail for contrasts. Options
+are:
 \itemize{
 \item \code{"simple"}: Pairwise comparisons (e.g., A - B).
 \item \code{"medium"}: Pairwise comparisons plus comparisons against the mean of other groups.
@@ -33,7 +38,8 @@ Options are:
 }}
 }
 \value{
-A named list containing ROC curve data and AUC values for each method, signature, and contrast.
+A named list containing ROC curve data and AUC values for each
+method, signature, and contrast.
 }
 \description{
 This function calculates Receiver Operating Characteristic (ROC) curves and

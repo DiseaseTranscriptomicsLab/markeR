@@ -1,31 +1,51 @@
 #' Plot Signature Similarity via Jaccard Index or Fisher's Odds Ratio
 #'
-#' Visualizes similarity between user-defined gene signatures and either
-#' other user-defined signatures or MSigDB gene sets, using either the Jaccard index
+#' Visualizes similarity between user-defined gene signatures and either other
+#' user-defined signatures or MSigDB gene sets, using either the Jaccard index
 #' or Fisher's Odds Ratio. Produces a heatmap of pairwise similarity metrics.
 #'
-#' @param signatures A named list of character vectors representing reference gene signatures.
-#' @param other_user_signatures Optional. A named list of character vectors representing other user-defined signatures to compare against.
-#' @param collection Optional. MSigDB collection name (e.g., `"H"` for hallmark, `"C2"` for curated gene sets). Use msigdbr::msigdbr_collections() for the available options.
-#' @param subcollection Optional. Subcategory within an MSigDB collection (e.g., `"CP:REACTOME"`). Use msigdbr::msigdbr_collections() for the available options.
+#' @param signatures A named list of character vectors representing reference
+#'   gene signatures.
+#' @param other_user_signatures Optional. A named list of character vectors
+#'   representing other user-defined signatures to compare against.
+#' @param collection Optional. MSigDB collection name (e.g., `"H"` for hallmark,
+#'   `"C2"` for curated gene sets). Use msigdbr::msigdbr_collections() for the
+#'   available options.
+#' @param subcollection Optional. Subcategory within an MSigDB collection (e.g.,
+#'   `"CP:REACTOME"`). Use msigdbr::msigdbr_collections() for the available
+#'   options.
 #' @param metric Character. Either "jaccard" or "odds_ratio".
-#' @param universe Character vector. Background gene universe. Required for odds ratio.
-#' @param or_threshold (only if method == "odds_ratio" only) Numeric. Minimum Odds Ratio required for a gene set to be included in the plot. Default is 1.
-#' @param pval_threshold (only if method == "odds_ratio" only) Numeric. Maximum adjusted p-value to show a label. Default is 0.05.
+#' @param universe Character vector. Background gene universe. Required for odds
+#'   ratio.
+#' @param or_threshold (only if method == "odds_ratio" only) Numeric. Minimum
+#'   Odds Ratio required for a gene set to be included in the plot. Default is
+#'   1.
+#' @param pval_threshold (only if method == "odds_ratio" only) Numeric. Maximum
+#'   adjusted p-value to show a label. Default is 0.05.
 #' @param limits Numeric vector of length 2. Limits for color scale.
-#' @param title_size Integer specifying the font size for the plot title. Default is `12`.
-#' @param color_values Character vector of colors used for the fill gradient. Default is `c("#F9F4AE", "#B44141")`.
-#' @param title Optional. Custom title for the plot. If `NULL`, the title defaults to `"Signature Overlap"`.
-#' @param jaccard_threshold (only if method == "jaccard" only) Numeric. Minimum Jaccard index required for a gene set to be included in the plot. Default is `0`.
-#' @param msig_subset Optional. Character vector of MSigDB gene set names to subset from the specified collection. Useful to restrict analysis to a specific set of pathways.
-#'                    If supplied, other filters will apply only to this subset. Use "collection = "all" to mix gene sets from different collections.
+#' @param title_size Integer specifying the font size for the plot title.
+#'   Default is `12`.
+#' @param color_values Character vector of colors used for the fill gradient.
+#'   Default is `c("#F9F4AE", "#B44141")`.
+#' @param title Optional. Custom title for the plot. If `NULL`, the title
+#'   defaults to `"Signature Overlap"`.
+#' @param jaccard_threshold (only if method == "jaccard" only) Numeric. Minimum
+#'   Jaccard index required for a gene set to be included in the plot. Default
+#'   is `0`.
+#' @param msig_subset Optional. Character vector of MSigDB gene set names to
+#'   subset from the specified collection. Useful to restrict analysis to a
+#'   specific set of pathways. If supplied, other filters will apply only to
+#'   this subset. Use "collection = "all" to mix gene sets from different
+#'   collections.
 #' @param width_text Integer. Character wrap width for labels.
-#' @param na_color Character. Color for NA values in the heatmap. Default is `"grey90"`.
+#' @param na_color Character. Color for NA values in the heatmap. Default is
+#'   `"grey90"`.
 #'
 #' @return Invisibly returns a list containing:
 #'   \describe{
 #'     \item{\code{plot}}{The \pkg{ggplot2} object of the similarity heatmap.}
-#'     \item{\code{data}}{The data frame object containing the similarity scores aper pair of gene sets.}
+#'     \item{\code{data}}{The data frame object containing the similarity
+#'     scores aper pair of gene sets.}
 #'   }
 #'
 #' @import ggplot2
@@ -90,7 +110,8 @@ geneset_similarity <- function(
   if (!is.list(signatures) || !all(sapply(signatures, is.character))) {
     stop("Signatures must be a named list of character vectors.")
   }
-  if (!is.null(other_user_signatures) && (!is.list(other_user_signatures) || !all(sapply(other_user_signatures, is.character)))) {
+  if (!is.null(other_user_signatures) && (!is.list(other_user_signatures) ||
+                                          !all(sapply(other_user_signatures, is.character)))) {
     stop("Other user signatures must be a named list of character vectors.")
   }
   if (!is.null(collection) && !is.character(collection)) {
@@ -265,8 +286,10 @@ geneset_similarity <- function(
 
   data <- similarity_df
 
-  similarity_df$Reference_Signature <- sapply(similarity_df$Reference_Signature, function(x) wrap_title(x, width_text))
-  similarity_df$Compared_Signature <- sapply(similarity_df$Compared_Signature, function(x) wrap_title(x, width_text))
+  similarity_df$Reference_Signature <- sapply(similarity_df$Reference_Signature,
+                                              function(x) wrap_title(x, width_text))
+  similarity_df$Compared_Signature <- sapply(similarity_df$Compared_Signature,
+                                             function(x) wrap_title(x, width_text))
 
   if (is.null(limits)) {
     if (metric == "jaccard") {
@@ -278,10 +301,12 @@ geneset_similarity <- function(
   }
   }
 
-  plt <- ggplot(similarity_df, aes(x = Reference_Signature, y = Compared_Signature, fill = Score)) +
+  plt <- ggplot(similarity_df, aes(x = Reference_Signature,
+                                   y = Compared_Signature, fill = Score)) +
     geom_tile(color = "white") +
     geom_text(aes(label = Label), color = "black") +
-    scale_fill_gradientn(colors = color_values, limits = limits, oob = scales::squish, na.value = na_color) +
+    scale_fill_gradientn(colors = color_values, limits = limits,
+                         oob = scales::squish, na.value = na_color) +
     labs(
       x = "",
       y = "Compared Signature",

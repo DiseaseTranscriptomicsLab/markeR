@@ -1,51 +1,71 @@
 #' Cohen's d Heatmap Function
 #'
-#' This function computes Cohen's d for each gene based on gene expression data and sample metadata.
-#' For each gene, it compares the expression values between samples where \code{condition_var} equals
-#' \code{class} (the positive class) versus the remaining samples. The resulting effect sizes are then
-#' visualized as a heatmap.
+#' This function computes Cohen's d for each gene based on gene expression data
+#' and sample metadata. For each gene, it compares the expression values between
+#' samples where \code{condition_var} equals \code{class} (the positive class)
+#' versus the remaining samples. The resulting effect sizes are then visualized
+#' as a heatmap.
 #'
-#' @param data A data frame or matrix containing gene expression data, with genes as rows and samples as columns.
-#' @param metadata A data frame containing sample metadata. The first column should contain sample identifiers that match the column names of \code{data}.
-#' @param genes A character vector specifying which genes to include. If \code{NULL} (default), all genes in \code{data} are used.
-#'   A warning is issued if more than 30 genes are selected.
-#' @param condition_var A character string specifying the column name in \code{metadata} representing the condition of interest.
-#'   (Mandatory; no default.)
-#' @param class A character string or vector specifying the positive class label for the condition.
-#'   (Mandatory; no default.)
-#' @param group_var An optional character string specifying the column name in \code{metadata} used for grouping samples.
-#'   If not provided (\code{NULL}), all samples are treated as a single group.
-#' @param title An optional character string specifying a custom title for the heatmap.
-#'   If not provided, a default title is generated.
-#' @param titlesize A numeric value specifying the size of the title. Default is \code{14}.
-#' @param params A list of additional parameters for customizing the heatmap. Possible elements include:
+#' @param data A data frame or matrix containing gene expression data, with
+#'   genes as rows and samples as columns.
+#' @param metadata A data frame containing sample metadata. The first column
+#'   should contain sample identifiers that match the column names of
+#'   \code{data}.
+#' @param genes A character vector specifying which genes to include. If
+#'   \code{NULL} (default), all genes in \code{data} are used. A warning is
+#'   issued if more than 30 genes are selected.
+#' @param condition_var A character string specifying the column name in
+#'   \code{metadata} representing the condition of interest. (Mandatory; no
+#'   default.)
+#' @param class A character string or vector specifying the positive class label
+#'   for the condition. (Mandatory; no default.)
+#' @param group_var An optional character string specifying the column name in
+#'   \code{metadata} used for grouping samples. If not provided (\code{NULL}),
+#'   all samples are treated as a single group.
+#' @param title An optional character string specifying a custom title for the
+#'   heatmap. If not provided, a default title is generated.
+#' @param titlesize A numeric value specifying the size of the title. Default is
+#'   \code{14}.
+#' @param params A list of additional parameters for customizing the heatmap.
+#'   Possible elements include:
 #'   \describe{
-#'     \item{\code{cluster_rows}}{Logical; if \code{TRUE} (default), rows are clustered.}
-#'     \item{\code{cluster_columns}}{Logical; if \code{TRUE} (default), columns are clustered.}
-#'     \item{\code{colors}}{A vector of length 2 of colors to be used for the minimum and maximum values of the color scale.
-#'       Defaults to \code{c("#FFFFFF", "#21975C")}, but note that the default mapping for Cohen's d is set to a divergent scale.}
-#'     \item{\code{limits}}{A numeric vector of length 2 specifying the minimum and maximum values for the color scale.
+#'     \item{\code{cluster_rows}}{Logical; if \code{TRUE} (default), rows are
+#'     clustered.}
+#'     \item{\code{cluster_columns}}{Logical; if \code{TRUE} (default), columns
+#'     are clustered.}
+#'     \item{\code{colors}}{A vector of length 2 of colors to be used for the
+#'     minimum and maximum values of the color scale.
+#'       Defaults to \code{c("#FFFFFF", "#21975C")}, but note that the default
+#'        mapping for Cohen's d is set to a divergent scale.}
+#'     \item{\code{limits}}{A numeric vector of length 2 specifying the minimum
+#'     and maximum values for the color scale.
 #'       If not provided, defaults to \code{c(-2, 2)}.}
-#'     \item{\code{name}}{A character string for the legend title of the color scale. Default is \code{"Cohen's d"}.}
-#'     \item{\code{row_names_gp}}{Optional graphical parameters for row names (passed to \pkg{ComplexHeatmap}).}
-#'     \item{\code{column_names_gp}}{Optional graphical parameters for column names (passed to \pkg{ComplexHeatmap}).}
+#'     \item{\code{name}}{A character string for the legend title of the color
+#'     scale. Default is \code{"Cohen's d"}.}
+#'     \item{\code{row_names_gp}}{Optional graphical parameters for row names
+#'     (passed to \pkg{ComplexHeatmap}).}
+#'     \item{\code{column_names_gp}}{Optional graphical parameters for column
+#'     names (passed to \pkg{ComplexHeatmap}).}
 #'   }
 #'
 #' @return Invisibly returns a list containing:
 #'   \describe{
 #'     \item{\code{plot}}{The \pkg{ComplexHeatmap} object of the Cohen's d heatmap.}
-#'     \item{\code{data}}{A data frame with the calculated Cohen's d values for each gene and group.}
+#'     \item{\code{data}}{A data frame with the calculated Cohen's d values for
+#'     each gene and group.}
 #'   }
 #'
-#' @details
-#' This function computes Cohen's d for each gene by comparing the expression values between samples with
-#' \code{condition_var == class} and those that do not. The effect sizes are then visualized as a heatmap using
-#' \pkg{ComplexHeatmap}. When \code{group_var} is not provided, all samples are treated as a single group.
+#' @details This function computes Cohen's d for each gene by comparing the
+#' expression values between samples with \code{condition_var == class} and
+#' those that do not. The effect sizes are then visualized as a heatmap using
+#' \pkg{ComplexHeatmap}. When \code{group_var} is not provided, all samples are
+#' treated as a single group.
 #'
 #' @examples
 #' # Simulate gene expression data (genes as rows, samples as columns)
 #' set.seed(101)
-#' expr <- matrix(abs(rnorm(40)), nrow = 4, ncol = 10)  # 4 genes, 10 samples, positive values
+#' expr <- matrix(abs(rnorm(40)), nrow = 4, ncol = 10)  # 4 genes, 10 samples,
+#' # positive values
 #' rownames(expr) <- paste0("Gene", 1:4)
 #' colnames(expr) <- paste0("Sample", 1:10)
 #'
@@ -130,7 +150,8 @@ CohenD_IndividualGenes <- function(data, metadata,
   # If group_var is provided, ensure it exists; otherwise, treat all samples as one group.
   if (!is.null(group_var)) {
     if (!group_var %in% colnames(metadata)) {
-      stop(paste("Error: The specified group_var", group_var, "is not found in the metadata."))
+      stop(paste("Error: The specified group_var", group_var, "is not found in
+                 the metadata."))
     }
     groups <- unique(data_merge[[group_var]])
   } else {
@@ -151,11 +172,13 @@ CohenD_IndividualGenes <- function(data, metadata,
     pooled_sd <- sqrt(((n1 - 1) * s1^2 + (n2 - 1) * s2^2) / (n1 + n2 - 2))
     if (pooled_sd == 0) return(NA)
     d <- (m1 - m2) / pooled_sd
-    d <- abs(d) # dor this application we don't need the direction of the classification, just if it works
+    # for this application we don't need the direction of the classification, just if it works
+    d <- abs(d)
     return(d)
   }
 
-  effect_values <- data.frame(Gene = character(), Group = character(), CohensD = numeric())
+  effect_values <- data.frame(Gene = character(), Group = character(),
+                              CohensD = numeric())
 
   # Compute Cohen's d for each gene and group
   for (gene in genes) {
@@ -164,7 +187,8 @@ CohenD_IndividualGenes <- function(data, metadata,
       pos <- subset_data[[gene]][subset_data[[condition_var]] %in% class]
       neg <- subset_data[[gene]][ ! subset_data[[condition_var]] %in% class]
       d_val <- compute_cohens_d(pos, neg)
-      effect_values <- rbind(effect_values, data.frame(Gene = gene, Group = group, CohensD = d_val))
+      effect_values <- rbind(effect_values, data.frame(Gene = gene,
+                                                       Group = group, CohensD = d_val))
     }
   }
 
@@ -172,15 +196,18 @@ CohenD_IndividualGenes <- function(data, metadata,
     warning("Some Cohen's d values are NA. Check if there are enough samples in each group.")
   }
 
-  # do barplot only if there's only one unique value in group and that equals "All". otherwise, do heatmap
+  # do barplot only if there's only one unique value in group and that equals
+  # "All". otherwise, do heatmap
 
   if(length(unique(effect_values$Group)) == 1 && unique(effect_values$Group) == "All") {
 
     fillcolor <- ifelse(is.null(params$colors), "#3B415B", params$colors[1])
 
-    if (is.null(title)) title <- paste("Cohen's d for variable", condition_var, "(", paste(class, collapse = ", "), " vs others)")
+    if (is.null(title)) title <- paste("Cohen's d for variable", condition_var,
+                                       "(", paste(class, collapse = ", "), " vs others)")
 
-    barplot <- ggplot2::ggplot(effect_values, ggplot2::aes(y = reorder(Gene, CohensD), x = CohensD)) +
+    barplot <- ggplot2::ggplot(effect_values, ggplot2::aes(y = reorder(Gene, CohensD),
+                                                           x = CohensD)) +
       ggplot2::geom_bar(stat = "identity", fill = fillcolor) +
       #ggplot2::coord_flip()  +
       coord_cartesian(xlim = c(0, max(effect_values$CohensD) + 0.1))+
@@ -198,17 +225,20 @@ CohenD_IndividualGenes <- function(data, metadata,
   } else {
 
     # Prepare matrix for heatmap
-    effect_matrix <- reshape(effect_values, idvar = "Gene", timevar = "Group", direction = "wide")
+    effect_matrix <- reshape(effect_values, idvar = "Gene", timevar = "Group",
+                             direction = "wide")
     colnames(effect_matrix) <- gsub("CohensD\\.", "", colnames(effect_matrix))
     rownames(effect_matrix) <- effect_matrix$Gene
     effect_matrix <- effect_matrix[, -1, drop = FALSE]
     effect_matrix <- as.matrix(effect_matrix)
     effect_matrix <- matrix(as.numeric(effect_matrix),
                             nrow = nrow(effect_matrix),
-                            dimnames = list(rownames(effect_matrix), colnames(effect_matrix)))
+                            dimnames = list(rownames(effect_matrix),
+                                            colnames(effect_matrix)))
 
     # Determine heatmap title
-    if (is.null(title)) title <- paste("Cohen's d for variable", condition_var, "(", paste(class, collapse = ", "), " vs others)")
+    if (is.null(title)) title <- paste("Cohen's d for variable", condition_var,
+                                       "(", paste(class, collapse = ", "), " vs others)")
 
 
     # Set default heatmap parameters if missing
@@ -227,8 +257,10 @@ CohenD_IndividualGenes <- function(data, metadata,
       limits <- heatmap_params_local$limits
     }
 
-    # Apply the colorRamp2 using the (possibly user-defined) color vector from heatmap_params_local$colors.
-    heatmap_params_local$colors <- circlize::colorRamp2(limits, heatmap_params_local$colors)
+    # Apply the colorRamp2 using the (possibly user-defined) color vector from
+    # heatmap_params_local$colors.
+    heatmap_params_local$colors <- circlize::colorRamp2(limits,
+                                                        heatmap_params_local$colors)
     heatmap_params_local$limits <- NULL  # Remove 'limits'
 
     heatmap_obj_local <- ComplexHeatmap::Heatmap(

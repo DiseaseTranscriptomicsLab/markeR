@@ -12,23 +12,26 @@ plotCombinedGSEA(
 )
 }
 \arguments{
-\item{GSEA_results}{A named list of data frames, where each data frame contains GSEA results for a contrast.
-Each data frame should have the columns: \code{NES} (Normalized Enrichment Score), \code{padj} (adjusted p-value),
+\item{GSEA_results}{A named list of data frames, where each data frame
+contains GSEA results for a contrast. Each data frame should have the
+columns: \code{NES} (Normalized Enrichment Score), \code{padj} (adjusted p-value),
 and \code{pathway} (pathway name). Output from \code{runGSEA}.}
 
-\item{sig_threshold}{Numeric, default = 0.05. Adjusted p-value threshold for significance.
-A dashed horizontal line is drawn at this threshold.}
+\item{sig_threshold}{Numeric, default = 0.05. Adjusted p-value threshold for
+significance. A dashed horizontal line is drawn at this threshold.}
 
 \item{PointSize}{Numeric, default = 4. Size of the plotted points.}
 
-\item{widthlegend}{Numeric, default = 16. Controls the width of pathway labels in the legend.}
+\item{widthlegend}{Numeric, default = 16. Controls the width of pathway
+labels in the legend.}
 }
 \value{
 A ggplot2 object displaying the combined GSEA results.
 }
 \description{
-This function creates a scatter plot visualizing multiple GSEA (Gene Set Enrichment Analysis) results
-across different contrasts. Each point represents a pathway, where:
+This function creates a scatter plot visualizing multiple GSEA (Gene Set
+Enrichment Analysis) results across different contrasts. Each point
+represents a pathway, where:
 \itemize{
 \item The x-axis corresponds to the Normalized Enrichment Score (NES).
 \item The y-axis corresponds to the significance level (-log10 adjusted p-value).

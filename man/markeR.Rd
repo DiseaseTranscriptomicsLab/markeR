@@ -4,11 +4,13 @@
 \name{markeR}
 \alias{markeR}
 \alias{markeR-package}
-\title{markeR: An R Toolkit for Evaluating Gene Signatures as Phenotypic Markers}
+\title{markeR: An R Toolkit for Evaluating Gene Signatures as Phenotypic
+Markers}
 \description{
-The \strong{markeR} package provides tools for evaluating gene signatures across phenotypes
-in transcriptomics datasets (especially bulk RNA-seq). It implements scoring and enrichment
-approaches, alongside intuitive visualizations and performance metrics.
+The \strong{markeR} package provides tools for evaluating gene
+signatures across phenotypes in transcriptomics datasets (especially bulk
+RNA-seq). It implements scoring and enrichment approaches, alongside
+intuitive visualizations and performance metrics.
 
 \strong{Key features:}
 \itemize{
@@ -21,8 +23,8 @@ approaches, alongside intuitive visualizations and performance metrics.
 \seealso{
 For more information on using the markeR package, check out the
 \href{https://diseasetranscriptomicslab.github.io/markeR/}{markeR Documentation}.
-You can also visit the \href{https://github.com/DiseaseTranscriptomicsLab/markeR}{GitHub Repository}
-for the latest updates and source code.
+You can also visit the \href{https://github.com/DiseaseTranscriptomicsLab/markeR}{GitHub Repository} for the
+latest updates and source code.
 }
 \author{
 \strong{Maintainer}: Rita Martins-Silva \email{rita.silva@medicina.ulisboa.pt} (\href{https://orcid.org/0000-0002-1067-7993}{ORCID})

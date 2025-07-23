@@ -27,29 +27,38 @@ Options: \code{"pearson"} (default), \code{"spearman"}, \code{"kendall"}.}
 \item{categorical_bin}{The statistical test for binary categorical variables.
 Options: \code{"t.test"} (default) or \code{"wilcoxon"}.}
 
-\item{categorical_multi}{The statistical test for multi-level categorical variables.
+\item{categorical_multi}{The statistical test for multi-level categorical
+variables.
 Options: \code{"anova"} (default) or \code{"kruskal-wallis"}.}
 }
 \value{
-A named list (one entry per variable being analysed) where each element is a data frame with:
+A named list (one entry per variable being analysed) where each
+element is a data frame with:
 \itemize{
-\item \strong{Metric}: The test statistic (correlation coefficient, t-statistic, ANOVA F-value, etc.).
+\item \strong{Metric}: The test statistic (correlation coefficient, t-statistic,
+ANOVA F-value, etc.).
 \item \strong{p-value}: The significance value of the test.
-\item For \strong{Categorical Multi}, multiple rows are included for pairwise comparisons (Tukey HSD results).
+\item For \strong{Categorical Multi}, multiple rows are included for pairwise
+comparisons (Tukey HSD results).
 }
 }
 \description{
-Performs statistical tests to assess the relationship between predictor variables
+Performs statistical tests to assess the relationship between predictor
+variables
 and a target variable, selecting appropriate methods based on variable types.
 Returns a list of data frames containing metric values and p-values.
 }
 \details{
 \subsection{\strong{Variable Classification}}{
 \itemize{
-\item \strong{Numeric}: Continuous numeric or integer variables with more than 10 unique values.
-\item \strong{Categorical Bin}: Binary categorical variables (factors, characters, or integers with exactly 2 unique values).
-\item \strong{Categorical Multi}: Categorical variables with more than 2 unique values (up to 10 levels recommended).
-A warning is issued for categorical variables with more than 10 unique values.
+\item \strong{Numeric}: Continuous numeric or integer variables with more than 10
+unique values.
+\item \strong{Categorical Bin}: Binary categorical variables (factors, characters, or
+integers with exactly 2 unique values).
+\item \strong{Categorical Multi}: Categorical variables with more than 2 unique values
+(up to 10 levels recommended).
+A warning is issued for categorical variables with more than 10 unique
+values.
 }
 }
 
@@ -58,12 +67,15 @@ A warning is issued for categorical variables with more than 10 unique values.
 \item \strong{Numeric Predictors}: Pearson, Spearman, or Kendall correlation.
 \item \strong{Categorical Bin Predictors}: T-test or Wilcoxon rank-sum test.
 \item \strong{Categorical Multi Predictors}: ANOVA (default) or Kruskal-Wallis test.
-If ANOVA is used, Tukey’s HSD post-hoc test is performed for multiple comparisons.
+If ANOVA is used, Tukey's HSD post-hoc test is performed for multiple
+comparisons.
 }
 
-The function automatically detects variable types and applies the appropriate test.
+The function automatically detects variable types and applies the appropriate
+test.
 If a categorical variable has more than 10 unique levels, a warning is issued.
-If an invalid statistical test is requested, the function stops with an error message.
+If an invalid statistical test is requested, the function stops with an error
+message.
 }
 }
 \examples{

@@ -7,9 +7,11 @@
 getRanking(data, sample, geneset)
 }
 \arguments{
-\item{data}{A data frame where rows represent genes, columns represent samples, and values correspond to expression levels.}
+\item{data}{A data frame where rows represent genes, columns represent
+samples, and values correspond to expression levels.}
 
-\item{sample}{A character string specifying the sample name (column in \code{data}).}
+\item{sample}{A character string specifying the sample name (column in
+\code{data}).}
 
 \item{geneset}{A vector of gene names to be ranked.}
 }
@@ -17,12 +19,14 @@ getRanking(data, sample, geneset)
 The sum of the ranks of the genes found in the sample.
 }
 \description{
-Computes the rank sum of a given gene set within a sample based on its expression level.
+Computes the rank sum of a given gene set within a sample based on its
+expression level.
 }
 \details{
 \itemize{
 \item The function orders gene expression levels from lowest to highest.
-\item It then determines the rank of each gene in \code{geneset} and returns the sum of these ranks.
+\item It then determines the rank of each gene in \code{geneset} and returns the
+sum of these ranks.
 \item If some genes are missing, they are omitted from the ranking calculation.
 }
 }

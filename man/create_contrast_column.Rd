@@ -9,15 +9,19 @@ create_contrast_column(metadata, variable_name, contrast)
 \arguments{
 \item{metadata}{A data frame containing sample metadata.}
 
-\item{variable_name}{A character string specifying the column name in \code{metadata} that represents the variable of interest.}
+\item{variable_name}{A character string specifying the column name in
+\code{metadata} that represents the variable of interest.}
 
-\item{contrast}{A character string representing the contrast in the form "(A + B) - (C + D)" (e.g.).}
+\item{contrast}{A character string representing the contrast in the form
+"(A + B) - (C + D)" (e.g.).}
 }
 \value{
-A subset of \code{metadata} with an added \code{cohentest} column, indicating group membership based on the contrast.
+A subset of \code{metadata} with an added \code{cohentest} column, indicating
+group membership based on the contrast.
 }
 \description{
-This function extracts and processes contrast groups from a given contrast string,
-then assigns contrast labels to a metadata subset based on the variable of interest.
+This function extracts and processes contrast groups from a given contrast
+string, then assigns contrast labels to a metadata subset based on the
+variable of interest.
 }
 \keyword{internal}

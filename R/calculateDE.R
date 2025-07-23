@@ -1,34 +1,52 @@
 #' Calculate Differential Gene Expression Statistics using limma
 #'
-#' This function computes differential gene expression statistics for each gene using a linear model via the limma package.
-#' Users may supply a custom design matrix directly via the \code{design} argument, or specify a model formula (\code{lmexpression})
-#' (e.g., \code{~0 + X} or \code{~X}) or variables from \code{metadata} to build the design matrix. When contrasts are supplied,
-#' they are applied using \code{limma::makeContrasts} and \code{limma::contrasts.fit}. Alternatively, when using \code{lmexpression} or a supplied
-#' \code{design}, specific coefficient indices may be provided via \code{coefs} to extract the corresponding gene-level statistics.
+#' This function computes differential gene expression statistics for each gene
+#' using a linear model via the limma package. Users may supply a custom design
+#' matrix directly via the \code{design} argument, or specify a model formula
+#' (\code{lmexpression}) (e.g., \code{~0 + X} or \code{~X}) or variables from
+#' \code{metadata} to build the design matrix. When contrasts are supplied, they
+#' are applied using \code{limma::makeContrasts} and
+#' \code{limma::contrasts.fit}. Alternatively, when using \code{lmexpression} or
+#' a supplied \code{design}, specific coefficient indices may be provided via
+#' \code{coefs} to extract the corresponding gene-level statistics.
 #'
-#' @param data A numeric matrix of gene expression values with genes as rows and samples as columns. Row names must correspond to gene identifiers.
-#'             Data should *not* be transformed (i.e., not log2 transformed).
-#' @param metadata A data frame containing sample metadata used to build the design matrix (unless a design is provided directly).
-#' @param variables A character vector specifying the variable(s) from \code{metadata} to use in the default linear model.
-#'                  Ignored if \code{lmexpression} or \code{design} is provided.
-#' @param modelmat (Optional) A user-supplied design matrix. If provided, this design is used directly and \code{lmexpression} and \code{variables}
-#'               are ignored. The order of samples in the design matrix should match the order in data.
-#' @param contrasts A character vector specifying contrasts to be applied (e.g., \code{c("A-B")}).
-#'                  If multiple contrasts are provided, the function returns a list of DE results (one per contrast). *Required* if
-#'                  \code{lmexpression} is NULL, optional otherwise. If not provided, the average expression profile of each
-#'                  condition will be returned instead of differential gene expression.
-#' @param ignore_NAs Boolean (default: FALSE). Whether to ignore NAs in the metadata. If TRUE, rows with any NAs will be removed before analysis,
-#'                          leading to a loss of data to be fitted in the model. Only applicable if \code{variables} is provided.
+#' @param data A numeric matrix of gene expression values with genes as rows and
+#'   samples as columns. Row names must correspond to gene identifiers. Data
+#'   should *not* be transformed (i.e., not log2 transformed).
+#' @param metadata A data frame containing sample metadata used to build the
+#'   design matrix (unless a design is provided directly).
+#' @param variables A character vector specifying the variable(s) from
+#'   \code{metadata} to use in the default linear model. Ignored if
+#'   \code{lmexpression} or \code{design} is provided.
+#' @param modelmat (Optional) A user-supplied design matrix. If provided, this
+#'   design is used directly and \code{lmexpression} and \code{variables} are
+#'   ignored. The order of samples in the design matrix should match the order
+#'   in data.
+#' @param contrasts A character vector specifying contrasts to be applied (e.g.,
+#'   \code{c("A-B")}). If multiple contrasts are provided, the function returns
+#'   a list of DE results (one per contrast). *Required* if \code{lmexpression}
+#'   is NULL, optional otherwise. If not provided, the average expression
+#'   profile of each condition will be returned instead of differential gene
+#'   expression.
+#' @param ignore_NAs Boolean (default: FALSE). Whether to ignore NAs in the
+#'   metadata. If TRUE, rows with any NAs will be removed before analysis,
+#'   leading to a loss of data to be fitted in the model. Only applicable if
+#'   \code{variables} is provided.
 #'
 #' @return A list of data-frames of differential expression statistics
 #'
-#' @details
-#' The function fits a linear model with \code{limma::lmFit} and applies empirical Bayes moderation with \code{limma::eBayes}. Depending on the input:
+#' @details The function fits a linear model with \code{limma::lmFit} and
+#' applies empirical Bayes moderation with \code{limma::eBayes}. Depending on
+#' the input:
 #' \itemize{
-#'   \item If a design matrix is provided via \code{design}, that design is used directly.
-#'   \item Otherwise, a design matrix is constructed using the \code{variables} argument (with no intercept).
-#'   \item If contrasts are provided, they are applied using \code{limma::makeContrasts} and \code{limma::contrasts.fit}.
-#'   \item If no contrasts are provided, the function returns all possible coefficients fitted in the linear model.
+#'   \item If a design matrix is provided via \code{design}, that design is
+#'   used directly.
+#'   \item Otherwise, a design matrix is constructed using the \code{variables}
+#'   argument (with no intercept).
+#'   \item If contrasts are provided, they are applied using
+#'   \code{limma::makeContrasts} and \code{limma::contrasts.fit}.
+#'   \item If no contrasts are provided, the function returns all possible
+#'   coefficients fitted in the linear model.
 #' }
 #'
 #' @examples
@@ -68,7 +86,8 @@
 #'
 #' @importFrom limma lmFit eBayes makeContrasts contrasts.fit topTable
 #' @export
-calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL, contrasts = NULL, ignore_NAs = FALSE) {
+calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL,
+                        contrasts = NULL, ignore_NAs = FALSE) {
 
   data <- as.data.frame(data) # Ensure data is a data frame
   remove_prefix <- function(colnames_vector, prefixes) {
@@ -90,10 +109,14 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL, co
 
 
   # Validate inputs
-  if (!is.matrix(data) && !is.data.frame(data)) stop("Error: 'data' must be a matrix or a data frame.")
-  if (is.null(rownames(data))) stop("Error: 'data' must have row names corresponding to gene identifiers.")
-  if (!is.null(metadata) && !is.data.frame(metadata)) stop("Error: 'metadata' must be a data frame.")
-  if (!is.null(metadata) && (ncol(data) != nrow(metadata))) stop("Error: Number of samples in 'data' does not match number of rows in 'metadata'.")
+  if (!is.matrix(data) && !is.data.frame(data)) stop(
+    "Error: 'data' must be a matrix or a data frame.")
+  if (is.null(rownames(data))) stop(
+    "Error: 'data' must have row names corresponding to gene identifiers.")
+  if (!is.null(metadata) && !is.data.frame(metadata)) stop(
+    "Error: 'metadata' must be a data frame.")
+  if (!is.null(metadata) && (ncol(data) != nrow(metadata))) stop(
+    "Error: Number of samples in 'data' does not match number of rows in 'metadata'.")
 
   # add "." after each variable and remove spaces
   # Important to avoid errors in design matrix
@@ -126,7 +149,8 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL, co
 
   # 4. Reorder metadata to match column order of count matrix
   rownames(metadata_matched) <- metadata_matched[[best_match_col]]
-  metadata_matched <- metadata_matched[sample_ids, , drop = FALSE]  # drop = FALSE to preserve data frame format
+  # drop = FALSE to preserve data frame format
+  metadata_matched <- metadata_matched[sample_ids, , drop = FALSE]
   metadata <- metadata_matched
 
 
@@ -135,7 +159,8 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL, co
     # Remove rows with NAs in the specified variables
     na_rows <- apply(metadata[variables], 1, function(x) any(is.na(x)))
     metadata <- metadata[!na_rows, ]
-    data <- data[, rownames(metadata), drop = FALSE]  # Ensure data matches the filtered metadata
+    # Ensure data matches the filtered metadata
+    data <- data[, rownames(metadata), drop = FALSE]
   }
 
 
@@ -144,7 +169,9 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL, co
 
     if (!is.null(modelmat)) {
       if (!is.matrix(modelmat)) stop("Error: 'modelmat' must be a matrix.")
-      if (nrow(modelmat) != ncol(data)) stop("Error: Rows in 'modelmat' must match the number of samples in 'data'. Check if your metadata has any NAs or consider using ignore_NAs = TRUE.")
+      if (nrow(modelmat) != ncol(data)) stop(
+        "Error: Rows in 'modelmat' must match the number of samples in 'data'.
+        Check if your metadata has any NAs or consider using ignore_NAs = TRUE.")
       modelmat
     # } else if (!is.null(lmexpression)) {
     #   lmexpression <- as.formula(lmexpression, env = parent.frame())
@@ -172,7 +199,8 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL, co
 
   # Ensure design matrix and data match
   if (nrow(design_matrix) != ncol(data))
-    stop("Error: Mismatch between number of samples in 'data' and rows in 'design_matrix'. Check if your metadata has any NAs or consider using ignore_NAs = TRUE.")
+    stop("Error: Mismatch between number of samples in 'data' and rows in 'design_matrix'.
+         Check if your metadata has any NAs or consider using ignore_NAs = TRUE.")
 
   # Fit model
   fit <- tryCatch({

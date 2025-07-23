@@ -16,37 +16,45 @@ plotGSEAenrichment(
 )
 }
 \arguments{
-\item{GSEA_results}{A named list of data frames containing GSEA results for each contrast.
-Each data frame should have a column named \code{pathway} specifying the gene set, and columns \code{NES} and \code{padj} for results.
-Output from \code{runGSEA}.}
+\item{GSEA_results}{A named list of data frames containing GSEA results for
+each contrast. Each data frame should have a column named \code{pathway}
+specifying the gene set, and columns \code{NES} and \code{padj} for results. Output
+from \code{runGSEA}.}
 
-\item{DEGList}{A named list of data frames containing differentially expressed genes (DEGs) for each contrast.
-Each data frame must include a column named \code{t} with t-statistics for ranking genes.
-Output from \code{calculateDE}.}
+\item{DEGList}{A named list of data frames containing differentially
+expressed genes (DEGs) for each contrast. Each data frame must include a
+column named \code{t} with t-statistics for ranking genes. Output from
+\code{calculateDE}.}
 
 \item{gene_sets}{A named list of gene sets, where each entry is either:
 \itemize{
 \item A vector of gene names (unidirectional gene set)
-\item A data frame with two columns: gene names and direction (+1 for enriched and -1 for depleted).
+\item A data frame with two columns: gene names and direction (+1 for enriched
+and -1 for depleted).
 }}
 
-\item{widthTitle}{Integer. The maximum width (in characters) for wrapping plot titles. Default is 24.}
+\item{widthTitle}{Integer. The maximum width (in characters) for wrapping
+plot titles. Default is 24.}
 
-\item{grid}{Logical. If \code{TRUE}, plots are arranged in a grid using \code{ggpubr::ggarrange()}. Default is \code{FALSE}.}
+\item{grid}{Logical. If \code{TRUE}, plots are arranged in a grid using
+\code{ggpubr::ggarrange()}. Default is \code{FALSE}.}
 
 \item{nrow}{Integer. Number of rows for the grid layout (used only if \code{grid = TRUE}). If \code{NULL}, it is auto-calculated.}
 
-\item{ncol}{Integer. Number of columns for the grid layout (used only if \code{grid = TRUE}). If \code{NULL}, it is auto-calculated.}
+\item{ncol}{Integer. Number of columns for the grid layout (used only if
+\code{grid = TRUE}). If \code{NULL}, it is auto-calculated.}
 
 \item{titlesize}{Integer. Font size for plot titles. Default is 12.}
 }
 \value{
-If \code{grid = FALSE}, returns a named list of ggplot objects (each plot corresponding to a contrast-signature pair).
-If \code{grid = TRUE}, returns a single ggplot object with all enrichment plots arranged in a grid.
+If \code{grid = FALSE}, returns a named list of ggplot objects (each plot
+corresponding to a contrast-signature pair). If \code{grid = TRUE}, returns a
+single ggplot object with all enrichment plots arranged in a grid.
 }
 \description{
-This function generates enrichment plots for gene sets using the \code{fgsea::plotEnrichment()} function.
-It supports both individual plots (returned as a list) and a grid layout using \code{ggpubr::ggarrange()}.
+This function generates enrichment plots for gene sets using the
+\code{fgsea::plotEnrichment()} function. It supports both individual plots
+(returned as a list) and a grid layout using \code{ggpubr::ggarrange()}.
 }
 \examples{
 # Example GSEA results (mock data, missing columns if running by runGSEA)

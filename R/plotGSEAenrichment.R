@@ -1,26 +1,34 @@
 #' Plot GSEA Enrichment Results
 #'
-#' This function generates enrichment plots for gene sets using the `fgsea::plotEnrichment()` function.
-#' It supports both individual plots (returned as a list) and a grid layout using `ggpubr::ggarrange()`.
+#' This function generates enrichment plots for gene sets using the
+#' `fgsea::plotEnrichment()` function. It supports both individual plots
+#' (returned as a list) and a grid layout using `ggpubr::ggarrange()`.
 #'
-#' @param GSEA_results A named list of data frames containing GSEA results for each contrast.
-#' Each data frame should have a column named `pathway` specifying the gene set, and columns `NES` and `padj` for results.
-#' Output from \code{runGSEA}.
-#' @param DEGList A named list of data frames containing differentially expressed genes (DEGs) for each contrast.
-#' Each data frame must include a column named `t` with t-statistics for ranking genes.
-#' Output from \code{calculateDE}.
+#' @param GSEA_results A named list of data frames containing GSEA results for
+#'   each contrast. Each data frame should have a column named `pathway`
+#'   specifying the gene set, and columns `NES` and `padj` for results. Output
+#'   from \code{runGSEA}.
+#' @param DEGList A named list of data frames containing differentially
+#'   expressed genes (DEGs) for each contrast. Each data frame must include a
+#'   column named `t` with t-statistics for ranking genes. Output from
+#'   \code{calculateDE}.
 #' @param gene_sets A named list of gene sets, where each entry is either:
 #'   - A vector of gene names (unidirectional gene set)
-#'   - A data frame with two columns: gene names and direction (+1 for enriched and -1 for depleted).
-#' @param widthTitle Integer. The maximum width (in characters) for wrapping plot titles. Default is 24.
-#' @param grid Logical. If `TRUE`, plots are arranged in a grid using `ggpubr::ggarrange()`. Default is `FALSE`.
-#' @param nrow Integer. Number of rows for the grid layout (used only if `grid = TRUE`). If `NULL`, it is auto-calculated.
-#' @param ncol Integer. Number of columns for the grid layout (used only if `grid = TRUE`). If `NULL`, it is auto-calculated.
+#'   - A data frame with two columns: gene names and direction (+1 for enriched
+#'   and -1 for depleted).
+#' @param widthTitle Integer. The maximum width (in characters) for wrapping
+#'   plot titles. Default is 24.
+#' @param grid Logical. If `TRUE`, plots are arranged in a grid using
+#'   `ggpubr::ggarrange()`. Default is `FALSE`.
+#' @param nrow Integer. Number of rows for the grid layout (used only if `grid =
+#'   TRUE`). If `NULL`, it is auto-calculated.
+#' @param ncol Integer. Number of columns for the grid layout (used only if
+#'   `grid = TRUE`). If `NULL`, it is auto-calculated.
 #' @param titlesize Integer. Font size for plot titles. Default is 12.
 #'
-#' @return
-#' If `grid = FALSE`, returns a named list of ggplot objects (each plot corresponding to a contrast-signature pair).
-#' If `grid = TRUE`, returns a single ggplot object with all enrichment plots arranged in a grid.
+#' @return If `grid = FALSE`, returns a named list of ggplot objects (each plot
+#' corresponding to a contrast-signature pair). If `grid = TRUE`, returns a
+#' single ggplot object with all enrichment plots arranged in a grid.
 #'
 #' @examples
 #' # Example GSEA results (mock data, missing columns if running by runGSEA)
@@ -47,7 +55,8 @@
 #'
 #' @import ggplot2 ggpubr fgsea
 #' @export
-plotGSEAenrichment <- function(GSEA_results, DEGList, gene_sets, widthTitle = 24, grid = FALSE, nrow=NULL, ncol=NULL, titlesize=12) {
+plotGSEAenrichment <- function(GSEA_results, DEGList, gene_sets, widthTitle = 24,
+                               grid = FALSE, nrow=NULL, ncol=NULL, titlesize=12) {
   plot_list <- list()
 
   if (length(unique(GSEA_results[[1]]$pathway))==1 & length(names(GSEA_results))==1) {
@@ -83,17 +92,21 @@ plotGSEAenrichment <- function(GSEA_results, DEGList, gene_sets, widthTitle = 24
       padj_value <- signif(gsea_row$padj, 3)
       if(stat_used=="B"){
         if (adjustpval){
-          subtitle_text <- paste0("Altered Gene Set\nNES: ", nes_value, " | adj. p-value: ", padj_value)
+          subtitle_text <- paste0("Altered Gene Set\nNES: ", nes_value,
+                                  " | adj. p-value: ", padj_value)
         } else {
-          subtitle_text <- paste0("Altered Gene Set\nNES: ", nes_value, " | p-value: ", padj_value)
+          subtitle_text <- paste0("Altered Gene Set\nNES: ", nes_value,
+                                  " | p-value: ", padj_value)
         }
 
       } else {
 
         if (adjustpval){
-          subtitle_text <- paste0("Enriched/Depleted Gene Set\nNES: ", nes_value, " | adj. p-value: ", padj_value)
+          subtitle_text <- paste0("Enriched/Depleted Gene Set\nNES: ", nes_value,
+                                  " | adj. p-value: ", padj_value)
         } else {
-          subtitle_text <- paste0("Enriched/Depleted Gene Set\nNES: ", nes_value, " | p-value: ", padj_value)
+          subtitle_text <- paste0("Enriched/Depleted Gene Set\nNES: ", nes_value,
+                                  " | p-value: ", padj_value)
         }
 
       }

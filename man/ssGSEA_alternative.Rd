@@ -2,7 +2,8 @@
 % Please edit documentation in R/ssGSEA_alternative.R
 \name{ssGSEA_alternative}
 \alias{ssGSEA_alternative}
-\title{Alternative Implementation of Single-Sample Gene Set Enrichment Analysis (ssGSEA)}
+\title{Alternative Implementation of Single-Sample Gene Set
+Enrichment Analysis (ssGSEA)}
 \usage{
 ssGSEA_alternative(
   X,
@@ -14,41 +15,65 @@ ssGSEA_alternative(
 )
 }
 \arguments{
-\item{X}{A numeric matrix of gene expression values with rows representing genes and columns representing samples. Row names should correspond to gene identifiers.}
+\item{X}{A numeric matrix of gene expression values with rows representing
+genes and columns representing samples. Row names should correspond to gene
+identifiers.}
 
-\item{gene_sets}{A list of gene sets, where each element is a vector of gene identifiers. The function will match these identifiers with the row names of \code{X}.}
+\item{gene_sets}{A list of gene sets, where each element is a vector of gene
+identifiers. The function will match these identifiers with the row names of
+\code{X}.}
 
-\item{alpha}{A numeric value specifying the exponent used to weight the ranking scores. Default is \code{0.25}.}
+\item{alpha}{A numeric value specifying the exponent used to weight the
+ranking scores. Default is \code{0.25}.}
 
-\item{scale}{Logical; if \code{TRUE}, the cumulative difference is normalized by the total number of genes. Default is \code{TRUE}.}
+\item{scale}{Logical; if \code{TRUE}, the cumulative difference is normalized
+by the total number of genes. Default is \code{TRUE}.}
 
-\item{norm}{Logical; if \code{TRUE}, the enrichment scores are further normalized by the absolute difference between the maximum and minimum scores. Default is \code{FALSE}.}
+\item{norm}{Logical; if \code{TRUE}, the enrichment scores are further
+normalized by the absolute difference between the maximum and minimum scores.
+Default is \code{FALSE}.}
 
-\item{single}{Logical; if \code{TRUE}, the function returns the sum of the cumulative differences as the enrichment score. If \code{FALSE}, the maximum absolute cumulative difference is used. Default is \code{TRUE}.}
+\item{single}{Logical; if \code{TRUE}, the function returns the sum of the
+cumulative differences as the enrichment score. If \code{FALSE},
+the maximum absolute cumulative difference is used. Default is \code{TRUE}.}
 }
 \value{
-A matrix of enrichment scores with rows corresponding to gene sets and columns corresponding to samples.
+A matrix of enrichment scores with rows corresponding to gene sets
+and columns corresponding to samples.
 }
 \description{
-This function computes an enrichment score for each sample using an alternative single-sample Gene Set Enrichment Analysis (ssGSEA) method.
-It first maps gene sets to the gene indices present in the expression matrix, then ranks the genes for each sample, and finally calculates
-a weighted enrichment score based on the cumulative differences between in-set and out-of-set gene ranks.
+This function computes an enrichment score for each sample using an
+alternative single-sample Gene Set Enrichment Analysis (ssGSEA) method.
+It first maps gene sets to the gene indices present in the expression
+matrix, then ranks the genes for each sample, and finally calculates
+a weighted enrichment score based on the cumulative differences between
+in-set and out-of-set gene ranks.
 Source: https://rpubs.com/pranali018/SSGSEA
 }
 \details{
 The function performs the following steps:
 \enumerate{
-\item Maps each gene set to the indices of genes in \code{X} by matching gene identifiers.
-\item Computes column-wise rankings for the gene expression matrix using a ranking method (via the \code{colRanking} function) with tie resolution set to \code{'average'}.
+\item Maps each gene set to the indices of genes in \code{X} by matching
+gene identifiers.
+\item Computes column-wise rankings for the gene expression matrix using
+a ranking method (via the \code{colRanking} function) with tie resolution
+set to \code{'average'}.
 \item For each sample, orders the gene ranks in decreasing order.
 \item For each gene set in the sample, calculates:
 \itemize{
-\item The weighted contribution (\code{rank_alpha}) for genes in the set raised to the power of \code{alpha}.
-\item The cumulative distribution functions (CDFs) for genes within the gene set (\code{step_cdf_pos}) and those not in the gene set (\code{step_cdf_neg}).
-\item The difference between these CDFs, optionally scaled by the number of genes if \code{scale = TRUE}.
-\item Depending on the \code{single} parameter, either the sum of the differences (if \code{TRUE}) or the maximum absolute difference (if \code{FALSE}) is used as the enrichment score for that gene set.
+\item The weighted contribution (\code{rank_alpha}) for genes in the
+set raised to the power of \code{alpha}.
+\item The cumulative distribution functions (CDFs) for genes within
+the gene set (\code{step_cdf_pos}) and those not in the gene set
+(\code{step_cdf_neg}).
+\item The difference between these CDFs, optionally scaled by the
+number of genes if \code{scale = TRUE}.
+\item Depending on the \code{single} parameter, either the sum of
+the differences (if \code{TRUE}) or the maximum absolute difference
+(if \code{FALSE}) is used as the enrichment score for that gene set.
 }
-\item Optionally normalizes the final enrichment scores by the range of values if \code{norm = TRUE}.
+\item Optionally normalizes the final enrichment scores by the range of
+values if \code{norm = TRUE}.
 }
 }
 \examples{
@@ -64,7 +89,8 @@ The function performs the following steps:
   )
 
   # Compute the ssGSEA enrichment scores:
-  es <- ssGSEA_alternative(X, gene_sets, alpha = 0.25, scale = TRUE, norm = FALSE, single = TRUE)
+  es <- ssGSEA_alternative(X, gene_sets, alpha = 0.25, scale = TRUE,
+  norm = FALSE, single = TRUE)
   print(es)
 }
 

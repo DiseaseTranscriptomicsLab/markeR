@@ -13,11 +13,13 @@ identify_variable_type(df, cols = NULL)
 }
 \value{
 A named character vector where names correspond to column names
-and values indicate the variable type: "Numeric", "Categorical Bin", or "Categorical Multi".
+and values indicate the variable type: "Numeric", "Categorical Bin", or
+"Categorical Multi".
 }
 \description{
 Determines the type of each variable in a given data frame.
-Variables are classified as "Numeric", "Categorical Bin" (binary categorical),
+Variables are classified as "Numeric", "Categorical Bin"
+(binary categorical),
 or "Categorical Multi" (multi-level categorical). Warnings are issued if
 categorical variables have more than 10 unique values.
 }
