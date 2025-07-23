@@ -1,3 +1,7 @@
+# markeR 0.99.2 (23 Jul, 2025)
+
+* Minor fixes in documentation
+
 # markeR 0.99.1 (23 Jul, 2025)
 
 * Fix documentation (invalid characters, deep nesting, missing value in data)
