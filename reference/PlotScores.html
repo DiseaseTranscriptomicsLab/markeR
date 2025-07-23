@@ -105,17 +105,17 @@ metadata-derived groupings or colors are used.</strong></p></dd>
 
 
 <dt id="arg-gene-sets">gene_sets<a class="anchor" aria-label="anchor" href="#arg-gene-sets"></a></dt>
-<dd><p>A named list of gene sets to score.</p><ul><li><p>For <strong>unidirectional gene sets</strong>: a list of character vectors.</p></li>
-<li><p>For <strong>bidirectional gene sets</strong>: a list of data frames with two columns:
-gene names and direction (1 = up, -1 = down). <strong>(Required)</strong></p></li>
-</ul></dd>
+<dd><p>A named list of gene sets to score. For unidirectional gene
+sets, provide a list of character vectors. For bidirectional gene sets,
+provide a list of data frames with two columns: gene names and direction
+(1 = up, -1 = down). <strong>(Required)</strong></p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
 <dd><p>Scoring method to use. One of <code>"ssGSEA"</code>, <code>"logmedian"</code>,
-<code>"ranking"</code>, or <code>"all"</code> (default = <code>"logmedian"</code>).</p><ul><li><p><code>"all"</code> triggers a full analysis returning both heatmap and volcano plots.</p></li>
-<li><p>Other values return single-score plots depending on <code>Variable</code> type.</p></li>
-</ul></dd>
+<code>"ranking"</code>, or <code>"all"</code> (default = <code>"logmedian"</code>). The <code>"all"</code> option
+triggers a full analysis returning both heatmap and volcano plots. Other
+values return single-score plots depending on <code>Variable</code> type.</p></dd>
 
 
 <dt id="arg-colorvariable">ColorVariable<a class="anchor" aria-label="anchor" href="#arg-colorvariable"></a></dt>
@@ -124,34 +124,30 @@ gene names and direction (1 = up, -1 = down). <strong>(Required)</strong></p></l
 
 
 <dt id="arg-variable">Variable<a class="anchor" aria-label="anchor" href="#arg-variable"></a></dt>
-<dd><p>Metadata column to define groups or numeric comparisons.</p><ul><li><p><strong>Required if <code>method = "all"</code></strong> (used to compute and compare effect sizes).</p></li>
-<li><p>If <code>NULL</code> and <code>method != "all"</code>, density plots of each signature scores
-across samples are shown (no grouping or comparison).</p></li>
-</ul></dd>
+<dd><p>Metadata column to define groups or numeric comparisons.
+This is <strong>required if <code>method = "all"</code></strong> (used to compute and compare effect
+sizes). If <code>NULL</code> and <code>method != "all"</code>, density plots of each signature
+score across samples are shown (no grouping or comparison).</p></dd>
 
 
 <dt id="arg-colorvalues">ColorValues<a class="anchor" aria-label="anchor" href="#arg-colorvalues"></a></dt>
 <dd><p>Optional. A named vector or list of colors used to control
 the coloring of plot elements across different methods and variable types.
-Behavior depends on the combination of <code>method</code> and <code>Variable</code>:</p><ul><li><p><strong>If <code>method != "all"</code></strong>:</p><ul><li><p>If <code>Variable</code> is <code>NULL</code>:</p><ul><li><p>Used in density plots; a <strong>single color</strong> will be applied
-(default: <code>"#ECBD78"</code> if <code>ColorValues</code> is not specified).</p></li>
+Behavior depends on the combination of <code>method</code> and <code>Variable</code>.</p>
+<p>If <code>method != "all"</code>, then:</p><ul><li><p>If <code>Variable</code> is <code>NULL</code>, a single color will be applied in density plots
+(default: <code>"#ECBD78"</code>).</p></li>
+<li><p>If <code>Variable</code> is categorical, a named vector should map each level of
+<code>Variable</code> (or <code>ColorVariable</code>) to a specific color. This overrides the
+palette specified by <code>colorPalette</code>.</p></li>
+<li><p>If <code>Variable</code> is numeric, a single color is applied to all points in the
+scatter plot (default: <code>"#5264B6"</code>).</p></li>
+</ul><p>If <code>method == "all"</code>, then:</p><ul><li><p><code>ColorValues</code> can be a named list with two elements:</p><ul><li><p><code>heatmap</code>: a vector of two colors used as a diverging scale for the heatmap
+of effect sizes (default: <code>c("#F9F4AE", "#B44141")</code>).</p></li>
+<li><p><code>volcano</code>: a named vector of colors used for labeling or grouping gene
+signatures (e.g., in the volcano plot).</p></li>
 </ul></li>
-<li><p>If <code>Variable</code> is <strong>categorical</strong>:</p><ul><li><p>A <strong>named vector</strong> should map each level of <code>Variable</code>
-(or <code>ColorVariable</code>) to a specific color.</p></li>
-<li><p>Overrides the palette specified by <code>colorPalette</code>.</p></li>
-</ul></li>
-<li><p>If <code>Variable</code> is <strong>numeric</strong>:</p><ul><li><p>A <strong>single color</strong> is applied to all points in the scatter plot
-(default: <code>"#5264B6"</code>).</p></li>
-</ul></li>
-</ul></li>
-<li><p><strong>If <code>method == "all"</code></strong>:</p><ul><li><p><code>ColorValues</code> can be a <strong>named list</strong> with two elements:</p><ul><li><p><code>heatmap</code>: A vector of <strong>two colors</strong> used as a diverging scale for
-the heatmap of effect sizes (default: <code>c("#F9F4AE", "#B44141")</code>).</p></li>
-<li><p><code>volcano</code>: A named vector of colors used for labeling or grouping
-gene signatures (e.g., in the volcano plot).</p></li>
-</ul></li>
-<li><p>If not provided, defaults will be used for both components.</p></li>
-</ul></li>
-</ul><p>In all cases, <code>ColorValues</code> takes precedence over the default
+</ul><p>If not provided, defaults will be used for both components.</p>
+<p>In all cases, <code>ColorValues</code> takes precedence over the default
 <code>colorPalette</code> setting if specified.</p></dd>
 
 
@@ -207,20 +203,18 @@ and numeric variables, including when <code>method = "all"</code>.</p></dd>
 
 <dt id="arg-compute-cohen">compute_cohen<a class="anchor" aria-label="anchor" href="#arg-compute-cohen"></a></dt>
 <dd><p>Logical. Whether to compute Cohen's effect sizes in
-<strong>score plots</strong> (<code>method != "all"</code>).</p><ul><li><p><strong>Only applies when <code>method != "all"</code></strong>; ignored otherwise.</p></li>
-<li><p>If the variable is <strong>categorical</strong> and <code>cond_cohend</code> is specified,
-computes <strong>Cohen's d</strong> for the specified comparison.</p></li>
-<li><p>If the variable is <strong>categorical</strong> and <code>cond_cohend</code> is not specified, computes:</p><ul><li><p><strong>Cohen's d</strong> if there are exactly two groups.</p></li>
-<li><p><strong>Cohen's f</strong> if there are more than two groups.</p></li>
-</ul></li>
-<li><p>If the variable is <strong>numeric</strong>, computes <strong>Cohen's f</strong> regardless of <code>cond_cohend</code>.</p></li>
-</ul></dd>
+<strong>score plots</strong> (<code>method != "all"</code>). This only applies when <code>method != "all"</code>; ignored otherwise.
+If the variable is categorical and <code>cond_cohend</code> is specified,
+computes <strong>Cohen's d</strong> for the specified comparison.
+If the variable is categorical and <code>cond_cohend</code> is not specified, it computes
+<strong>Cohen's d</strong> if there are exactly two groups, or <strong>Cohen's f</strong> if there are more than two groups.
+If the variable is numeric, computes <strong>Cohen's f</strong> regardless of <code>cond_cohend</code>.</p></dd>
 
 
 <dt id="arg-cond-cohend">cond_cohend<a class="anchor" aria-label="anchor" href="#arg-cond-cohend"></a></dt>
 <dd><p>Optional. List of length 2 with the two groups being used
 to compute effect size. The values in each entry should be levels of
-<code>Variable (used with </code>compute_cohen = TRUE`).</p></dd>
+<code>Variable</code>. Used with <code>compute_cohen = TRUE</code>.</p></dd>
 
 
 <dt id="arg-pvalcalc">pvalcalc<a class="anchor" aria-label="anchor" href="#arg-pvalcalc"></a></dt>
@@ -230,13 +224,13 @@ to compute effect size. The values in each entry should be levels of
 <dt id="arg-mode">mode<a class="anchor" aria-label="anchor" href="#arg-mode"></a></dt>
 <dd><p>A string specifying the contrast mode when <code>method = "all"</code>.
 Determines the complexity and breadth of comparisons performed between
-group levels. Options are:</p><ul><li><p><code>"simple"</code>: Performs the minimal number of pairwise comparisons between
-individual group levels (e.g., A - B, A - C). Default.</p></li>
-<li><p><code>"medium"</code>: Includes comparisons between one group and the union of all
-other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.</p></li>
-<li><p><code>"extensive"</code>: Allows for all possible algebraic combinations of group
-levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.</p></li>
-</ul></dd>
+group levels. Options are:</p>
+<p><code>"simple"</code> performs the minimal number of pairwise comparisons between
+individual group levels (e.g., A - B, A - C). This is the default.</p>
+<p><code>"medium"</code> includes comparisons between one group and the union of all
+other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.</p>
+<p><code>"extensive"</code> allows for all possible algebraic combinations of group
+levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.</p></dd>
 
 
 <dt id="arg-widthlegend">widthlegend<a class="anchor" aria-label="anchor" href="#arg-widthlegend"></a></dt>
@@ -256,13 +250,13 @@ volcano plots. Used only when <code>method = "all"</code>.</p></dd>
 
 <dt id="arg-colorpalette">colorPalette<a class="anchor" aria-label="anchor" href="#arg-colorpalette"></a></dt>
 <dd><p>Name of an RColorBrewer palette used to assign colors in
-plots. Applies to all methods. Default is "Set3". If <code>ColorValues</code> is
-provided, it overrides this palette.</p><ul><li><p>If <code>Variable</code> is <code>NULL</code> and <code>method != "all"</code> (i.e., for density plots),
-a default color <code>"#ECBD78"</code> is used.</p></li>
-<li><p>If <code>method = "all"</code> (i.e., for heatmaps and volcano plots), a default
+plots. Applies to all methods. Default is <code>"Set3"</code>. If <code>ColorValues</code> is
+provided, it overrides this palette.
+If <code>Variable</code> is <code>NULL</code> and <code>method != "all"</code> (i.e., for density plots),
+a default color <code>"#ECBD78"</code> is used.
+If <code>method = "all"</code> (i.e., for heatmaps and volcano plots), a default
 diverging color scale is used: <code>c("#F9F4AE", "#B44141")</code>, unless <code>ColorValues</code>
-is manually specified.</p></li>
-</ul></dd>
+is manually specified.</p></dd>
 
 
 <dt id="arg-cor">cor<a class="anchor" aria-label="anchor" href="#arg-cor"></a></dt>
@@ -273,63 +267,54 @@ numeric and <code>method != "all"</code>.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Depending on <code>method</code>:</p><ul><li><p>If <code>method = "all"</code>: returns a list with <code>heatmap</code> and <code>volcano</code> ggplot objects.</p></li>
-<li><p>If <code>method</code> is a single method: returns a single ggplot object (scatter or
-violin plot depending on variable type).</p></li>
-</ul></div>
+    <p>Depending on <code>method</code>:</p>
+<p>If <code>method = "all"</code>, returns a list with <code>heatmap</code> and <code>volcano</code> ggplot objects.</p>
+<p>If <code>method</code> is a single method, returns a single ggplot object (scatter or
+violin plot depending on variable type).</p>
+    </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p><strong>Behavior Based on <code>method</code>:</strong></p><ul><li><p><code>"all"</code>:</p><ul><li><p>Requires <code>metadata</code> and <code>Variable</code>.</p></li>
-<li><p>Computes scores using all available methods and returns:</p><ul><li><p>A heatmap of Cohen's effect sizes.</p></li>
-<li><p>A volcano plot showing effect size vs p-value across gene signatures.</p></li>
-</ul></li>
-<li><p>Uses additional parameters:</p><ul><li><p><code>mode</code>: defines how contrasts between groups are constructed.</p></li>
-<li><p><code>sig_threshold</code> and <code>cohend_threshold</code>: add <strong>guide dashed lines</strong> to the
-volcano plot (do not affect point coloring).</p></li>
-<li><p><code>widthlegend</code>: controls width of the volcano plot legend.</p></li>
-<li><p><code>pointSize</code>: controls dot size for signature points in the volcano plot.</p></li>
-</ul></li>
-<li><p><code>ColorValues</code> can be a <strong>named list</strong>:</p><ul><li><p><code>heatmap</code>: two-color gradient for effect sizes (default: <code>c("#F9F4AE", "#B44141")</code>).</p></li>
-<li><p><code>signatures</code>: named vector of colors for gene signatures in the volcano
-plot (default is color palette "Set3").</p></li>
-</ul></li>
-</ul></li>
-<li><p><code>"ssGSEA"</code>, <code>"logmedian"</code>, or <code>"ranking"</code>:</p><ul><li><p>The type of <code>Variable</code> determines the plot:</p><ul><li><p>If <strong>categorical</strong>: produces violin plots with optional group comparisons.</p></li>
-<li><p>If <strong>numeric</strong>: produces scatter plots with correlation.</p></li>
-<li><p>If <code>Variable</code> is <code>NULL</code>: produces density plots for each signature across all samples.</p></li>
-</ul></li>
-<li><p>Additional arguments:</p><ul><li><p><code>ColorVariable</code> and <code>ColorValues</code>: control coloring of points or violins.</p></li>
-<li><p><code>colorPalette</code>: default palette (overridden by <code>ColorValues</code> if present).</p></li>
-<li><p><code>ConnectGroups</code>: links samples by ID (for categorical <code>Variable</code> only).</p></li>
-<li><p><code>cor</code>: specifies correlation method for numeric <code>Variable</code>.</p></li>
-<li><p><code>pvalcalc</code>: enables group-wise p-value calculations (categorical only).</p></li>
-<li><p><code>compute_cohen</code>: calculates effect sizes when applicable.</p></li>
-<li><p><code>cond_cohend</code>: focuses Cohen's d calculation on a specific comparison.</p></li>
-</ul></li>
-</ul></li>
-</ul><p><strong>Behavior Based on <code>Variable</code> Type:</strong></p><ul><li><p><strong>If <code>Variable</code> is numeric</strong>:</p><ul><li><p>Outputs scatter plots (in single-method mode).</p></li>
-<li><p>Computes correlation (<code>cor</code>).</p></li>
-<li><p>Ignores <code>compute_cohen</code>, <code>cond_cohend</code>, and <code>pvalcalc</code>.</p></li>
-<li><p>Color is uniform (default: <code>"#5264B6"</code>) unless overridden via <code>ColorValues</code>.</p></li>
-<li><p>Cohen's f effect size estimation (<code>compute_cohen = TRUE</code>) and significance
-if <code>pvalcalc</code> is <code>TRUE</code>.</p></li>
-</ul></li>
-<li><p><strong>If <code>Variable</code> is categorical</strong>:</p><ul><li><p>Outputs violin plots (in single-method mode).</p></li>
-<li><p>Supports:</p><ul><li><p>p-value comparisons (<code>pvalcalc = TRUE</code>),</p></li>
-<li><p>optional connection lines (<code>ConnectGroups = TRUE</code>),</p></li>
-<li><p>Cohen's effect size estimation (<code>compute_cohen = TRUE</code>) and significance
-(<code>pvalcalc</code> is <code>TRUE</code>):</p><ul><li><p>If <code>cond_cohend</code> is specified, computes <strong>Cohen's d</strong> for that comparison.</p></li>
-<li><p>If not specified:</p><ul><li><p>Computes <strong>Cohen's d</strong> if 2 groups.</p></li>
-<li><p>Computes <strong>Cohen's f</strong> if &gt;2 groups.</p></li>
-</ul></li>
-</ul></li>
-</ul></li>
-<li><p>Colors are matched to factor levels using <code>ColorValues</code> or <code>colorPalette</code>.</p></li>
-</ul></li>
-<li><p><strong>If <code>Variable</code> is NULL and <code>method != "all"</code></strong>:</p><ul><li><p>Produces density plots of signature scores.</p></li>
-<li><p>Uses a <strong>single fill color</strong> (<code>"#ECBD78"</code> by default or from <code>ColorValues</code>).</p></li>
-</ul></li>
-</ul></div>
+    <p>Behavior based on <code>method</code>:</p>
+<p>For <code>"all"</code>, the function requires <code>metadata</code> and <code>Variable</code>. It computes
+scores using all available methods and returns a heatmap of Cohen's effect
+sizes and a volcano plot showing effect size vs p-value across gene
+signatures. Additional parameters include <code>mode</code> to define how contrasts
+between groups are constructed, <code>sig_threshold</code> and <code>cohend_threshold</code> which
+add guide dashed lines to the volcano plot (do not affect point coloring),
+<code>widthlegend</code> controlling width of the volcano plot legend, and <code>pointSize</code>
+controlling dot size for signature points in the volcano plot.
+<code>ColorValues</code> can be a named list with <code>heatmap</code> (two-color gradient for
+effect sizes) and <code>signatures</code> (named vector of colors for gene signatures
+in the volcano plot).</p>
+<p>For <code>"ssGSEA"</code>, <code>"logmedian"</code>, or <code>"ranking"</code>, the type of <code>Variable</code>
+determines the plot. If categorical, violin plots with optional group
+comparisons are produced. If numeric, scatter plots with correlation are
+produced. If <code>Variable</code> is <code>NULL</code>, density plots for each signature across
+all samples are produced. Additional arguments include <code>ColorVariable</code> and
+<code>ColorValues</code> for coloring control, <code>colorPalette</code> (overridden by
+<code>ColorValues</code> if present), <code>ConnectGroups</code> to link samples by ID for
+categorical <code>Variable</code>, <code>cor</code> to specify correlation method for numeric
+<code>Variable</code>, <code>pvalcalc</code> to enable group-wise p-value calculations for
+categorical variables, <code>compute_cohen</code> to calculate effect sizes when
+applicable, and <code>cond_cohend</code> to focus Cohen's d calculation on a specific
+comparison.</p>
+<p>Behavior based on <code>Variable</code> type:</p>
+<p>If <code>Variable</code> is numeric, scatter plots are output (in single-method mode)
+with computed correlation (<code>cor</code>). Parameters <code>compute_cohen</code>,
+<code>cond_cohend</code>, and <code>pvalcalc</code> are ignored. Color is uniform (default:
+<code>"#5264B6"</code>) unless overridden via <code>ColorValues</code>. Cohen's f effect size
+estimation (<code>compute_cohen = TRUE</code>) and significance if <code>pvalcalc</code> is <code>TRUE</code>.</p>
+<p>If <code>Variable</code> is categorical, violin plots are output (in single-method mode)
+supporting p-value comparisons (<code>pvalcalc = TRUE</code>), optional connection lines
+(<code>ConnectGroups = TRUE</code>), and Cohen's effect size estimation
+(<code>compute_cohen = TRUE</code>) with significance (<code>pvalcalc</code> is <code>TRUE</code>). If
+<code>cond_cohend</code> is specified, computes Cohen's d for that comparison. If not
+specified, computes Cohen's d if 2 groups or Cohen's f if more than 2 groups.
+Colors are matched to factor levels using <code>ColorValues</code> or <code>colorPalette</code>.</p>
+<p>If <code>Variable</code> is <code>NULL</code> and <code>method != "all"</code>, density plots of signature
+scores are produced. A single fill color is used (default <code>"#ECBD78"</code> or
+from <code>ColorValues</code>).</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -390,6 +375,7 @@ if <code>pvalcalc</code> is <code>TRUE</code>.</p></li>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Considering unidirectional gene signature mode for signature Signature1</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Considering unidirectional gene signature mode for signature Signature2</span>
 <span class="r-plt img"><img src="PlotScores-3.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># 4. All methods, categorical variable: Heatmap and volcano</span></span></span>
 <span class="r-in"><span><span class="co"># (Returns a list with $heatmap and $volcano elements)</span></span></span>
 <span class="r-in"><span><span class="va">all_plots</span> <span class="op">&lt;-</span> <span class="fu">PlotScores</span><span class="op">(</span></span></span>
