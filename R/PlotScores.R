@@ -11,43 +11,46 @@
 #'   corresponds to a sample, with the first column containing sample IDs that
 #'   match `colnames(data)`. **Required if `method = "all"` or if
 #'   metadata-derived groupings or colors are used.**
-#' @param gene_sets A named list of gene sets to score.
-#'   - For **unidirectional gene sets**: a list of character vectors.
-#'   - For **bidirectional gene sets**: a list of data frames with two columns:
-#'   gene names and direction (1 = up, -1 = down). **(Required)**
+#' @param gene_sets A named list of gene sets to score. For unidirectional gene
+#'   sets, provide a list of character vectors. For bidirectional gene sets,
+#'   provide a list of data frames with two columns: gene names and direction
+#'   (1 = up, -1 = down). **(Required)**
 #' @param method Scoring method to use. One of `"ssGSEA"`, `"logmedian"`,
-#'   `"ranking"`, or `"all"` (default = `"logmedian"`).
-#'   - `"all"` triggers a full analysis returning both heatmap and volcano plots.
-#'   - Other values return single-score plots depending on `Variable` type.
+#'   `"ranking"`, or `"all"` (default = `"logmedian"`). The `"all"` option
+#'   triggers a full analysis returning both heatmap and volcano plots. Other
+#'   values return single-score plots depending on `Variable` type.
 #' @param ColorVariable Name of a metadata column to color points by. Used in
 #'   **single-method mode** (`"ssGSEA"`, etc.). Ignored in `"all"` mode.
 #' @param Variable Metadata column to define groups or numeric comparisons.
-#'   - **Required if `method = "all"`** (used to compute and compare effect sizes).
-#'   - If `NULL` and `method != "all"`, density plots of each signature scores
-#'   across samples are shown (no grouping or comparison).
+#'   This is **required if `method = "all"`** (used to compute and compare effect
+#'   sizes). If `NULL` and `method != "all"`, density plots of each signature
+#'   score across samples are shown (no grouping or comparison).
 #' @param ColorValues Optional. A named vector or list of colors used to control
 #'   the coloring of plot elements across different methods and variable types.
-#'   Behavior depends on the combination of `method` and `Variable`:
+#'   Behavior depends on the combination of `method` and `Variable`.
 #'
-#'   - **If `method != "all"`**:
-#'     - If `Variable` is `NULL`:
-#'       - Used in density plots; a **single color** will be applied
-#'   (default: `"#ECBD78"` if `ColorValues` is not specified).
-#'     - If `Variable` is **categorical**:
-#'       - A **named vector** should map each level of `Variable`
-#'   (or `ColorVariable`) to a specific color.
-#'       - Overrides the palette specified by `colorPalette`.
-#'     - If `Variable` is **numeric**:
-#'       - A **single color** is applied to all points in the scatter plot
-#'   (default: `"#5264B6"`).
+#'   If `method != "all"`, then:
 #'
-#'   - **If `method == "all"`**:
-#'     - `ColorValues` can be a **named list** with two elements:
-#'       - `heatmap`: A vector of **two colors** used as a diverging scale for
-#'   the heatmap of effect sizes (default: `c("#F9F4AE", "#B44141")`).
-#'       - `volcano`: A named vector of colors used for labeling or grouping
-#'   gene signatures (e.g., in the volcano plot).
-#'     - If not provided, defaults will be used for both components.
+#'   - If `Variable` is `NULL`, a single color will be applied in density plots
+#'     (default: `"#ECBD78"`).
+#'
+#'   - If `Variable` is categorical, a named vector should map each level of
+#'     `Variable` (or `ColorVariable`) to a specific color. This overrides the
+#'     palette specified by `colorPalette`.
+#'
+#'   - If `Variable` is numeric, a single color is applied to all points in the
+#'     scatter plot (default: `"#5264B6"`).
+#'
+#'   If `method == "all"`, then:
+#'
+#'   - `ColorValues` can be a named list with two elements:
+#'     * `heatmap`: a vector of two colors used as a diverging scale for the heatmap
+#'       of effect sizes (default: `c("#F9F4AE", "#B44141")`).
+#'
+#'     * `volcano`: a named vector of colors used for labeling or grouping gene
+#'       signatures (e.g., in the volcano plot).
+#'
+#'   If not provided, defaults will be used for both components.
 #'
 #'   In all cases, `ColorValues` takes precedence over the default
 #'   `colorPalette` setting if specified.
@@ -70,39 +73,40 @@
 #' @param xlab Label for x-axis (optional; defaults to `Variable`).
 #' @param labsize Font size for axis and facet labels.
 #' @param compute_cohen Logical. Whether to compute Cohen's effect sizes in
-#'   **score plots** (`method != "all"`).
-#'   - **Only applies when `method != "all"`**; ignored otherwise.
-#'   - If the variable is **categorical** and `cond_cohend` is specified,
+#'   **score plots** (`method != "all"`). This only applies when `method != "all"`; ignored otherwise.
+#'   If the variable is categorical and `cond_cohend` is specified,
 #'   computes **Cohen's d** for the specified comparison.
-#'   - If the variable is **categorical** and `cond_cohend` is not specified, computes:
-#'       - **Cohen's d** if there are exactly two groups.
-#'       - **Cohen's f** if there are more than two groups.
-#'   - If the variable is **numeric**, computes **Cohen's f** regardless of `cond_cohend`.
+#'   If the variable is categorical and `cond_cohend` is not specified, it computes
+#'   **Cohen's d** if there are exactly two groups, or **Cohen's f** if there are more than two groups.
+#'   If the variable is numeric, computes **Cohen's f** regardless of `cond_cohend`.
 #' @param cond_cohend Optional. List of length 2 with the two groups being used
 #'   to compute effect size. The values in each entry should be levels of
-#'   `Variable (used with `compute_cohen = TRUE`).
+#'   `Variable`. Used with `compute_cohen = TRUE`.
 #' @param cohen_threshold Effect size threshold shown as a **guide line** in
 #'   volcano plots. Used only when `method = "all"`.
 #' @param pvalcalc Logical. If `TRUE`, computes p-values between groups.
 #' @param mode A string specifying the contrast mode when `method = "all"`.
 #'   Determines the complexity and breadth of comparisons performed between
 #'   group levels. Options are:
-#' - `"simple"`: Performs the minimal number of pairwise comparisons between
-#' individual group levels (e.g., A - B, A - C). Default.
-#' - `"medium"`: Includes comparisons between one group and the union of all
-#' other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
-#' - `"extensive"`: Allows for all possible algebraic combinations of group
-#' levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.
+#'
+#'   `"simple"` performs the minimal number of pairwise comparisons between
+#'   individual group levels (e.g., A - B, A - C). This is the default.
+#'
+#'   `"medium"` includes comparisons between one group and the union of all
+#'   other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
+#'
+#'   `"extensive"` allows for all possible algebraic combinations of group
+#'   levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.
 #' @param widthlegend Width of the legend in **volcano plots** (used only if
 #'   `method = "all"`) and violin score plots.
 #' @param sig_threshold P-value cutoff shown as a **guide line** in volcano
 #'   plots. Only applies when `method = "all"`.
 #' @param colorPalette Name of an RColorBrewer palette used to assign colors in
-#'   plots. Applies to all methods. Default is "Set3". If `ColorValues` is
+#'   plots. Applies to all methods. Default is `"Set3"`. If `ColorValues` is
 #'   provided, it overrides this palette.
-#'   - If `Variable` is `NULL` and `method != "all"` (i.e., for density plots),
+#'   If `Variable` is `NULL` and `method != "all"` (i.e., for density plots),
 #'   a default color `"#ECBD78"` is used.
-#'   - If `method = "all"` (i.e., for heatmaps and volcano plots), a default
+#'   If `method = "all"` (i.e., for heatmaps and volcano plots), a default
 #'   diverging color scale is used: `c("#F9F4AE", "#B44141")`, unless `ColorValues`
 #'   is manually specified.
 #' @param cor Correlation method for numeric variables. One of `"pearson"`
@@ -110,69 +114,59 @@
 #'   numeric and `method != "all"`.
 #'
 #' @return Depending on `method`:
-#'   - If `method = "all"`: returns a list with `heatmap` and `volcano` ggplot objects.
-#'   - If `method` is a single method: returns a single ggplot object (scatter or
+#'
+#'   If `method = "all"`, returns a list with `heatmap` and `volcano` ggplot objects.
+#'
+#'   If `method` is a single method, returns a single ggplot object (scatter or
 #'   violin plot depending on variable type).
 #'
 #' @details
-#' **Behavior Based on `method`:**
+#' Behavior based on `method`:
 #'
-#' - `"all"`:
-#'   - Requires `metadata` and `Variable`.
-#'   - Computes scores using all available methods and returns:
-#'     - A heatmap of Cohen's effect sizes.
-#'     - A volcano plot showing effect size vs p-value across gene signatures.
-#'   - Uses additional parameters:
-#'     - `mode`: defines how contrasts between groups are constructed.
-#'     - `sig_threshold` and `cohend_threshold`: add **guide dashed lines** to the
-#'     volcano plot (do not affect point coloring).
-#'     - `widthlegend`: controls width of the volcano plot legend.
-#'     - `pointSize`: controls dot size for signature points in the volcano plot.
-#'   - `ColorValues` can be a **named list**:
-#'     - `heatmap`: two-color gradient for effect sizes (default: `c("#F9F4AE", "#B44141")`).
-#'     - `signatures`: named vector of colors for gene signatures in the volcano
-#'     plot (default is color palette "Set3").
+#' For `"all"`, the function requires `metadata` and `Variable`. It computes
+#' scores using all available methods and returns a heatmap of Cohen's effect
+#' sizes and a volcano plot showing effect size vs p-value across gene
+#' signatures. Additional parameters include `mode` to define how contrasts
+#' between groups are constructed, `sig_threshold` and `cohend_threshold` which
+#' add guide dashed lines to the volcano plot (do not affect point coloring),
+#' `widthlegend` controlling width of the volcano plot legend, and `pointSize`
+#' controlling dot size for signature points in the volcano plot.
+#' `ColorValues` can be a named list with `heatmap` (two-color gradient for
+#' effect sizes) and `signatures` (named vector of colors for gene signatures
+#' in the volcano plot).
 #'
-#' - `"ssGSEA"`, `"logmedian"`, or `"ranking"`:
-#'   - The type of `Variable` determines the plot:
-#'     - If **categorical**: produces violin plots with optional group comparisons.
-#'     - If **numeric**: produces scatter plots with correlation.
-#'     - If `Variable` is `NULL`: produces density plots for each signature across all samples.
-#'   - Additional arguments:
-#'     - `ColorVariable` and `ColorValues`: control coloring of points or violins.
-#'     - `colorPalette`: default palette (overridden by `ColorValues` if present).
-#'     - `ConnectGroups`: links samples by ID (for categorical `Variable` only).
-#'     - `cor`: specifies correlation method for numeric `Variable`.
-#'     - `pvalcalc`: enables group-wise p-value calculations (categorical only).
-#'     - `compute_cohen`: calculates effect sizes when applicable.
-#'     - `cond_cohend`: focuses Cohen's d calculation on a specific comparison.
+#' For `"ssGSEA"`, `"logmedian"`, or `"ranking"`, the type of `Variable`
+#' determines the plot. If categorical, violin plots with optional group
+#' comparisons are produced. If numeric, scatter plots with correlation are
+#' produced. If `Variable` is `NULL`, density plots for each signature across
+#' all samples are produced. Additional arguments include `ColorVariable` and
+#' `ColorValues` for coloring control, `colorPalette` (overridden by
+#' `ColorValues` if present), `ConnectGroups` to link samples by ID for
+#' categorical `Variable`, `cor` to specify correlation method for numeric
+#' `Variable`, `pvalcalc` to enable group-wise p-value calculations for
+#' categorical variables, `compute_cohen` to calculate effect sizes when
+#' applicable, and `cond_cohend` to focus Cohen's d calculation on a specific
+#' comparison.
 #'
-#' **Behavior Based on `Variable` Type:**
+#' Behavior based on `Variable` type:
 #'
-#' - **If `Variable` is numeric**:
-#'   - Outputs scatter plots (in single-method mode).
-#'   - Computes correlation (`cor`).
-#'   - Ignores `compute_cohen`, `cond_cohend`, and `pvalcalc`.
-#'   - Color is uniform (default: `"#5264B6"`) unless overridden via `ColorValues`.
-#'   - Cohen's f effect size estimation (`compute_cohen = TRUE`) and significance
-#'   if `pvalcalc` is `TRUE`.
+#' If `Variable` is numeric, scatter plots are output (in single-method mode)
+#' with computed correlation (`cor`). Parameters `compute_cohen`,
+#' `cond_cohend`, and `pvalcalc` are ignored. Color is uniform (default:
+#' `"#5264B6"`) unless overridden via `ColorValues`. Cohen's f effect size
+#' estimation (`compute_cohen = TRUE`) and significance if `pvalcalc` is `TRUE`.
 #'
-#' - **If `Variable` is categorical**:
-#'   - Outputs violin plots (in single-method mode).
-#'   - Supports:
-#'     - p-value comparisons (`pvalcalc = TRUE`),
-#'     - optional connection lines (`ConnectGroups = TRUE`),
-#'     - Cohen's effect size estimation (`compute_cohen = TRUE`) and significance
-#'     (`pvalcalc` is `TRUE`):
-#'       - If `cond_cohend` is specified, computes **Cohen's d** for that comparison.
-#'       - If not specified:
-#'         - Computes **Cohen's d** if 2 groups.
-#'         - Computes **Cohen's f** if >2 groups.
-#'   - Colors are matched to factor levels using `ColorValues` or `colorPalette`.
+#' If `Variable` is categorical, violin plots are output (in single-method mode)
+#' supporting p-value comparisons (`pvalcalc = TRUE`), optional connection lines
+#' (`ConnectGroups = TRUE`), and Cohen's effect size estimation
+#' (`compute_cohen = TRUE`) with significance (`pvalcalc` is `TRUE`). If
+#' `cond_cohend` is specified, computes Cohen's d for that comparison. If not
+#' specified, computes Cohen's d if 2 groups or Cohen's f if more than 2 groups.
+#' Colors are matched to factor levels using `ColorValues` or `colorPalette`.
 #'
-#' - **If `Variable` is NULL and `method != "all"`**:
-#'   - Produces density plots of signature scores.
-#'   - Uses a **single fill color** (`"#ECBD78"` by default or from `ColorValues`).
+#' If `Variable` is `NULL` and `method != "all"`, density plots of signature
+#' scores are produced. A single fill color is used (default `"#ECBD78"` or
+#' from `ColorValues`).
 #'
 #' @examples
 #' # Simulate positive gene expression data (genes as rows, samples as columns)
@@ -219,7 +213,7 @@
 #'   gene_sets = gene_sets,
 #'   method = "logmedian"
 #' )
-
+#'
 #' # 4. All methods, categorical variable: Heatmap and volcano
 #' # (Returns a list with $heatmap and $volcano elements)
 #' all_plots <- PlotScores(

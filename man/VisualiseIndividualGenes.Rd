@@ -152,6 +152,8 @@ VisualiseIndividualGenes(
 \seealso{
 \code{\link{IndividualGenes_Violins}},
 \code{\link{CorrelationHeatmap}},
-\code{\link{ExpressionHeatmap}}, \code{\link{ROCandAUCplot}},
-\code{\link{CohenD_IndividualGenes}}, \code{\link{plotPCA}}
+\code{\link{ExpressionHeatmap}},
+\code{\link{CohenD_IndividualGenes}},
+\code{\link{plotPCA}},
+\code{\link{ROCandAUCplot}}
 }

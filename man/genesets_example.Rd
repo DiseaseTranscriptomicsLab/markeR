@@ -10,8 +10,8 @@ A named list of length 3:
 \item{Literature_Senescence}{Character vector of gene symbols. A small,
 curated gene set of commonly reported senescence markers,
 with directionality (+1 or -1).}
-\item{REACTOME_Senescence}{Character vector of gene symbols. A gene set
-from the REACTOME_CELLULAR_SENESCENCE MSigDB pathway. No directionality.}
+\item{REACTOME_Senescence}{Character vector of gene symbols. The
+REACTOME_CELLULAR_SENESCENCE from MSigDB pathway. No directionality.}
 \item{HernandezSegura}{A data frame with columns \code{gene} and \code{direction}.
 A gene set from Hernandez-Segura et al. (2017), with directionality (+1 or -1).}
 }
