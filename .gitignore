@@ -1,9 +1,7 @@
 .Rproj.user
 .Rhistory
 .Rdata
-.httr-oauth
-.DS_Store
-*.DS_Store
+.httr-oauth 
 .quarto
 /renv/
 /tests/debug/
@@ -17,3 +15,5 @@ markeR.BiocCheck/
 /doc/
 /Meta/
 markeR.Rproj
+.DS_Store
+**/.DS_Store
