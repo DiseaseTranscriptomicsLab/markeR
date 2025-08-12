@@ -29,8 +29,10 @@ along with tools to compute performance metrics and visualize results.
 > de Lisboa, Lisbon, Portugal. R package version 0.99.2,
 > <https://github.com/DiseaseTranscriptomicsLab/markeR>.
 
-`inst/Paper/` — Contains all scripts and materials used in the original
-markeR paper to reproduce analyses and figures.
+The folder `inst/Paper/` is in the **paper** branch and contains all
+scripts and materials used in the original markeR paper to reproduce
+analyses and figures. You can browse it
+[here](https://github.com/DiseaseTranscriptomicsLab/markeR/tree/paper/inst/Paper).
 
 ![](man/figures/Workflow.png)
 
