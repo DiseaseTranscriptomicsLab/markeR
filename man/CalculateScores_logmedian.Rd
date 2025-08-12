@@ -15,19 +15,12 @@ provided, the resulting scores will be merged with metadata.}
 
 \item{gene_sets}{A named list representing gene sets. \strong{(Required)}
 \itemize{
-\item \strong{Unidirectional gene sets:} Each element should be a vector of gene
-names representing a signature.
+\item \strong{Unidirectional gene sets:} Each element should be a vector of gene names representing a signature.
+The names of the list elements serve as labels for the signatures.
+\item \strong{Bidirectional gene sets:} Each element should be a data frame with two columns:
 \itemize{
-\item The names of the list elements serve as labels for the signatures.
-}
-\item \strong{Bidirectional gene sets:} Each element should be a data frame with:
-\itemize{
-\item The \strong{first column} containing gene names.
-\item The \strong{second column} specifying the expected direction of enrichment:
-\itemize{
-\item \code{1} for upregulated genes.
-\item \code{-1} for downregulated genes.
-}
+\item First column: gene names.
+\item Second column: expected direction of enrichment (1 for upregulated, -1 for downregulated).
 }
 }}
 }

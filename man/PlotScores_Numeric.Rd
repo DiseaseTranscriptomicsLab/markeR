@@ -27,56 +27,80 @@ PlotScores_Numeric(
 )
 }
 \arguments{
-\item{data}{A data frame of Normalised (non-transformed) gene expression counts. Rows are genes, columns are samples. Row names should be gene names, and column names should match sample identifiers in \code{metadata}.}
+\item{data}{A data frame of Normalised (non-transformed) gene expression
+counts. Rows are genes, columns are samples. Row names should be gene
+names, and column names should match sample identifiers in \code{metadata}.}
 
-\item{metadata}{A data frame where each row corresponds to a sample and contains sample-level attributes (e.g., clinical or experimental metadata). Must include a column matching the sample IDs in \code{data}.}
+\item{metadata}{A data frame where each row corresponds to a sample and
+contains sample-level attributes (e.g., clinical or experimental metadata).
+Must include a column matching the sample IDs in \code{data}.}
 
-\item{gene_sets}{A list of gene sets (signatures). Each element is either a character vector of gene names or a data frame with gene names and enrichment direction (1 for upregulated, -1 for downregulated).}
+\item{gene_sets}{A list of gene sets (signatures). Each element is either a
+character vector of gene names or a data frame with gene names and
+enrichment direction (1 for upregulated, -1 for downregulated).}
 
-\item{method}{Scoring method to use. One of \code{"ssGSEA"}, \code{"logmedian"}, or \code{"ranking"}. Default is \code{"logmedian"}.}
+\item{method}{Scoring method to use. One of \code{"ssGSEA"},
+\code{"logmedian"}, or \code{"ranking"}. Default is \code{"logmedian"}.}
 
-\item{Variable}{Name of the continuous variable in \code{metadata} to use on the x-axis for scoring association.}
+\item{Variable}{Name of the continuous variable in \code{metadata} to use on
+the x-axis for scoring association.}
 
-\item{ColorValues}{(Optional) A named vector defining the color for the plotted points. If NULL, defaults to a preset color.}
+\item{ColorValues}{(Optional) A named vector defining the color for the
+plotted points. If NULL, defaults to a preset color.}
 
-\item{ncol, nrow}{Number of columns and rows in the facet grid layout. If NULL, computed automatically.}
+\item{ncol, nrow}{Number of columns and rows in the facet grid layout. If
+NULL, computed automatically.}
 
 \item{title}{Optional string for the overall title of the plot grid.}
 
-\item{widthTitle}{Maximum character width for titles before inserting line breaks. Default is 10.}
+\item{widthTitle}{Maximum character width for titles before inserting line
+breaks. Default is 10.}
 
-\item{titlesize}{Numeric value for the font size of plot titles. Default is 12.}
+\item{titlesize}{Numeric value for the font size of plot titles. Default is
+12.}
 
 \item{limits}{Optional numeric vector of length 2 to define y-axis limits.}
 
 \item{pointSize}{Size of the plotted points. Default is 2.}
 
-\item{xlab}{Optional label for the x-axis. If NULL, defaults to the name of \code{Variable}.}
+\item{xlab}{Optional label for the x-axis. If NULL, defaults to the name of
+\code{Variable}.}
 
 \item{labsize}{Font size for axis labels. Default is 10.}
 
-\item{compute_cohen}{Logical. If TRUE (default), computes Cohen's f effect size for the association between signature score and the continuous variable.}
+\item{compute_cohen}{Logical. If TRUE (default), computes Cohen's f effect
+size for the association between signature score and the continuous
+variable.}
 
-\item{pvalcalc}{Logical. If TRUE, includes the p-value in the plot subtitle. Default is FALSE.}
+\item{pvalcalc}{Logical. If TRUE, includes the p-value in the plot subtitle.
+Default is FALSE.}
 
-\item{colorPalette}{Name of the RColorBrewer palette for coloring. Default is "Set3". Currently unused but kept for consistency.}
+\item{colorPalette}{Name of the RColorBrewer palette for coloring. Default is
+"Set3". Currently unused but kept for consistency.}
 
-\item{cor}{Character string indicating the correlation method to be used in \code{ggpubr::stat_cor()}. Options are "pearson" (default), "kendall", or "spearman".}
+\item{cor}{Character string indicating the correlation method to be used in
+\code{ggpubr::stat_cor()}. Options are "pearson" (default), "kendall", or
+"spearman".}
 }
 \value{
-A ggplot2 object or a multi-plot figure showing scatter plots for each gene signature, with linear regression lines and optional statistical annotations.
+A ggplot2 object or a multi-plot figure showing scatter plots for each
+gene signature, with linear regression lines and optional statistical annotations.
 }
 \description{
-This function visualizes gene signature scores using scatter plots and regression lines across a continuous metadata variable.
-Signature scores are computed per sample using one of three methods: \code{"ssGSEA"}, \code{"logmedian"}, or \code{"ranking"}.
-Optionally, the effect size (Cohen's f) and p-value for the association between the signature score and the continuous variable can be computed and displayed.
+This function visualizes gene signature scores using scatter plots and
+regression lines across a continuous metadata variable. Signature scores are
+computed per sample using one of three methods: \code{"ssGSEA"},
+\code{"logmedian"}, or \code{"ranking"}. Optionally, the effect size (Cohen's
+f) and p-value for the association between the signature score and the
+continuous variable can be computed and displayed.
 }
 \details{
 For each gene signature, the function:
 \itemize{
 \item Computes a signature score per sample using the selected method.
 \item Plots the score against a continuous metadata variable (\code{Variable}).
-\item Adds a regression line and optionally computes and displays Cohen’s f effect size and p-value.
+\item Adds a regression line and optionally computes and displays Cohen's f
+effect size and p-value.
 \item Returns a faceted grid of ggplots, arranged by \code{ncol} and \code{nrow}.
 }
 

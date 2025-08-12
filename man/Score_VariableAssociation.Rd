@@ -29,33 +29,44 @@ Score_VariableAssociation(
 \arguments{
 \item{data}{A data frame or matrix containing gene expression data.}
 
-\item{metadata}{A data frame containing sample metadata with at least one column corresponding to the variables of interest.}
+\item{metadata}{A data frame containing sample metadata with at least one
+column corresponding to the variables of interest.}
 
 \item{cols}{A character vector specifying metadata columns to analyse.}
 
-\item{method}{A character string specifying the scoring method (\code{"logmedian"}, \code{"ssGSEA"}, or \code{"ranking"}).}
+\item{method}{A character string specifying the scoring method
+(\code{"logmedian"}, \code{"ssGSEA"}, or \code{"ranking"}).}
 
 \item{gene_set}{A named list containing one gene set for scoring.}
 
-\item{mode}{A character string specifying the contrast generation method (\code{"simple"}, \code{"medium"}, \code{"extensive"}). Four methods are available:
+\item{mode}{A character string specifying the contrast generation method
+(\code{"simple"}, \code{"medium"}, \code{"extensive"}). Four methods are available:
 \itemize{
-\item \strong{ssGSEA}: Uses the single-sample Gene Set Enrichment Analysis (ssGSEA) method to compute an enrichment score
-for each signature in each sample using an adaptation of the \code{gsva()} function from the \code{GSVA} package.
-\item \strong{logmedian}: Computes the score as the sum of the normalized (log2-median-centered) expression values of the
-signature genes divided by the number of genes in the signature.
-\item \strong{ranking}: Computes gene signature scores for each sample by ranking the expression of signature genes
-in the dataset and normalizing the score based on the total number of genes.
+\item \strong{ssGSEA}: Uses the single-sample Gene Set Enrichment Analysis (ssGSEA)
+method to compute an enrichment score for each signature in each sample
+using an adaptation of the \code{gsva()} function from the \code{GSVA} package.
+\item \strong{logmedian}: Computes the score as the sum of the normalized
+(log2-median-centered) expression values of the signature genes divided
+by the number of genes in the signature.
+\item \strong{ranking}: Computes gene signature scores for each sample by ranking
+the expression of signature genes in the dataset and normalizing the
+score based on the total number of genes.
 }}
 
-\item{nonsignif_color}{A string specifying the color for non-significant results. Default: \code{"grey"}.}
+\item{nonsignif_color}{A string specifying the color for non-significant
+results. Default: \code{"grey"}.}
 
-\item{signif_color}{A string specifying the color for significant results. Default: \code{"red"}.}
+\item{signif_color}{A string specifying the color for significant results.
+Default: \code{"red"}.}
 
-\item{saturation_value}{A numeric value for color saturation threshold. Default: \code{NULL} (auto-determined).}
+\item{saturation_value}{A numeric value for color saturation threshold.
+Default: \code{NULL} (auto-determined).}
 
-\item{sig_threshold}{A numeric value specifying the significance threshold. Default: \code{0.05}.}
+\item{sig_threshold}{A numeric value specifying the significance threshold.
+Default: \code{0.05}.}
 
-\item{widthlabels}{An integer controlling contrast label wrapping. Default: \code{18}.}
+\item{widthlabels}{An integer controlling contrast label wrapping.
+Default: \code{18}.}
 
 \item{labsize}{An integer controlling axis text size. Default: \code{10}.}
 
@@ -63,33 +74,46 @@ in the dataset and normalizing the score based on the total number of genes.
 
 \item{pointSize}{A numeric value for point size in plots. Default: \code{5}.}
 
-\item{discrete_colors}{A named list mapping categorical variable levels to colors.
-Each element should be a named vector where names correspond to factor levels. Default: \code{NULL}.}
+\item{discrete_colors}{A named list mapping categorical variable levels
+to colors. Each element should be a named vector where names correspond to
+factor levels. Default: \code{NULL}.}
 
-\item{continuous_color}{A string specifying the color for continuous variables. Default: \code{"#8C6D03"}.}
+\item{continuous_color}{A string specifying the color for continuous
+variables. Default: \code{"#8C6D03"}.}
 
-\item{color_palette}{A string specifying the color palette for discrete variables. Default: \code{"Set2"}.}
+\item{color_palette}{A string specifying the color palette for discrete
+variables. Default: \code{"Set2"}.}
 
 \item{printplt}{Boolean specifying if plot is to be printed. Default: \code{TRUE}.}
 }
 \value{
 A list with:
 \itemize{
-\item \code{Overall}: Data frame of effect sizes and p-values for each contrasted phenotypic variable.
-\item \code{Contrasts}: Data frame of Cohen’s d and adjusted p-values for contrasts between levels of categorical variables,
-with the resolution of contrasts determined by the mode parameter.
+\item \code{Overall}: Data frame of effect sizes and p-values for each contrasted
+phenotypic variable.
+\item \code{Contrasts}: Data frame of Cohen's d and adjusted p-values for contrasts
+between levels of categorical variables, with the resolution of contrasts
+determined by the mode parameter.
 \item \code{plot}: A combined visualization with three main panels:
-(1) lollipop plots of Cohen’s f for each variable of interest,
-(2) distribution plots of the score by variable (density or scatter depending on variable type),
-and (3, if applicable) lollipop plots of Cohen’s d for contrasts in categorical variables.
-\item \code{plot_contrasts}: Lollipop plots of Cohen’s d effect sizes for contrasts between levels of non numerical variables (if applicable), colored by adjusted p-value (BH).
-\item \code{plot_overall}: Lollipop plot showing Cohen’s f effect sizes for each variable, colored by p-value.
-\item \code{plot_distributions}: List of density or scatter plots of the score across variable levels, depending on variable type.
+(1) lollipop plots of Cohen's f for each variable of interest,
+(2) distribution plots of the score by variable (density or scatter
+depending on variable type),
+and (3, if applicable) lollipop plots of Cohen's d for contrasts in
+categorical variables.
+\item \code{plot_contrasts}: Lollipop plots of Cohen's d effect sizes for contrasts
+between levels of non numerical variables (if applicable), colored
+by adjusted p-value (BH).
+\item \code{plot_overall}: Lollipop plot showing Cohen's f effect sizes for each
+variable, colored by p-value.
+\item \code{plot_distributions}: List of density or scatter plots of the score
+across variable levels, depending on variable type.
 }
 }
 \description{
-This function evaluates the association between gene expression scores and metadata variables.
-It uses linear modeling to get Cohen's F, and contrast-based comparisons for categorical variables to compute Cohen's D.
+This function evaluates the association between gene expression scores and
+metadata variables.
+It uses linear modeling to get Cohen's F, and contrast-based comparisons
+for categorical variables to compute Cohen's D.
 The function generates plots summarizing the results.
 }
 \keyword{internal}

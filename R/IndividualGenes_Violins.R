@@ -1,36 +1,60 @@
 #' Generate Violin Plots for Individual Genes
 #'
-#' This function creates violin plots of gene expression data with jittered points and optional faceting.
-#' It allows visualization of individual gene expression distributions across sample groups.
+#' This function creates violin plots of gene expression data with jittered
+#' points and optional faceting. It allows visualization of individual gene
+#' expression distributions across sample groups.
 #'
-#' @param data A data frame containing gene expression values with row names as gene names and column names as sample IDs. **(Required)**
-#' @param metadata An optional data frame containing sample metadata. The first column must match the sample IDs from `data`. **(Optional)**
+#' @param data A data frame containing gene expression values with row names as
+#'   gene names and column names as sample IDs. **(Required)**
+#' @param metadata An optional data frame containing sample metadata. The first
+#'   column must match the sample IDs from `data`. **(Optional)**
 #' @param genes A character vector of gene names to be plotted.  **(Required)**
-#' @param GroupingVariable A character string specifying the column in `metadata` used for grouping samples on the x-axis. **(Required)**
-#' @param plot A logical value indicating whether to print the plot. If `FALSE`, only the output list is returned. Default is `TRUE`. **(Optional)**
-#' @param ncol An optional numeric value specifying the number of columns in the facet grid. If not provided, it is computed automatically. Only applicable if `divide` is `NULL`. **(Optional)**
-#' @param nrow An optional numeric value specifying the number of rows in the facet grid. If not provided, it is computed automatically. Only applicable if `divide` is `NULL`. **(Optional)**
-#' @param divide An optional character string specifying a column in `metadata` to be used for facetting, besides faceting by genes. **(Optional)**
-#' @param invert_divide A logical value indicating whether to invert the facet layout, when `divide` is being used. Default is `FALSE`, corresponding to genes in the rows. **(Optional)**
-#' @param ColorValues An optional named vector mapping unique values of `ColorVariable` to specific colors. If `NULL`, a default Brewer palette ("Paired") is used. **(Optional)**
-#' @param pointSize A numeric value specifying the size of the points in the plot. Default is `2`. **(Optional)**
-#' @param ColorVariable A character string specifying a metadata column used for coloring points. Default is `NULL`. **(Optional)**
-#' @param title A character string specifying the title of the plot. Default is `NULL`. **(Optional)**
-#' @param widthTitle A numeric value specifying the maximum width of the title before inserting line breaks. **(Optional)**
-#' @param y_limits A numeric vector of length 2 specifying the limits of the y-axis. If `NULL` (default), the y-axis is adjusted automatically. **(Optional)**
-#' @param legend_nrow A numeric value specifying the number of rows in the legend. Default is `NULL`. **(Optional)**
-#' @param xlab A character string specifying the x-axis label. If `NULL`, it defaults to `GroupingVariable`. **(Optional)**
-#' @param colorlab A character string specifying the legend title for colors. Default is an empty string. **(Optional)**
+#' @param GroupingVariable A character string specifying the column in
+#'   `metadata` used for grouping samples on the x-axis. **(Required)**
+#' @param plot A logical value indicating whether to print the plot. If `FALSE`,
+#'   only the output list is returned. Default is `TRUE`. **(Optional)**
+#' @param ncol An optional numeric value specifying the number of columns in the
+#'   facet grid. If not provided, it is computed automatically. Only applicable
+#'   if `divide` is `NULL`. **(Optional)**
+#' @param nrow An optional numeric value specifying the number of rows in the
+#'   facet grid. If not provided, it is computed automatically. Only applicable
+#'   if `divide` is `NULL`. **(Optional)**
+#' @param divide An optional character string specifying a column in `metadata`
+#'   to be used for facetting, besides faceting by genes. **(Optional)**
+#' @param invert_divide A logical value indicating whether to invert the facet
+#'   layout, when `divide` is being used. Default is `FALSE`, corresponding to
+#'   genes in the rows. **(Optional)**
+#' @param ColorValues An optional named vector mapping unique values of
+#'   `ColorVariable` to specific colors. If `NULL`, a default Brewer palette
+#'   ("Paired") is used. **(Optional)**
+#' @param pointSize A numeric value specifying the size of the points in the
+#'   plot. Default is `2`. **(Optional)**
+#' @param ColorVariable A character string specifying a metadata column used for
+#'   coloring points. Default is `NULL`. **(Optional)**
+#' @param title A character string specifying the title of the plot. Default is
+#'   `NULL`. **(Optional)**
+#' @param widthTitle A numeric value specifying the maximum width of the title
+#'   before inserting line breaks. **(Optional)**
+#' @param y_limits A numeric vector of length 2 specifying the limits of the
+#'   y-axis. If `NULL` (default), the y-axis is adjusted automatically.
+#'   **(Optional)**
+#' @param legend_nrow A numeric value specifying the number of rows in the
+#'   legend. Default is `NULL`. **(Optional)**
+#' @param xlab A character string specifying the x-axis label. If `NULL`, it
+#'   defaults to `GroupingVariable`. **(Optional)**
+#' @param colorlab A character string specifying the legend title for colors.
+#'   Default is an empty string. **(Optional)**
 #'
-#' @return A list containing:
-#'   \item{plot}{A ggplot2 object representing the facetted violin plots.}
-#'   \item{data}{A data frame used for plotting, including transformed expression values (log2) and metadata.}
+#' @return A list containing: \item{plot}{A ggplot2 object representing the
+#'   facetted violin plots.} \item{data}{A data frame used for plotting,
+#'   including transformed expression values (log2) and metadata.}
 #'
-#' @details
-#' The function processes the gene expression data, filters for the specified genes, and transforms expression values using `log2()`.
-#' A violin plot with jittered points is generated using `ggplot2`. A median summary is added as a crossbar. If `divide` is provided,
-#' facets are created using `ggh4x::facet_grid2()`.
-#' Color customization is available via `ColorVariable` and `ColorValues`.
+#' @details The function processes the gene expression data, filters for the
+#' specified genes, and transforms expression values using `log2()`. A violin
+#' plot with jittered points is generated using `ggplot2`. A median summary is
+#' added as a crossbar. If `divide` is provided, facets are created using
+#' `ggh4x::facet_grid2()`. Color customization is available via `ColorVariable`
+#' and `ColorValues`.
 #'
 #' @importFrom reshape2 melt
 #' @import ggplot2
@@ -55,7 +79,12 @@
 #'
 #' IndividualGenes_Violins(data, metadata, genes, "Group")
 #'
-IndividualGenes_Violins <- function(data, metadata=NULL, genes,GroupingVariable, plot=TRUE, ncol=NULL, nrow=NULL, divide=NULL, invert_divide=FALSE, ColorValues=NULL, pointSize=2, ColorVariable=NULL,title=NULL, widthTitle=16,y_limits = NULL, legend_nrow = NULL,xlab=NULL, colorlab=NULL){
+IndividualGenes_Violins <- function(data, metadata=NULL, genes,GroupingVariable,
+                                    plot=TRUE, ncol=NULL, nrow=NULL, divide=NULL,
+                                    invert_divide=FALSE, ColorValues=NULL, pointSize=2,
+                                    ColorVariable=NULL,title=NULL, widthTitle=16,
+                                    y_limits = NULL, legend_nrow = NULL,xlab=NULL,
+                                    colorlab=NULL){
 
   #set.seed("1234")
 
@@ -90,13 +119,16 @@ IndividualGenes_Violins <- function(data, metadata=NULL, genes,GroupingVariable,
 
   }
 
-  plt <- ggplot2::ggplot(datasub, ggplot2::aes_string(y = "expression",x=GroupingVariable))
+  plt <- ggplot2::ggplot(datasub, ggplot2::aes_string(y = "expression",
+                                                      x=GroupingVariable))
 
   # Add jittered points, optionally colored by ColorVariable.Default: Brewer Pallette "Paired"
   if (!is.null(ColorVariable)) {
-    plt <- plt + ggplot2::geom_jitter(ggplot2::aes_string(color = ColorVariable), size = pointSize, alpha = 0.5)
+    plt <- plt + ggplot2::geom_jitter(ggplot2::aes_string(color = ColorVariable),
+                                      size = pointSize, alpha = 0.5)
   } else {
-    plt <- plt + ggplot2::geom_jitter(size = pointSize, alpha = 0.5) + ggplot2::scale_color_brewer(palette = "Paired")
+    plt <- plt + ggplot2::geom_jitter(size = pointSize, alpha = 0.5) +
+      ggplot2::scale_color_brewer(palette = "Paired")
   }
 
 

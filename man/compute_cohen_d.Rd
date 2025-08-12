@@ -12,11 +12,14 @@ compute_cohen_d(
 )
 }
 \arguments{
-\item{dfScore}{A data frame containing at least one numeric column and a grouping variable. Output from flatten_results.}
+\item{dfScore}{A data frame containing at least one numeric column and a
+grouping variable. Output from flatten_results.}
 
-\item{variable}{A string specifying the name of the categorical grouping column in \code{dfScore}.}
+\item{variable}{A string specifying the name of the categorical grouping
+column in \code{dfScore}.}
 
-\item{quantitative_var}{A string specifying the name of the numeric column (default is \code{"score"}).}
+\item{quantitative_var}{A string specifying the name of the numeric column
+(default is \code{"score"}).}
 }
 \value{
 A data frame with the following columns:
@@ -28,7 +31,7 @@ A data frame with the following columns:
 }
 }
 \description{
-Computes Cohen\'s d effect sizes and corresponding p-values for all pairwise comparisons of a grouping variable
-in a data frame.
+Computes Cohen\'s d effect sizes and corresponding p-values for all pairwise
+comparisons of a grouping variable in a data frame.
 }
 \keyword{internal}

@@ -1,33 +1,42 @@
 #' Run Gene Set Enrichment Analysis (GSEA) for Multiple Contrasts
 #'
-#' This function performs GSEA using `fgsea` for each contrast in a list of differential expression results.
-#' It automatically determines the appropriate ranking statistic based on the gene set format unless specified by the user.
+#' This function performs GSEA using `fgsea` for each contrast in a list of
+#' differential expression results. It automatically determines the appropriate
+#' ranking statistic based on the gene set format unless specified by the user.
 #'
-#' @param DEGList A named list where each element represents a contrast and contains a data frame of differential expression results.
+#' @param DEGList A named list where each element represents a contrast and
+#'   contains a data frame of differential expression results.
 #'   - Each data frame must include at least the `"t"` statistic and the `"B"` statistic for each gene.
 #'   - Row names should correspond to gene identifiers.
 #'
-#' @param gene_sets A named list where each element represents a gene set. Each gene set can be:
+#' @param gene_sets A named list where each element represents a gene set. Each
+#'   gene set can be:
 #'   - A **vector of gene names** (for unidirectional gene sets).
 #'   - A **data frame** with two columns:
 #'     - Column 1: Gene names.
 #'     - Column 2: Expected direction (`1` for upregulated genes, `-1` for downregulated genes).
 #'
-#' @param stat Optional. The statistic to use for ranking genes before GSEA. If `NULL`, it is automatically determined based on the gene set:
+#' @param stat Optional. The statistic to use for ranking genes before GSEA. If
+#'   `NULL`, it is automatically determined based on the gene set:
 #'   - `"B"` for gene sets with **no known direction** (vectors).
 #'   - `"t"` for **unidirectional** or **bidirectional** gene sets (data frames).
 #'   - If provided, this argument overrides the automatic selection.
 #'
-#' @param ContrastCorrection Logical, default is `FALSE`. If `TRUE`, applies an additional multiple testing
-#' correction (Benjamini–Hochberg) across all contrasts returned in the `DEGList` results list.
-#' This accounts for the number of contrasts tested per signature and provides more stringent control of
-#' false discovery rate across multiple comparisons. If `FALSE`, the function only corrects for the number of gene sets.
+#' @param ContrastCorrection Logical, default is `FALSE`. If `TRUE`, applies an
+#'   additional multiple testing correction (Benjamini-Hochberg) across all
+#'   contrasts returned in the `DEGList` results list. This accounts for the
+#'   number of contrasts tested per signature and provides more stringent
+#'   control of false discovery rate across multiple comparisons. If `FALSE`,
+#'   the function only corrects for the number of gene sets.
 #'
-#' @param nPermSimple Number of permutations in the simple fgsea implementation for preliminary estimation of P-values. Parameter from fgsea.
+#' @param nPermSimple Number of permutations in the simple fgsea implementation
+#'   for preliminary estimation of P-values. Parameter from fgsea.
 #'
-#' @return A named list where each element corresponds to a contrast. Each contrast contains a **single data frame** with GSEA results for all gene sets.
-#' P-values are corrected for multiple testing based on all contrasts.
-#'   The result includes the standard `fgsea` output plus two additional columns:
+#' @return A named list where each element corresponds to a contrast. Each
+#'   contrast contains a **single data frame** with GSEA results for all gene
+#'   sets. P-values are corrected for multiple testing based on all contrasts.
+#'   The result includes the standard `fgsea` output plus two additional
+#'   columns:
 #'   - `pathway`: The name of the gene set.
 #'   - `stat_used`: The statistic used for ranking genes in that analysis (`"t"` or `"B"`).
 #'

@@ -28,43 +28,55 @@ ROC_Scores(
 
 \item{gene_sets}{A named list of gene sets.}
 
-\item{method}{A character string specifying the scoring method(s) (\code{"logmedian"}, \code{"ssGSEA"}, \code{"ranking"}, or \code{"all"}).}
+\item{method}{A character string specifying the scoring method(s)
+(\code{"logmedian"}, \code{"ssGSEA"}, \code{"ranking"}, or \code{"all"}).}
 
-\item{variable}{A character string specifying the categorical variable for group comparisons.}
+\item{variable}{A character string specifying the categorical variable for
+group comparisons.}
 
-\item{colors}{A named vector specifying colors for each method. Only one color is allowed, if method != "all".
-Default colors are \code{c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52")}.}
+\item{colors}{A named vector specifying colors for each method. Only one color
+is allowed, if method != "all". Default colors are \code{c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52")}.}
 
 \item{grid}{Logical; if \code{TRUE}, arranges plots in a grid.}
 
-\item{spacing_annotation}{numeric value specifying the spacing between labels of AUC values. Default is 0.3.}
+\item{spacing_annotation}{numeric value specifying the spacing between labels
+of AUC values. Default is 0.3.}
 
-\item{ncol}{Optional numeric value specifying the number of columns in the grid layout for the combined plots.
-If \code{NULL}, there will be as many columns as contrasts. If this number is 1, then a near-square grid is computed.}
+\item{ncol}{Optional numeric value specifying the number of columns in the
+grid layout for the combined plots. If \code{NULL}, there will be as many columns
+as contrasts. If this number is 1, then a near-square grid is computed.}
 
-\item{nrow}{Optional numeric value specifying the number of rows in the grid layout.
-If \code{NULL}, there will be as many columns as gene sets. If this number is 1, then a near-square grid is computed.}
+\item{nrow}{Optional numeric value specifying the number of rows in the grid
+layout. If \code{NULL}, there will be as many columns as gene sets. If this
+number is 1, then a near-square grid is computed.}
 
-\item{mode}{A string specifying the level of detail for contrasts. Options are:
+\item{mode}{A string specifying the level of detail for contrasts. Options
+are:
 \itemize{
-\item \code{"simple"}: Performs the minimal number of pairwise comparisons between individual group levels (e.g., A - B, A - C). Default.
-\item \code{"medium"}: Includes comparisons between one group and the union of all other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
-\item \code{"extensive"}: Allows for all possible algebraic combinations of group levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.
+\item \code{"simple"}: Performs the minimal number of pairwise comparisons between
+individual group levels (e.g., A - B, A - C). Default.
+\item \code{"medium"}: Includes comparisons between one group and the union of all
+other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
+\item \code{"extensive"}: Allows for all possible algebraic combinations of group
+levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.
 }}
 
-\item{widthTitle}{Optional integer specifying the maximum width of the title before inserting line breaks.
-Titles break at \verb{_}, \code{-}, or \code{:} where possible, or at the exact width if no such character is found.
-Default is \code{18}.}
+\item{widthTitle}{Optional integer specifying the maximum width of the title
+before inserting line breaks. Titles break at \verb{_}, \code{-}, or \code{:} where
+possible, or at the exact width if no such character is found. Default is
+\code{18}.}
 
 \item{title}{Title for the grid of plots.}
 
-\item{titlesize}{An integer specifying the text size for each of the heatmap titles. Default is 12.}
+\item{titlesize}{An integer specifying the text size for each of the heatmap
+titles. Default is 12.}
 }
 \value{
 A \code{ggplot2} or \code{ggarrange} object containing the ROC curve plots.
 }
 \description{
-This function generates ROC curve plots for different gene signatures across multiple scoring methods.
+This function generates ROC curve plots for different gene signatures across
+multiple scoring methods.
 }
 \examples{
 # Example data

@@ -7,9 +7,11 @@
 CalculateScores_ssGSEA_unidirectional(data, signature)
 }
 \arguments{
-\item{data}{A data frame of normalized (non-transformed) counts where rows are genes and columns are samples.}
+\item{data}{A data frame of normalized (non-transformed) counts where rows are
+genes and columns are samples.}
 
-\item{signature}{A vector of gene names representing a unidirectional gene signature.}
+\item{signature}{A vector of gene names representing a unidirectional gene
+signature.}
 }
 \value{
 A data frame containing:
@@ -19,8 +21,8 @@ A data frame containing:
 }
 }
 \description{
-Computes single-sample Gene Set Enrichment Analysis (ssGSEA) scores for each sample using
-a unidirectional gene signature.
+Computes single-sample Gene Set Enrichment Analysis (ssGSEA) scores for each
+sample using a unidirectional gene signature.
 }
 \examples{
 \dontrun{

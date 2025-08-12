@@ -1,40 +1,52 @@
-#' ExpressionHeatmap: Generate an expression heatmap with customizable sample annotations and separate legend positions
+#' ExpressionHeatmap: Generate an expression heatmap with customizable sample
+#' annotations and separate legend positions
 #'
 #' This function creates a heatmap of Z-score scaled gene expression using the
 #' `ComplexHeatmap` package. Genes are displayed as rows and samples as columns.
 #' A color annotation bar is added on top based on specified metadata columns.
-#' The user can control the position of the heatmap color scale (scale_position) and
-#' the annotation legend (legend_position) independently.
+#' The user can control the position of the heatmap color scale (scale_position)
+#' and the annotation legend (legend_position) independently.
 #'
-#' @param data A numeric expression matrix where rows correspond to genes and columns to samples.
-#' @param metadata A data frame containing metadata for the samples. It must contain a column
-#'   named `"Sample"` with sample IDs matching the column names of `data`.
+#' @param data A numeric expression matrix where rows correspond to genes and
+#'   columns to samples.
+#' @param metadata A data frame containing metadata for the samples. It must
+#'   contain a column named `"Sample"` with sample IDs matching the column names
+#'   of `data`.
 #' @param genes A character vector of gene names to include in the heatmap.
-#' @param annotate.by A character vector of metadata column names to be used for sample annotations
-#'   (e.g., \code{c("Condition", "Batch")}). If provided, a color bar is added on top.
-#' @param annotation_colors Optional. A named list where each element corresponds to an annotation variable
-#'   and provides a named vector mapping each unique level to a color. If not provided, default Brewer palettes are used.
-#' @param colorlist A named list specifying the colors for the heatmap (for scaled expression) with elements
-#'   `low`, `mid`, and `high`. Default is \code{list(low = "blue", mid = "white", high = "red")}.
+#' @param annotate.by A character vector of metadata column names to be used for
+#'   sample annotations (e.g., \code{c("Condition", "Batch")}). If provided, a
+#'   color bar is added on top.
+#' @param annotation_colors Optional. A named list where each element
+#'   corresponds to an annotation variable and provides a named vector mapping
+#'   each unique level to a color. If not provided, default Brewer palettes are
+#'   used.
+#' @param colorlist A named list specifying the colors for the heatmap (for
+#'   scaled expression) with elements `low`, `mid`, and `high`. Default is
+#'   \code{list(low = "blue", mid = "white", high = "red")}.
 #' @param cluster_rows Logical; whether to cluster rows (default = \code{TRUE}).
-#' @param cluster_columns Logical; whether to cluster columns (default = \code{TRUE}). If \code{FALSE},
-#'   the columns are reordered based on the values in `annotate.by`.
+#' @param cluster_columns Logical; whether to cluster columns (default =
+#'   \code{TRUE}). If \code{FALSE}, the columns are reordered based on the
+#'   values in `annotate.by`.
 #' @param title A string specifying the main title of the heatmap.
 #' @param titlesize Numeric; font size of the heatmap title (default = 20).
-#' @param scale_position A character string specifying the position of the heatmap color scale.
-#'   Options are \code{"right"} (default), \code{"top"}, or \code{"bottom"}. The scale legend will adopt a vertical
-#'   orientation if on the right and horizontal if on top or bottom.
-#' @param legend_position A character string specifying the position of the annotation legend.
-#'   Options are \code{"top"} (default), \code{"right"}, or \code{"bottom"}.
-#' @param show_row_names A character string specifying whether row names (genes) should be displayed.
-#' @param show_column_names A character string specifying whether column names (samples) should be displayed.
+#' @param scale_position A character string specifying the position of the
+#'   heatmap color scale. Options are \code{"right"} (default), \code{"top"}, or
+#'   \code{"bottom"}. The scale legend will adopt a vertical orientation if on
+#'   the right and horizontal if on top or bottom.
+#' @param legend_position A character string specifying the position of the
+#'   annotation legend. Options are \code{"top"} (default), \code{"right"}, or
+#'   \code{"bottom"}.
+#' @param show_row_names A character string specifying whether row names (genes)
+#'   should be displayed.
+#' @param show_column_names A character string specifying whether column names
+#'   (samples) should be displayed.
 #'
 #'
-#' @return A list containing:
-#'   \describe{
-#'     \item{data}{The scaled expression matrix (Z-scores).}
-#'     \item{plot}{The generated ComplexHeatmap object.}
-#'   }
+#' @return Invisibly returns a list with:
+#' \describe{
+#'   \item{data}{Scaled expression matrix (Z-scores).}
+#'   \item{plot}{Generated ComplexHeatmap object.}
+#' }
 #'
 #' @examples
 #' # Simulate gene expression data (genes as rows, samples as columns)
@@ -128,7 +140,8 @@ ExpressionHeatmap <- function(data, metadata = NULL, genes, annotate.by = NULL,
   }
 
 
-  # If column clustering is disabled and annotations are provided, reorder columns based on annotation values
+  # If column clustering is disabled and annotations are provided, reorder
+  # columns based on annotation values
   if (!cluster_columns && !is.null(metadata) && !is.null(annotate.by)) {
     annotate.by <- annotate.by[annotate.by %in% colnames(metadata)]
     if (length(annotate.by) > 0) {
@@ -153,9 +166,6 @@ ExpressionHeatmap <- function(data, metadata = NULL, genes, annotate.by = NULL,
         unique_vals <- unique(ann_data[[var]])
         palette_choices <- c("Set1", "Set2", "Set3", "Paired", "Dark2",
                              "Set1", "Set2", "Set3", "Paired", "Dark2")
-        # pal <- RColorBrewer::brewer.pal(min(length(unique_vals), 9),
-        #                                 palette_choices[(which(annotate.by == var) - 1) %% length(palette_choices) + 1])
-
 
         n_colors <- length(unique_vals)
         n_colors <- ifelse(n_colors < 3, 3, min(n_colors, 9))  # enforce min = 3
@@ -204,7 +214,8 @@ ExpressionHeatmap <- function(data, metadata = NULL, genes, annotate.by = NULL,
                                 column_title_gp = grid::gpar(fontsize = titlesize),
                                 heatmap_legend_param = scale_legend_param)
 
-  # Draw the heatmap, forcing the heatmap legend to appear at scale_position and annotation legend at legend_position.
+  # Draw the heatmap, forcing the heatmap legend to appear at scale_position
+  # and annotation legend at legend_position.
   ht_drawn <- ComplexHeatmap::draw(ht,
                                    heatmap_legend_side = scale_side,
                                    annotation_legend_side = annot_side)

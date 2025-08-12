@@ -14,42 +14,61 @@ calculateDE(
 )
 }
 \arguments{
-\item{data}{A numeric matrix of gene expression values with genes as rows and samples as columns. Row names must correspond to gene identifiers.
-Data should \emph{not} be transformed (i.e., not log2 transformed).}
+\item{data}{A numeric matrix of gene expression values with genes as rows and
+samples as columns. Row names must correspond to gene identifiers. Data
+should \emph{not} be transformed (i.e., not log2 transformed).}
 
-\item{metadata}{A data frame containing sample metadata used to build the design matrix (unless a design is provided directly).}
+\item{metadata}{A data frame containing sample metadata used to build the
+design matrix (unless a design is provided directly).}
 
-\item{variables}{A character vector specifying the variable(s) from \code{metadata} to use in the default linear model.
-Ignored if \code{lmexpression} or \code{design} is provided.}
+\item{variables}{A character vector specifying the variable(s) from
+\code{metadata} to use in the default linear model. Ignored if
+\code{lmexpression} or \code{design} is provided.}
 
-\item{modelmat}{(Optional) A user-supplied design matrix. If provided, this design is used directly and \code{lmexpression} and \code{variables}
-are ignored. The order of samples in the design matrix should match the order in data.}
+\item{modelmat}{(Optional) A user-supplied design matrix. If provided, this
+design is used directly and \code{lmexpression} and \code{variables} are
+ignored. The order of samples in the design matrix should match the order
+in data.}
 
-\item{contrasts}{A character vector specifying contrasts to be applied (e.g., \code{c("A-B")}).
-If multiple contrasts are provided, the function returns a list of DE results (one per contrast). \emph{Required} if
-\code{lmexpression} is NULL, optional otherwise. If not provided, the average expression profile of each
-condition will be returned instead of differential gene expression.}
+\item{contrasts}{A character vector specifying contrasts to be applied (e.g.,
+\code{c("A-B")}). If multiple contrasts are provided, the function returns
+a list of DE results (one per contrast). \emph{Required} if \code{lmexpression}
+is NULL, optional otherwise. If not provided, the average expression
+profile of each condition will be returned instead of differential gene
+expression.}
 
-\item{ignore_NAs}{Boolean (default: FALSE). Whether to ignore NAs in the metadata. If TRUE, rows with any NAs will be removed before analysis,
-leading to a loss of data to be fitted in the model. Only applicable if \code{variables} is provided.}
+\item{ignore_NAs}{Boolean (default: FALSE). Whether to ignore NAs in the
+metadata. If TRUE, rows with any NAs will be removed before analysis,
+leading to a loss of data to be fitted in the model. Only applicable if
+\code{variables} is provided.}
 }
 \value{
 A list of data-frames of differential expression statistics
 }
 \description{
-This function computes differential gene expression statistics for each gene using a linear model via the limma package.
-Users may supply a custom design matrix directly via the \code{design} argument, or specify a model formula (\code{lmexpression})
-(e.g., \code{~0 + X} or \code{~X}) or variables from \code{metadata} to build the design matrix. When contrasts are supplied,
-they are applied using \code{limma::makeContrasts} and \code{limma::contrasts.fit}. Alternatively, when using \code{lmexpression} or a supplied
-\code{design}, specific coefficient indices may be provided via \code{coefs} to extract the corresponding gene-level statistics.
+This function computes differential gene expression statistics for each gene
+using a linear model via the limma package. Users may supply a custom design
+matrix directly via the \code{design} argument, or specify a model formula
+(\code{lmexpression}) (e.g., \code{~0 + X} or \code{~X}) or variables from
+\code{metadata} to build the design matrix. When contrasts are supplied, they
+are applied using \code{limma::makeContrasts} and
+\code{limma::contrasts.fit}. Alternatively, when using \code{lmexpression} or
+a supplied \code{design}, specific coefficient indices may be provided via
+\code{coefs} to extract the corresponding gene-level statistics.
 }
 \details{
-The function fits a linear model with \code{limma::lmFit} and applies empirical Bayes moderation with \code{limma::eBayes}. Depending on the input:
+The function fits a linear model with \code{limma::lmFit} and
+applies empirical Bayes moderation with \code{limma::eBayes}. Depending on
+the input:
 \itemize{
-\item If a design matrix is provided via \code{design}, that design is used directly.
-\item Otherwise, a design matrix is constructed using the \code{variables} argument (with no intercept).
-\item If contrasts are provided, they are applied using \code{limma::makeContrasts} and \code{limma::contrasts.fit}.
-\item If no contrasts are provided, the function returns all possible coefficients fitted in the linear model.
+\item If a design matrix is provided via \code{design}, that design is
+used directly.
+\item Otherwise, a design matrix is constructed using the \code{variables}
+argument (with no intercept).
+\item If contrasts are provided, they are applied using
+\code{limma::makeContrasts} and \code{limma::contrasts.fit}.
+\item If no contrasts are provided, the function returns all possible
+coefficients fitted in the linear model.
 }
 }
 \examples{

@@ -2,7 +2,8 @@
 % Please edit documentation in R/ExpressionHeatmap.R
 \name{ExpressionHeatmap}
 \alias{ExpressionHeatmap}
-\title{ExpressionHeatmap: Generate an expression heatmap with customizable sample annotations and separate legend positions}
+\title{ExpressionHeatmap: Generate an expression heatmap with customizable sample
+annotations and separate legend positions}
 \usage{
 ExpressionHeatmap(
   data,
@@ -22,55 +23,66 @@ ExpressionHeatmap(
 )
 }
 \arguments{
-\item{data}{A numeric expression matrix where rows correspond to genes and columns to samples.}
+\item{data}{A numeric expression matrix where rows correspond to genes and
+columns to samples.}
 
-\item{metadata}{A data frame containing metadata for the samples. It must contain a column
-named \code{"Sample"} with sample IDs matching the column names of \code{data}.}
+\item{metadata}{A data frame containing metadata for the samples. It must
+contain a column named \code{"Sample"} with sample IDs matching the column names
+of \code{data}.}
 
 \item{genes}{A character vector of gene names to include in the heatmap.}
 
-\item{annotate.by}{A character vector of metadata column names to be used for sample annotations
-(e.g., \code{c("Condition", "Batch")}). If provided, a color bar is added on top.}
+\item{annotate.by}{A character vector of metadata column names to be used for
+sample annotations (e.g., \code{c("Condition", "Batch")}). If provided, a
+color bar is added on top.}
 
-\item{annotation_colors}{Optional. A named list where each element corresponds to an annotation variable
-and provides a named vector mapping each unique level to a color. If not provided, default Brewer palettes are used.}
+\item{annotation_colors}{Optional. A named list where each element
+corresponds to an annotation variable and provides a named vector mapping
+each unique level to a color. If not provided, default Brewer palettes are
+used.}
 
-\item{colorlist}{A named list specifying the colors for the heatmap (for scaled expression) with elements
-\code{low}, \code{mid}, and \code{high}. Default is \code{list(low = "blue", mid = "white", high = "red")}.}
+\item{colorlist}{A named list specifying the colors for the heatmap (for
+scaled expression) with elements \code{low}, \code{mid}, and \code{high}. Default is
+\code{list(low = "blue", mid = "white", high = "red")}.}
 
 \item{cluster_rows}{Logical; whether to cluster rows (default = \code{TRUE}).}
 
-\item{cluster_columns}{Logical; whether to cluster columns (default = \code{TRUE}). If \code{FALSE},
-the columns are reordered based on the values in \code{annotate.by}.}
+\item{cluster_columns}{Logical; whether to cluster columns (default =
+\code{TRUE}). If \code{FALSE}, the columns are reordered based on the
+values in \code{annotate.by}.}
 
 \item{title}{A string specifying the main title of the heatmap.}
 
 \item{titlesize}{Numeric; font size of the heatmap title (default = 20).}
 
-\item{scale_position}{A character string specifying the position of the heatmap color scale.
-Options are \code{"right"} (default), \code{"top"}, or \code{"bottom"}. The scale legend will adopt a vertical
-orientation if on the right and horizontal if on top or bottom.}
+\item{scale_position}{A character string specifying the position of the
+heatmap color scale. Options are \code{"right"} (default), \code{"top"}, or
+\code{"bottom"}. The scale legend will adopt a vertical orientation if on
+the right and horizontal if on top or bottom.}
 
-\item{legend_position}{A character string specifying the position of the annotation legend.
-Options are \code{"top"} (default), \code{"right"}, or \code{"bottom"}.}
+\item{legend_position}{A character string specifying the position of the
+annotation legend. Options are \code{"top"} (default), \code{"right"}, or
+\code{"bottom"}.}
 
-\item{show_row_names}{A character string specifying whether row names (genes) should be displayed.}
+\item{show_row_names}{A character string specifying whether row names (genes)
+should be displayed.}
 
-\item{show_column_names}{A character string specifying whether column names (samples) should be displayed.}
+\item{show_column_names}{A character string specifying whether column names
+(samples) should be displayed.}
 }
 \value{
-A list containing:
+Invisibly returns a list with:
 \describe{
-\item{data}{The scaled expression matrix (Z-scores).}
-\item{plot}{The generated ComplexHeatmap object.}
+\item{data}{Scaled expression matrix (Z-scores).}
+\item{plot}{Generated ComplexHeatmap object.}
 }
 }
 \description{
 This function creates a heatmap of Z-score scaled gene expression using the
 \code{ComplexHeatmap} package. Genes are displayed as rows and samples as columns.
 A color annotation bar is added on top based on specified metadata columns.
-The user can control the position of the heatmap color scale (scale_position) and
-the annotation legend (legend_position) independently.
+The user can control the position of the heatmap color scale (scale_position)
+and the annotation legend (legend_position) independently.
 }
 \examples{
 # Simulate gene expression data (genes as rows, samples as columns)

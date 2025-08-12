@@ -7,31 +7,36 @@
 CalculateScores_ssGSEA_bidirectional(data, signature)
 }
 \arguments{
-\item{data}{A data frame of normalized (non-transformed) counts where rows are genes and columns are samples.}
+\item{data}{A data frame of normalized (non-transformed) counts where rows are
+genes and columns are samples.}
 
 \item{signature}{A data frame with:
 \itemize{
 \item The \strong{first column} containing gene names.
-\item The \strong{second column} (\code{Signal}) indicating the expected direction of enrichment (1 for upregulated genes, -1 for downregulated genes).
+\item The \strong{second column} (\code{Signal}) indicating the expected direction of
+enrichment (1 for upregulated genes, -1 for downregulated genes).
 }}
 }
 \value{
 A data frame containing:
 \itemize{
 \item \code{sample}: Sample name.
-\item \code{score}: Final ssGSEA enrichment score (computed as the difference between upregulated and downregulated scores).
+\item \code{score}: Final ssGSEA enrichment score (computed as the difference
+between upregulated and downregulated scores).
 }
 }
 \description{
-Computes single-sample Gene Set Enrichment Analysis (ssGSEA) scores for each sample using
-a bidirectional gene signature (separating upregulated and downregulated genes).
+Computes single-sample Gene Set Enrichment Analysis (ssGSEA) scores for each
+sample using a bidirectional gene signature (separating upregulated and
+downregulated genes).
 }
 \details{
 \itemize{
 \item The input gene expression matrix (\code{data}) is log2-transformed before applying ssGSEA.
 \item Upregulated and downregulated genes are analyzed separately.
 \item As both upregulated and downregulated genes are present, the final score is computed as:
-\deqn{score = (score_{up} \* \frac{|up\_genes|}{|total\_genes|}) - (score_{down} \* \frac{|down\_genes|}{|total\_genes|})}
+\deqn{score = (score_{up} \* \frac{|up\_genes|}{|total\_genes|}) -
+(score_{down} \* \frac{|down\_genes|}{|total\_genes|})}
 \item If no downregulated genes are present, only the upregulated score is used.
 \item The results are reshaped into a long-format data frame with one score per sample.
 }

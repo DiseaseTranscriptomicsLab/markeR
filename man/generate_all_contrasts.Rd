@@ -9,19 +9,22 @@ generate_all_contrasts(levels, mode = "simple")
 \arguments{
 \item{levels}{A character vector of unique group levels.}
 
-\item{mode}{A string specifying the level of detail for contrasts.
-Options are \code{"simple"} (pairwise only), \code{"medium"} (pairwise + vs. mean of others), or \code{"extensive"} (all possible balanced groupwise contrasts). Default is \code{"extensive"}.}
+\item{mode}{A string specifying the level of detail for contrasts. Options
+are \code{"simple"} (pairwise only), \code{"medium"} (pairwise + vs. mean of others),
+or \code{"extensive"} (all possible balanced groupwise contrasts). Default is
+\code{"extensive"}.}
 }
 \value{
 A character vector of unique contrast expressions.
 }
 \description{
-This function creates statistical contrasts between levels of a categorical variable.
-Users can choose the level of complexity:
+This function creates statistical contrasts between levels of a categorical
+variable. Users can choose the level of complexity:
 \itemize{
 \item \code{"simple"}: Pairwise comparisons (e.g., A - B).
 \item \code{"medium"}: Pairwise comparisons plus comparisons against the mean of other groups.
-\item \code{"extensive"}: All possible groupwise contrasts, ensuring balance in the number of terms on each side.
+\item \code{"extensive"}: All possible groupwise contrasts, ensuring balance in the
+number of terms on each side.
 }
 }
 \examples{

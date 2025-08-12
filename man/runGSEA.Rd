@@ -13,13 +13,15 @@ runGSEA(
 )
 }
 \arguments{
-\item{DEGList}{A named list where each element represents a contrast and contains a data frame of differential expression results.
+\item{DEGList}{A named list where each element represents a contrast and
+contains a data frame of differential expression results.
 \itemize{
 \item Each data frame must include at least the \code{"t"} statistic and the \code{"B"} statistic for each gene.
 \item Row names should correspond to gene identifiers.
 }}
 
-\item{gene_sets}{A named list where each element represents a gene set. Each gene set can be:
+\item{gene_sets}{A named list where each element represents a gene set. Each
+gene set can be:
 \itemize{
 \item A \strong{vector of gene names} (for unidirectional gene sets).
 \item A \strong{data frame} with two columns:
@@ -29,32 +31,39 @@ runGSEA(
 }
 }}
 
-\item{stat}{Optional. The statistic to use for ranking genes before GSEA. If \code{NULL}, it is automatically determined based on the gene set:
+\item{stat}{Optional. The statistic to use for ranking genes before GSEA. If
+\code{NULL}, it is automatically determined based on the gene set:
 \itemize{
 \item \code{"B"} for gene sets with \strong{no known direction} (vectors).
 \item \code{"t"} for \strong{unidirectional} or \strong{bidirectional} gene sets (data frames).
 \item If provided, this argument overrides the automatic selection.
 }}
 
-\item{ContrastCorrection}{Logical, default is \code{FALSE}. If \code{TRUE}, applies an additional multiple testing
-correction (Benjamini–Hochberg) across all contrasts returned in the \code{DEGList} results list.
-This accounts for the number of contrasts tested per signature and provides more stringent control of
-false discovery rate across multiple comparisons. If \code{FALSE}, the function only corrects for the number of gene sets.}
+\item{ContrastCorrection}{Logical, default is \code{FALSE}. If \code{TRUE}, applies an
+additional multiple testing correction (Benjamini-Hochberg) across all
+contrasts returned in the \code{DEGList} results list. This accounts for the
+number of contrasts tested per signature and provides more stringent
+control of false discovery rate across multiple comparisons. If \code{FALSE},
+the function only corrects for the number of gene sets.}
 
-\item{nPermSimple}{Number of permutations in the simple fgsea implementation for preliminary estimation of P-values. Parameter from fgsea.}
+\item{nPermSimple}{Number of permutations in the simple fgsea implementation
+for preliminary estimation of P-values. Parameter from fgsea.}
 }
 \value{
-A named list where each element corresponds to a contrast. Each contrast contains a \strong{single data frame} with GSEA results for all gene sets.
-P-values are corrected for multiple testing based on all contrasts.
-The result includes the standard \code{fgsea} output plus two additional columns:
+A named list where each element corresponds to a contrast. Each
+contrast contains a \strong{single data frame} with GSEA results for all gene
+sets. P-values are corrected for multiple testing based on all contrasts.
+The result includes the standard \code{fgsea} output plus two additional
+columns:
 \itemize{
 \item \code{pathway}: The name of the gene set.
 \item \code{stat_used}: The statistic used for ranking genes in that analysis (\code{"t"} or \code{"B"}).
 }
 }
 \description{
-This function performs GSEA using \code{fgsea} for each contrast in a list of differential expression results.
-It automatically determines the appropriate ranking statistic based on the gene set format unless specified by the user.
+This function performs GSEA using \code{fgsea} for each contrast in a list of
+differential expression results. It automatically determines the appropriate
+ranking statistic based on the gene set format unless specified by the user.
 }
 \examples{
 # Example input data

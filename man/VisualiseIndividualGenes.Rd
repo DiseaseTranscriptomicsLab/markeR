@@ -7,43 +7,52 @@
 VisualiseIndividualGenes(type, data, genes, metadata = NULL, ...)
 }
 \arguments{
-\item{type}{Character. Specifies the type of plot to generate.
-Must be one of:
-\describe{
-\item{"violin"}{Violin plots of individual gene expression by group.}
-\item{"correlation"}{Correlation heatmap of selected genes.}
-\item{"expression"}{Expression heatmap of selected genes.}
-\item{"roc"}{ROC plots for classification performance of individual genes.}
-\item{"auc"}{AUC plots for classification performance of individual genes.}
-\item{"rocauc"}{ROC and AUC plots for classification performance of individual genes.}
-\item{"cohend"}{Effect size (Cohen's D) heatmap of individual genes.}
-\item{"pca"}{PCA plot of selected genes.}
+\item{type}{Character. Specifies the type of plot to generate. Must be one of:
+\itemize{
+\item \code{"violin"}: Violin plots of individual gene expression by group
+\item \code{"correlation"}: Correlation heatmap of selected genes
+\item \code{"expression"}: Expression heatmap of selected genes
+\item \code{"roc"}: ROC plots for classification performance of individual genes
+\item \code{"auc"}: AUC plots for classification performance of individual genes
+\item \code{"rocauc"}: Combined ROC and AUC plots
+\item \code{"cohend"}: Effect size (Cohen's D) heatmap
+\item \code{"pca"}: PCA plot of selected genes
 }}
 
-\item{data}{Required. Expression data matrix or data frame, with samples as rows and genes as columns.}
+\item{data}{Required. Expression data matrix or data frame, with samples as
+rows and genes as columns.}
 
-\item{genes}{Required. Character vector of gene names to include in the visualisation.}
+\item{genes}{Required. Character vector of gene names to include in the
+visualisation.}
 
-\item{metadata}{Optional. Data frame with sample metadata, required for some plot types (e.g., violin, roc, cohend).}
+\item{metadata}{Optional. Data frame with sample metadata, required for some
+plot types (e.g., violin, roc, cohend).}
 
 \item{...}{Additional arguments passed to the specific plotting function.}
 }
 \value{
-The output of the specific plotting function called, usually a ggplot or ComplexHeatmap object,
+The output of the specific plotting function called, usually a ggplot
+or ComplexHeatmap object,
 often wrapped in a list with additional data.
 }
 \description{
-This wrapper function helps explore individual gene behavior within a gene set used in \code{markeR}.
-It dispatches to specific visualisation functions based on \code{plot_type}, supporting various plot types:
-heatmaps, violin plots, correlation analysis, PCA, ROC/AUC, and effect size heatmaps.
+This wrapper function helps explore individual gene behavior within a gene
+set used in \code{markeR}.
+It dispatches to specific visualisation functions based on \code{plot_type},
+supporting various plot types: heatmaps, violin plots, correlation analysis,
+PCA, ROC/AUC, and effect size heatmaps.
 }
 \section{Additional required arguments (passed via \code{...}) per \code{plot_type}}{
 
 \describe{
-\item{violin}{Requires \code{GroupingVariable} (column name in \code{metadata} for grouping).}
-\item{roc, auc, rocauc}{Requires \code{condition_var} (metadata column with condition labels) and \code{class} (positive class label).}
-\item{cohend}{Requires \code{condition_var} and \code{class} (same as roc).}
-\item{correlation, expression, pca}{No additional mandatory arguments required.}
+\item{violin}{Requires \code{GroupingVariable} (column name in
+\code{metadata} for grouping).}
+\item{roc, auc, rocauc}{Requires \code{condition_var} (metadata column
+with condition labels) and \code{class} (positive class label).}
+\item{cohend}{Requires \code{condition_var} and \code{class}
+(same as roc).}
+\item{correlation, expression, pca}{No additional mandatory arguments
+required.}
 }
 }
 
@@ -141,7 +150,10 @@ VisualiseIndividualGenes(
 
 }
 \seealso{
-\code{\link{IndividualGenes_Violins}}, \code{\link{CorrelationHeatmap}},
-\code{\link{ExpressionHeatmap}}, \code{\link{ROCandAUCplot}},
-\code{\link{CohenD_IndividualGenes}}, \code{\link{plotPCA}}
+\code{\link{IndividualGenes_Violins}},
+\code{\link{CorrelationHeatmap}},
+\code{\link{ExpressionHeatmap}},
+\code{\link{CohenD_IndividualGenes}},
+\code{\link{plotPCA}},
+\code{\link{ROCandAUCplot}}
 }

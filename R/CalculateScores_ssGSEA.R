@@ -1,18 +1,24 @@
 #' Calculate Gene Signature Scores using ssGSEA
 #'
-#' Computes an enrichment score for each gene signature in each sample using the single-sample Gene Set Enrichment Analysis (ssGSEA).
+#' Computes an enrichment score for each gene signature in each sample using the
+#' single-sample Gene Set Enrichment Analysis (ssGSEA).
 #'
-#' @param data A data frame of normalized (non-transformed) counts where each row is a gene and each column is a sample.
+#' @param data A data frame of normalized (non-transformed) counts where each
+#'   row is a gene and each column is a sample.
 #' @param metadata A data frame containing sample metadata (optional).
 #' @param gene_sets Gene set input. **(Required)**
 #'
-#' If using **unidirectional** gene sets, provide a named list where each element is a vector of gene names representing a gene signature.
-#' The names of the list elements should correspond to the labels for each signature.
+#'   If using **unidirectional** gene sets, provide a named list where each
+#'   element is a vector of gene names representing a gene signature. The names
+#'   of the list elements should correspond to the labels for each signature.
 #'
-#' If using **bidirectional** gene sets, provide a named list where each element is a data frame. The names of the list elements should
-#' correspond to the labels for each signature, and each data frame should contain the following structure:
+#'   If using **bidirectional** gene sets, provide a named list where each
+#'   element is a data frame. The names of the list elements should correspond
+#'   to the labels for each signature, and each data frame should contain the
+#'   following structure:
 #' - The **first column** should contain gene names.
-#' - The **second column** should indicate the expected direction of enrichment (1 for upregulated genes, -1 for downregulated genes).
+#' - The **second column** should indicate the expected direction of enrichment
+#' (1 for upregulated genes, -1 for downregulated genes).
 #'
 #'
 #' @importFrom reshape2 melt
@@ -58,17 +64,19 @@ CalculateScores_ssGSEA <- function(data, metadata = NULL, gene_sets) {
 }
 
 
-#' Calculate ssGSEA Scores for Unidirectional Gene Signatures
+#'Calculate ssGSEA Scores for Unidirectional Gene Signatures
 #'
-#' Computes single-sample Gene Set Enrichment Analysis (ssGSEA) scores for each sample using
-#' a unidirectional gene signature.
+#'Computes single-sample Gene Set Enrichment Analysis (ssGSEA) scores for each
+#'sample using a unidirectional gene signature.
 #'
-#' @param data A data frame of normalized (non-transformed) counts where rows are genes and columns are samples.
-#' @param signature A vector of gene names representing a unidirectional gene signature.
+#'@param data A data frame of normalized (non-transformed) counts where rows are
+#'  genes and columns are samples.
+#'@param signature A vector of gene names representing a unidirectional gene
+#'  signature.
 #'
-#' @importFrom reshape2 melt
+#'@importFrom reshape2 melt
 #'
-#' @return A data frame containing:
+#'@return A data frame containing:
 #' - `sample`: Sample name.
 #' - `score`: ssGSEA enrichment score for the gene signature.
 #'
@@ -88,7 +96,7 @@ CalculateScores_ssGSEA <- function(data, metadata = NULL, gene_sets) {
 #' scores <- CalculateScores_ssGSEA_unidirectional(data, signature = signature)
 #' print(scores)
 #'}
-#' @keywords internal
+#'@keywords internal
 CalculateScores_ssGSEA_unidirectional <- function(data, signature) {
   data <- as.data.frame(data) # Ensure data is a data frame
   ResultsList <- list()
@@ -110,27 +118,32 @@ CalculateScores_ssGSEA_unidirectional <- function(data, signature) {
 }
 
 
-#' Calculate ssGSEA Scores for Bidirectional Gene Signatures
+#'Calculate ssGSEA Scores for Bidirectional Gene Signatures
 #'
-#' Computes single-sample Gene Set Enrichment Analysis (ssGSEA) scores for each sample using
-#' a bidirectional gene signature (separating upregulated and downregulated genes).
+#'Computes single-sample Gene Set Enrichment Analysis (ssGSEA) scores for each
+#'sample using a bidirectional gene signature (separating upregulated and
+#'downregulated genes).
 #'
-#' @param data A data frame of normalized (non-transformed) counts where rows are genes and columns are samples.
-#' @param signature A data frame with:
+#'@param data A data frame of normalized (non-transformed) counts where rows are
+#'  genes and columns are samples.
+#'@param signature A data frame with:
 #' - The **first column** containing gene names.
-#' - The **second column** (`Signal`) indicating the expected direction of enrichment (1 for upregulated genes, -1 for downregulated genes).
+#' - The **second column** (`Signal`) indicating the expected direction of
+#' enrichment (1 for upregulated genes, -1 for downregulated genes).
 #'
-#' @importFrom reshape2 melt
+#'@importFrom reshape2 melt
 #'
-#' @return A data frame containing:
+#'@return A data frame containing:
 #' - `sample`: Sample name.
-#' - `score`: Final ssGSEA enrichment score (computed as the difference between upregulated and downregulated scores).
+#' - `score`: Final ssGSEA enrichment score (computed as the difference
+#' between upregulated and downregulated scores).
 #'
-#' @details
+#'@details
 #' - The input gene expression matrix (`data`) is log2-transformed before applying ssGSEA.
 #' - Upregulated and downregulated genes are analyzed separately.
 #' - As both upregulated and downregulated genes are present, the final score is computed as:
-#'   \deqn{score = (score_{up} \* \frac{|up\_genes|}{|total\_genes|}) - (score_{down} \* \frac{|down\_genes|}{|total\_genes|})}
+#'\deqn{score = (score_{up} \* \frac{|up\_genes|}{|total\_genes|}) -
+#'(score_{down} \* \frac{|down\_genes|}{|total\_genes|})}
 #' - If no downregulated genes are present, only the upregulated score is used.
 #' - The results are reshaped into a long-format data frame with one score per sample.
 #'
@@ -150,7 +163,7 @@ CalculateScores_ssGSEA_unidirectional <- function(data, signature) {
 #' scores <- CalculateScores_ssGSEA_bidirectional(data, signature = signature)
 #' print(scores)
 #'}
-#' @keywords internal
+#'@keywords internal
 CalculateScores_ssGSEA_bidirectional <- function(data, signature) {
   data <- as.data.frame(data) # Ensure data is a data frame
   ResultsList <- list()
@@ -192,12 +205,17 @@ CalculateScores_ssGSEA_bidirectional <- function(data, signature) {
   ssGSEAresults <- merge(up_results, down_results, by = "sample")
 
   # Calculate Final Score
-  frac_upgenes <- length(up_genes)/nrow(signature) # fraction of genes for the up part of the signature
-  frac_downgenes <- length(down_genes)/nrow(signature) # fraction of genes for the down part of the signature
+  # fraction of genes for the up part of the signature
+  frac_upgenes <- length(up_genes)/nrow(signature)
+  # fraction of genes for the down part of the signature
+  frac_downgenes <- length(down_genes)/nrow(signature)
 
-  # weight ssGSEA results based on the proportion of genes from each direction; calculate difference - if negative, means that the
-  # signature is doing the opposite that it should do (either DOWN is positive, UP is negative; both...)
-  ssGSEAresults$score <- (ssGSEAresults$score_up * frac_upgenes) - (ssGSEAresults$score_down * frac_downgenes)
+  # weight ssGSEA results based on the proportion of genes from each direction;
+  #calculate difference - if negative, means that the
+  # signature is doing the opposite that it should do (either DOWN is
+  # positive, UP is negative; both...)
+  ssGSEAresults$score <- (ssGSEAresults$score_up * frac_upgenes) -
+    (ssGSEAresults$score_down * frac_downgenes)
   ssGSEAresults$score_up <- NULL
   ssGSEAresults$score_down <- NULL
 

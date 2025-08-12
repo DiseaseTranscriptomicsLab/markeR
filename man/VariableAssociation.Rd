@@ -36,33 +36,41 @@ VariableAssociation(
 \item \code{"GSEA"}
 }}
 
-\item{data}{A data frame with gene expression data (genes as rows, samples as columns).}
+\item{data}{A data frame with gene expression data (genes as rows,
+samples as columns).}
 
-\item{metadata}{A data frame containing sample metadata; the first column should be the sampleID.}
+\item{metadata}{A data frame containing sample metadata; the first column
+should be the sampleID.}
 
 \item{cols}{Character vector of metadata column names to analyze.}
 
 \item{gene_set}{A named list of gene sets:
 \itemize{
 \item For score-based methods: list of gene vectors.
-\item For GSEA: list of vectors (unidirectional) or data frames (bidirectional).
+\item For GSEA: list of vectors (unidirectional) or
+data frames (bidirectional).
 }}
 
 \item{mode}{Contrast mode: \code{"simple"} (default), \code{"medium"}, or \code{"extensive"}.}
 
-\item{stat}{(GSEA only) Optional. Statistic for ranking genes (\code{"B"} or \code{"t"}). Auto-detected if \code{NULL}.}
+\item{stat}{(GSEA only) Optional. Statistic for ranking genes
+(\code{"B"} or \code{"t"}). Auto-detected if \code{NULL}.}
 
-\item{ignore_NAs}{(GSEA only) Logical. If \code{TRUE}, rows with NA metadata are removed. Default: \code{FALSE}.}
+\item{ignore_NAs}{(GSEA only) Logical. If \code{TRUE}, rows with NA metadata are
+removed. Default: \code{FALSE}.}
 
-\item{signif_color}{Color used for significant associations (default: \code{"red"}).}
+\item{signif_color}{Color used for significant associations
+(default: \code{"red"}).}
 
-\item{nonsignif_color}{Color used for non-significant associations (default: \code{"grey"}).}
+\item{nonsignif_color}{Color used for non-significant associations
+(default: \code{"grey"}).}
 
 \item{sig_threshold}{Numeric significance cutoff (default: \code{0.05}).}
 
 \item{saturation_value}{Lower limit for p-value coloring (default: auto).}
 
-\item{widthlabels}{Integer for contrast label width before wrapping (default: \code{18}).}
+\item{widthlabels}{Integer for contrast label width before wrapping
+(default: \code{18}).}
 
 \item{labsize}{Axis text size (default: \code{10}).}
 
@@ -70,11 +78,14 @@ VariableAssociation(
 
 \item{pointSize}{Size of plot points (default: \code{5}).}
 
-\item{discrete_colors}{(Score-based only) Optional named list mapping factor levels to colors.}
+\item{discrete_colors}{(Score-based only) Optional named list mapping
+factor levels to colors.}
 
-\item{continuous_color}{(Score-based only) Color for continuous variable points (default: \code{"#8C6D03"}).}
+\item{continuous_color}{(Score-based only) Color for continuous variable
+points (default: \code{"#8C6D03"}).}
 
-\item{color_palette}{(Score-based only) ColorBrewer palette name for categorical variables (default: \code{"Set2"}).}
+\item{color_palette}{(Score-based only) ColorBrewer palette name for
+categorical variables (default: \code{"Set2"}).}
 
 \item{printplt}{Logical. If \code{TRUE}, plots are printed. Default: \code{TRUE}.}
 }
@@ -83,29 +94,36 @@ A list with method-specific results and ggplot2-based visualizations:
 
 \strong{For score-based methods (\code{logmedian}, \code{ssGSEA}, \code{ranking}):}
 \itemize{
-\item \code{Overall}: Data frame of effect sizes (Cohen's f) and p-values for each metadata variable.
-\item \code{Contrasts}: Data frame of Cohen’s d values and adjusted p-values for pairwise comparisons (based on \code{mode}).
+\item \code{Overall}: Data frame of effect sizes (Cohen's f) and p-values for each
+metadata variable.
+\item \code{Contrasts}: Data frame of Cohen's d values and adjusted p-values for
+pairwise comparisons (based on \code{mode}).
 \item \code{plot}: A combined visualization including:
 \itemize{
-\item Lollipop plots of Cohen’s f,
+\item Lollipop plots of Cohen's f,
 \item Distribution plots by variable (density or scatter),
-\item Lollipop plots of Cohen’s d for contrasts.
+\item Lollipop plots of Cohen's d for contrasts.
 }
-\item \code{plot_contrasts}: Lollipop plots of Cohen’s d effect sizes, colored by adjusted p-values (BH).
-\item \code{plot_overall}: Lollipop plot of Cohen’s f, colored by p-values.
+\item \code{plot_contrasts}: Lollipop plots of Cohen's d effect sizes, colored by
+adjusted p-values (BH).
+\item \code{plot_overall}: Lollipop plot of Cohen's f, colored by p-values.
 \item \code{plot_distributions}: List of distribution plots of scores by variable.
 }
 
 \strong{For GSEA-based method (\code{GSEA}):}
 \itemize{
-\item \code{data}: A data frame with GSEA results, including normalized enrichment scores (NES), adjusted p-values, and contrasts.
+\item \code{data}: A data frame with GSEA results, including normalized enrichment
+scores (NES), adjusted p-values, and contrasts.
 \item \code{plot}: A ggplot2 lollipop plot of GSEA enrichment across contrasts.
 }
 }
 \description{
-This unified function evaluates associations between gene expression and sample metadata
-using multiple methods: score-based (logmedian, ssGSEA, ranking) or GSEA-based association.
-The function returns statistical results and visualizations summarizing effect sizes and significance.
+This unified function evaluates associations between gene expression and
+sample metadata
+using multiple methods: score-based (logmedian, ssGSEA, ranking) or
+GSEA-based association.
+The function returns statistical results and visualizations summarizing
+effect sizes and significance.
 }
 \section{Shared Arguments (All Methods)}{
 

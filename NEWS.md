@@ -1,3 +1,13 @@
+# markeR 0.99.2 (23 Jul, 2025)
+
+* Minor fixes in documentation
+
+# markeR 0.99.1 (23 Jul, 2025)
+
+* Fix documentation (invalid characters, deep nesting, missing value in data)
+* Remove citation, given that a DOI is not yet available
+* Removed unwanted files from the repository 
+
 # markeR 0.99.0 (18 Jul, 2025)
 
 * First submission to Bioconductor

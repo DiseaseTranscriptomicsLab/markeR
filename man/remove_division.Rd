@@ -13,6 +13,7 @@ remove_division(contrasts)
 A character vector with division notation removed.
 }
 \description{
-This function removes division notation (e.g., \verb{/2}, \verb{/3}) after closing parentheses in contrast labels.
+This function removes division notation (e.g., \verb{/2}, \verb{/3}) after closing
+parentheses in contrast labels.
 }
 \keyword{internal}

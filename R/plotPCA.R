@@ -1,33 +1,45 @@
 #' Principal Component Analysis (PCA) Plot
 #'
-#' This function performs PCA on a given dataset and visualizes the results using ggplot2.
-#' It allows users to specify genes of interest, customize scaling and centering, and color points
-#' based on a metadata variable.
+#' This function performs PCA on a given dataset and visualizes the results
+#' using ggplot2. It allows users to specify genes of interest, customize
+#' scaling and centering, and color points based on a metadata variable.
 #'
-#' @param data A numeric matrix or data frame where rows represent genes and columns represent samples.
-#' @param metadata A data frame containing sample metadata. The first column should contain sample names. Default is NULL.
-#' @param genes A character vector specifying genes to be included in the PCA. Default is NULL (uses all genes).
-#' @param scale Logical; if TRUE, variables are scaled before PCA. Default is FALSE.
-#' @param center Logical; if TRUE, variables are centered before PCA. Default is TRUE.
-#' @param PCs A list specifying which principal components (PCs) to plot. Default is \code{list(c(1,2))}.
-#' @param ColorVariable A character string specifying the metadata column used for coloring points. Default is NULL.
-#' @param ColorValues A vector specifying custom colors for groups in \code{ColorVariable}. Default is NULL.
+#' @param data A numeric matrix or data frame where rows represent genes and
+#'   columns represent samples.
+#' @param metadata A data frame containing sample metadata. The first column
+#'   should contain sample names. Default is NULL.
+#' @param genes A character vector specifying genes to be included in the PCA.
+#'   Default is NULL (uses all genes).
+#' @param scale Logical; if TRUE, variables are scaled before PCA. Default is
+#'   FALSE.
+#' @param center Logical; if TRUE, variables are centered before PCA. Default is
+#'   TRUE.
+#' @param PCs A list specifying which principal components (PCs) to plot.
+#'   Default is \code{list(c(1,2))}.
+#' @param ColorVariable A character string specifying the metadata column used
+#'   for coloring points. Default is NULL.
+#' @param ColorValues A vector specifying custom colors for groups in
+#'   \code{ColorVariable}. Default is NULL.
 #' @param pointSize Numeric; sets the size of points in the plot. Default is 5.
 #' @param legend_nrow Integer; number of rows in the legend. Default is 2.
-#' @param legend_position Character; position of the legend ("bottom", "top", "right", "left"). Default is "bottom".
-#' @param ncol Integer; number of columns in the arranged PCA plots. Default is determined automatically.
-#' @param nrow Integer; number of rows in the arranged PCA plots. Default is determined automatically.
+#' @param legend_position Character; position of the legend ("bottom", "top",
+#'   "right", "left"). Default is "bottom".
+#' @param ncol Integer; number of columns in the arranged PCA plots. Default is
+#'   determined automatically.
+#' @param nrow Integer; number of rows in the arranged PCA plots. Default is
+#'   determined automatically.
 #'
 #'
-#' @details
-#' The function performs PCA using \code{prcomp()} and visualizes the results using \code{ggplot2}.
-#' If a metadata data frame is provided, it ensures the sample order matches between data and metadata.
+#' @details The function performs PCA using \code{prcomp()} and visualizes the
+#'   results using \code{ggplot2}. If a metadata data frame is provided, it
+#'   ensures the sample order matches between data and metadata.
 #'
 #' @return A list with two elements:
 #' \itemize{
 #'   \item \code{plt}: A ggplot2 or ggarrange object displaying the PCA plot.
-#'   \item \code{data}: A data frame containing PCA-transformed values and sample metadata (if available).
-#' }#'
+#'   \item \code{data}: A data frame containing PCA-transformed values and
+#'   sample metadata (if available).
+#' }
 #'
 #' @examples
 #' # Example dataset
@@ -46,10 +58,10 @@
 #' n_genes <- 100
 #' n_samples <- 10
 #'
-#' # Group A: samples 1–5, lower mean
+#' # Group A: samples 1-5, lower mean
 #' group_A <- matrix(rlnorm(n_genes * 5, meanlog = 1, sdlog = 0.3), nrow = n_genes)
 #'
-#' # Group B: samples 6–10, higher mean
+#' # Group B: samples 6-10, higher mean
 #' group_B <- matrix(rlnorm(n_genes * 5, meanlog = 2, sdlog = 0.3), nrow = n_genes)
 #'
 #' # Combine
@@ -69,7 +81,11 @@
 #' @import ggplot2
 #' @importFrom ggpubr ggarrange
 #' @export
-plotPCA <- function(data, metadata=NULL, genes=NULL, scale=FALSE, center=TRUE, PCs=list(c(1,2)), ColorVariable=NULL,ColorValues=NULL,pointSize=5,legend_nrow=2, legend_position=c("bottom","top","right","left"),ncol=NULL, nrow=NULL){
+plotPCA <- function(data, metadata=NULL, genes=NULL, scale=FALSE, center=TRUE,
+                    PCs=list(c(1,2)), ColorVariable=NULL,ColorValues=NULL,
+                    pointSize=5,legend_nrow=2,
+                    legend_position=c("bottom","top","right","left"),
+                    ncol=NULL, nrow=NULL){
   data <- as.data.frame(data) # Ensure data is a data frame
   legend_position <- match.arg(legend_position)
 
@@ -112,14 +128,17 @@ plotPCA <- function(data, metadata=NULL, genes=NULL, scale=FALSE, center=TRUE, P
     pc_x <- round(100*ev[pc[1]]/sum(ev),2)
     pc_y <- round(100*ev[pc[2]]/sum(ev),2)
 
-    plt <- ggplot2::ggplot(PCAcounts, ggplot2::aes_string(y = paste0("PC",pc[2]), x =  paste0("PC",pc[1])))
+    plt <- ggplot2::ggplot(PCAcounts, ggplot2::aes_string(y = paste0("PC",pc[2]),
+                                                          x =  paste0("PC",pc[1])))
 
 
     # Add jittered points, optionally colored by ColorVariable.Default: Brewer Pallette "Paired"
     if (!is.null(ColorVariable)) {
-      plt <- plt + ggplot2::geom_point(ggplot2::aes_string(fill = ColorVariable), size = pointSize, alpha = 0.5, shape=21, color="black")
+      plt <- plt + ggplot2::geom_point(ggplot2::aes_string(fill = ColorVariable),
+                                       size = pointSize, alpha = 0.5, shape=21, color="black")
     } else {
-      plt <- plt + ggplot2::geom_point(size = pointSize, alpha = 0.5, shape=21, color="black", fill="#D8D8D8")
+      plt <- plt + ggplot2::geom_point(size = pointSize, alpha = 0.5, shape=21,
+                                       color="black", fill="#D8D8D8")
     }
 
     # If ColorValues is provided, use a manual color scale; otherwise, if ColorVariable is provided,
@@ -147,7 +166,8 @@ plotPCA <- function(data, metadata=NULL, genes=NULL, scale=FALSE, center=TRUE, P
 
     # Adjust legend rows if legend_nrow is specified
     if (!is.null(legend_nrow)) {
-      plt <- plt + ggplot2::guides(fill = ggplot2::guide_legend(nrow = legend_nrow, position = legend_position))
+      plt <- plt + ggplot2::guides(fill = ggplot2::guide_legend(nrow = legend_nrow,
+                                                                position = legend_position))
     }
 
     # Add reference lines
@@ -185,7 +205,8 @@ plotPCA <- function(data, metadata=NULL, genes=NULL, scale=FALSE, center=TRUE, P
     }
 
     if (!is.null(ColorVariable)) {
-      plt <- ggpubr::ggarrange(plotlist = pltList, ncol = ncol, nrow = nrow, common.legend = TRUE, align = "h")
+      plt <- ggpubr::ggarrange(plotlist = pltList, ncol = ncol, nrow = nrow,
+                               common.legend = TRUE, align = "h")
     } else {
       plt <- ggpubr::ggarrange(plotlist = pltList, ncol = ncol, nrow = nrow, align = "h")
     }

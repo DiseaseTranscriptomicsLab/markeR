@@ -1,8 +1,7 @@
 .Rproj.user
 .Rhistory
 .Rdata
-.httr-oauth
-.DS_Store
+.httr-oauth 
 .quarto
 /renv/
 /tests/debug/
@@ -15,3 +14,6 @@ renv.lock
 markeR.BiocCheck/ 
 /doc/
 /Meta/
+markeR.Rproj
+.DS_Store
+**/.DS_Store

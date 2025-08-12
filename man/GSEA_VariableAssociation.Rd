@@ -24,67 +24,93 @@ GSEA_VariableAssociation(
 )
 }
 \arguments{
-\item{data}{A matrix or data frame containing gene expression data, where rows represent genes and columns represent samples.}
+\item{data}{A matrix or data frame containing gene expression data, where
+rows represent genes and columns represent samples.}
 
-\item{metadata}{A data frame containing sample metadata with at least one column corresponding to the variables of interest.}
+\item{metadata}{A data frame containing sample metadata with at least one
+column corresponding to the variables of interest.}
 
-\item{cols}{A character vector specifying the metadata columns (variables) to analyse.}
+\item{cols}{A character vector specifying the metadata columns (variables) to
+analyse.}
 
-\item{stat}{Optional. The statistic to use for ranking genes before GSEA. If \code{NULL}, it is automatically determined based on the gene set:
+\item{stat}{Optional. The statistic to use for ranking genes before GSEA. If
+\code{NULL}, it is automatically determined based on the gene set:
 \itemize{
 \item \code{"B"} for gene sets with \strong{no known direction} (vectors).
 \item \code{"t"} for \strong{unidirectional} or \strong{bidirectional} gene sets (data frames).
 \item If provided, this argument overrides the automatic selection.
 }}
 
-\item{mode}{A string specifying the level of detail for contrasts. Options are:
+\item{mode}{A string specifying the level of detail for contrasts. Options
+are:
 \itemize{
-\item \code{"simple"}: Performs the minimal number of pairwise comparisons between individual group levels (e.g., A - B, A - C). Default.
-\item \code{"medium"}: Includes comparisons between one group and the union of all other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
-\item \code{"extensive"}: Allows for all possible algebraic combinations of group levels (e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.
+\item \code{"simple"}: Performs the minimal number of pairwise comparisons between
+individual group levels (e.g., A - B, A - C). Default.
+\item \code{"medium"}: Includes comparisons between one group and the union of all
+other groups (e.g., A - (B + C + D)), enabling broader contrasts beyond simple pairs.
+\item \code{"extensive"}: Allows for all possible algebraic combinations of group levels
+(e.g., (A + B) - (C + D)), supporting flexible and complex contrast definitions.
 }}
 
 \item{gene_set}{A named list defining the gene sets for GSEA. \strong{(Required)}
 \itemize{
-\item If using \strong{unidirectional} gene sets, provide a list where each element is a vector of gene names representing a signature.
-\item If using \strong{bidirectional} gene sets, provide a list where each element is a data frame:
+\item If using \strong{unidirectional} gene sets, provide a list where each element
+is a vector of gene names representing a signature.
+\item If using \strong{bidirectional} gene sets, provide a list where each element
+is a data frame:
 \item The \strong{first column} should contain gene names.
-\item The \strong{second column} should indicate the expected direction of enrichment (\code{1} for upregulated, \code{-1} for downregulated).
+\item The \strong{second column} should indicate the expected direction of enrichment
+(\code{1} for upregulated, \code{-1} for downregulated).
 }}
 
-\item{nonsignif_color}{A string specifying the color for the middle of the adjusted p-value gradient. Default is \code{"white"}. Lower limit correspond to the value of \code{sig_threshold}.}
+\item{nonsignif_color}{A string specifying the color for the middle of the
+adjusted p-value gradient. Default is \code{"white"}. Lower limit correspond to
+the value of \code{sig_threshold}.}
 
-\item{signif_color}{A string specifying the color for the low end of the adjusted p-value gradient until the value chosen for significance (\code{sig_threshold}). Default is \code{"red"}.}
+\item{signif_color}{A string specifying the color for the low end of the
+adjusted p-value gradient until the value chosen for significance
+(\code{sig_threshold}). Default is \code{"red"}.}
 
-\item{saturation_value}{A numeric value specifying the lower limit of the adjusted p-value gradient, below which the color will correspond to \code{signif_color}. Default is the results' minimum, unless that
-value is above the sig_threshold; in that case, it is 0.001.}
+\item{saturation_value}{A numeric value specifying the lower limit of the
+adjusted p-value gradient, below which the color will correspond to
+\code{signif_color}. Default is the results' minimum, unless that value is
+above the sig_threshold; in that case, it is 0.001.}
 
-\item{sig_threshold}{A numeric value specifying the threshold for significance visualization in the plot. Default: \code{0.05}.}
+\item{sig_threshold}{A numeric value specifying the threshold for
+significance visualization in the plot. Default: \code{0.05}.}
 
-\item{widthlabels}{An integer controlling the maximum width of contrast labels before text wrapping. Default: \code{18}.}
+\item{widthlabels}{An integer controlling the maximum width of contrast
+labels before text wrapping. Default: \code{18}.}
 
-\item{labsize}{An integer controlling the axis text size in the plot. Default: \code{10}.}
+\item{labsize}{An integer controlling the axis text size in the plot.
+Default: \code{10}.}
 
 \item{titlesize}{An integer specifying the plot title size. Default: \code{14}.}
 
-\item{pointSize}{Numeric. The size of points in the lollipop plot (default is 5).}
+\item{pointSize}{Numeric. The size of points in the lollipop plot (default is
+5).}
 
-\item{ignore_NAs}{Boolean (default: FALSE). Whether to ignore NAs in the metadata when fitting the linear model.
-If TRUE, rows with any NAs will be removed before analysis, leading to a loss of data to be fitted in the model.}
+\item{ignore_NAs}{Boolean (default: FALSE). Whether to ignore NAs in the
+metadata when fitting the linear model. If TRUE, rows with any NAs will be
+removed before analysis, leading to a loss of data to be fitted in the
+model.}
 
 \item{printplt}{Boolean specifying if plot is to be printed. Default: \code{TRUE}.}
 }
 \value{
 A list with two elements:
 \itemize{
-\item \code{data}: A data frame containing the GSEA results, including normalized enrichment scores (NES), adjusted p-values, and contrasts.
+\item \code{data}: A data frame containing the GSEA results, including normalized
+enrichment scores (NES), adjusted p-values, and contrasts.
 \item \code{plot}: A ggplot2 object visualizing the GSEA results as a lollipop plot.
 }
 }
 \description{
-This function assesses the association between gene expression (or another molecular score)
-and metadata variables using differential expression (DE) analysis and Gene Set Enrichment Analysis (GSEA).
-It generates all possible contrasts for categorical variables and uses linear modeling for continuous variables.
+This function assesses the association between gene expression (or another
+molecular score) and metadata variables using differential expression (DE)
+analysis and Gene Set Enrichment Analysis (GSEA). It generates all possible
+contrasts for categorical variables and uses linear modeling for continuous
+variables.
 }
 \examples{
 # Simulate gene expression data (genes as rows, samples as columns)

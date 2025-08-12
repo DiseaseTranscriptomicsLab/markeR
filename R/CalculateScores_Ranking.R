@@ -1,32 +1,37 @@
-#' Calculate Gene Signature Scores using Ranking Approach
+#'Calculate Gene Signature Scores using Ranking Approach
 #'
-#' Computes gene signature scores for each sample by ranking the expression of signature genes
-#' in the dataset and normalizing the score based on the total number of genes.
+#'Computes gene signature scores for each sample by ranking the expression of
+#'signature genes in the dataset and normalizing the score based on the total
+#'number of genes.
 #'
-#' @param data A data frame where rows represent genes, columns represent samples, and values
-#'   correspond to gene expression levels. **(Required)**
-#' @param metadata A data frame containing sample metadata. The first column must contain sample
-#'   names. **(Optional)**
+#'@param data A data frame where rows represent genes, columns represent
+#'  samples, and values correspond to gene expression levels. **(Required)**
+#'@param metadata A data frame containing sample metadata. The first column must
+#'  contain sample names. **(Optional)**
 #' @param gene_sets A named list of gene sets. **(Required)**
+#'   For unidirectional gene sets, provide a named list where each element is a vector of gene names.
+#'   For bidirectional gene sets, provide a named list where each element is a data frame with two columns:
+#'   \itemize{
+#'     \item The first column: gene names.
+#'     \item The second column: expected direction (1 for upregulated, -1 for downregulated).
+#'   }
 #'
-#' - **Unidirectional gene sets**: Provide a named list where each element is a vector of gene names.
-#' - **Bidirectional gene sets**: Provide a named list where each element is a data frame.
-#'   - The **first column** should contain gene names.
-#'   - The **second column** should indicate the expected direction of enrichment (1 for upregulated genes, -1 for downregulated genes).
-#'
-#' @return A named list of data frames, where each data frame contains:
+#'@return A named list of data frames, where each data frame contains:
 #' - `sample`: Sample name.
 #' - `score`: Normalized ranking score for the given gene signature.
 #' - Additional metadata columns (if `metadata` is provided).
 #'
-#' @details
+#'@details
 #' - The function first validates inputs and extracts relevant genes from the dataset.
-#' - For **unidirectional** signatures, it computes rankings based on gene expression levels.
-#' - For **bidirectional** signatures, it computes separate rankings for upregulated and downregulated genes,
-#'   then calculates a final score by subtracting downregulated rankings from upregulated rankings.
+#' - For **unidirectional** signatures, it computes rankings based on gene
+#' expression levels.
+#' - For **bidirectional** signatures, it computes separate rankings for upregulated
+#' and downregulated genes, then calculates a final score by subtracting
+#' downregulated rankings from upregulated rankings.
 #' - The final scores are normalized by dividing by the total number of genes.
-#' - This metric is not suitable to compare absolute values between different gene sets, i.e. should be used only for
-#'   relative comparisons between samples when using the same gene set.
+#' - This metric is not suitable to compare absolute values between different
+#' gene sets, i.e. should be used only for relative comparisons between
+#' samples when using the same gene set.
 #'
 #' @examples
 #' \dontrun{
@@ -43,13 +48,14 @@
 #' scores <- CalculateScores_Ranking(data, gene_sets = gene_sets)
 #' print(scores)
 #'}
-#' @keywords internal
+#'@keywords internal
 CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
   data <- as.data.frame(data) # Ensure data is a data frame
   ResultsList <- list()
 
   if (!is.data.frame(data)) stop("Error: data must be a data frame")
-  if (!is.null(metadata) && !is.data.frame(metadata)) stop("Error: metadata must be a data frame")
+  if (!is.null(metadata) && !is.data.frame(metadata)) stop(
+    "Error: metadata must be a data frame")
   if (!is.list(gene_sets)) stop("Error: gene_sets must be a list")
 
   # Change first column name to default name "sample" for merging purposes
@@ -74,8 +80,10 @@ CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
         signaturegenes_down <- signature[signature[,2] == -1, 1]
 
         # Apply getRanking function to each sample (column)
-        rankings_up <- sapply(colnames(data), function(sample) getRanking(data, sample, signaturegenes_up))
-        rankings_down <- sapply(colnames(data), function(sample) getRanking(data, sample, signaturegenes_down))
+        rankings_up <- sapply(colnames(data),
+                              function(sample) getRanking(data, sample, signaturegenes_up))
+        rankings_down <- sapply(colnames(data),
+                                function(sample) getRanking(data, sample, signaturegenes_down))
 
         ranking_final <- (rankings_up - rankings_down) / length(universe_genes)
         ranking_final <- data.frame(sample = colnames(data), score = ranking_final)
@@ -87,7 +95,8 @@ CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
         signaturegenes <- signature[, 1]
 
         # Apply getRanking function to each sample (column)
-        rankings <- sapply(colnames(data), function(sample) getRanking(data, sample, signaturegenes))
+        rankings <- sapply(colnames(data),
+                           function(sample) getRanking(data, sample, signaturegenes))
 
         ranking_final <- rankings / length(universe_genes)
         ranking_final <- data.frame(sample = colnames(data), score = ranking_final)
@@ -99,7 +108,8 @@ CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
       signaturegenes <- signature
 
       # Apply getRanking function to each sample (column)
-      rankings <- sapply(colnames(data), function(sample) getRanking(data, sample, signaturegenes))
+      rankings <- sapply(colnames(data),
+                         function(sample) getRanking(data, sample, signaturegenes))
 
       ranking_final <- rankings / length(universe_genes)
       ranking_final <- data.frame(sample = colnames(data), score = ranking_final)
@@ -116,18 +126,22 @@ CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
   return(ResultsList)
 }
 
-#' Get Gene Expression Ranking
+#'Get Gene Expression Ranking
 #'
-#' Computes the rank sum of a given gene set within a sample based on its expression level.
+#'Computes the rank sum of a given gene set within a sample based on its
+#'expression level.
 #'
-#' @param data A data frame where rows represent genes, columns represent samples, and values correspond to expression levels.
-#' @param sample A character string specifying the sample name (column in `data`).
-#' @param geneset A vector of gene names to be ranked.
+#'@param data A data frame where rows represent genes, columns represent
+#'  samples, and values correspond to expression levels.
+#'@param sample A character string specifying the sample name (column in
+#'  `data`).
+#'@param geneset A vector of gene names to be ranked.
 #'
-#' @return The sum of the ranks of the genes found in the sample.
-#' @details
+#'@return The sum of the ranks of the genes found in the sample.
+#'@details
 #' - The function orders gene expression levels from lowest to highest.
-#' - It then determines the rank of each gene in `geneset` and returns the sum of these ranks.
+#' - It then determines the rank of each gene in `geneset` and returns the
+#' sum of these ranks.
 #' - If some genes are missing, they are omitted from the ranking calculation.
 #'
 #' @examples
@@ -145,12 +159,15 @@ CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
 #' rank_score <- getRanking(data, "Sample_1", geneset)
 #' print(rank_score)
 #'}
-#' @keywords internal
+#'@keywords internal
 getRanking <- function(data, sample, geneset) {
-  data <- as.data.frame(data) # Ensure data is a data frame
-  expressiongene <- data[, sample]  # Isolate one sample and get the expression of all genes
+  # Ensure data is a data frame
+  data <- as.data.frame(data)
+  # Isolate one sample and get the expression of all genes
+  expressiongene <- data[, sample]
   names(expressiongene) <- row.names(data)  # Name vector
-  expressiongene <- expressiongene[order(expressiongene, decreasing = FALSE)]  # Order from least to most expressed
+  # Order from least to most expressed
+  expressiongene <- expressiongene[order(expressiongene, decreasing = FALSE)]
   ranking <- match(geneset, names(expressiongene))  # Find gene positions in ordered list
   ranking <- as.vector(na.omit(ranking))  # Remove missing genes
 

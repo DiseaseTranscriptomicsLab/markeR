@@ -19,41 +19,54 @@ Volcano_Cohen(
 )
 }
 \arguments{
-\item{cohenlist}{A named list where each element corresponds to a gene signature. Output of \code{CohenD_allConditions}. Each signature element is a list with three components:
-\describe{
-\item{CohenD}{A data frame where rows are methods and columns are group contrasts (formatted as \"Group1:Group2\"),
-containing the computed Cohen\'s d effect sizes.}
-\item{PValue}{A data frame with the same structure as \code{CohenD} containing the corresponding p-values.}
-\item{padj}{A data frame with the same structure as \code{PValue} containing the corresponding p-values corrected using the BH method, for all signatures and contrasts,
-and by method.}
+\item{cohenlist}{A named list from \code{CohenD_allConditions}. Each element
+is a list with:
+\itemize{
+\item \code{CohenD}: A data frame where rows are methods and columns are group
+contrasts (formatted as "Group1:Group2"), containing the computed Cohen's d
+effect sizes.
+\item \code{PValue}: A data frame with the same structure as \code{CohenD}
+containing the corresponding p-values.
+\item \code{padj}: A data frame with the same structure as \code{PValue}
+containing the corresponding p-values corrected using the BH method,
+for all signatures and contrasts, and by method.
 }}
 
 \item{titlesize}{Integer. Size of the facet strip titles. Default is 12.}
 
-\item{ColorValues}{Character vector of colors used to distinguish signatures. If NULL, colors are automatically generated.}
+\item{ColorValues}{Character vector of colors used to distinguish signatures.
+If NULL, colors are automatically generated.}
 
 \item{title}{Optional title for the overall plot.}
 
-\item{widthlegend}{Integer. Width used to wrap long signature names. Default is 22.}
+\item{widthlegend}{Integer. Width used to wrap long signature names. Default
+is 22.}
 
 \item{pointSize}{Numeric. Size of the points in the plot. Default is 3.}
 
-\item{sig_threshold}{Numeric. Adjusted p-value threshold for significance. Default is 0.05.}
+\item{sig_threshold}{Numeric. Adjusted p-value threshold for significance.
+Default is 0.05.}
 
 \item{cohen_threshold}{Numeric. Effect size threshold. Default is 0.5.}
 
-\item{colorPalette}{Character. Name of RColorBrewer palette to use if \code{ColorValues} is not provided. Default is "Set3".}
+\item{colorPalette}{Character. Name of RColorBrewer palette to use if
+\code{ColorValues} is not provided. Default is "Set3".}
 
-\item{nrow}{Optional numeric value specifying the number of rows in the grid layout. If \code{NULL}, a near-square grid is computed.}
+\item{nrow}{Optional numeric value specifying the number of rows in the grid
+layout. If \code{NULL}, a near-square grid is computed.}
 
-\item{ncol}{Optional numeric value specifying the number of columns in the ggplot facet. If \code{NULL}, a near-square grid is computed.}
+\item{ncol}{Optional numeric value specifying the number of columns in the
+ggplot facet. If \code{NULL}, a near-square grid is computed.}
 }
 \value{
-A \code{ggplot} object showing a faceted volcano plot of Cohen's d effect sizes across signatures and methods for each contrast.
+A \code{ggplot} object showing a faceted volcano plot of Cohen's d effect
+sizes across signatures and methods for each contrast.
 }
 \description{
-This function computes Cohen's d effect sizes and adjusted p-values for multiple gene signatures across defined contrasts,
-and generates a volcano plot (Cohen's d vs -log10(padj)) using \code{ggplot2}. Each point represents a method-signature pair,
+This function computes Cohen's d effect sizes and adjusted p-values for
+multiple gene signatures across defined contrasts,
+and generates a volcano plot (Cohen's d vs -log10(padj)) using \code{ggplot2}.
+Each point represents a method-signature pair,
 faceted by contrast.
 }
 \seealso{

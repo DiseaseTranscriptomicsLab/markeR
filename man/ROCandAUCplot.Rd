@@ -20,55 +20,80 @@ ROCandAUCplot(
 )
 }
 \arguments{
-\item{data}{A data frame or matrix containing gene expression data, with genes as rows and samples as columns.}
+\item{data}{A data frame or matrix containing gene expression data, with
+genes as rows and samples as columns.}
 
-\item{metadata}{A data frame containing sample metadata. The first column should contain sample identifiers that match the column names of \code{data}.}
+\item{metadata}{A data frame containing sample metadata. The first column
+should contain sample identifiers that match the column names of
+\code{data}.}
 
-\item{genes}{A character vector specifying which genes to plot. If \code{NULL} (default), all genes in \code{data} are used.
-A warning is issued if more than 30 genes are selected.}
+\item{genes}{A character vector specifying which genes to plot. If
+\code{NULL} (default), all genes in \code{data} are used. A warning is
+issued if more than 30 genes are selected.}
 
-\item{condition_var}{A character string specifying the column name in \code{metadata} representing the condition of interest.
-(Mandatory; no default.)}
+\item{condition_var}{A character string specifying the column name in
+\code{metadata} representing the condition of interest. (Mandatory; no
+default.)}
 
-\item{class}{A character string or vector specifying the positive class label for the condition.
-(Mandatory; no default.)}
+\item{class}{A character string or vector specifying the positive class label
+for the condition. (Mandatory; no default.)}
 
-\item{group_var}{An optional character string specifying the column name in \code{metadata} used for grouping samples (e.g., cell types).
-If not provided (\code{NULL}), all samples are treated as a single group. Should be a categorical variable.}
+\item{group_var}{An optional character string specifying the column name in
+\code{metadata} used for grouping samples (e.g., cell types). If not
+provided (\code{NULL}), all samples are treated as a single group. Should
+be a categorical variable.}
 
 \item{plot_type}{A character string indicating which plot(s) to generate.
-Accepted values are \code{"roc"} (only ROC curves), \code{"auc"} (only the AUC heatmap/barplot), or \code{"all"} (both arranged side-by-side).
-Default is \code{"roc"}.}
+Accepted values are \code{"roc"} (only ROC curves), \code{"auc"} (only the
+AUC heatmap/barplot), or \code{"all"} (both arranged side-by-side). Default
+is \code{"roc"}.}
 
-\item{title}{An optional character string specifying the main title of the plot.}
+\item{title}{An optional character string specifying the main title of the
+plot.}
 
-\item{titlesize}{A numeric value specifying the size of the title. Default is \code{14}.}
+\item{titlesize}{A numeric value specifying the size of the title. Default is
+\code{14}.}
 
-\item{roc_params}{A list of additional parameters for customizing the ROC plot. Possible elements include:
+\item{roc_params}{A list of additional parameters for customizing the ROC
+plot. Possible elements include:
 \describe{
-\item{\code{nrow}}{An integer specifying the number of rows in the ROC plot grid. If \code{NULL} (default), it is calculated automatically.}
-\item{\code{ncol}}{An integer specifying the number of columns in the ROC plot grid. If \code{NULL} (default), it is calculated automatically.}
-\item{\code{colors}}{A named vector of colors for the different groups. If \code{NULL} (default), a default color palette is generated.}
+\item{\code{nrow}}{An integer specifying the number of rows in the ROC
+plot grid. If \code{NULL} (default), it is calculated automatically.}
+\item{\code{ncol}}{An integer specifying the number of columns in the ROC
+plot grid. If \code{NULL} (default), it is calculated automatically.}
+\item{\code{colors}}{A named vector of colors for the different groups.
+If \code{NULL} (default), a default color palette is generated.}
 }}
 
-\item{auc_params}{A list of additional parameters for customizing the AUC heatmap or AUC barplot. Possible elements include:
+\item{auc_params}{A list of additional parameters for customizing the AUC
+heatmap or AUC barplot. Possible elements include:
 \describe{
 \item{\code{cluster_rows}}{Logical; if \code{TRUE} (default), rows are clustered.}
 \item{\code{cluster_columns}}{Logical; if \code{TRUE} (default), columns are clustered.}
-\item{\code{colors}}{If \code{group_var} is used, should be a vector of length 2 of colors to be used for the minimum and maximum values of the color scale. Defaults to \code{c("#FFFFFF", "#21975C")}.
-If \code{group_var} is \code{NULL}, then should be a single color to fill the barplot. If \code{NULL}, defaults to \code{"#3B415B"}. If a vector is provided, only the first color will be used.}
-\item{\code{limits}}{A numeric vector of length 2 specifying the minimum and maximum values for the color scale.
+\item{\code{colors}}{If \code{group_var} is used, should be a vector of length 2 of
+colors to be used for the minimum and maximum values of the color scale.
+Defaults to \code{c("#FFFFFF", "#21975C")}.
+If \code{group_var} is \code{NULL}, then should be a single color to fill the barplot.
+If \code{NULL}, defaults to \code{"#3B415B"}. If a vector is provided, only the
+first color will be used.}
+\item{\code{limits}}{A numeric vector of length 2 specifying the minimum
+and maximum values for the color scale.
 If not provided, defaults to \code{c(0.5, 1)}.}
-\item{\code{name}}{A character string for the legend title of the color scale. Default is \code{"AUC"}.}
-\item{\code{row_names_gp}}{Optional graphical parameters for row names (passed to \pkg{ComplexHeatmap}).}
-\item{\code{column_names_gp}}{Optional graphical parameters for column names (passed to \pkg{ComplexHeatmap}).}
+\item{\code{name}}{A character string for the legend title of the color
+scale. Default is \code{"AUC"}.}
+\item{\code{row_names_gp}}{Optional graphical parameters for row names
+(passed to \pkg{ComplexHeatmap}).}
+\item{\code{column_names_gp}}{Optional graphical parameters for column
+names (passed to \pkg{ComplexHeatmap}).}
 }}
 
-\item{commomplot_params}{A list of parameters for customizing the layout of the combined plot when \code{plot_type = "all"}.
-Possible elements include:
+\item{commomplot_params}{A list of parameters for customizing the layout of
+the combined plot when \code{plot_type = "all"}. Possible elements include:
 \describe{
-\item{\code{widths}}{A numeric vector specifying the relative widths of the ROC and heatmap panels.}
-\item{\code{heights}}{A numeric vector specifying the relative heights of the panels.}
+\item{\code{widths}}{A numeric vector specifying the relative widths of
+the ROC and heatmap panels.}
+\item{\code{heights}}{A numeric vector specifying the relative heights
+of the panels.}
 }}
 }
 \value{
@@ -81,13 +106,16 @@ Invisibly returns a list containing:
 }
 }
 \description{
-This function computes ROC curves and AUC values for each gene based on gene expression data and sample metadata.
-It can generate ROC plots, an AUC heatmap / barplot, or both arranged side‐by‐side.
+This function computes ROC curves and AUC values for each gene based on gene
+expression data and sample metadata. It can generate ROC plots, an AUC
+heatmap / barplot, or both arranged side‐by‐side.
 }
 \details{
-The function processes gene expression data and metadata to compute ROC curves and AUC values for each gene.
-Depending on the value of \code{plot_type}, it produces ROC plots (using \pkg{ggplot2}), an AUC heatmap (using \pkg{ComplexHeatmap})
-or AUC barplot (if \code{group_var} is \code{NULL}), or both arranged side-by-side (using \pkg{gridExtra}).
+The function processes gene expression data and metadata to compute
+ROC curves and AUC values for each gene. Depending on the value of
+\code{plot_type}, it produces ROC plots (using \pkg{ggplot2}), an AUC
+heatmap (using \pkg{ComplexHeatmap}) or AUC barplot (if \code{group_var} is
+\code{NULL}), or both arranged side-by-side (using \pkg{gridExtra}).
 }
 \examples{
 # Simulate positive gene expression data (genes as rows, samples as columns)
