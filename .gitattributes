@@ -1,2 +1,4 @@
 docs/* linguist-generated
 *.html linguist-generated
+inst/Paper merge=ours
+.gitattributes merge=ours
