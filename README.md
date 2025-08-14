@@ -1,270 +1,123 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# markeR <a href="https://diseasetranscriptomicslab.github.io/markeR/"><img src="man/figures/logo.png" align="right" height="139"/></a>
+# markeR
 
-<!-- badges: start -->
+This repository contains all scripts, data references, and resources to
+reproduce the analyses and figures presented in the manuscript exploring
+senescence-associated gene sets using the **`markeR`** package.
 
-![](https://img.shields.io/badge/status-development-yellowgreen)
-[![Pkgdown](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://diseasetranscriptomicslab.github.io/markeR/)
-[![Minimal R
-Version](https://img.shields.io/badge/min%20R-4.4.0-blue.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/Rminversion.yaml)
-[![codecov](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR/graph/badge.svg?token=7T1I4JCJG6)](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR)
-<!-- [![R-CMD-check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml)-->
-<!-- [![Bioconductor Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml) -->
+------------------------------------------------------------------------
 
-<!-- badges: end -->
+## Repository Structure
 
-**markeR** provides a suite of methods for using gene sets (signatures)
-to quantify and evaluate the extent to which a given gene signature
-marks a specific phenotype from gene expression data. The package
-implements various scoring, enrichment and classification approaches,
-along with tools to compute performance metrics and visualize results.
+The repository is organized into two main folders: **`preprocessing`**
+and **`Figures`**.
 
-> **To cite markeR please use:**
->
-> Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). *markeR: an R
-> Toolkit for Evaluating Gene Sets as Phenotypic Markers*. Gulbenkian
-> Institute for Molecular Medicine, Faculdade de Medicina, Universidade
-> de Lisboa, Lisbon, Portugal. R package version 0.99.2,
-> <https://github.com/DiseaseTranscriptomicsLab/markeR>.
+- **`preprocessing`**: Contains scripts to download, align,
+  quality-check, filter, normalize, and batch-correct RNA-seq datasets,
+  producing the processed data used for analysis.
+  - `Download_Alignment_QC`: Includes `Metadata.csv`,
+    `pipeline_download_processing.sh`, and `sampleIDs.txt` for
+    retrieving raw datasets from GEO and ArrayExpress and performing
+    alignment and quality control.  
+  - `Filtering_Normalisation_Batch`: Includes
+    `Preprocessing_SenescenceDatasets.Rmd`, which performs
+    low-expression filtering, normalization, and batch effect
+    correction.
+- **`Figures`**: Contains scripts and outputs for generating manuscript
+  figures.
+  - `Figures_Paper_Main.Rmd` and `Figures_Paper_Supplementary.Rmd`
+    contain the figure-generation code.  
+  - `Figs/` stores the resulting `.png` images.
 
-The folder `inst/Paper/` is in the **paper** branch and contains all
-scripts and materials used in the original markeR paper to reproduce
-analyses and figures. You can browse it
-[here](https://github.com/DiseaseTranscriptomicsLab/markeR/tree/paper/inst/Paper).
-
-![](man/figures/Workflow.png)
+------------------------------------------------------------------------
 
 ## Table of Contents
 
-- [Installation](#installation)  
-- [Tutorials](#tutorials)  
-- [Requirements](#requirements)
-- [Common Workflow](#common-workflow)
-  - [1. Input Requirements](#1-input-requirements)  
-  - [2. Select Mode of Analysis](#2-select-mode-of-analysis)  
-  - [3. Choose a Quantification
-    Approach](#3-choose-a-quantification-approach)
-    - [3.1 Score-Based Approach](#31-score-based-approach)  
-    - [3.2 Enrichment-Based Approach](#32-enrichment-based-approach)  
-  - [4. Visualisation and Evaluation](#4-visualisation-and-evaluation)  
-  - [5. Individual Gene Exploration
-    (Optional)](#5-individual-gene-exploration-optional)  
-  - [6. Compare with Reference Gene Sets
-    (Optional)](#6-compare-with-reference-gene-sets-optional)  
-- [Contact](#contact)
+1.  [Data Availability](#data-availability)  
+2.  [Alignment](#alignment)  
+3.  [Pre-processing](#pre-processing)  
+4.  [Generating Figures](#generating-figures)  
+5.  [Installation](#installation)  
+6.  [References](#references)
 
-## Installation
+------------------------------------------------------------------------
 
-The latest development release of markeR from
-[GitHub](https://github.com/) can be installed with:
+## Data Availability
 
-``` r
-# install.packages("devtools")
-devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
-```
+No data has been generated for this manuscript. The senescence
+compendium was compiled using publicly available RNA-seq datasets
+accessed under the following accession codes:
+`E-MTAB-5403, E-MTAB-9714, GSE175533, GSE60340, GSE63577, GSE64553, GSE214410, GSE222400, GSE224070, GSE230181, GSE235768, GSE247831, GSE74324, GSE75643, GSE94928, GSE130727, GSE250224, GSE196724, GSE206677, GSE217718, GSE110268, 200213323, E-MTAB-10969`.
+This data includes six cell types (fibroblast \[n=384\], endothelial
+\[n=90\], keratinocyte \[n=36\], melanocyte \[n=12\], mesenchymal
+\[n=12\], and neuronal \[n=11\]) and three cellular states: senescent (n
+= 240), proliferative (n = 272), and quiescent (n = 33).
 
-## Tutorials
+Data from the Genotype-Tissue Expression (GTEx) project v8, already
+aligned, filtered, normalized, and batch-corrected, was obtained from
+the repository associated with Schneider et al., 2024 ([voyAGEr
+GitHub](https://github.com/DiseaseTranscriptomicsLab/voyAGEr)). Donor
+metadata, including exact age, was retrieved via dbGaP accession number
+`phs000424.v9.p2`.
 
-The following tutorials are available:
+Senescence gene sets that reflect both community use and diversity of
+biological contexts were selected, based publicly available resources
+available as of 13 March 2024. We included five well-cited, open-source
+gene sets derived from different cell types and senescence-inducing
+stimuli: `SAUL_SEN_MAYO` (Saul et al., 2022), `CSGene` (Zhao et al.,
+2016), `CellAge` (Chatsirisupachai et al., 2019), `SeneQuest` (Gorgoulis
+et al., 2019) and `HernandezSegura` (Hernandez-Segura et al., 2017).
+Additionally, we incorporated four gene sets from MSigDB (Subramanian et
+al., 2005): `GOBP_CELLULAR_SENESCENCE`,
+`GOBP_NEGATIVE_REGULATION_OF_CELLULAR_SENESCENCE`,
+`GOBP_POSITIVE_REGULATION_OF_CELLULAR_SENESCENCE` and
+`REACTOME_CELLULAR_SENESCENCE`.
 
-- [Benchmarking
-  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_BenchmarkingMode.html)
-- [Discovery
-  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_DiscoveryMode.html)
-- [Signature
-  Similarity](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_GeneSetSimilarity.html)
+------------------------------------------------------------------------
 
-## Requirements
+## Alignment
 
-This package is officially supported on (based on a GitHub Actions
-workflow that tests against multiple `R` versions):
+Raw FASTQ files from GEO were downloaded using `fasterq-dump` and
+manually from ArrayExpress. Quality control was performed using `fastqc`
+and summarized with `MultiQC`. All reads were pseudo-aligned to the
+RefSeq human transcriptome (NCBI release 109) using `kallisto` v0.44.0.
 
-- `R` `4.4.x`
-- `R` `4.5.x`
+------------------------------------------------------------------------
 
-However, due to `Bioconductor` submission requirements, `R` version
-`4.5.0` will be listed as required upon package installation in future
-releases.
+## Pre-processing
 
-⚠️ Compatibility with older R versions depends on the specific versions
-of dependencies installed. Older versions of `R` (including `R` `3.5.x`,
-`3.6.x`, `4.0.x`, `4.1.x`, `4.2.x`, and `4.3.x`) may work, but are not
-officially supported due to upstream dependency constraints. In some
-cases, installing older versions of dependencies (e.g., via `renv`,
-`CRAN` snapshots, or `checkpoint`) can restore compatibility.
+Lowly expressed genes were removed by retaining only genes with an
+average of \>70 reads in at least one condition (proliferative,
+quiescent, or senescent). Normalization factors were calculated using
+`calcNormFactors` from **edgeR**, and counts were log2-transformed with
+**voom** from **limma**. Batch effects were corrected using a modified
+`removeBatchEffect` function from **limma**, regressing out dataset ID
+while preserving biological variation (e.g., cell type).
 
-## Common Workflow
+The **`preprocessing`** folder contains the full scripts used to
+reproduce these steps:  
+- `pipeline_download_processing.sh` in the **`Download_Alignment_QC`**
+folder automates FASTQ download and alignment.  
+- `Preprocessing_SenescenceDatasets.Rmd` in the
+**`Filtering_Normalisation_Batch`** performs filtering, normalization,
+and batch correction.
 
-`markeR` provides a modular pipeline to quantify transcriptomic
-signatures and assess their association with phenotypic or clinical
-variables. The typical workflow includes the following steps:
+------------------------------------------------------------------------
 
-### 1. Input Requirements
+## Generating Figures
 
-Depending on the analysis mode, inputs vary slightly.
+Figures for the manuscript can be generated using the R Markdown scripts
+in the **`Figures`** folder:  
+- `Figures_Paper_Main.Rmd` generates all main manuscript figures.  
+- `Figures_Paper_Supplementary.Rmd` generates supplementary figures.
 
-- **Gene Set(s)**:  
-  A named list where each element represents one gene set:
+The resulting images are stored in the `Figs` subfolder. These scripts
+rely on the processed datasets generated in the **preprocessing**
+workflow, not included in this repository.
 
-  - Use a **character vector** for gene sets where direction of
-    enrichment is not known.
-  - Use a **data frame** with gene names and a directionality column
-    (`-1` for down-regulated, `+1` for up-regulated)
-
-This structure supports both **Discovery Mode** (single gene set) and
-**Benchmarking Mode** (multiple gene sets).
-
-``` r
-# Example 
-gene_sets
-#> $Set1
-#> [1] "GeneA" "GeneB" "GeneC" "GeneD"
-#> 
-#> $Set2
-#>    gene direction
-#> 1 GeneX         1
-#> 2 GeneY        -1
-#> 3 GeneZ         1
-```
-
-- **Expression Data Frame**:  
-  A filtered and normalised gene expression data frame (genes ×
-  samples). Row names must be gene identifiers, and column names must
-  match the sample IDs in the metadata.
-
-``` r
-head(expr_df)
-#>        Sample1  Sample2  Sample3  Sample4  Sample5
-#> GeneA 3.879049 7.448164 2.864353 5.852928 3.610586
-#> GeneB 4.539645 5.719628 4.564050 4.409857 4.584165
-#> GeneC 8.117417 5.801543 2.947991 6.790251 2.469207
-#> GeneD 5.141017 5.221365 3.542218 6.756267 9.337912
-#> GeneX 5.258575 3.888318 3.749921 6.643162 7.415924
-#> GeneY 8.430130 8.573826 1.626613 6.377281 2.753783
-```
-
-- **Sample Metadata**:  
-  A data frame with annotations for each sample, with the sample ID in
-  the first column. The row names must match the column names of the
-  expression matrix.
-
-``` r
-metadata
-#>   SampleID Condition Age
-#> 1  Sample1   Control  49
-#> 2  Sample2 Treatment  44
-#> 3  Sample3   Control  46
-#> 4  Sample4 Treatment  49
-#> 5  Sample5   Control  38
-```
-
-### 2. Select Mode of Analysis
-
-- **Discovery Mode**: Explore how a single, well-characterised gene set
-  relates to a specific variable of interest. Suitable for hypothesis
-  generation or signature projection.
-
-- **Benchmarking Mode**: Evaluate one or more gene sets against multiple
-  metadata variables using a standardised scoring and effect size
-  framework. This mode provides comprehensive visualisations and
-  comparisons across methods.
-
-### 3. Choose a Quantification Approach
-
-`markeR` supports two complementary strategies for quantifying the
-association between gene sets and phenotypes:
-
-#### 3.1 Score-Based Approach
-
-This strategy generates a **single numeric score per sample**,
-reflecting the activity of a gene set. It enables flexible downstream
-analyses, including comparisons across phenotypic groups.
-
-Three scoring methods are available:
-
-- **Log2-median**: Calculates the median log2 expression of the genes in
-  the set. Sensitive to absolute shifts in expression.
-
-- **Ranking**: Ranks all genes within each sample and averages the ranks
-  of gene set members. Captures relative ordering rather than magnitude.
-
-- **ssGSEA**: Computes a single-sample gene set enrichment score using
-  the ssGSEA algorithm. Reflects the coordinated up- or down-regulation
-  of the set in each sample.
-
-These methods vary in assumptions and sensitivity. Robust gene sets are
-expected to perform consistently across all three.
-
-#### 3.2 Enrichment-Based Approach
-
-This approach uses a classical **gene set enrichment analysis (GSEA)**
-framework to evaluate whether the gene set is significantly
-overrepresented at the top or bottom of a ranked list of genes (e.g.,
-ranked by fold change or correlation with phenotype).
-
-- **GSEA**: Computes a Normalised Enrichment Score (NES) for each
-  contrast or variable of interest, adjusting for gene set size and
-  multiple testing.
-
-Use this approach when interested in collective behaviour of gene sets
-in relation to ranked differential signals.
-
-### 4. Visualisation and Evaluation
-
-In **Benchmarking Mode**, `markeR` offers a range of visual summaries:
-
-- Violin or scatter plots showing score distributions by phenotype
-- Volcano plots and heatmaps based on effect sizes (Cohen’s *d* or *f*)
-- ROC curves and AUC values
-- Null distribution testing using random gene sets matched for size and
-  directionality
-
-In **Discovery Mode**, the output focuses on a single gene set:
-
-- Score distributions by phenotype
-- Pairwise contrasts (Cohen’s *d*) and overall effect sizes (Cohen’s
-  *f*)
-- Enrichment score summaries (NES) with adjusted p-values (e.g.,
-  lollipop plots)
-
-Benchmarking mode offers the most comprehensive set of features and
-allows users to seamlessly move from discovery to benchmarking mode once
-a variable of interest has been identified and further testing is
-required. The main difference from Discovery mode is that Benchmarking
-is designed to evaluate multiple gene sets simultaneously, whereas
-Discovery mode focuses on quantifying a single, robust gene set.
-
-### 5. Individual Gene Exploration (Optional)
-
-To better understand the contribution of individual genes within a gene
-set and identify whether specific genes drive the overall signal,
-`markeR` offers a suite of gene-level exploratory analyses, including:
-
-- Expression heatmaps of genes across samples and groups
-- Violin plots showing expression distributions of individual genes
-- Correlation heatmaps to reveal co-expression patterns among genes in
-  the set
-- ROC curves and AUC values for individual genes to evaluate their
-  discriminatory power
-- Effect size calculations (Cohen’s *d*) per gene to quantify
-  differential expression
-- Principal Component Analysis (PCA) on gene set genes to assess
-  variance explained and sample clustering
-
-### 6. Compare with Reference Gene Sets (Optional)
-
-`markeR` allows comparison of user-defined gene sets to reference sets
-(e.g., from MSigDB) using:
-
-- **Jaccard Index**: Measures gene overlap relative to union size.
-
-- **Log Odds Ratio (logOR)**: Computes enrichment using a user-defined
-  gene universe and Fisher’s exact test.
-
-Filters can be applied based on similarity thresholds (e.g., minimum
-Jaccard, OR, or p-value).
+------------------------------------------------------------------------
 
 ## Contact
 
