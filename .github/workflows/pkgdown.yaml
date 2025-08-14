@@ -2,11 +2,11 @@
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 on:
   push:
-    branches: [main, master]
+    branches: [pkgdown]
   pull_request:
-  release:
-    types: [published]
+    branches: [pkgdown]
   workflow_dispatch:
+    branches: [pkgdown]
 
 name: pkgdown.yaml
 
