@@ -4,6 +4,12 @@ on:
   push:
     branches: [main, master]
   pull_request:
+    branches: [main, master]
+  release:
+    types: [published]
+    branches: [main, master]
+  workflow_dispatch:
+    branches: [main, master]
 
 name: R-CMD-check.yaml
 
