@@ -220,6 +220,11 @@ In **Benchmarking Mode**, `markeR` offers a range of visual summaries:
 - ROC curves and AUC values
 - Null distribution testing using random gene sets matched for size and
   directionality
+- Lollipop plots summarising enrichment scores (NES) with adjusted
+  p-values
+- Enrichment plots showing running enrichment scores across ranked gene
+  lists
+- Volcano plots
 
 In **Discovery Mode**, the output focuses on a single gene set:
 
