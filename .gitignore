@@ -1,0 +1,16 @@
+.Rproj.user
+.Rhistory
+.Rdata
+.httr-oauth 
+.quarto
+/renv/ 
+.Rprofile
+docs
+renv.lock 
+/inst/Paper/localjobs/ 
+markeR.BiocCheck/ 
+/doc/
+/Meta/
+markeR.Rproj
+.DS_Store
+**/.DS_Store
