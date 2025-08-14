@@ -1,0 +1,39 @@
+/* NAVBAR CUSTOM COLOR */
+.navbar {
+  background-color: #FAFAFA !important;
+}
+
+.navbar .navbar-brand,
+.navbar .navbar-nav .nav-link {
+  color: #515151 !important;
+}
+
+.navbar .navbar-nav .nav-link:hover {
+  color: #f0c674 !important;
+}
+
+
+/* GLOBAL LINK STYLE */
+/* LIGHT MODE (default) */
+a {
+  color: #515151;
+  text-decoration: none;
+}
+
+a:hover,
+a:focus {
+  color: #f0c674;
+  text-decoration: underline;
+}
+
+/* DARK MODE OVERRIDES */
+[data-bs-theme="dark"] a {
+  color: #dddddd !important;
+}
+
+[data-bs-theme="dark"] a:hover,
+[data-bs-theme="dark"] a:focus {
+  color: #ffd700 !important;
+  text-decoration: underline;
+}
+
