@@ -1,37 +1,17 @@
 ---
 title: "Discovery Mode Tutorial"
-output: rmarkdown::html_document
-vignette: >
-  %\VignetteIndexEntry{Discovery Mode Tutorial}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
+
+```{r, include = FALSE}
 knitr::opts_chunk$set(
-  dev = "png",
-  dpi = 72, 
-  fig.retina = 1
+  collapse = TRUE,
+  comment = "#>"
 )
 ```
 
 This vignette provides a comprehensive introduction to the **markeR** package, focusing on its **Discovery Mode**. The discovery mode was designed for users who are interested in quantifying a known, robust gene set in a given dataset to explore associations with other phenotypic or clinical variables. This approach is particularly suited to hypothesis generation where the phenotype marked by the gene set is of known biological or clinical relevance.
- 
-# Installation 
-
-The user can install the development version of markeR from [GitHub](https://github.com/) with:
-   
- 
-```{r, include = FALSE }
-library(markeR)
-```
-
-``` r
-# install.packages("devtools")
-devtools::install_github("DiseaseTranscriptomicsLab/markeR")
-```
-
- 
+  
 # Case-study: Senescence
 
 We will be using an already pre-processed gene expression dataset, derived from the Marthandan et al. (2016) study (GSE63577), that includes human fibroblast samples cultured under two different conditions: replicative senescence and proliferative control. The dataset has already been filtered and normalized using the `edgeR` package. For more information about the dataset structure, see the help pages for `?counts_example` and `?metadata_example`.

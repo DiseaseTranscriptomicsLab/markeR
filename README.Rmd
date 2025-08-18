@@ -30,7 +30,7 @@ knitr::opts_chunk$set(
 
 > **To cite markeR please use:** 
 >
->   Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). _markeR: an R Toolkit for Evaluating Gene Sets as Phenotypic Markers_. Gulbenkian Institute for Molecular Medicine, Faculdade de Medicina, Universidade de Lisboa, Lisbon, Portugal. R package version 0.99.2, https://github.com/DiseaseTranscriptomicsLab/markeR.
+>   Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). _markeR: an R Toolkit for Evaluating Gene Sets as Phenotypic Markers_. Gulbenkian Institute for Molecular Medicine, Faculdade de Medicina, Universidade de Lisboa, Lisbon, Portugal. R package version 0.99.3, https://github.com/DiseaseTranscriptomicsLab/markeR.
  
 The folder `inst/Paper/` is in the **paper** branch and contains all scripts and materials used in the original markeR paper to reproduce analyses and figures.  You can browse it [here](https://github.com/DiseaseTranscriptomicsLab/markeR/tree/paper/inst/Paper).
 
@@ -57,7 +57,19 @@ The folder `inst/Paper/` is in the **paper** branch and contains all scripts and
 
 ## Installation 
 
-The latest development release of markeR from [GitHub](https://github.com/) can be installed with:
+
+Install the latest release from Bioconductor:
+
+```{r, eval=FALSE}
+# Install from Bioconductor
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("markeR")
+library(markeR)
+```
+ 
+
+Or install the latest development release of markeR from [GitHub](https://github.com/) with:
    
 ``` r
 # install.packages("devtools")
@@ -241,6 +253,6 @@ Filters can be applied based on similarity thresholds (e.g., minimum Jaccard, OR
 Email: [rita.silva@medicina.ulisboa.pt](mailto:rita.silva@medicina.ulisboa.pt)
 
  
-[tutorial-benchmarking]: https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_BenchmarkingMode.html
-[tutorial-discovery]: https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_DiscoveryMode.html
-[tutorial-signaturesimilarity]: https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_GeneSetSimilarity.html
+[tutorial-benchmarking]: https://diseasetranscriptomicslab.github.io/markeR/articles/Article_BenchmarkingMode.html
+[tutorial-discovery]: https://diseasetranscriptomicslab.github.io/markeR/articles/Article_DiscoveryMode.html
+[tutorial-signaturesimilarity]: https://diseasetranscriptomicslab.github.io/markeR/articles/Article_GeneSetSimilarity.html
