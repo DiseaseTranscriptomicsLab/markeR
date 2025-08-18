@@ -824,8 +824,8 @@ corrcounts <- readRDS("../data/corrcounts.rds")
 signatures <- readRDS("../data/SenescenceSignatures.rds") 
 signatures_bidirectional <- readRDS("../data/SenescenceSigntures_Bidirectional.rds") # Divided by direction
 
-GTEx_alltissues <- readRDS("../../../../data/GTExV8_voyagercorrected.rds") # https://github.com/DiseaseTranscriptomicsLab/voyAGEr/tree/main/Corrected_Counts
-metadata_GTEx_alltissues <- readRDS("../../../../data/GTExV8_metadata.rds") # Restricted access 
+GTEx_alltissues <- readRDS("../data/GTExV8_voyagercorrected.rds") # https://github.com/DiseaseTranscriptomicsLab/voyAGEr/tree/main/Corrected_Counts
+metadata_GTEx_alltissues <- readRDS("../data/GTExV8_metadata.rds") # Restricted access 
 ```
 
 
