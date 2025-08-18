@@ -2,14 +2,14 @@ name: Bioconductor Check
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, default]
   pull_request:
-    branches: [main, master]
+    branches: [main, default]
   release:
     types: [published]
-    branches: [main, master]
+    branches: [main, default]
   workflow_dispatch:
-    branches: [main, master]
+    branches: [main, default]
 
 jobs:
   bioccheck:
