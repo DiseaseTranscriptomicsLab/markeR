@@ -817,15 +817,15 @@ PlotScores_Numeric_adapted <- function(data,
 ### Load relevant data
 
 ```{r}
-metadata <- readRDS("../data/metadata.rds")
-filtered_counts <- readRDS("../data/filtered_counts.rds")
-normalised_counts <- readRDS("../data/normalised_counts.rds")
-corrcounts <- readRDS("../data/corrcounts.rds")
-signatures <- readRDS("../data/SenescenceSignatures.rds") 
-signatures_bidirectional <- readRDS("../data/SenescenceSigntures_Bidirectional.rds") # Divided by direction
+metadata <- readRDS("../data_aux/metadata.rds")
+filtered_counts <- readRDS("../data_aux/filtered_counts.rds")
+normalised_counts <- readRDS("../data_aux/normalised_counts.rds")
+corrcounts <- readRDS("../data_aux/corrcounts.rds")
+signatures <- readRDS("../data_aux/SenescenceSignatures.rds") 
+signatures_bidirectional <- readRDS("../data_aux/SenescenceSigntures_Bidirectional.rds") # Divided by direction
 
-GTEx_alltissues <- readRDS("../data/GTExV8_voyagercorrected.rds") # https://github.com/DiseaseTranscriptomicsLab/voyAGEr/tree/main/Corrected_Counts
-metadata_GTEx_alltissues <- readRDS("../data/GTExV8_metadata.rds") # Restricted access 
+GTEx_alltissues <- readRDS("../data_aux/GTExV8_voyagercorrected.rds") # https://github.com/DiseaseTranscriptomicsLab/voyAGEr/tree/main/Corrected_Counts
+metadata_GTEx_alltissues <- readRDS("../data_aux/GTExV8_metadata.rds") # Restricted access 
 ```
 
 
