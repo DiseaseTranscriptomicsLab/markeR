@@ -9,11 +9,10 @@
 docs
 renv.lock
 .obsidian/
-/inst/Paper/
-/inst/Paper/localjobs/ 
 markeR.BiocCheck/ 
 /doc/
 /Meta/
 markeR.Rproj
 .DS_Store
 **/.DS_Store
+inst/doc
