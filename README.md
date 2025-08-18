@@ -26,7 +26,7 @@ along with tools to compute performance metrics and visualize results.
 > Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). *markeR: an R
 > Toolkit for Evaluating Gene Sets as Phenotypic Markers*. Gulbenkian
 > Institute for Molecular Medicine, Faculdade de Medicina, Universidade
-> de Lisboa, Lisbon, Portugal. R package version 0.99.2,
+> de Lisboa, Lisbon, Portugal. R package version 0.99.3,
 > <https://github.com/DiseaseTranscriptomicsLab/markeR>.
 
 The folder `inst/Paper/` is in the **paper** branch and contains all
@@ -57,8 +57,18 @@ analyses and figures. You can browse it
 
 ## Installation
 
-The latest development release of markeR from
-[GitHub](https://github.com/) can be installed with:
+Install the latest release from Bioconductor:
+
+``` r
+# Install from Bioconductor
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("markeR")
+library(markeR)
+```
+
+Or install the latest development release of markeR from
+[GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
@@ -70,23 +80,15 @@ devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
 The following tutorials are available:
 
 - [Benchmarking
-  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_BenchmarkingMode.html)
+  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Article_BenchmarkingMode.html)
 - [Discovery
-  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_DiscoveryMode.html)
+  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Article_DiscoveryMode.html)
 - [Signature
-  Similarity](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_GeneSetSimilarity.html)
+  Similarity](https://diseasetranscriptomicslab.github.io/markeR/articles/Article_GeneSetSimilarity.html)
 
 ## Requirements
 
-This package is officially supported on (based on a GitHub Actions
-workflow that tests against multiple `R` versions):
-
-- `R` `4.4.x`
-- `R` `4.5.x`
-
-However, due to `Bioconductor` submission requirements, `R` version
-`4.5.0` will be listed as required upon package installation in future
-releases.
+This package is officially supported on `R > 4.4.0`.
 
 ⚠️ Compatibility with older R versions depends on the specific versions
 of dependencies installed. Older versions of `R` (including `R` `3.5.x`,
