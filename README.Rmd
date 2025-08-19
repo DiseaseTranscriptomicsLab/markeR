@@ -80,6 +80,7 @@ devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
 
 The following tutorials are available:
 
+* [Introduction to markeR][tutorial-introduction]
 * [Benchmarking Mode][tutorial-benchmarking]
 * [Discovery Mode][tutorial-discovery]
 * [Signature Similarity][tutorial-signaturesimilarity]
@@ -247,7 +248,7 @@ Filters can be applied based on similarity thresholds (e.g., minimum Jaccard, OR
 **Rita Martins-Silva**  
 Email: [rita.silva@medicina.ulisboa.pt](mailto:rita.silva@medicina.ulisboa.pt)
 
- 
+[tutorial-introduction]: https://diseasetranscriptomicslab.github.io/markeR/articles/markeR.html
 [tutorial-benchmarking]: https://diseasetranscriptomicslab.github.io/markeR/articles/Article_BenchmarkingMode.html
 [tutorial-discovery]: https://diseasetranscriptomicslab.github.io/markeR/articles/Article_DiscoveryMode.html
 [tutorial-signaturesimilarity]: https://diseasetranscriptomicslab.github.io/markeR/articles/Article_GeneSetSimilarity.html

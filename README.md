@@ -79,6 +79,8 @@ devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
 
 The following tutorials are available:
 
+- [Introduction to
+  markeR](https://diseasetranscriptomicslab.github.io/markeR/articles/markeR.html)
 - [Benchmarking
   Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Article_BenchmarkingMode.html)
 - [Discovery
