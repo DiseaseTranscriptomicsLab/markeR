@@ -123,7 +123,7 @@ ROCAUC_Scores_Calculate <- function(data, metadata, gene_sets, method = c("logme
 #'@param title Title for the grid of plots.
 #'@return A `ggplot2` or `ggarrange` object containing the ROC curve plots.
 #'
-#'@importFrom ggplot2 ggplot geom_line aes labs theme scale_color_manual
+#'@import ggplot2
 #'@importFrom ggpubr annotate_figure ggarrange
 #'
 #'@examples

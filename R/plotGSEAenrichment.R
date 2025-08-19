@@ -53,7 +53,9 @@
 #' plot <- plotCombinedGSEA(GSEA_results, sig_threshold = 0.05, PointSize = 7)
 #' print(plot)
 #'
-#' @import ggplot2 ggpubr fgsea
+#' @import ggplot2  
+#' @importFrom ggpubr ggarrange
+#' @importFrom fgsea plotEnrichment
 #' @export
 plotGSEAenrichment <- function(GSEA_results, DEGList, gene_sets, widthTitle = 24,
                                grid = FALSE, nrow=NULL, ncol=NULL, titlesize=12) {

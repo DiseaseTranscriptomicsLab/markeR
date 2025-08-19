@@ -103,7 +103,7 @@
 #' )
 #'
 #' @import ggplot2
-#' @import ggpubr
+#' @importFrom ggpubr ggarrange annotate_figure
 #' @export
 #'
 FPR_Simulation <- function(data, metadata, original_signatures, Variable,

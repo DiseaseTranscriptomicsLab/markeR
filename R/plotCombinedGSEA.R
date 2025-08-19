@@ -43,7 +43,7 @@
 #' plotCombinedGSEA(GSEA_results, sig_threshold = 0.05, PointSize = 4)
 #'
 #' @import ggplot2
-#' @import RColorBrewer
+#' @importFrom RColorBrewer brewer.pal
 #' @export
 plotCombinedGSEA <- function(GSEA_results, sig_threshold = 0.05, PointSize = 4,
                              widthlegend=16) {

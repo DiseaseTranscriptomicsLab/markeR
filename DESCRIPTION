@@ -46,7 +46,6 @@ Imports:
     limma,
     ggrepel,
     effectsize,
-    patchwork,
     msigdbr,
     tibble
 Suggests: 

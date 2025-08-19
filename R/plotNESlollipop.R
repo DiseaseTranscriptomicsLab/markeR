@@ -95,7 +95,7 @@
 #'
 #' @import ggplot2
 #' @importFrom ggpubr annotate_figure ggarrange
-#' @import grid
+#' @importFrom grid textGrob gpar
 #' @export
 plotNESlollipop <- function(GSEA_results,
                             signif_color = "red", nonsignif_color = "white",

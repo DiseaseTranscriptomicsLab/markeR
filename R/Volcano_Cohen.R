@@ -39,7 +39,7 @@
 #'
 #' @seealso \code{\link{CohenD_allConditions}}
 #'
-#' @importFrom ggplot2 ggplot geom_point geom_vline geom_hline facet_wrap labs scale_color_manual scale_shape_manual theme_bw ggtitle theme element_text element_rect
+#' @import ggplot2 
 #' @importFrom RColorBrewer brewer.pal
 #' @keywords internal
 Volcano_Cohen <- function(cohenlist,

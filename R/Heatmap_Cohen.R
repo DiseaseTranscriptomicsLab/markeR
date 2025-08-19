@@ -55,8 +55,7 @@
 #' @seealso \code{\link{CohenD_allConditions}},
 #'   \code{\link{CohenF_allConditions}}
 #'
-#' @importFrom ggplot2 ggplot geom_tile geom_text labs scale_fill_gradientn
-#'   theme_minimal element_text element_blank element_line margin
+#' @import ggplot2 
 #' @importFrom ggpubr ggarrange
 #'
 #' @keywords internal
