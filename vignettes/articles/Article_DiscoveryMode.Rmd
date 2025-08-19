@@ -1,5 +1,7 @@
 ---
 title: "Discovery Mode Tutorial"
+author: "Rita M. Silva"
+date: "`r Sys.Date()`"
 ---
 
 

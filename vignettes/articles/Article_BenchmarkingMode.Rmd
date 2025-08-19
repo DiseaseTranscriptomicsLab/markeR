@@ -1,5 +1,7 @@
 ---
 title: "Benchmarking Mode Tutorial"
+author: "Rita M. Silva"
+date: "`r Sys.Date()`"
 ---
 
 ```{r, include = FALSE}
