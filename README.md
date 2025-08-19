@@ -90,14 +90,12 @@ The following tutorials are available:
 
 ## Requirements
 
-This package is officially supported on `R > 4.4.0`.
-
-⚠️ Compatibility with older R versions depends on the specific versions
-of dependencies installed. Older versions of `R` (including `R` `3.5.x`,
-`3.6.x`, `4.0.x`, `4.1.x`, `4.2.x`, and `4.3.x`) may work, but are not
-officially supported due to upstream dependency constraints. In some
-cases, installing older versions of dependencies (e.g., via `renv`,
-`CRAN` snapshots, or `checkpoint`) can restore compatibility.
+This package is officially supported on `R > 4.4.0`. ⚠️ Compatibility
+with older R versions depends on the specific versions of dependencies
+installed. Older versions of `R` may work, but are not officially
+supported due to upstream dependency constraints. In some cases,
+installing older versions of dependencies (e.g., via `renv`, `CRAN`
+snapshots, or `checkpoint`) can restore compatibility.
 
 ## Common Workflow
 
