@@ -124,12 +124,12 @@ plotNESlollipop <- function(GSEA_results,
     res$pathway <- sapply(res$pathway, function(x) wrap_title(x, widthlabels))
     res$pathway <- factor(res$pathway, levels = res$pathway[order(res$NES)])
 
-    plot <- ggplot2::ggplot(res, ggplot2::aes(x = NES, y = pathway, fill = -log10(padj))) +
+    plot <- ggplot2::ggplot(res, ggplot2::aes(x = .data$NES, y = .data$pathway, fill = -log10(.data$padj))) +
 
       # Add a condition for dashed lines and points for B statistic and negative NES
-      ggplot2::geom_segment(ggplot2::aes(yend = pathway,
+      ggplot2::geom_segment(ggplot2::aes(yend = .data$pathway,
                                          xend = 0,
-                                         linetype = ifelse(stat_used == "B" & NES < 0,
+                                         linetype = ifelse(.data$stat_used == "B" & .data$NES < 0,
                                                            "dashed", "solid")),
                             size = .5,
                             color = ifelse(res$stat_used == "B" & res$NES < 0,
@@ -138,7 +138,7 @@ plotNESlollipop <- function(GSEA_results,
         shape = 21,
         stroke = 1.2,
         size = 4,
-        ggplot2::aes(color = ifelse(stat_used == "B" & NES < 0,
+        ggplot2::aes(color = ifelse(.data$stat_used == "B" & .data$NES < 0,
                                     "darkgrey", "black")) # Points color for B and negative NES
       ) +
 

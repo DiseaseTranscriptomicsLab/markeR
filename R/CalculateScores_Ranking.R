@@ -169,7 +169,7 @@ getRanking <- function(data, sample, geneset) {
   # Order from least to most expressed
   expressiongene <- expressiongene[order(expressiongene, decreasing = FALSE)]
   ranking <- match(geneset, names(expressiongene))  # Find gene positions in ordered list
-  ranking <- as.vector(na.omit(ranking))  # Remove missing genes
+  ranking <- as.vector(stats::na.omit(ranking))  # Remove missing genes
 
   return(sum(ranking))  # Return sum of ranks
 }

@@ -125,10 +125,6 @@ GSEA-based association.
 The function returns statistical results and visualizations summarizing
 effect sizes and significance.
 }
-\section{Shared Arguments (All Methods)}{
-
-}
-
 \examples{
 # Simulate gene expression data (genes as rows, samples as columns)
 set.seed(42)

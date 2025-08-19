@@ -185,7 +185,7 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL,
     #   design_matrix
     } else {
       design_formula <- as.formula(paste("~0+", paste(variables, collapse = " + ")))
-      design_matrix <- model.matrix(design_formula, data = metadata)
+      design_matrix <- stats::model.matrix(design_formula, data = metadata)
       #colnames(design_matrix) <- gsub("^Condition","",colnames(design_matrix))
       #colnames(design_matrix) <- sub("^[^.]*\\.", "", colnames(design_matrix)) # remove the variable name
       colnames(design_matrix) <-   remove_prefix(colnames(design_matrix), variables)

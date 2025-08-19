@@ -96,7 +96,7 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL,
     if (variable_types[var] == "Numeric") {
 
       # Use a model matrix for continuous variables
-      design <- model.matrix(as.formula(paste("~1+", var)), data = metadata)
+      design <- stats::model.matrix(as.formula(paste("~1+", var)), data = metadata)
 
       DEGs_var <- calculateDE(data = data, metadata = metadata,
                               modelmat =  design, contrasts = c(var),
@@ -129,7 +129,7 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL,
   combined_results$Contrast <- cont_vec
 
   # correct adjusted p value to correct for multiple testing for the contrasts?
-  combined_results$padj <- p.adjust(combined_results$padj, method = "BH")
+  combined_results$padj <- stats::p.adjust(combined_results$padj, method = "BH")
 
 
   combined_results_toreturn <- combined_results
@@ -153,17 +153,17 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL,
   }
 
 
-  plot <- ggplot2::ggplot(combined_results, ggplot2::aes(x = NES, y = Contrast,
-                                                         fill = -log10(padj))) +
+  plot <- ggplot2::ggplot(combined_results, ggplot2::aes(x = .data$NES, y = .data$Contrast,
+                                                         fill = -log10(.data$padj))) +
     ggplot2::geom_segment(ggplot2::aes(
-      yend = Contrast,
+      yend = .data$Contrast,
       xend = 0,
-      linetype = ifelse(stat_used == "B" & NES < 0, "dashed", "solid"),
-      color = ifelse(stat_used == "B" & NES < 0, "grey", "black")
+      linetype = ifelse(.data$stat_used == "B" & .data$NES < 0, "dashed", "solid"),
+      color = ifelse(.data$stat_used == "B" & .data$NES < 0, "grey", "black")
     ), size = .5) +
     ggplot2::geom_point(ggplot2::aes(
       stroke = 1.2,
-      color = ifelse(stat_used == "B" & NES < 0, "grey", "black")
+      color = ifelse(.data$stat_used == "B" & .data$NES < 0, "grey", "black")
     ), shape = 21, size = pointSize) +
      ggplot2::scale_fill_gradient2(low = nonsignif_color,
                                   mid = nonsignif_color,

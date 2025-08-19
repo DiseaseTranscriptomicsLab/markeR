@@ -194,7 +194,7 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
         test_df <- rbind(test_df, tukey_df)
 
       } else if (categorical_multi == "kruskal-wallis") {
-        test_result <- kruskal.test(df[[target_var]] ~ df[[var]])
+        test_result <- stats::kruskal.test(df[[target_var]] ~ df[[var]])
         test_df <- data.frame(metric = test_result$statistic,
                               p_value = test_result$p.value)
         row.names(test_df) <- "Kruskal-Wallis"
@@ -207,7 +207,7 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
     # scientific notation
     test_df$metric <- formatC(test_df$metric, format = "e", digits = 2)
     # correct for multiple testing per variable
-    test_df$p_value <- p.adjust(test_df$p_value, method = "BH")
+    test_df$p_value <- stats::p.adjust(test_df$p_value, method = "BH")
     test_df$p_value <- formatC(test_df$p_value, format = "e", digits = 3)
 
 
@@ -240,7 +240,6 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
 #'   - `"ranking"`
 #'   - `"GSEA"`
 #'
-#' @section Shared Arguments (All Methods):
 #' @param data A data frame with gene expression data (genes as rows,
 #' samples as columns).
 #' @param metadata A data frame containing sample metadata; the first column

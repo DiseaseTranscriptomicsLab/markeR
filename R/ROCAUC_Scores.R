@@ -204,7 +204,7 @@ ROC_Scores <- function(data,
       }
 
       # Create the ROC plot with all methods on the same plot
-      p <- ggplot2::ggplot(combined_df, ggplot2::aes(x = FPR, y = TPR, color = Method)) +
+      p <- ggplot2::ggplot(combined_df, ggplot2::aes(x = .data$FPR, y = .data$TPR, color = .data$Method)) +
         ggplot2::geom_line(size = 1) +  # Plot all ROC curves on the same plot
         ggplot2::scale_color_manual(values = colors) +  # Ensure correct color mapping for each method
         ggplot2::labs(title = wrap_title(signature,widthTitle),
@@ -225,9 +225,9 @@ ROC_Scores <- function(data,
                                       length.out = length(auc_values)))  # Adjust the vertical positions
 
       p <- p + ggplot2::geom_label(data = auc_texts,
-                                  ggplot2::aes(x = x, y = y,
-                                               label = paste0("AUC ", Method, " = ", round(AUC, 2), ""),
-                                               color = Method),
+                                  ggplot2::aes(x = .data$x, y = .data$y,
+                                               label = paste0("AUC ", .data$Method, " = ", round(.data$AUC, 2), ""),
+                                               color = .data$Method),
                                   size = 3,
                                   vjust = 0,  # Adjust vertical position
                                   hjust = 1,  # Adjust horizontal position to align to the right
@@ -436,9 +436,9 @@ AUC_Scores <- function(data, metadata, gene_sets,
     limits <- if (is.null(limits)) c(0.5 , 1) else limits
 
     # Create heatmap using ggplot2
-    p <- ggplot2::ggplot(long_data, ggplot2::aes(x = Method, y = Contrast, fill = AUC)) +
+    p <- ggplot2::ggplot(long_data, ggplot2::aes(x = .data$Method, y = .data$Contrast, fill = .data$AUC)) +
       ggplot2::geom_tile() +
-      ggplot2::geom_text(aes(label = label), color = "black", size = 3) +
+      ggplot2::geom_text(aes(label = .data$label), color = "black", size = 3) +
       ggplot2::scale_fill_gradientn(colors = ColorValues, limits = limits) +
       ggplot2::labs(title = signature_title, x = NULL, y = NULL, fill = "AUC") +
       ggplot2::theme_bw() +

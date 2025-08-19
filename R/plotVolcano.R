@@ -262,7 +262,7 @@ plotVolcano <- function(DEResultsList, genes = NULL, N = NULL,
 
           # Add to plot
           p <- p + ggplot2::geom_point(data = plot_data,
-                                       aes(color = Direction),
+                                       aes(color = .data$Direction),
                                        size = pointSize,
                                        alpha = 0.8) +
             ggplot2::scale_color_manual(values = c(

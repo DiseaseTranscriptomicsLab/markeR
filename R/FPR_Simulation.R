@@ -1,3 +1,4 @@
+utils::globalVariables(c( "cohen", "method", "contrast" ))
 #' FPR Simulation Plot
 #'
 #' This function simulates false positive rates (FPR) by generating simulated
@@ -322,7 +323,7 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
       for (mt in methods) {
         subset_df <- final_df[final_df$method == mt & final_df$contrast == ct, ]
         if (nrow(subset_df) == 0) next
-        q95 <- quantile(subset_df$cohen, 0.95, na.rm = TRUE)
+        q95 <- stats::quantile(subset_df$cohen, 0.95, na.rm = TRUE)
         xpos <- which(methods == mt)
         q_data <- rbind(q_data, data.frame(
           method = mt, contrast = ct, q_high = q95,
@@ -334,8 +335,9 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
 
     # Ensuring the label is always on top
     # Compute max cohen per method + contrast across both Simulated and Original
-    all_max <- aggregate(cohen ~ method + contrast, data = final_df, FUN = max)
+     all_max <- stats::aggregate(cohen ~ method + contrast, data = final_df, FUN = max)
 
+    
     # Extract FPR values from Original rows
     original_df <- final_df[final_df$type == "Original", ]
 
@@ -359,19 +361,19 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
     # Build the plot for the current signature
     p <- ggplot2::ggplot() +
       geom_jitter(data = final_df[final_df$type == "Simulated",],
-                  aes(y = cohen, x = method, color = type),
+                  aes(y = .data$cohen, x = .data$method, color = .data$type),
                   width = 0.3, height = 0,size = pointSize, alpha = 0.5) +
-      geom_violin(data = final_df, aes(y = cohen, x = method),
+      geom_violin(data = final_df, aes(y = .data$cohen, x = .data$method),
                   fill = "#F0F0F0", color = "black", alpha = 0.5) +
       geom_jitter(data = final_df[final_df$type == "Original",],
                   aes(y = cohen, x = method, color = type),
                   width = 0.3, height = 0, size = pointSize, alpha = 1) +
       geom_text(data = all_max,
-                aes(x = method, y = y, label = label),
+                aes(x = .data$method, y = .data$y, label = .data$label),
                 size = 3,
                 inherit.aes = FALSE) +
       geom_segment(data = q_data,
-                   aes(x = xmin, xend = xmax, y = q_high, yend = q_high),
+                   aes(x = .data$xmin, xend = .data$xmax, y = .data$q_high, yend = .data$q_high),
                    linetype = "dashed", color = "red", inherit.aes = FALSE) +
       labs(title = wrap_title(sig, widthTitle),
            y = ifelse(cohentype == "d", "|Cohen's d|", "|Cohen's f|"),

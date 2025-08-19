@@ -229,7 +229,7 @@ geneset_similarity <- function(
         d <- length(setdiff(universe, union(sig1, sig2)))
 
         cont_tbl <- matrix(c(a, b, c, d), nrow = 2)
-        ft <- fisher.test(cont_tbl)
+        ft <- stats::fisher.test(cont_tbl)
 
         score <- log10(ft$estimate)
         if (!is.na(ft$p.value) && ft$p.value <= pval_threshold && ft$estimate >= or_threshold) {
@@ -301,10 +301,10 @@ geneset_similarity <- function(
   }
   }
 
-  plt <- ggplot(similarity_df, aes(x = Reference_Signature,
-                                   y = Compared_Signature, fill = Score)) +
+  plt <- ggplot(similarity_df, aes(x = .data$Reference_Signature,
+                                   y = .data$Compared_Signature, fill = .data$Score)) +
     geom_tile(color = "white") +
-    geom_text(aes(label = Label), color = "black") +
+    geom_text(aes(label = .data$Label), color = "black") +
     scale_fill_gradientn(colors = color_values, limits = limits,
                          oob = scales::squish, na.value = na_color) +
     labs(
