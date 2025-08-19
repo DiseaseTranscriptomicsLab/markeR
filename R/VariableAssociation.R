@@ -297,6 +297,49 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
 #' scores (NES), adjusted p-values, and contrasts.
 #' - `plot`: A ggplot2 lollipop plot of GSEA enrichment across contrasts.
 #'
+#' @examples
+#' # Simulate gene expression data (genes as rows, samples as columns)
+#' set.seed(42)
+#' expr <- as.data.frame(matrix(rnorm(500), nrow = 50, ncol = 10))
+#' rownames(expr) <- paste0("Gene", 1:50)
+#' colnames(expr) <- paste0("Sample", 1:10)
+#'
+#' # Simulate metadata (categorical and continuous)
+#' metadata <- data.frame(
+#'   sampleID = paste0("Sample", 1:10),
+#'   Group = rep(c("A", "B"), each = 5),
+#'   Age = sample(20:60, 10),
+#'   row.names = colnames(expr)
+#' )
+#'
+#' # Define a toy gene set: one gene set only for discovery mode!
+#' gene_set <- list(
+#'   Signature1 = paste0("Gene", 1:10)
+#' )
+#'
+#' # Score-based association (e.g., logmedian)
+#' res_score <- VariableAssociation(
+#'   method = "logmedian",
+#'   data = expr,
+#'   metadata = metadata,
+#'   cols = c("Group", "Age"),
+#'   gene_set = gene_set
+#' )
+#' print(res_score$Overall)
+#' print(res_score$plot)
+#'
+#' # GSEA-based association (if GSEA_VariableAssociation is available)
+#' # res_gsea <- VariableAssociation(
+#' #   method = "GSEA",
+#' #   data = expr,
+#' #   metadata = metadata,
+#' #   cols = "Group",
+#' #   gene_set = gene_set
+#' # )
+#' # print(res_gsea$data)
+#' print(res_score$plot)
+#'
+#'
 #' @export
 VariableAssociation <- function(method = c("ssGSEA", "logmedian",
                                            "ranking", "GSEA"),
