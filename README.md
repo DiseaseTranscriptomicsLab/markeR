@@ -5,10 +5,11 @@
 
 <!-- badges: start -->
 
-![](https://img.shields.io/badge/status-development-yellowgreen)
+<!--![](https://img.shields.io/badge/status-development-yellowgreen)-->
+
 [![Pkgdown](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://diseasetranscriptomicslab.github.io/markeR/)
 [![Minimal R
-Version](https://img.shields.io/badge/min%20R-4.4.0-blue.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/Rminversion.yaml)
+Version](https://img.shields.io/badge/min%20R-4.5.0-blue.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/Rminversion.yaml)
 [![codecov](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR/graph/badge.svg?token=7T1I4JCJG6)](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR)
 <!-- [![R-CMD-check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml)-->
 <!-- [![Bioconductor Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml) -->
@@ -90,12 +91,11 @@ The following tutorials are available:
 
 ## Requirements
 
-This package is officially supported on `R > 4.4.0`. ⚠️ Compatibility
-with older R versions depends on the specific versions of dependencies
-installed. Older versions of `R` may work, but are not officially
-supported due to upstream dependency constraints. In some cases,
-installing older versions of dependencies (e.g., via `renv`, `CRAN`
-snapshots, or `checkpoint`) can restore compatibility.
+This package is officially supported on `R > 4.5.0`. ⚠️ Older versions
+of `R` may work, but are not officially supported due to upstream
+dependency constraints. In some cases, installing older versions of
+dependencies (e.g., via `renv`, `CRAN` snapshots, or `checkpoint`) can
+restore compatibility.
 
 ## Common Workflow
 
