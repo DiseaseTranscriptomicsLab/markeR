@@ -112,9 +112,14 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL,
     stop("Error: 'data' must be a matrix or data frame with row names corresponding to gene identifiers.")
   }
   
-  if ((!is.null(metadata) && (!is.data.frame(metadata)) || ncol(data) != nrow(metadata))) {
-    stop("Error: 'metadata' must be a data frame with the same number of rows as columns in 'data'.")
+  if (!is.null(metadata)) {
+    if (!is.data.frame(metadata) || ncol(data) != nrow(metadata)) {
+      stop(
+        "Error with 'metadata': must be a data frame, and the number of rows must match the number of samples in 'data'."
+      )
+    }
   }
+  
    
   if (!is.null(metadata)){
     # Reorder and subset metadata to match data
