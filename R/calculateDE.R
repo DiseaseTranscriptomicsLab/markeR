@@ -106,18 +106,7 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL,
     variables <- setdiff(variables, "")  # Remove empty strings
     return(variables)
   }
-
-
-  # # Validate inputs
-  # if (!is.matrix(data) && !is.data.frame(data)) stop(
-  #   "Error: 'data' must be a matrix or a data frame.")
-  # if (is.null(rownames(data))) stop(
-  #   "Error: 'data' must have row names corresponding to gene identifiers.")
-  # if (!is.null(metadata) && !is.data.frame(metadata)) stop(
-  #   "Error: 'metadata' must be a data frame.")
-  # if (!is.null(metadata) && (ncol(data) != nrow(metadata))) stop(
-  #   "Error: Number of samples in 'data' does not match number of rows in 'metadata'.")
-  
+ 
   # Validate inputs
   if ((!is.matrix(data) && !is.data.frame(data)) || is.null(rownames(data))) {
     stop("Error: 'data' must be a matrix or data frame with row names corresponding to gene identifiers.")
@@ -126,22 +115,7 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL,
   if ((!is.null(metadata) && (!is.data.frame(metadata)) || ncol(data) != nrow(metadata))) {
     stop("Error: 'metadata' must be a data frame with the same number of rows as columns in 'data'.")
   }
-  
-
-  # add "." after each variable and remove spaces
-  # Important to avoid errors in design matrix
-  # if (!is.null(metadata)){
-  #   #metadata <- as.data.frame(lapply(metadata, function(x) paste0(".", x)))
-  #   #colnames(metadata) <- paste0(colnames(metadata),".")
-  #   metadata <- as.data.frame(lapply(metadata, function(x) gsub(" ", "", x)))
-  # }
-  # if(!is.null(variables)){
-  #   variables <- gsub(" ", "", variables)
-  #   #variables <- paste0(variables,".")
-  # }
-  #if(!is.null(modelmat)) colnames(modelmat) <- gsub(" ", "", colnames(modelmat))
-
-
+   
   if (!is.null(metadata)){
     # Reorder and subset metadata to match data
     # counts: matrix or data frame with column names as sample IDs
@@ -181,33 +155,16 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL,
   # Construct design matrix
   design_matrix <- tryCatch({
 
-    if (!is.null(modelmat)) {
-      # if (!is.matrix(modelmat)) stop("Error: 'modelmat' must be a matrix.")
-      # if (nrow(modelmat) != ncol(data)) stop(
-      #   "Error: Rows in 'modelmat' must match the number of samples in 'data'.
-      #   Check if your metadata has any NAs or consider using ignore_NAs = TRUE.")
-
+    if (!is.null(modelmat)) { 
       if (!is.matrix(modelmat) || (nrow(modelmat) != ncol(data))) {
         stop("Error: 'modelmat' must be a matrix with rows equal to the number of samples in 'data'.
        Check if your metadata has any NAs or consider using ignore_NAs = TRUE.")
       }
 
-      modelmat
-    # } else if (!is.null(lmexpression)) {
-    #   lmexpression <- as.formula(lmexpression, env = parent.frame())
-    #   design_matrix <- model.matrix(lmexpression, data = metadata)
-    #   vars <- extract_variables(lmexpression)
-    #   #colnames(design_matrix) <- gsub("^Condition","",colnames(design_matrix))
-    #
-    #   colnames(design_matrix) <-  remove_prefix(colnames(design_matrix), vars)
-    #   colnames(design_matrix) <- gsub(" ", "", colnames(design_matrix))
-    #   #colnames(design_matrix) <- sub("^[^.]*\\.", "", colnames(design_matrix))
-    #   design_matrix
+      modelmat 
     } else {
       design_formula <- as.formula(paste("~0+", paste(variables, collapse = " + ")))
-      design_matrix <- stats::model.matrix(design_formula, data = metadata)
-      #colnames(design_matrix) <- gsub("^Condition","",colnames(design_matrix))
-      #colnames(design_matrix) <- sub("^[^.]*\\.", "", colnames(design_matrix)) # remove the variable name
+      design_matrix <- stats::model.matrix(design_formula, data = metadata) 
       colnames(design_matrix) <-   remove_prefix(colnames(design_matrix), variables)
       colnames(design_matrix) <- gsub(" ", "", colnames(design_matrix)) # remove spaces
       design_matrix

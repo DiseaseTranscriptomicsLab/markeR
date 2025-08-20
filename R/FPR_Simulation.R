@@ -274,35 +274,7 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
 
     # needed to define the quantile dashed lines
     final_df$method <- factor(final_df$method, levels = methods)
-
-    #
-    # # Restructure simulation results into a list (one data frame per method)
-    # restructured <- lapply(methods, function(m) {
-    #   data.frame(
-    #     CohensD = sapply(results2, function(sim) sim$CohenD[m, 1]),
-    #     Pval    = sapply(results2, function(sim) sim$PValue[m, 1])
-    #   )
-    # })
-    # names(restructured) <- methods
-
-    # Combine simulation data into one long-format data frame
-    # sim_data <- do.call(rbind, lapply(methods, function(m) {
-    #   df <- restructured[[m]]
-    #   df$Method <- m
-    #   df$Shape <- ifelse(df$Pval < 0.05, "Significant", "Not Significant")
-    #   df
-    # }))
-    # # Set Method as a factor to control order in the plot
-    # sim_data$Method <- factor(sim_data$Method, levels = methods)
-
-    # Compute only the 95th percentile (top 5% threshold) for each method
-    # q_data <- do.call(rbind, lapply(methods, function(m) {
-    #   cd_vals <- final_df_simulated$cohen[final_df_simulated$method == m]
-    #   data.frame(
-    #     Method = m,
-    #     q_high = as.numeric(quantile(cd_vals, 0.95, na.rm = TRUE))
-    #   )
-    # }))
+ 
 
     # Calculate FPR for each Original observation
     final_df$FPR <- NA

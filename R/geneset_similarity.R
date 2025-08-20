@@ -285,11 +285,7 @@ geneset_similarity <- function(
   }
 
   data <- similarity_df
-
-  # similarity_df$Reference_Signature <- sapply(similarity_df$Reference_Signature,
-  #                                             function(x) wrap_title(x, width_text))
-  # similarity_df$Compared_Signature <- sapply(similarity_df$Compared_Signature,
-  #                                            function(x) wrap_title(x, width_text))
+ 
   
   similarity_df$Reference_Signature <- vapply(similarity_df$Reference_Signature,
                                               function(x) wrap_title(x, width_text),

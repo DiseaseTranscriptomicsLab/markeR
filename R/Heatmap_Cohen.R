@@ -402,9 +402,7 @@ compute_cohen_d <- function(dfScore, variable, quantitative_var="score",
     dfScore_subset <- create_contrast_column(dfScore, variable, pair)
     group1 <- levels(dfScore_subset$cohentest)[1]
     group2 <- levels(dfScore_subset$cohentest)[2]
-
-    # group1 <- unique(dfScore_subset$cohentest)[1]
-    # group2 <- unique(dfScore_subset$cohentest)[2]
+ 
 
     x <- dfScore_subset[dfScore_subset[["cohentest"]] == group1,
                         quantitative_var, drop = TRUE]
