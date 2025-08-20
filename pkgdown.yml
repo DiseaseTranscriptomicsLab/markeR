@@ -2,10 +2,11 @@ pandoc: 3.1.11
 pkgdown: 2.1.3
 pkgdown_sha: ~
 articles:
-  Tutorial_BenchmarkingMode: Tutorial_BenchmarkingMode.html
-  Tutorial_DiscoveryMode: Tutorial_DiscoveryMode.html
-  Tutorial_GeneSetSimilarity: Tutorial_GeneSetSimilarity.html
-last_built: 2025-08-20T16:31Z
+  articles/Article_BenchmarkingMode: Article_BenchmarkingMode.html
+  articles/Article_DiscoveryMode: Article_DiscoveryMode.html
+  articles/Article_GeneSetSimilarity: Article_GeneSetSimilarity.html
+  markeR: markeR.html
+last_built: 2025-08-20T16:42Z
 urls:
   reference: https://diseasetranscriptomicslab.github.io/markeR/reference
   article: https://diseasetranscriptomicslab.github.io/markeR/articles
