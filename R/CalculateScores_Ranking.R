@@ -53,10 +53,22 @@ CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
   data <- as.data.frame(data) # Ensure data is a data frame
   ResultsList <- list()
 
-  if (!is.data.frame(data)) stop("Error: data must be a data frame")
-  if (!is.null(metadata) && !is.data.frame(metadata)) stop(
-    "Error: metadata must be a data frame")
-  if (!is.list(gene_sets)) stop("Error: gene_sets must be a list")
+  # if (!is.data.frame(data)) stop("Error: data must be a data frame")
+  # if (!is.null(metadata) && !is.data.frame(metadata)) stop(
+  #   "Error: metadata must be a data frame")
+  # if (!is.list(gene_sets)) stop("Error: gene_sets must be a list")
+  
+  if (!is.data.frame(data) || (!is.null(metadata) && !is.data.frame(metadata)) || !is.list(gene_sets)) {
+    stop(
+      paste(
+        if (!is.data.frame(data)) "Error: 'data' must be a data frame." else NULL,
+        if (!is.null(metadata) && !is.data.frame(metadata)) "Error: 'metadata' must be a data frame." else NULL,
+        if (!is.list(gene_sets)) "Error: 'gene_sets' must be a list." else NULL,
+        collapse = " "
+      )
+    )
+  }
+  
 
   # Change first column name to default name "sample" for merging purposes
   if (!is.null(metadata)) colnames(metadata)[1] <- "sample"
@@ -80,10 +92,19 @@ CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
         signaturegenes_down <- signature[signature[,2] == -1, 1]
 
         # Apply getRanking function to each sample (column)
-        rankings_up <- sapply(colnames(data),
-                              function(sample) getRanking(data, sample, signaturegenes_up))
-        rankings_down <- sapply(colnames(data),
-                                function(sample) getRanking(data, sample, signaturegenes_down))
+        # rankings_up <- sapply(colnames(data),
+        #                       function(sample) getRanking(data, sample, signaturegenes_up))
+        # rankings_down <- sapply(colnames(data),
+        #                         function(sample) getRanking(data, sample, signaturegenes_down))
+        
+        rankings_up <- vapply(colnames(data),
+                              function(sample) getRanking(data, sample, signaturegenes_up),
+                              numeric(1))
+        
+        rankings_down <- vapply(colnames(data),
+                                function(sample) getRanking(data, sample, signaturegenes_down),
+                                numeric(1))
+        
 
         ranking_final <- (rankings_up - rankings_down) / length(universe_genes)
         ranking_final <- data.frame(sample = colnames(data), score = ranking_final)
@@ -95,9 +116,13 @@ CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
         signaturegenes <- signature[, 1]
 
         # Apply getRanking function to each sample (column)
-        rankings <- sapply(colnames(data),
-                           function(sample) getRanking(data, sample, signaturegenes))
+        # rankings <- sapply(colnames(data),
+        #                    function(sample) getRanking(data, sample, signaturegenes))
 
+        rankings <- vapply(colnames(data),
+                           function(sample) getRanking(data, sample, signaturegenes),
+                           numeric(1))
+        
         ranking_final <- rankings / length(universe_genes)
         ranking_final <- data.frame(sample = colnames(data), score = ranking_final)
 
@@ -108,8 +133,11 @@ CalculateScores_Ranking <- function(data, metadata = NULL, gene_sets) {
       signaturegenes <- signature
 
       # Apply getRanking function to each sample (column)
-      rankings <- sapply(colnames(data),
-                         function(sample) getRanking(data, sample, signaturegenes))
+      # rankings <- sapply(colnames(data),
+      #                    function(sample) getRanking(data, sample, signaturegenes))
+      rankings <- vapply(colnames(data),
+                         function(sample) getRanking(data, sample, signaturegenes),
+                         numeric(1))
 
       ranking_final <- rankings / length(universe_genes)
       ranking_final <- data.frame(sample = colnames(data), score = ranking_final)

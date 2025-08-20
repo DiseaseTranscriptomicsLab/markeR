@@ -409,7 +409,7 @@ The `calculateDE` function in the `markeR` package leverages the `limma` framewo
 
 Below are the corresponding code snippets demonstrating each scenario, by answering the same question: **What are the genes differentially expressed between senescence and proliferative cells?**
 
-```{r DEGs, out.width="80%", warning=FALSE, message=FALSE}
+```{r DEGs, out.width="80%", warning=FALSE}
 # Example 1: Build design matrix from variables (Condition) and apply a contrast.
 # In this case, the design matrix is constructed automatically using the variable "Condition".
 DEGs <- calculateDE(data = counts_example,

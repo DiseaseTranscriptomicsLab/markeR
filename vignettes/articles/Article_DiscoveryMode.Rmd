@@ -159,7 +159,7 @@ Depending on the statistic used (`t` or `B`), the interpretation of results vari
 The following code evaluates how three phenotypic variables — `Condition`, `Researcher`, and `DaysToSequencing` — are associated with the **HernandezSegura** gene set:
 
 ```{r GSEA_varassoc, fig.width=6, fig.height=6, out.width="60%", warning=FALSE, message=FALSE}
-VariableAssociation(
+varassoc_gsea <- VariableAssociation(
   data = counts_example,
   metadata = metadata_example,
   method = "GSEA",
@@ -175,7 +175,8 @@ VariableAssociation(
   titlesize = 14,
   pointSize = 5
 )
- 
+
+varassoc_gsea$data
 ```
  
 # Session Information

@@ -205,7 +205,8 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
 
     # Generate simulated signatures based on the current signature
     simulatedsigs <- list()
-    for (sim in 1:number_of_sims) {
+#    for (sim in 1:number_of_sims) {
+    for (sim in seq_len(number_of_sims)) {
       cur_model_sig <- cur_sig  # copy the current signature
       cur_model_sig$Gene <- sample(gene_list, nrow(cur_sig))  # simulate by sampling genes
       simulatedsigs[[paste0("sim", sim)]] <- cur_model_sig
@@ -240,7 +241,7 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
       } else if (cohentype=="f"){
         cohen_mat <- sig_data$CohenF
       } else {
-        stop("Error: results2 format not valid.")
+        stop("Error: results format not valid.")
       }
 
       padj_mat <- sig_data$padj

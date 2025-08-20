@@ -626,7 +626,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 
           line1 <- wrap_title(paste0("Cohen's d = ",
                                      format(signif(cohen_d_results, digits=3),
-                                            scientific = TRUE)),
+                                            scientific = FALSE)),
                               width = widthTitle)
           line2 <- wrap_title(paste0("p = ", format(signif(p_val, digits=3),
                                                     scientific = TRUE)),
@@ -636,7 +636,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
         } else {
           subtitle <- wrap_title(paste0("Cohen's d = ",
                                         format(signif(cohen_d_results, digits=3),
-                                               scientific = TRUE)),
+                                               scientific = FALSE)),
                                  width = widthTitle)
         }
 
@@ -665,7 +665,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 
             line1 <- wrap_title(paste0("Cohen's d = ",
                                        format(signif(cohen_d_results, digits = 3),
-                                              scientific = TRUE)),
+                                              scientific = FALSE)),
                                 width = widthTitle)
             line2 <- wrap_title(paste0("p = ",
                                        format(signif(p_val, digits = 3), scientific = TRUE)),
@@ -674,7 +674,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
           } else {
             subtitle <- wrap_title(paste0("Cohen's d = ",
                                           format(signif(cohen_d_results, digits = 3),
-                                                 scientific = TRUE)),
+                                                 scientific = FALSE)),
                                    width = widthTitle)
           }
 
@@ -695,7 +695,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 
             line1 <- wrap_title(paste0("Cohen's f = ",
                                        format(signif(results_var["Cohen_f"], digits = 3),
-                                              scientific = TRUE)), width = widthTitle)
+                                              scientific = FALSE)), width = widthTitle)
             line2 <- wrap_title(paste0("p = ",
                                        format(signif(results_var["P_Value"], digits = 3),
                                               scientific = TRUE)), width = widthTitle)
@@ -703,7 +703,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
           } else {
             subtitle <- wrap_title(paste0("Cohen's f = ",
                                           format(signif(results_var["Cohen_f"], digits = 3),
-                                                 scientific = TRUE)), width = widthTitle)
+                                                 scientific = FALSE)), width = widthTitle)
           }
 
         }
@@ -1025,7 +1025,7 @@ PlotScores_Numeric <- function(data,
       if (pvalcalc) {
         line1 <- wrap_title(paste0("Cohen's f = ",
                                    format(signif(results_var["Cohen_f"], digits=3),
-                                          scientific = TRUE)), width = widthTitle)
+                                          scientific = FALSE)), width = widthTitle)
         line2 <- wrap_title(paste0("p = ",
                                    format(signif(results_var["P_Value"], digits=3),
                                           scientific = TRUE)), width = widthTitle)
@@ -1034,7 +1034,7 @@ PlotScores_Numeric <- function(data,
       } else {
         subtitle <- wrap_title(paste0("Cohen's f = ",
                                       format(signif(results_var["Cohen_f"],
-                                                    digits=3), scientific = TRUE)),
+                                                    digits=3), scientific = FALSE)),
                                width = widthTitle)
       }
 

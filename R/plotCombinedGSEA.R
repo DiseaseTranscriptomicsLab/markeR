@@ -67,7 +67,11 @@ plotCombinedGSEA <- function(GSEA_results, sig_threshold = 0.05, PointSize = 4,
 
   pathway_colors <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))(length(unique(combined_data$pathway)))
 
-  combined_data$pathway <- sapply(combined_data$pathway, function(x) wrap_title(x, widthlegend))
+  # combined_data$pathway <- sapply(combined_data$pathway, function(x) wrap_title(x, widthlegend))
+  combined_data$pathway <- vapply(combined_data$pathway,
+                                  function(x) wrap_title(x, widthlegend),
+                                  character(1))
+  
 
   # Create the plot
   plot <- ggplot2::ggplot(combined_data, ggplot2::aes(x = .data$NES, y = .data$logpadj,

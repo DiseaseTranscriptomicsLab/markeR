@@ -136,8 +136,12 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL,
 
 
   # Ensure contrast ordering
-  combined_results$Contrast <- sapply(combined_results$Contrast,
-                                      function(x) wrap_title(x, widthlabels))
+  # combined_results$Contrast <- sapply(combined_results$Contrast,
+  #                                     function(x) wrap_title(x, widthlabels))
+  combined_results$Contrast <- vapply(combined_results$Contrast,
+                                      function(x) wrap_title(x, widthlabels),
+                                      FUN.VALUE = character(1))
+  
   combined_results$Contrast <- factor(combined_results$Contrast,
                                       levels = combined_results$Contrast[order(combined_results$NES)])
 
@@ -266,7 +270,8 @@ generate_all_contrasts <- function(levels, mode = "simple") {
 
   # 3. Groupwise comparisons (extensive mode)
   group_contrasts <- c()
-  for (i in 1:(n-1)) {
+ # for (i in 1:(n-1)) {
+  for (i in seq_len(max(0, n - 1))) {
     left_groups <- combn(levels, i, simplify = FALSE)  # Subsets for the first group
     for (left in left_groups) {
       right <- setdiff(levels, left)  # Remaining elements for the second group

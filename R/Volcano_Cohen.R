@@ -88,8 +88,12 @@ Volcano_Cohen <- function(cohenlist,
   final_df <- do.call(rbind, rows)
 
   # Wrap long signature names
-  final_df$signature <- sapply(final_df$signature,
-                               function(x) wrap_title(x, widthlegend))
+  # final_df$signature <- sapply(final_df$signature,
+  #                              function(x) wrap_title(x, widthlegend))
+  
+  final_df$signature <- vapply(final_df$signature,
+                               function(x) wrap_title(x, widthlegend),
+                               character(1))
 
   # Handle colors
   if (is.null(ColorValues)) {

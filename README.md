@@ -15,11 +15,11 @@ Version](https://img.shields.io/badge/min%20R-4.4.0-blue.svg)](https://github.co
 
 <!-- badges: end -->
 
-**markeR** provides a suite of methods for using gene sets (signatures)
-to quantify and evaluate the extent to which a given gene signature
-marks a specific phenotype from gene expression data. The package
-implements various scoring, enrichment and classification approaches,
-along with tools to compute performance metrics and visualize results.
+**markeR** provides a suite of methods for using gene sets to quantify
+and evaluate the extent to which a given gene signature marks a specific
+phenotype from gene expression data. The package implements various
+scoring, enrichment and classification approaches, along with tools to
+compute performance metrics and visualize results.
 
 > **To cite markeR please use:**
 >

@@ -62,7 +62,7 @@ test_that("calculateDE returns all coefficients when no contrast is given", {
   expect_true("A" %in% names(res))
   expect_true("B" %in% names(res))
 })
-
+ 
 test_that("calculateDE errors with mismatched design matrix", {
   set.seed(1004)
   expr <- matrix(rpois(100, lambda = 20), nrow = 10, ncol = 10)
@@ -74,6 +74,7 @@ test_that("calculateDE errors with mismatched design matrix", {
     stringsAsFactors = FALSE
   )
   design_bad <- matrix(1, nrow = 9, ncol = 2)
+  
   expect_error(
     calculateDE(
       data = expr,
@@ -81,9 +82,10 @@ test_that("calculateDE errors with mismatched design matrix", {
       modelmat = design_bad,
       contrasts = "A-B"
     ),
-    "Rows in 'modelmat' must match the number of samples"
+    regexp = "must be a matrix with rows equal to the number of samples"
   )
 })
+
 
 test_that("calculateDE handles NAs with ignore_NAs", {
   set.seed(1005)

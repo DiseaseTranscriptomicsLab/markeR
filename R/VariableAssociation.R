@@ -32,33 +32,55 @@ identify_variable_type <- function(df, cols = NULL) {
 
   if (!is.null(cols)) df <- df[, cols, drop = FALSE]
 
-  variable_types <- sapply(names(df), function(col_name) {
-
+ #  variable_types <- sapply(names(df), function(col_name) {
+ # 
+ #    col <- df[[col_name]]
+ #    unique_vals <- length(unique(col))
+ # 
+ #    if (is.numeric(col) | is.integer(col)) {
+ # #     if (unique_vals > 10) {
+ #        return("Numeric")
+ #      # } else if (unique_vals == 2) {
+ #      #   return("Categorical Bin")
+ #      # } else {
+ #      #   return("Categorical Multi")
+ #      # }
+ #    } else if (is.character(col) || is.factor(col)) {
+ #      if (unique_vals == 2) {
+ #        return("Categorical Bin")
+ #      } else if (unique_vals > 10) {
+ #        warning(paste0("Warning: Number of unique values in '", col_name, "'
+ #                       is too high (>10). Consider removing this variable
+ #                       from the analysis."))
+ #        return("Categorical Multi")
+ #      } else {
+ #        return("Categorical Multi")
+ #      }
+ #    }
+ #    return("Unknown")
+ #  }, USE.NAMES = TRUE)
+  
+  variable_types <- vapply(names(df), function(col_name) {
     col <- df[[col_name]]
     unique_vals <- length(unique(col))
-
+    
     if (is.numeric(col) | is.integer(col)) {
- #     if (unique_vals > 10) {
-        return("Numeric")
-      # } else if (unique_vals == 2) {
-      #   return("Categorical Bin")
-      # } else {
-      #   return("Categorical Multi")
-      # }
+      return("Numeric")
     } else if (is.character(col) || is.factor(col)) {
       if (unique_vals == 2) {
         return("Categorical Bin")
       } else if (unique_vals > 10) {
-        warning(paste0("Warning: Number of unique values in '", col_name, "'
-                       is too high (>10). Consider removing this variable
-                       from the analysis."))
+        warning(paste0("Warning: Number of unique values in '", col_name,
+                       "' is too high (>10). Consider removing this variable ",
+                       "from the analysis."))
         return("Categorical Multi")
       } else {
         return("Categorical Multi")
       }
     }
     return("Unknown")
-  }, USE.NAMES = TRUE)
+  }, FUN.VALUE = character(1), USE.NAMES = TRUE)
+  
 
   return(variable_types)
 }

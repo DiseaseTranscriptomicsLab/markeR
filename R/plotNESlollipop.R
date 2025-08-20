@@ -121,7 +121,11 @@ plotNESlollipop <- function(GSEA_results,
     }
 
     # Ensure contrast ordering
-    res$pathway <- sapply(res$pathway, function(x) wrap_title(x, widthlabels))
+    # res$pathway <- sapply(res$pathway, function(x) wrap_title(x, widthlabels))
+    res$pathway <- vapply(res$pathway,
+                          function(x) wrap_title(x, widthlabels),
+                          FUN.VALUE = character(1))
+    
     res$pathway <- factor(res$pathway, levels = res$pathway[order(res$NES)])
 
     plot <- ggplot2::ggplot(res, ggplot2::aes(x = .data$NES, y = .data$pathway, fill = -log10(.data$padj))) +

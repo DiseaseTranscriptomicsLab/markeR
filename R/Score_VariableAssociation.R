@@ -313,9 +313,13 @@ Score_VariableAssociation <- function(data,
     ########### CONTRAST MODE PLOT ############
 
     # Ensure contrast ordering
-    df_results_contrast$Contrast <- sapply(df_results_contrast$Contrast,
-                                           function(x) wrap_title(
-                                             x, widthlabels))
+    # df_results_contrast$Contrast <- sapply(df_results_contrast$Contrast,
+    #                                        function(x) wrap_title(
+    #                                          x, widthlabels))
+    df_results_contrast$Contrast <- vapply(df_results_contrast$Contrast,
+                                           function(x) wrap_title(x, widthlabels),
+                                           FUN.VALUE = character(1))
+    
     df_results_contrast$Contrast <- factor(df_results_contrast$Contrast,
                                            levels = df_results_contrast$Contrast
                                            [order(df_results_contrast$CohenD)])

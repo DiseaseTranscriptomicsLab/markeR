@@ -107,11 +107,11 @@ geneset_similarity <- function(
   if (is.null(signatures) || length(signatures) == 0) {
     stop("You must provide at least one signature.")
   }
-  if (!is.list(signatures) || !all(sapply(signatures, is.character))) {
+  if (!is.list(signatures) || !all(vapply(signatures, is.character, logical(1)))) {
     stop("Signatures must be a named list of character vectors.")
   }
   if (!is.null(other_user_signatures) && (!is.list(other_user_signatures) ||
-                                          !all(sapply(other_user_signatures, is.character)))) {
+                                          !all(vapply(other_user_signatures, is.character, logical(1))))) {
     stop("Other user signatures must be a named list of character vectors.")
   }
   if (!is.null(collection) && !is.character(collection)) {
@@ -286,10 +286,17 @@ geneset_similarity <- function(
 
   data <- similarity_df
 
-  similarity_df$Reference_Signature <- sapply(similarity_df$Reference_Signature,
-                                              function(x) wrap_title(x, width_text))
-  similarity_df$Compared_Signature <- sapply(similarity_df$Compared_Signature,
-                                             function(x) wrap_title(x, width_text))
+  # similarity_df$Reference_Signature <- sapply(similarity_df$Reference_Signature,
+  #                                             function(x) wrap_title(x, width_text))
+  # similarity_df$Compared_Signature <- sapply(similarity_df$Compared_Signature,
+  #                                            function(x) wrap_title(x, width_text))
+  
+  similarity_df$Reference_Signature <- vapply(similarity_df$Reference_Signature,
+                                              function(x) wrap_title(x, width_text),
+                                              character(1))
+  similarity_df$Compared_Signature <- vapply(similarity_df$Compared_Signature,
+                                             function(x) wrap_title(x, width_text),
+                                             character(1))
 
   if (is.null(limits)) {
     if (metric == "jaccard") {
