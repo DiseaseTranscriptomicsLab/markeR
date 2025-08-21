@@ -77,7 +77,6 @@
 </h1>
 </div>
 <!-- badges: start -->
-<!--![](https://img.shields.io/badge/status-development-yellowgreen)-->
 
 <!-- badges: end -->
 <p><strong>markeR</strong> provides a suite of methods for using gene sets to quantify and evaluate the extent to which a given gene signature marks a specific phenotype from gene expression data. The package implements various scoring, enrichment and classification approaches, along with tools to compute performance metrics and visualize results.</p>
@@ -135,15 +134,8 @@
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>Install the latest release from Bioconductor:</p>
+<p>Install the latest development release of markeR from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Install from Bioconductor</span></span>
-<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"BiocManager"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"BiocManager"</span><span class="op">)</span></span>
-<span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"markeR"</span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://diseasetranscriptomicslab.github.io/markeR/">markeR</a></span><span class="op">)</span></span></code></pre></div>
-<p>Or install the latest development release of markeR from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"DiseaseTranscriptomicsLab/markeR@*release"</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -182,7 +174,7 @@ A named list where each element represents one gene set:</p>
 </li>
 </ul>
 <p>This structure supports both <strong>Discovery Mode</strong> (single gene set) and <strong>Benchmarking Mode</strong> (multiple gene sets).</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Example </span></span>
 <span><span class="va">gene_sets</span></span>
 <span><span class="co">#&gt; $Set1</span></span>
@@ -198,7 +190,7 @@ A named list where each element represents one gene set:</p>
 <strong>Expression Data Frame</strong>:<br>
 A filtered and normalised gene expression data frame (genes × samples). Row names must be gene identifiers, and column names must match the sample IDs in the metadata.</li>
 </ul>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">expr_df</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        Sample1  Sample2  Sample3  Sample4  Sample5</span></span>
 <span><span class="co">#&gt; GeneA 3.879049 7.448164 2.864353 5.852928 3.610586</span></span>
@@ -212,7 +204,7 @@ A filtered and normalised gene expression data frame (genes × samples). Row nam
 <strong>Sample Metadata</strong>:<br>
 A data frame with annotations for each sample, with the sample ID in the first column. The row names must match the column names of the expression matrix.</li>
 </ul>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">metadata</span></span>
 <span><span class="co">#&gt;   SampleID Condition Age</span></span>
 <span><span class="co">#&gt; 1  Sample1   Control  49</span></span>
@@ -346,6 +338,8 @@ Email: <a href="mailto:rita.silva@medicina.ulisboa.pt" class="email">rita.silva@
 <ul class="list-unstyled">
 <li><a href="https://diseasetranscriptomicslab.github.io/markeR/"><img src="https://img.shields.io/badge/docs-pkgdown-blue.svg" alt="Pkgdown"></a></li>
 <li><a href="https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR" class="external-link"><img src="https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR/graph/badge.svg?token=7T1I4JCJG6" alt="codecov"></a></li>
+<li><a href="https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
+<li><a href="https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml" class="external-link"><img src="https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg" alt="Bioconductor Check"></a></li>
 </ul>
 </div>
 

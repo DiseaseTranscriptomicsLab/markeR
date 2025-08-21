@@ -78,7 +78,7 @@ Silva</h4>
             
             <h4 data-toc-skip class="date">2025-08-21</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/DiseaseTranscriptomicsLab/markeR/blob/main/vignettes/markeR.Rmd" class="external-link"><code>vignettes/markeR.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/DiseaseTranscriptomicsLab/markeR/blob/default/vignettes/markeR.Rmd" class="external-link"><code>vignettes/markeR.Rmd</code></a></small>
       <div class="d-none name"><code>markeR.Rmd</code></div>
     </div>
 
@@ -208,17 +208,10 @@ standardized phenotypic characterization of gene sets.</p>
 <div class="section level2">
 <h2 id="installation">2. Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>Install the latest release from Bioconductor:</p>
+<p>Install the latest development release of markeR from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Install from Bioconductor</span></span>
-<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"BiocManager"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"BiocManager"</span><span class="op">)</span></span>
-<span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"markeR"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"DiseaseTranscriptomicsLab/markeR@*release"</span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://diseasetranscriptomicslab.github.io/markeR/">markeR</a></span><span class="op">)</span></span></code></pre></div>
-<p>Or install the latest development release of markeR from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">#devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")</span></span>
-<span><span class="co">#library(markeR)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="common-workflow">3. Common Workflow<a class="anchor" aria-label="anchor" href="#common-workflow"></a>
@@ -240,7 +233,7 @@ or clinical variables.</p>
 <code>direction</code> (values <code>+1</code> for up, <code>-1</code>
 for down) when direction is known (bidirectional).</li>
 </ul>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Example</span></span>
 <span><span class="va">gene_sets</span></span></code></pre></div>
 <pre><code><span><span class="co">## $Set1</span></span>
@@ -256,7 +249,7 @@ that ship with the package: <strong>LiteratureMarkers</strong>
 (bidirectional), <strong>REACTOME_CELLULAR_SENESCENCE</strong>
 (undirected), and <strong>HernandezSegura</strong> (bidirectional). See
 <code><a href="../reference/genesets_example.html">?genesets_example</a></code>.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Load example gene sets</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">genesets_example</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -271,7 +264,7 @@ al. (2016, GSE63577) with human fibroblasts under <strong>replicative
 senescence</strong> and <strong>proliferative control</strong>.
 Normalisation was performed with <strong>edgeR</strong>. See
 <code><a href="../reference/counts_example.html">?counts_example</a></code> for structure.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Load example expression data</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">counts_example</span><span class="op">)</span></span>
 <span><span class="va">counts_example</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span></span></code></pre></div>
@@ -290,7 +283,7 @@ expression matrix column names; the first column contains sample
 IDs.</p>
 <p>We use the accompanying metadata from the Marthandan et al. (2016)
 study. See <code><a href="../reference/metadata_example.html">?metadata_example</a></code>.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Load example metadata</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">metadata_example</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">metadata_example</span><span class="op">)</span></span></code></pre></div>
@@ -403,7 +396,7 @@ method calculates median-centered expression for each gene and averages
 across the gene set, providing a robust summary of coordinated activity.
 Here, we assess whether the available gene sets can distinguish between
 the two conditions: Senescent and Proliferative.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Quantification approach: scores</span></span>
 <span><span class="co"># Method: log2-median </span></span>
 <span><span class="fu"><a href="../reference/PlotScores.html">PlotScores</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
@@ -417,14 +410,14 @@ the two conditions: Senescent and Proliferative.</p>
 <span>           widthTitle <span class="op">=</span> <span class="fl">24</span>,</span>
 <span>           labsize<span class="op">=</span><span class="fl">12</span>, </span>
 <span>           titlesize <span class="op">=</span> <span class="fl">12</span><span class="op">)</span>  </span></code></pre></div>
-<p><img src="markeR_files/figure-html/unnamed-chunk-3-1.png" width="100%"></p>
+<p><img src="markeR_files/figure-html/unnamed-chunk-2-1.png" width="100%"></p>
 <p>Next, we calculate scores using all available methods (log2-median,
 ranking, and ssGSEA) to compare results across scoring strategies. The
 output includes heatmaps and volcano plots to visualize differences
 between conditions. Heatmaps summarize scores across samples and gene
 sets, while volcano plots show effect sizes (|Cohen’s d|) versus
 statistical significance.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Overall_Scores</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/PlotScores.html">PlotScores</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
 <span>                             metadata <span class="op">=</span> <span class="va">metadata_example</span>,  </span>
 <span>                             gene_sets<span class="op">=</span><span class="va">genesets_example</span>, </span>
@@ -449,16 +442,16 @@ statistical significance.</p>
 <span>                             cohen_threshold<span class="op">=</span><span class="fl">0.6</span>,</span>
 <span>                             pointSize<span class="op">=</span><span class="fl">6</span>,</span>
 <span>                             colorPalette<span class="op">=</span><span class="st">"Paired"</span><span class="op">)</span>  </span></code></pre></div>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Overall_Scores</span><span class="op">$</span><span class="va">heatmap</span></span></code></pre></div>
 <p><img src="markeR_files/figure-html/Overall_Scores_heatmap-1.png" width="100%"></p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Overall_Scores</span><span class="op">$</span><span class="va">volcano</span></span></code></pre></div>
 <p><img src="markeR_files/figure-html/Overall_Scores_volcano-1.png" width="70%"></p>
 <p>ROC curves evaluate the discriminatory power of gene set scores,
 providing insight into how well a signature distinguishes between
 experimental or clinical groups.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ROC_Scores.html">ROC_Scores</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
 <span>           metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
 <span>           gene_sets<span class="op">=</span><span class="va">genesets_example</span>, </span>
@@ -478,7 +471,7 @@ experimental or clinical groups.</p>
 the false positive rate. This step ensures that observed gene set
 signals exceed what would be expected by chance, improving confidence in
 the results.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/FPR_Simulation.html">FPR_Simulation</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>,</span>
 <span>               metadata <span class="op">=</span> <span class="va">metadata_example</span>,</span>
 <span>               original_signatures <span class="op">=</span> <span class="va">genesets_example</span>,</span>
@@ -510,7 +503,7 @@ example, we build the design matrix automatically from the
 <code>Senescent - Proliferative</code>. Internally, this fits a linear
 model without an intercept, enabling quick comparison between levels of
 a categorical variable.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Build design matrix from variables (Condition) and apply a contrast.</span></span>
 <span><span class="co"># The design matrix is constructed automatically using the variable "Condition".</span></span>
 <span><span class="va">DEGs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculateDE.html">calculateDE</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>,</span>
@@ -531,7 +524,7 @@ predefined gene sets, showing the magnitude of differential expression
 Up- (green) and downregulated (red) genes are color-coded to facilitate
 interpretation. Genes in blue represent those from gene sets without
 known direction.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Change order: signatures in columns, contrast in rows</span></span>
 <span><span class="fu"><a href="../reference/plotVolcano.html">plotVolcano</a></span><span class="op">(</span><span class="va">DEGs</span>, genes <span class="op">=</span> <span class="va">genesets_example</span>, </span>
 <span>            N <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -546,7 +539,7 @@ differential expression results. This approach evaluates whether members
 of each gene set are non-randomly distributed toward the top or bottom
 of the ranked gene list, providing normalized enrichment scores (NES)
 and adjusted p-values.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">GSEAresults</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/runGSEA.html">runGSEA</a></span><span class="op">(</span>DEGList <span class="op">=</span> <span class="va">DEGs</span>, </span>
 <span>                       gene_sets <span class="op">=</span> <span class="va">genesets_example</span>,</span>
 <span>                       stat <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -568,7 +561,7 @@ and adjusted p-values.</p>
 list, we use enrichment curves from <code>fgsea.</code> This plot shows
 the running enrichment score across the ranked list of genes,
 highlighting where gene set members are concentrated.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotGSEAenrichment.html">plotGSEAenrichment</a></span><span class="op">(</span>GSEA_results<span class="op">=</span><span class="va">GSEAresults</span>, </span>
 <span>                   DEGList<span class="op">=</span><span class="va">DEGs</span>, </span>
 <span>                   gene_sets<span class="op">=</span><span class="va">genesets_example</span>, </span>
@@ -578,7 +571,7 @@ highlighting where gene set members are concentrated.</p>
 compactly shows the normalized enrichment score and highlights
 statistically significant gene sets. This provides a quick overview of
 which pathways are most strongly altered.</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotNESlollipop.html">plotNESlollipop</a></span><span class="op">(</span>GSEA_results<span class="op">=</span><span class="va">GSEAresults</span>, </span>
 <span>                saturation_value<span class="op">=</span><span class="cn">NULL</span>, </span>
 <span>                nonsignif_color <span class="op">=</span> <span class="st">"#F4F4F4"</span>, </span>
@@ -593,7 +586,7 @@ which pathways are most strongly altered.</p>
 <p>Finally, a volcano-style scatter plot combines NES and significance
 for all gene sets, making it easy to identify which sets show the
 strongest and most statistically robust enrichment or depletion.</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotCombinedGSEA.html">plotCombinedGSEA</a></span><span class="op">(</span><span class="va">GSEAresults</span>, sig_threshold <span class="op">=</span> <span class="fl">0.05</span>, PointSize<span class="op">=</span><span class="fl">6</span>, widthlegend <span class="op">=</span> <span class="fl">26</span> <span class="op">)</span></span></code></pre></div>
 <p><img src="markeR_files/figure-html/GSEA_volcano-1.png" width="100%"></p>
 </div>
@@ -612,7 +605,7 @@ lollipop plots)</li>
 </ul>
 <p>We start by selecting the gene set of interest. Here, we use the
 HernandezSegura gene set from our example collection.</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">HernandezSegura_GeneSet</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>HernandezSegura<span class="op">=</span><span class="va">genesets_example</span><span class="op">$</span><span class="va">HernandezSegura</span><span class="op">)</span> </span></code></pre></div>
 <p>For illustration, we add two hypothetical variables to the metadata:
 <code>DaysToSequencing</code>, representing the number of days between
@@ -620,7 +613,7 @@ sample preparation and sequencing, and <code>Researcher</code>,
 identifying the person who processed each sample. This allows us to
 explore associations between gene set activity and different types of
 variables (categorical or continuous).</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">metadata_example</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="st">"123456"</span><span class="op">)</span></span>
 <span><span class="va">metadata_example</span><span class="op">$</span><span class="va">Researcher</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"John"</span>,<span class="st">"Ana"</span>,<span class="st">"Francisca"</span><span class="op">)</span>,<span class="fl">39</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -644,7 +637,7 @@ variables (categorical or continuous).</p>
 variables using enrichment-based approaches in Discovery Mode. The
 resulting plot highlights significant associations across variables and
 visually summarizes the direction and strength of the effect.</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/VariableAssociation.html">VariableAssociation</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">counts_example</span>,</span>
 <span>  metadata <span class="op">=</span> <span class="va">metadata_example</span>,</span>
@@ -685,7 +678,7 @@ log2-median). This approach calculates per-sample scores for the gene
 set and summarizes them across variables. The “extensive” mode provides
 a comprehensive output including effect sizes for pairwise contrasts and
 overall statistics for continuous variables.</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/VariableAssociation.html">VariableAssociation</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">counts_example</span>, </span>
 <span>                    metadata <span class="op">=</span> <span class="va">metadata_example</span>, </span>
 <span>                    method <span class="op">=</span> <span class="st">"logmedian"</span>,</span>
@@ -745,7 +738,7 @@ using a user-defined gene universe and Fisher’s exact test.</p></li>
 <p>Filters can be applied based on similarity thresholds (e.g., minimum
 Jaccard, OR, or p-value).</p>
 <p>Example of Gene Set Similarity (full tutorial <a href="https://diseasetranscriptomicslab.github.io/markeR/articles/Article_GeneSetSimilarity.html">here</a>)::</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Example data</span></span>
 <span><span class="va">signature1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"TP53"</span>, <span class="st">"BRCA1"</span>, <span class="st">"MYC"</span>, <span class="st">"EGFR"</span>, <span class="st">"CDK2"</span><span class="op">)</span></span>
 <span><span class="va">signature2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ATXN2"</span>, <span class="st">"FUS"</span>, <span class="st">"MTOR"</span>, <span class="st">"CASP3"</span><span class="op">)</span></span>
@@ -773,7 +766,7 @@ Jaccard, OR, or p-value).</p>
 <span>  pval_threshold <span class="op">=</span> <span class="fl">0.05</span>, </span>
 <span>  width_text<span class="op">=</span><span class="fl">50</span></span>
 <span><span class="op">)</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
-<p><img src="markeR_files/figure-html/unnamed-chunk-6-1.png" width="60%"></p>
+<p><img src="markeR_files/figure-html/unnamed-chunk-5-1.png" width="60%"></p>
 </div>
 </div>
 <div class="section level2">
@@ -803,7 +796,7 @@ Email: <a href="mailto:rita.silva@medicina.ulisboa.pt">rita.silva@medicina.ulisb
 <div class="section level2">
 <h2 id="session-information">6. Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## R version 4.5.1 (2025-06-13)</span></span>
 <span><span class="co">## Platform: x86_64-pc-linux-gnu</span></span>
