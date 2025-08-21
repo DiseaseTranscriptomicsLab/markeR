@@ -624,7 +624,7 @@ Based on these very simple analyses, the REACTOME_CELLULAR_SENESCENCE showed con
 
 These findings highlight important trade-offs: while scoring methods offer per-sample resolution and are less sensitive (in terms of statistical significance) to gene set size, making them useful for classification tasks, they may be overly influenced by a small subset of genes, which could limit biological interpretability. While more robust to sample heterogeneity and better at capturing coordinated expression changes, enrichment-based methods are sensitive to gene set composition and size. Caution is warranted when interpreting results, especially from score-based approaches, as strong signals may not always reflect the intended biological process, but rather a handful of dominant genes. 
 
-## Visualise Individual Gene Behaviour
+## Visualise Individual Gene Behaviour.  
 
 As highlighted in the previous section, score-based approaches can be disproportionately influenced by a small subset of genes. To address this, `markeR` includes dedicated functions for exploring individual gene behaviour, enabling users to assess if and which genes may be driving the overall signal. We demonstrate this functionality using the `LiteratureMarkers` gene set. 
  
