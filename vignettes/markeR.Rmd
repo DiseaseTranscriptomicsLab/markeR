@@ -78,21 +78,11 @@ The package is designed to be fully customizable, supporting diverse visualizati
 
 # 2. Installation
 
-Install the latest release from Bioconductor:
-
-```{r, eval=FALSE}
-# Install from Bioconductor
-if (!requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-BiocManager::install("markeR")
-library(markeR)
-```
-
-Or install the latest development release of markeR from [GitHub](https://github.com/) with:
+Install the latest development release of markeR from [GitHub](https://github.com/) with:
 
 ```r
-#devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
-#library(markeR)
+devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
+library(markeR)
 ```
 
 ```{r, echo=FALSE} 
