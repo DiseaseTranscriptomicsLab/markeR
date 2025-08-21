@@ -456,7 +456,7 @@ VariableAssociation(data = counts_example,
 
 Benchmarking mode offers the most comprehensive set of features and allows users to seamlessly move from discovery to benchmarking mode once a variable of interest has been identified and further testing is required. The main difference from Discovery mode is that Benchmarking is designed to evaluate multiple gene sets simultaneously, whereas Discovery mode focuses on quantifying a single, robust gene set.
 
-## 3.5. Individual Gene Exploration (Optional)
+## 3.5. Individual Gene Exploration  
 
 To better understand the contribution of individual genes within a gene set and identify whether specific genes drive the overall signal, `markeR` offers a suite of gene-level exploratory analyses (via `VisualiseIndividualGenes`), including:
 
@@ -469,7 +469,7 @@ To better understand the contribution of individual genes within a gene set and 
 
 See `?VisualiseIndividualGenes` for more details on the available options and the extended online tutorial [here](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_BenchmarkingMode.html#visualise-individual-gene-behaviour).
 
-## 3.6. Compare with Reference Gene Sets (Optional)
+## 3.6. Compare with Reference Gene Sets  
 
 `markeR` allows comparison of user-defined gene sets to reference sets (e.g., from MSigDB) using:
 
