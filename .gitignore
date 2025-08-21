@@ -17,3 +17,4 @@ markeR.BiocCheck/
 markeR.Rproj
 .DS_Store
 **/.DS_Store
+/data_aux/
