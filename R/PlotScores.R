@@ -1,3 +1,5 @@
+utils::globalVariables(c("score"))
+
 #' Plot gene signature scores using various methods.
 #'
 #' Computes and visualizes gene signature scores using one or more methods,
@@ -499,11 +501,11 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 
       ColorValues <- if (is.null(ColorValues)) "#ECBD78" else ColorValues
 
-      p <- ggplot2::ggplot(df, ggplot2::aes(x = score)) +
+      p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$score)) +
         ggplot2::geom_density(fill = ColorValues, alpha = 0.5) +
         ggplot2::labs(title = "Density Plot of Score", x = xlab, y = "Density") +
         # add points below density
-        ggplot2::geom_rug(ggplot2::aes(x = score), color=ColorValues, sides = "b",
+        ggplot2::geom_rug(ggplot2::aes(x = .data$score), color=ColorValues, sides = "b",
                           alpha = 0.8, size = .5, length = grid::unit(0.035, "npc"))
 
       # Customize the plot appearance.
@@ -596,7 +598,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
     p <- p + ggplot2::geom_violin(alpha = 0.5, scale = "width")
 
     # Add median summary crossbar.
-    p <- p + ggplot2::stat_summary(fun = median, fun.min = median, fun.max = median,
+    p <- p + ggplot2::stat_summary(fun = stats::median, fun.min = stats::median, fun.max = stats::median,
                                    geom = "crossbar", width = 0.25,
                                    position = ggplot2::position_dodge(width = 0.13))
 
@@ -624,7 +626,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 
           line1 <- wrap_title(paste0("Cohen's d = ",
                                      format(signif(cohen_d_results, digits=3),
-                                            scientific = TRUE)),
+                                            scientific = FALSE)),
                               width = widthTitle)
           line2 <- wrap_title(paste0("p = ", format(signif(p_val, digits=3),
                                                     scientific = TRUE)),
@@ -634,7 +636,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
         } else {
           subtitle <- wrap_title(paste0("Cohen's d = ",
                                         format(signif(cohen_d_results, digits=3),
-                                               scientific = TRUE)),
+                                               scientific = FALSE)),
                                  width = widthTitle)
         }
 
@@ -663,7 +665,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 
             line1 <- wrap_title(paste0("Cohen's d = ",
                                        format(signif(cohen_d_results, digits = 3),
-                                              scientific = TRUE)),
+                                              scientific = FALSE)),
                                 width = widthTitle)
             line2 <- wrap_title(paste0("p = ",
                                        format(signif(p_val, digits = 3), scientific = TRUE)),
@@ -672,7 +674,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
           } else {
             subtitle <- wrap_title(paste0("Cohen's d = ",
                                           format(signif(cohen_d_results, digits = 3),
-                                                 scientific = TRUE)),
+                                                 scientific = FALSE)),
                                    width = widthTitle)
           }
 
@@ -693,7 +695,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 
             line1 <- wrap_title(paste0("Cohen's f = ",
                                        format(signif(results_var["Cohen_f"], digits = 3),
-                                              scientific = TRUE)), width = widthTitle)
+                                              scientific = FALSE)), width = widthTitle)
             line2 <- wrap_title(paste0("p = ",
                                        format(signif(results_var["P_Value"], digits = 3),
                                               scientific = TRUE)), width = widthTitle)
@@ -701,7 +703,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
           } else {
             subtitle <- wrap_title(paste0("Cohen's f = ",
                                           format(signif(results_var["Cohen_f"], digits = 3),
-                                                 scientific = TRUE)), width = widthTitle)
+                                                 scientific = FALSE)), width = widthTitle)
           }
 
         }
@@ -718,7 +720,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
     if (ConnectGroups && !is.null(ColorVariable)) {
       p <- p + ggplot2::stat_summary(ggplot2::aes_string(group = ColorVariable,
                                                          color = ColorVariable),
-                                     fun.y = median, geom = "line", size = 1.5,
+                                     fun.y = stats::median, geom = "line", size = 1.5,
                                      alpha = 0.75,
                                      show.legend = FALSE)
     }
@@ -1023,7 +1025,7 @@ PlotScores_Numeric <- function(data,
       if (pvalcalc) {
         line1 <- wrap_title(paste0("Cohen's f = ",
                                    format(signif(results_var["Cohen_f"], digits=3),
-                                          scientific = TRUE)), width = widthTitle)
+                                          scientific = FALSE)), width = widthTitle)
         line2 <- wrap_title(paste0("p = ",
                                    format(signif(results_var["P_Value"], digits=3),
                                           scientific = TRUE)), width = widthTitle)
@@ -1032,7 +1034,7 @@ PlotScores_Numeric <- function(data,
       } else {
         subtitle <- wrap_title(paste0("Cohen's f = ",
                                       format(signif(results_var["Cohen_f"],
-                                                    digits=3), scientific = TRUE)),
+                                                    digits=3), scientific = FALSE)),
                                width = widthTitle)
       }
 

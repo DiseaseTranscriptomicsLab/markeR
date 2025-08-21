@@ -9,7 +9,7 @@ test_that("plotNESlollipop returns list of ggplot objects for single contrast", 
   )
   result <- plotNESlollipop(gsea_mock)
   expect_type(result, "list")
-  expect_true(all(sapply(result, function(x) inherits(x, "gg"))))
+  expect_true(all(vapply(result, function(x) inherits(x, "gg"), logical(1))))
 })
 
 test_that("plotNESlollipop does not fail when all padj > sig_threshold", {

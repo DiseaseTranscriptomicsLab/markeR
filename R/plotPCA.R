@@ -118,13 +118,14 @@ plotPCA <- function(data, metadata=NULL, genes=NULL, scale=FALSE, center=TRUE,
 
   if (nPCs > ncol(PCAcounts)) stop("Error: Number of genes too low for number of chosen PCs. Please reduce number of PCs.")
 
-  PCAcounts <-  cbind(PCAcounts[,1:nPCs],y$samples)
-
+  #PCAcounts <-  cbind(PCAcounts[,1:nPCs],y$samples)
+  PCAcounts <- cbind(PCAcounts[, seq_len(nPCs), drop = FALSE], y$samples)
+  
   pltList <- list()
 
   for (pc in PCs){
     pc <- unlist(pc)
-    ev = PCAdata$sdev^2
+    ev <-  PCAdata$sdev^2
     pc_x <- round(100*ev[pc[1]]/sum(ev),2)
     pc_y <- round(100*ev[pc[2]]/sum(ev),2)
 

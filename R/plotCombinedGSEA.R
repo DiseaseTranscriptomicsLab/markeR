@@ -43,7 +43,7 @@
 #' plotCombinedGSEA(GSEA_results, sig_threshold = 0.05, PointSize = 4)
 #'
 #' @import ggplot2
-#' @import RColorBrewer
+#' @importFrom RColorBrewer brewer.pal
 #' @export
 plotCombinedGSEA <- function(GSEA_results, sig_threshold = 0.05, PointSize = 4,
                              widthlegend=16) {
@@ -65,15 +65,19 @@ plotCombinedGSEA <- function(GSEA_results, sig_threshold = 0.05, PointSize = 4,
   # Create a color palette for pathways
   # RColorBrewer has palettes for discrete color scales
 
-  pathway_colors <- colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))(length(unique(combined_data$pathway)))
+  pathway_colors <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))(length(unique(combined_data$pathway)))
 
-  combined_data$pathway <- sapply(combined_data$pathway, function(x) wrap_title(x, widthlegend))
+  # combined_data$pathway <- sapply(combined_data$pathway, function(x) wrap_title(x, widthlegend))
+  combined_data$pathway <- vapply(combined_data$pathway,
+                                  function(x) wrap_title(x, widthlegend),
+                                  character(1))
+  
 
   # Create the plot
-  plot <- ggplot2::ggplot(combined_data, ggplot2::aes(x = NES, y = logpadj,
-                                                      shape = contrast)) +
+  plot <- ggplot2::ggplot(combined_data, ggplot2::aes(x = .data$NES, y = .data$logpadj,
+                                                      shape = .data$contrast)) +
     ggplot2::geom_point(colour="black", size = PointSize) +
-    ggplot2::geom_point(ggplot2::aes(colour = factor(pathway)) ,
+    ggplot2::geom_point(ggplot2::aes(colour = factor(.data$pathway)) ,
                         size = PointSize-2.5) +
     ggplot2::geom_hline(yintercept = -log10(sig_threshold), linetype = "dashed",
                         color = "black", size = .5)  +

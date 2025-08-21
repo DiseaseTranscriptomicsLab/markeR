@@ -53,7 +53,9 @@
 #' plot <- plotCombinedGSEA(GSEA_results, sig_threshold = 0.05, PointSize = 7)
 #' print(plot)
 #'
-#' @import ggplot2 ggpubr fgsea
+#' @import ggplot2  
+#' @importFrom ggpubr ggarrange
+#' @importFrom fgsea plotEnrichment
 #' @export
 plotGSEAenrichment <- function(GSEA_results, DEGList, gene_sets, widthTitle = 24,
                                grid = FALSE, nrow=NULL, ncol=NULL, titlesize=12) {
@@ -85,7 +87,7 @@ plotGSEAenrichment <- function(GSEA_results, DEGList, gene_sets, widthTitle = 24
       stat_used <- gsea_row$stat_used
 
       # order ranks by stat used
-      ranks <- setNames(deg_df[,stat_used, drop=TRUE], rownames(deg_df))
+      ranks <- stats::setNames(deg_df[,stat_used, drop=TRUE], rownames(deg_df))
       ranks <- sort(ranks, decreasing = TRUE)
 
       nes_value <- round(gsea_row$NES, 2)
@@ -118,7 +120,7 @@ plotGSEAenrichment <- function(GSEA_results, DEGList, gene_sets, widthTitle = 24
         directions <- as.numeric(gs[[2]])
         ranks_adjusted <- ranks
         idx <- which(names(ranks_adjusted) %in% gs_genes)
-        lookup <- setNames(directions, gs_genes)
+        lookup <- stats::setNames(directions, gs_genes)
         ranks_adjusted[idx] <- ranks_adjusted[idx] * lookup[names(ranks_adjusted)[idx]]
 
         plot <- fgsea::plotEnrichment(gs_genes, sort(ranks_adjusted, decreasing = TRUE))
