@@ -243,7 +243,7 @@ required. The main difference from Discovery mode is that Benchmarking
 is designed to evaluate multiple gene sets simultaneously, whereas
 Discovery mode focuses on quantifying a single, robust gene set.
 
-### 5. Individual Gene Exploration (Optional)
+### 5. Individual Gene Exploration
 
 To better understand the contribution of individual genes within a gene
 set and identify whether specific genes drive the overall signal,
@@ -260,7 +260,7 @@ set and identify whether specific genes drive the overall signal,
 - Principal Component Analysis (PCA) on gene set genes to assess
   variance explained and sample clustering
 
-### 6. Compare with Reference Gene Sets (Optional)
+### 6. Compare with Reference Gene Sets
 
 `markeR` allows comparison of user-defined gene sets to reference sets
 (e.g., from MSigDB) using:
