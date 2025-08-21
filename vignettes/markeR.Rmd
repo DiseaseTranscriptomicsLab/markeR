@@ -69,11 +69,6 @@ The package integrates multiple approaches for characterizing phenotypes:
 - **Enrichment-based methods**: GSEA using moderated t- or B-statistics, with options to handle unidirectional and bidirectional gene sets.
 - **Gene-level exploration**: expression heatmaps, violin plots, ROC curves, AUC calculations, effect size measures, and PCA analysis to assess individual gene contributions.
 
-markeR supports two primary usage modes:
-
-- **Benchmarking mode**: Evaluate multiple gene sets across multiple phenotypic variables, integrating both score- and enrichment-based analyses, visualizations, and null distribution comparisons.
-- **Discovery mode**: Focus on a single, well-characterized gene set for hypothesis generation and exploration of associations with phenotypic variables.
-
 The package is designed to be fully customizable, supporting diverse visualization strategies via `ggplot2`, `ComplexHeatmap`, `ggpubr`, `cowplot`, and `grid.` Its modular structure allows easy integration of new functionalities while providing a robust framework for reproducible, standardized phenotypic characterization of gene sets.
 
 # 2. Installation
@@ -145,7 +140,7 @@ data(genesets_example)
 
 A filtered and normalised gene expression matrix (genes × samples). Row names must be gene identifiers; column names must match sample IDs in the metadata.
 
-In this vignette, we use a pre‑processed dataset from Marthandan et al. (2016, GSE63577) with human fibroblasts under **replicative senescence** and **proliferative control**. Normalisation was performed with **edgeR**. See `?counts_example` for structure.
+In this vignette, we use a pre‑processed dataset from Marthandan et al. (2016, GSE63577) with human fibroblasts under **replicative senescence** and **proliferative control**. See `?counts_example` for structure.
 
 ```{r loaddata}
 # Load example expression data
@@ -167,12 +162,12 @@ head(metadata_example)
 
 ## 3.2. Select Mode of Analysis
 
+* **Benchmarking Mode**:
+Evaluate one or more gene sets against a metadata variable using a standardised scoring and effect size framework. This mode provides comprehensive visualisations and comparisons across methods.
+
 * **Discovery Mode**:
 Explore how a single, well-characterised gene set relates to a specific variable of interest. Suitable for hypothesis generation or signature projection.
-
-* **Benchmarking Mode**:
-Evaluate one or more gene sets against multiple metadata variables using a standardised scoring and effect size framework. This mode provides comprehensive visualisations and comparisons across methods.
-
+ 
 ## 3.3. Choose a Quantification Approach
 
 `markeR` supports two complementary strategies for quantifying the association between gene sets and phenotypes:
@@ -189,7 +184,7 @@ Three scoring methods are available:
 
 * **ssGSEA**: Computes a single-sample gene set enrichment score using the ssGSEA algorithm. Reflects the coordinated up- or down-regulation of the set in each sample.
 
-These methods vary in assumptions and sensitivity. Robust gene sets are expected to perform consistently across all three.
+Robust gene sets are expected to perform consistently across all three.
 
 ### 3.3.2 Enrichment-Based Approach
 
@@ -219,7 +214,7 @@ Example of common workflows in Benchmarking mode (full tutorial [here][tutorial-
 
 We begin by quantifying gene set activity using score-based methods. These approaches generate numeric scores per sample that reflect the coordinated expression of genes in each set. This allows easy comparison of gene set behavior across phenotypic groups, while giving a single score per sample, which can be useful in certain contexts.
 
-First, we compute and plot scores using the log2-median method. This method calculates median-centered expression for each gene and averages across the gene set, providing a robust summary of coordinated activity. Here, we assess whether the available gene sets can distinguish between the two conditions: Senescent and Proliferative.
+First, we compute and plot scores using the log2-median method, which calculates median-centered expression for each gene and averages across the gene set to provide a robust summary of coordinated activity. We then assess whether the available gene sets distinguish between Senescent and Proliferative conditions. These results suggest that the HernandezSegura and LiteratureMarkers gene sets show very strong effect sizes (|Cohen's d|), while the REACTOME_CELLULAR_SENESCENCE gene set shows a more modest effect. The distributions of scores also overlap more for the latter.
 
 
 ```{r fig.width=8, fig.height=4, out.width="100%", warning=FALSE, message=FALSE}
@@ -239,7 +234,7 @@ PlotScores(data = counts_example,
 
 ```
 
-Next, we calculate scores using all available methods (log2-median, ranking, and ssGSEA) to compare results across scoring strategies. The output includes heatmaps and volcano plots to visualize differences between conditions. Heatmaps summarize scores across samples and gene sets, while volcano plots show effect sizes (|Cohen's d|) versus statistical significance.
+Next, we calculate scores using multiple methods (log2-median, ranking, and ssGSEA) to compare results across scoring strategies. The output includes heatmaps and volcano plots to visualize effect sizes (|Cohen's d|) between conditions. These analyses confirm that the HernandezSegura and LiteratureMarkers gene sets consistently discriminate Senescence from Proliferative samples across all methods, whereas REACTOME_CELLULAR_SENESCENCE does not.
 
 ```{r warning=FALSE, message=FALSE}
 Overall_Scores <- PlotScores(data = counts_example, 
@@ -276,7 +271,7 @@ Overall_Scores$heatmap
 Overall_Scores$volcano
 ```
 
-ROC curves evaluate the discriminatory power of gene set scores, providing insight into how well a signature distinguishes between experimental or clinical groups. 
+ROC curves assess the discriminatory power of gene set scores, indicating how well a signature separates different experimental or clinical groups. When discriminating between Senescent and Proliferative samples, the REACTOME_CELLULAR_SENESCENCE gene set shows more heterogeneous ROC curves and AUC values across scoring methods, reflecting less consistent performance compared to the HernandezSegura and LiteratureMarkers gene sets.
 
 ```{r roc_scores, fig.width=10, fig.height=3, out.width="100%", warning=FALSE, message=FALSE}
 ROC_Scores(data = counts_example, 
@@ -296,7 +291,8 @@ ROC_Scores(data = counts_example,
 
 ```
 
-Finally, we perform simulations using random gene sets to estimate the false positive rate. This step ensures that observed gene set signals exceed what would be expected by chance, improving confidence in the results.
+Finally, we perform simulations using random gene sets to estimate the false positive rate. This step informs whether observed gene set signals exceed what would be expected by chance, improving confidence in the results. By simulating 10 random gene sets of the same size, we see that the LiteratureMarkers gene set performs best, with only two of the random sets achieving higher effect sizes than the original one using the ranking method. While increasing the number of simulated sets would yield finer resolution, this comes at the cost of additional computational time.
+
 
 ```{r FDRSim, fig.width=12, fig.height=3, out.width="100%", warning=FALSE, message=FALSE}
 
@@ -335,7 +331,8 @@ DEGs <- calculateDE(data = counts_example,
 DEGs$`Senescent-Proliferative`[1:5,]
 ```
 
-Once differential expression is calculated, we can visualize the results with a volcano plot. This plot highlights genes in our predefined gene sets, showing the magnitude of differential expression (log fold-change) versus statistical significance (adjusted p-value). Up- (green) and downregulated (red) genes are color-coded to facilitate interpretation. Genes in blue represent those from gene sets without known direction. 
+Once differential expression is calculated, we can visualize the results with a volcano plot. This plot highlights genes in our predefined gene sets, showing the magnitude of differential expression (log fold-change) versus statistical significance (adjusted p-value). Up- (green) and downregulated (red) genes are color-coded. For the HernandezSegura gene set, green genes mostly appear in the positive logFC range and red genes in the negative range, though these are not the genes with the most extreme logFC values. In the LiteratureMarkers gene set, two red genes (LMNB1 and MKI67) show very negative logFC, which is consistent with their roles as proliferation markers since senescent cells are non-proliferative. Genes from the REACTOME_CELLULAR_SENESCENCE gene set are shown in blue, as this set lacks information on directionality; these genes are scattered across the full range of logFC values.
+
 
 ```{r DEGsvolcano, fig.width=10, fig.height=3, out.width="100%", warning=FALSE, message=FALSE} 
 # Change order: signatures in columns, contrast in rows
@@ -348,7 +345,7 @@ plotVolcano(DEGs, genes = genesets_example,
             labsize = 10, widthlabs = 24, invert = TRUE)
 ```
 
-Next, we perform Gene Set Enrichment Analysis (GSEA) using the differential expression results. This approach evaluates whether members of each gene set are non-randomly distributed toward the top or bottom of the ranked gene list, providing normalized enrichment scores (NES) and adjusted p-values.
+Next, we perform Gene Set Enrichment Analysis (GSEA) using the differential expression results. This approach evaluates whether members of each gene set are non-randomly distributed toward the top or bottom of the ranked gene list, providing normalized enrichment scores (NES) and adjusted p-values. The ranking of genes can be based on different metrics, reflecting the expected directionality of the gene set. This is also reflected in the plot labels below: gene sets are marked as altered when genes are ordered by the B statistic, or enriched/depleted when ordered by the t-statistic. For a full example and explanation, see the tutorial [here][tutorial-benchmarking].
 
 ```{r GSEA, warning=FALSE, message=FALSE}
 GSEAresults <- runGSEA(DEGList = DEGs, 
@@ -359,7 +356,8 @@ GSEAresults <- runGSEA(DEGList = DEGs,
 GSEAresults
 ```
 
-To visualize the enrichment of each gene set along the ranked gene list, we use enrichment curves from `fgsea.`  This plot shows the running enrichment score across the ranked list of genes, highlighting where gene set members are concentrated.  
+To visualize the enrichment of each gene set along the ranked gene list, we use enrichment curves from `fgsea.` These plots show the running enrichment score across the ranked list, highlighting where members of each gene set are concentrated. 
+
 
 ```{r GSEA_plotenrichment, fig.width=10, fig.height=3, out.width="100%", warning=FALSE, message=FALSE}
 plotGSEAenrichment(GSEA_results=GSEAresults, 
@@ -368,7 +366,7 @@ plotGSEAenrichment(GSEA_results=GSEAresults,
                    widthTitle=40, grid = TRUE, titlesize = 10, nrow=1, ncol=3) 
 ```
 
-We can also summarize enrichment results in a lollipop plot, which compactly shows the normalized enrichment score and highlights statistically significant gene sets. This provides a quick overview of which pathways are most strongly altered.
+We can also summarize enrichment results in a lollipop plot, which compactly shows the normalized enrichment score and highlights statistically significant gene sets. This provides a quick overview of which pathways are most strongly altered. Here, we can see that the HernandezSegura gene set clearly exhibits the strongest enrichment signal.
 
 ```{r GSEA_lollypop, fig.width=5, fig.height=4, out.width="60%", warning=FALSE, message=FALSE}
 plotNESlollipop(GSEA_results=GSEAresults, 
@@ -382,11 +380,15 @@ plotNESlollipop(GSEA_results=GSEAresults,
                 title=NULL, titlesize=12) 
 ```
 
-Finally, a volcano-style scatter plot combines NES and significance for all gene sets, making it easy to identify which sets show the strongest and most statistically robust enrichment or depletion.
+Finally, a volcano-style scatter plot combines NES and significance for all gene sets, making it easy to identify which sets show the strongest and most statistically robust alteration.
 
 ```{r GSEA_volcano, fig.width=8, fig.height=3, out.width="100%", warning=FALSE, message=FALSE}
 plotCombinedGSEA(GSEAresults, sig_threshold = 0.05, PointSize=6, widthlegend = 26 )
 ```
+
+From this exercise in benchmarking mode, we can see that two gene sets clearly perform best at discriminating between Senescent and Proliferative conditions: HernandezSegura and LiteratureMarkers. The REACTOME_CELLULAR_SENESCENCE gene set does not show a strong signal; since it is undirected and lacks information on up- or downregulation, this also dilutes the signal, highlighting the importance of providing directionality when available.
+
+Across methods, scoring and enrichment approaches provide complementary insights. Score-based methods offer sample-level resolution, capturing strong contributions from individual genes, while enrichment-based methods evaluate coordinated behaviour across the set, typically at the group level. Even among scoring methods, rank-based approaches (e.g., ssGSEA or rank scoring) are generally more robust to technical noise, whereas magnitude-based methods (e.g., log2-median) better detect shifts in well-controlled data. Performance also depends on sample size and gene set size, explaining why HernandezSegura may appear stronger in enrichment analyses and LiteratureMarkers in scoring analyses. Integrating both approaches provides the most comprehensive view of gene set behaviour.
 
 
 ### 3.4.2 Discovery Mode
@@ -414,7 +416,7 @@ metadata_example$DaysToSequencing <- sample(c(1:20),39, replace = TRUE)
 head(metadata_example)
 ```
 
-We can then examine how the selected gene set associates with these variables using enrichment-based approaches in Discovery Mode. The resulting plot highlights significant associations across variables and visually summarizes the direction and strength of the effect.
+We can then examine how the selected gene set associates with these variables using enrichment-based approaches in Discovery Mode. The resulting plot highlights significant associations across variables and visually summarizes the direction and strength of the effect. The “simple” mode provides comparison of effect sizes for pairwise contrasts between only two levels of the variable, but can be changed to more levels of comparison (see `?VariableAssociation`). Here, we can see that the HernandezSegura gene set is significantly enriched in samples sequenced by Francisca, when compared to those processed by Ana or John, suggesting that this gene set may be particularly relevant to her experimental conditions or sample processing. This gene set has also a strong enrichment for the comparison between proliferative and senescent, which is expected given the nature of the gene set and the results from the Benchmarking mode.
 
 ```{r GSEA_varassoc, fig.width=6, fig.height=6, out.width="60%", warning=FALSE, message=FALSE}
 VariableAssociation(
@@ -432,12 +434,12 @@ VariableAssociation(
   labsize = 10,
   titlesize = 14,
   pointSize = 5
-) 
+) $plot
 
 ```
 
 
-Next, we evaluate the association using a score-based method (here, log2-median). This approach calculates per-sample scores for the gene set and summarizes them across variables. The “extensive” mode provides a comprehensive output including effect sizes for pairwise contrasts and overall statistics for continuous variables.
+Next, we evaluate the association using a score-based method (here, log2-median). This approach calculates per-sample scores for the gene set and summarizes them across variables. In this analysis, Condition (representing whether the sample is senescent or proliferative) shows a strong effect, reflected by a large Cohen’s f. This effect size metric is directly comparable across different variable types (categorical, numeric, etc.), making it particularly versatile. In contrast, the variable Researcher does not show a significant effect here, unlike in the enrichment analysis. This divergence illustrates the value of applying both enrichment- and score-based approaches in a complementary manner.
 
 
 ```{r variableassoc_score_sen, fig.width=7, fig.height=7, out.width="100%", warning=FALSE, message=FALSE} 
@@ -446,7 +448,7 @@ VariableAssociation(data = counts_example,
                     method = "logmedian",
                     cols = c("Condition","Researcher","DaysToSequencing"),  
                     gene_set = HernandezSegura_GeneSet,
-                    mode="extensive",
+                    mode="simple",
                     nonsignif_color = "white", signif_color = "red", saturation_value=NULL,sig_threshold = 0.05,
                     widthlabels=30, labsize=10, titlesize=14, pointSize=5, discrete_colors=NULL,
                     continuous_color = "#8C6D03", color_palette = "Set2")$Overall 
@@ -481,7 +483,7 @@ Computes enrichment using a user-defined gene universe and Fisher’s exact test
 
 Filters can be applied based on similarity thresholds (e.g., minimum Jaccard, OR, or p-value).
 
-Example of Gene Set Similarity (full tutorial [here][tutorial-signaturesimilarity])::
+Example of Gene Set Similarity (full tutorial [here][tutorial-signaturesimilarity]). Here, we are seeing how two user-defined signatures compare to a set of other user-defined signatures, as well as to a collection of reference gene sets from MSigDB (C2:CP:KEGG_LEGACY). The results are visualized in a heatmap, showing the similarity between the signatures based on log odds ratio (at least one with log10OR > 2).
 
 ```{r, fig.width=6, fig.height=8, out.width="60%"}
 
