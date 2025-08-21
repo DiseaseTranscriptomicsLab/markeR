@@ -1,3 +1,27 @@
+# markeR 0.99.3 (21 Aug, 2025)
+
+## Package size and structure
+- Reduced package size below the 5 MB limit by converting long vignettes into `pkgdown` articles and keeping only a shorter vignette in the package.
+- Moved `inst/Paper` to a dedicated `paper` branch for better repository organization.
+- Removed unnecessary `LICENSE` file (already declared in `DESCRIPTION`).
+
+## Documentation
+- Added a concise main vignette (`markeR`) with installation, introduction, and a basic workflow.
+- Converted three longer vignettes into `pkgdown` articles (linked at the end of the main vignette).
+- Added runnable examples for `VariableAssociation`. 
+
+## NAMESPACE and dependencies
+- Replaced broad imports with `importFrom()` for most packages (except `ggplot2`, retained as full import).
+- Removed unused `patchwork` import.
+- Added missing imports from `stats` and `grDevices` to resolve `R CMD check` notes.
+
+## Code quality
+- Replaced all `sapply()` calls with `vapply()`.
+- Replaced `1:...` usage with `seq_len()` or `seq_along()`.
+- Standardized assignment to `<-` instead of `=`.
+- Fixed some redundant `stop()`/`warning()` conditions to provide clearer input validation.
+- Addressed “no visible binding” notes by using `.data$` or `utils::globalVariables()`.
+
 # markeR 0.99.2 (23 Jul, 2025)
 
 * Minor fixes in documentation
