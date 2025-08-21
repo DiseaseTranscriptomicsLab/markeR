@@ -35,7 +35,7 @@ scripts and materials used in the original markeR paper to reproduce
 analyses and figures. You can browse it
 [here](https://github.com/DiseaseTranscriptomicsLab/markeR/tree/paper/inst/Paper).
 
-![](man/figures/Workflow.png)
+![](man/figures/Workflow2.png)
 
 ## Table of Contents
 
