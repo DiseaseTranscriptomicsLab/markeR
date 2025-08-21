@@ -80,14 +80,12 @@ Install the latest release from Bioconductor:
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 BiocManager::install("markeR")
-library(markeR)
 ```
 
 Or install the latest development release of markeR from [GitHub](https://github.com/) with:
 
 ```r
 #devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
-#library(markeR)
 ```
 
 ```{r, echo=FALSE} 
