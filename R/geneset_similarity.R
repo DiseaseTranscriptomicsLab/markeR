@@ -107,11 +107,11 @@ geneset_similarity <- function(
   if (is.null(signatures) || length(signatures) == 0) {
     stop("You must provide at least one signature.")
   }
-  if (!is.list(signatures) || !all(sapply(signatures, is.character))) {
+  if (!is.list(signatures) || !all(vapply(signatures, is.character, logical(1)))) {
     stop("Signatures must be a named list of character vectors.")
   }
   if (!is.null(other_user_signatures) && (!is.list(other_user_signatures) ||
-                                          !all(sapply(other_user_signatures, is.character)))) {
+                                          !all(vapply(other_user_signatures, is.character, logical(1))))) {
     stop("Other user signatures must be a named list of character vectors.")
   }
   if (!is.null(collection) && !is.character(collection)) {
@@ -229,7 +229,7 @@ geneset_similarity <- function(
         d <- length(setdiff(universe, union(sig1, sig2)))
 
         cont_tbl <- matrix(c(a, b, c, d), nrow = 2)
-        ft <- fisher.test(cont_tbl)
+        ft <- stats::fisher.test(cont_tbl)
 
         score <- log10(ft$estimate)
         if (!is.na(ft$p.value) && ft$p.value <= pval_threshold && ft$estimate >= or_threshold) {
@@ -285,11 +285,14 @@ geneset_similarity <- function(
   }
 
   data <- similarity_df
-
-  similarity_df$Reference_Signature <- sapply(similarity_df$Reference_Signature,
-                                              function(x) wrap_title(x, width_text))
-  similarity_df$Compared_Signature <- sapply(similarity_df$Compared_Signature,
-                                             function(x) wrap_title(x, width_text))
+ 
+  
+  similarity_df$Reference_Signature <- vapply(similarity_df$Reference_Signature,
+                                              function(x) wrap_title(x, width_text),
+                                              character(1))
+  similarity_df$Compared_Signature <- vapply(similarity_df$Compared_Signature,
+                                             function(x) wrap_title(x, width_text),
+                                             character(1))
 
   if (is.null(limits)) {
     if (metric == "jaccard") {
@@ -301,10 +304,10 @@ geneset_similarity <- function(
   }
   }
 
-  plt <- ggplot(similarity_df, aes(x = Reference_Signature,
-                                   y = Compared_Signature, fill = Score)) +
+  plt <- ggplot(similarity_df, aes(x = .data$Reference_Signature,
+                                   y = .data$Compared_Signature, fill = .data$Score)) +
     geom_tile(color = "white") +
-    geom_text(aes(label = Label), color = "black") +
+    geom_text(aes(label = .data$Label), color = "black") +
     scale_fill_gradientn(colors = color_values, limits = limits,
                          oob = scales::squish, na.value = na_color) +
     labs(

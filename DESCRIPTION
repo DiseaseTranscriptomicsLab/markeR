@@ -1,6 +1,6 @@
 Package: markeR
 Title: An R Toolkit for Evaluating Gene Signatures as Phenotypic Markers
-Version: 0.99.2 
+Version: 0.99.3
 Authors@R: 
     c(
       person("Rita", "Martins-Silva", 
@@ -14,7 +14,7 @@ Authors@R:
                comment=c(ORCID="0000-0002-1215-0538"))
     )
 Description: 
-    markeR provides a suite of methods for using gene sets (signatures) to quantify and evaluate the 
+    A suite of methods for using gene sets to quantify and evaluate the 
     extent to which a given gene signature marks a specific phenotype. The package implements various 
     scoring, enrichment and classification approaches, along with tools to compute 
     performance metrics and visualize results, making it a valuable resource for transcriptomics research (bulk RNA-seq).
@@ -46,7 +46,6 @@ Imports:
     limma,
     ggrepel,
     effectsize,
-    patchwork,
     msigdbr,
     tibble
 Suggests: 
@@ -62,8 +61,9 @@ Suggests:
     covr
 Config/testthat/edition: 3
 Depends: 
-    R (>= 3.5.0)
+    R (>= 4.5.0)
 URL: https://diseasetranscriptomicslab.github.io/markeR/,
      https://github.com/DiseaseTranscriptomicsLab/markeR
 BugReports: https://github.com/DiseaseTranscriptomicsLab/markeR/issues
 VignetteBuilder: knitr
+Config/Needs/website: rmarkdown

@@ -39,7 +39,7 @@
 #'
 #' @seealso \code{\link{CohenD_allConditions}}
 #'
-#' @importFrom ggplot2 ggplot geom_point geom_vline geom_hline facet_wrap labs scale_color_manual scale_shape_manual theme_bw ggtitle theme element_text element_rect
+#' @import ggplot2 
 #' @importFrom RColorBrewer brewer.pal
 #' @keywords internal
 Volcano_Cohen <- function(cohenlist,
@@ -88,12 +88,16 @@ Volcano_Cohen <- function(cohenlist,
   final_df <- do.call(rbind, rows)
 
   # Wrap long signature names
-  final_df$signature <- sapply(final_df$signature,
-                               function(x) wrap_title(x, widthlegend))
+  # final_df$signature <- sapply(final_df$signature,
+  #                              function(x) wrap_title(x, widthlegend))
+  
+  final_df$signature <- vapply(final_df$signature,
+                               function(x) wrap_title(x, widthlegend),
+                               character(1))
 
   # Handle colors
   if (is.null(ColorValues)) {
-    ColorValues <- colorRampPalette(RColorBrewer::brewer.pal(12, colorPalette))(
+    ColorValues <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, colorPalette))(
       length(unique(final_df$signature)))
   } else {
     if (!is.null(ColorValues[["volcano"]])) {
@@ -105,13 +109,13 @@ Volcano_Cohen <- function(cohenlist,
   }
 
   # Generate plot
-  plt <- ggplot2::ggplot(final_df, ggplot2::aes(x = abs(cohen),
-                                                y = -log10(padj),
-                                                shape = method)) +
+  plt <- ggplot2::ggplot(final_df, ggplot2::aes(x = abs(.data$cohen),
+                                                y = -log10(.data$padj),
+                                                shape = .data$method)) +
     ggplot2::geom_point(colour = "black", size = pointSize) +
-    ggplot2::geom_point(ggplot2::aes(colour = signature),
+    ggplot2::geom_point(ggplot2::aes(colour = .data$signature),
                         size = pointSize - 1.5) +
-    ggplot2::facet_wrap(. ~ contrast, scales = "free") +
+    ggplot2::facet_wrap(. ~ .data$contrast, scales = "free") +
     ggplot2::geom_hline(yintercept = -log10(sig_threshold),
                         linetype = "dashed",
                         color = "black", size = 0.5) +

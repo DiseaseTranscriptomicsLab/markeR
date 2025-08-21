@@ -113,11 +113,12 @@ CalculateScores <- function(data, metadata, gene_sets,
                             method = c("ssGSEA", "logmedian","ranking", "all")) {
   data <- as.data.frame(data) # Ensure data is a data frame
   method <- match.arg(method)  # Validate method input
-
-  if (!is.data.frame(data)) stop("Error: data must be a data-frame")
-  if (!is.null(metadata) && !is.data.frame(metadata)) stop(
-    "Error: metadata must be a data-frame")
-  if (!is.list(gene_sets)) stop("Error: gene_sets must be a list")
+ 
+  
+  if (!is.data.frame(data) || (!is.null(metadata) && !is.data.frame(metadata)) || !is.list(gene_sets)) {
+    stop("Invalid input: 'data' must be a data-frame, 'metadata' (if provided) must be a data-frame, and 'gene_sets' must be a list.")
+  }
+  
 
   # Change first column name to default name "sample", for merging purposes
   if (!is.null(metadata)) colnames(metadata)[1] <- "sample"

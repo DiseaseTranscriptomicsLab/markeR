@@ -5,28 +5,29 @@
 
 <!-- badges: start -->
 
-![](https://img.shields.io/badge/status-development-yellowgreen)
+<!--![](https://img.shields.io/badge/status-development-yellowgreen)-->
+
 [![Pkgdown](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://diseasetranscriptomicslab.github.io/markeR/)
-[![Minimal R
-Version](https://img.shields.io/badge/min%20R-4.4.0-blue.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/Rminversion.yaml)
+![Minimal R
+Version](https://img.shields.io/badge/min%20R-4.5.0-blue.svg)
 [![codecov](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR/graph/badge.svg?token=7T1I4JCJG6)](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR)
 <!-- [![R-CMD-check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml)-->
 <!-- [![Bioconductor Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml) -->
 
 <!-- badges: end -->
 
-**markeR** provides a suite of methods for using gene sets (signatures)
-to quantify and evaluate the extent to which a given gene signature
-marks a specific phenotype from gene expression data. The package
-implements various scoring, enrichment and classification approaches,
-along with tools to compute performance metrics and visualize results.
+**markeR** provides a suite of methods for using gene sets to quantify
+and evaluate the extent to which a given gene signature marks a specific
+phenotype from gene expression data. The package implements various
+scoring, enrichment and classification approaches, along with tools to
+compute performance metrics and visualize results.
 
 > **To cite markeR please use:**
 >
 > Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). *markeR: an R
 > Toolkit for Evaluating Gene Sets as Phenotypic Markers*. Gulbenkian
 > Institute for Molecular Medicine, Faculdade de Medicina, Universidade
-> de Lisboa, Lisbon, Portugal. R package version 0.99.2,
+> de Lisboa, Lisbon, Portugal. R package version 0.99.3,
 > <https://github.com/DiseaseTranscriptomicsLab/markeR>.
 
 The folder `inst/Paper/` is in the **paper** branch and contains all
@@ -57,8 +58,18 @@ analyses and figures. You can browse it
 
 ## Installation
 
-The latest development release of markeR from
-[GitHub](https://github.com/) can be installed with:
+Install the latest release from Bioconductor:
+
+``` r
+# Install from Bioconductor
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("markeR")
+library(markeR)
+```
+
+Or install the latest development release of markeR from
+[GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
@@ -69,31 +80,22 @@ devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
 
 The following tutorials are available:
 
+- [Introduction to
+  markeR](https://diseasetranscriptomicslab.github.io/markeR/articles/markeR.html)
 - [Benchmarking
-  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_BenchmarkingMode.html)
+  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Article_BenchmarkingMode.html)
 - [Discovery
-  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_DiscoveryMode.html)
+  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Article_DiscoveryMode.html)
 - [Signature
-  Similarity](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_GeneSetSimilarity.html)
+  Similarity](https://diseasetranscriptomicslab.github.io/markeR/articles/Article_GeneSetSimilarity.html)
 
 ## Requirements
 
-This package is officially supported on (based on a GitHub Actions
-workflow that tests against multiple `R` versions):
-
-- `R` `4.4.x`
-- `R` `4.5.x`
-
-However, due to `Bioconductor` submission requirements, `R` version
-`4.5.0` will be listed as required upon package installation in future
-releases.
-
-⚠️ Compatibility with older R versions depends on the specific versions
-of dependencies installed. Older versions of `R` (including `R` `3.5.x`,
-`3.6.x`, `4.0.x`, `4.1.x`, `4.2.x`, and `4.3.x`) may work, but are not
-officially supported due to upstream dependency constraints. In some
-cases, installing older versions of dependencies (e.g., via `renv`,
-`CRAN` snapshots, or `checkpoint`) can restore compatibility.
+This package is officially supported on `R > 4.5.0`. ⚠️ Older versions
+of `R` may work, but are not officially supported due to upstream
+dependency constraints. In some cases, installing older versions of
+dependencies (e.g., via `renv`, `CRAN` snapshots, or `checkpoint`) can
+restore compatibility.
 
 ## Common Workflow
 
@@ -241,7 +243,7 @@ required. The main difference from Discovery mode is that Benchmarking
 is designed to evaluate multiple gene sets simultaneously, whereas
 Discovery mode focuses on quantifying a single, robust gene set.
 
-### 5. Individual Gene Exploration (Optional)
+### 5. Individual Gene Exploration
 
 To better understand the contribution of individual genes within a gene
 set and identify whether specific genes drive the overall signal,
@@ -258,7 +260,7 @@ set and identify whether specific genes drive the overall signal,
 - Principal Component Analysis (PCA) on gene set genes to assess
   variance explained and sample clustering
 
-### 6. Compare with Reference Gene Sets (Optional)
+### 6. Compare with Reference Gene Sets
 
 `markeR` allows comparison of user-defined gene sets to reference sets
 (e.g., from MSigDB) using:

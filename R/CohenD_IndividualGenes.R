@@ -166,8 +166,8 @@ CohenD_IndividualGenes <- function(data, metadata,
     if(n1 < 2 || n2 < 2) return(NA)
     m1 <- mean(x)
     m2 <- mean(y)
-    s1 <- sd(x)
-    s2 <- sd(y)
+    s1 <- stats::sd(x)
+    s2 <- stats::sd(y)
     pooled_sd <- sqrt(((n1 - 1) * s1^2 + (n2 - 1) * s2^2) / (n1 + n2 - 2))
     if (pooled_sd == 0) return(NA)
     d <- (m1 - m2) / pooled_sd
@@ -205,8 +205,8 @@ CohenD_IndividualGenes <- function(data, metadata,
     if (is.null(title)) title <- paste("Cohen's d for variable", condition_var,
                                        "(", paste(class, collapse = ", "), " vs others)")
 
-    barplot <- ggplot2::ggplot(effect_values, ggplot2::aes(y = reorder(Gene, CohensD),
-                                                           x = CohensD)) +
+    barplot <- ggplot2::ggplot(effect_values, ggplot2::aes(y = stats::reorder(.data$Gene, .data$CohensD),
+                                                           x = .data$CohensD)) +
       ggplot2::geom_bar(stat = "identity", fill = fillcolor) +
       #ggplot2::coord_flip()  +
       coord_cartesian(xlim = c(0, max(effect_values$CohensD) + 0.1))+

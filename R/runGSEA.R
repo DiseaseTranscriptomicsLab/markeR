@@ -80,7 +80,7 @@ runGSEA <- function(DEGList, gene_sets, stat = NULL, ContrastCorrection=FALSE, n
       }
 
       # Create the ranking vector for GSEA
-      ranks <- setNames(deg_df[[current_stat]], rownames(deg_df))
+      ranks <- stats::setNames(deg_df[[current_stat]], rownames(deg_df))
 
       if (current_stat=="t") {
 
@@ -150,7 +150,7 @@ runGSEA <- function(DEGList, gene_sets, stat = NULL, ContrastCorrection=FALSE, n
     combined_df <- do.call(rbind, Map(cbind, results_by_contrast, df_name = names(results_by_contrast)))
 
     # Step 2: Adjust p-values across all data
-    combined_df$padj <- p.adjust(combined_df$pval, method = "BH")
+    combined_df$padj <- stats::p.adjust(combined_df$pval, method = "BH")
 
     # Step 3: Split back into the original list structure
     list_of_dfs <- split(combined_df, combined_df$df_name)
@@ -163,7 +163,7 @@ runGSEA <- function(DEGList, gene_sets, stat = NULL, ContrastCorrection=FALSE, n
 
     # Step 1: Adjust p-values for each data frame individually
     results_by_contrast <- lapply(results_by_contrast, function(df) {
-      df$padj <- p.adjust(df$pval, method = "BH")  # Adjust p-values per data frame
+      df$padj <- stats::p.adjust(df$pval, method = "BH")  # Adjust p-values per data frame
       return(df)
     })
 

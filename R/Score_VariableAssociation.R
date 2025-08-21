@@ -296,7 +296,7 @@ Score_VariableAssociation <- function(data,
   # Would happen if we have only numeric variables
   if (nrow(df_results_contrast)!=0){
 
-    df_results_contrast$padj <- p.adjust(df_results_contrast$PValue,
+    df_results_contrast$padj <- stats::p.adjust(df_results_contrast$PValue,
                                          method = "BH")
 
     if(is.null(saturation_value)){
@@ -313,20 +313,24 @@ Score_VariableAssociation <- function(data,
     ########### CONTRAST MODE PLOT ############
 
     # Ensure contrast ordering
-    df_results_contrast$Contrast <- sapply(df_results_contrast$Contrast,
-                                           function(x) wrap_title(
-                                             x, widthlabels))
+    # df_results_contrast$Contrast <- sapply(df_results_contrast$Contrast,
+    #                                        function(x) wrap_title(
+    #                                          x, widthlabels))
+    df_results_contrast$Contrast <- vapply(df_results_contrast$Contrast,
+                                           function(x) wrap_title(x, widthlabels),
+                                           FUN.VALUE = character(1))
+    
     df_results_contrast$Contrast <- factor(df_results_contrast$Contrast,
                                            levels = df_results_contrast$Contrast
                                            [order(df_results_contrast$CohenD)])
 
 
     plot_contrasts <- ggplot2::ggplot(df_results_contrast,
-                                      ggplot2::aes(x = CohenD,
-                                                   y = Contrast,
-                                                   fill = -log10(padj))) +
+                                      ggplot2::aes(x = .data$CohenD,
+                                                   y = .data$Contrast,
+                                                   fill = -log10(.data$padj))) +
       ggplot2::geom_segment(ggplot2::aes(
-        yend = Contrast,
+        yend = .data$Contrast,
         xend = 0,
         linetype =  "solid",
         color =  "black"
@@ -359,7 +363,7 @@ Score_VariableAssociation <- function(data,
         axis.text = ggplot2::element_text(size = labsize),
         axis.title.y = element_text(face = "bold")
       ) +
-      ggplot2::facet_grid(Variable ~.,   scales = "free", switch = "y",
+      ggplot2::facet_grid(.data$Variable ~.,   scales = "free", switch = "y",
                           space = "free" ) +
       theme(strip.background =element_rect(fill="white"))
 
@@ -381,10 +385,10 @@ Score_VariableAssociation <- function(data,
   ########### OVERALL MODE PLOT ############
 
   plot_overall <- ggplot2::ggplot(df_results_overall,
-                                  ggplot2::aes(x = Cohen_f, y = Variable,
-                                               fill = -log10(P_Value))) +
+                                  ggplot2::aes(x = .data$Cohen_f, y = .data$Variable,
+                                               fill = -log10(.data$P_Value))) +
     ggplot2::geom_segment(ggplot2::aes(
-      yend = Variable,
+      yend = .data$Variable,
       xend = 0,
       linetype =  "solid",
       color =  "black"
@@ -455,7 +459,7 @@ Score_VariableAssociation <- function(data,
         colors <- discrete_colors[[var]]
       } else {
         num_levels <- length(unique(df_ranking[[var]]))
-        colors <- colorRampPalette(RColorBrewer::brewer.pal(
+        colors <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(
           8, color_palette))(num_levels)
 
       }

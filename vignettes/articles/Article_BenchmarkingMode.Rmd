@@ -1,34 +1,19 @@
 ---
 title: "Benchmarking Mode Tutorial"
-output: rmarkdown::html_document
-vignette: >
-  %\VignetteIndexEntry{Benchmarking Mode Tutorial}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+author: "Rita M. Silva"
+date: "`r Sys.Date()`"
 ---
-  
-```{r setup, include=FALSE}
+
+```{r, include = FALSE}
 knitr::opts_chunk$set(
-  dev = "png",
-  dpi = 72, 
-  fig.retina = 1
+  collapse = TRUE,
+  comment = "#>"
 )
 ```
 
+
 This vignette provides a comprehensive introduction to the **markeR** package, focusing on its **Benchmarking Mode**. This mode is designed to evaluate the performance of gene signatures in quantifying specific biological states or phenotypes, such as disease states or cellular conditions. It allows users to assess the robustness and reliability of gene signatures across various conditions, providing a standardized framework for benchmarking.
- 
-# Installation 
-
- 
-```{r, include = FALSE }
-library(markeR)
-```
-
-``` r
-# install.packages("devtools")
-devtools::install_github("DiseaseTranscriptomicsLab/markeR")
-```
-
+  
 # Case-study: Senescence
 
 We will be using an already pre-processed gene expression dataset, derived from the Marthandan et al. (2016) study (GSE63577), that includes human fibroblast samples cultured under two different conditions: replicative senescence and proliferative control. The dataset has already been filtered and normalized using the `edgeR` package. For more information about the dataset structure, see the help pages for `?counts_example` and `?metadata_example`.
@@ -424,7 +409,7 @@ The `calculateDE` function in the `markeR` package leverages the `limma` framewo
 
 Below are the corresponding code snippets demonstrating each scenario, by answering the same question: **What are the genes differentially expressed between senescence and proliferative cells?**
 
-```{r DEGs, out.width="80%", warning=FALSE, message=FALSE}
+```{r DEGs, out.width="80%", warning=FALSE}
 # Example 1: Build design matrix from variables (Condition) and apply a contrast.
 # In this case, the design matrix is constructed automatically using the variable "Condition".
 DEGs <- calculateDE(data = counts_example,
@@ -639,7 +624,7 @@ Based on these very simple analyses, the REACTOME_CELLULAR_SENESCENCE showed con
 
 These findings highlight important trade-offs: while scoring methods offer per-sample resolution and are less sensitive (in terms of statistical significance) to gene set size, making them useful for classification tasks, they may be overly influenced by a small subset of genes, which could limit biological interpretability. While more robust to sample heterogeneity and better at capturing coordinated expression changes, enrichment-based methods are sensitive to gene set composition and size. Caution is warranted when interpreting results, especially from score-based approaches, as strong signals may not always reflect the intended biological process, but rather a handful of dominant genes. 
 
-## Visualise Individual Gene Behaviour
+## Visualise Individual Gene Behaviour.  
 
 As highlighted in the previous section, score-based approaches can be disproportionately influenced by a small subset of genes. To address this, `markeR` includes dedicated functions for exploring individual gene behaviour, enabling users to assess if and which genes may be driving the overall signal. We demonstrate this functionality using the `LiteratureMarkers` gene set. 
  

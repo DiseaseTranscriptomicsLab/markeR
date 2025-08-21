@@ -169,10 +169,11 @@ CalculateScores_ssGSEA_bidirectional <- function(data, signature) {
   ResultsList <- list()
 
   mtx <- log2(data)
-  mtx <- as.matrix(mtx)
-
-  up_genes <- subset(signature, Signal == 1)$Gene
-  down_genes <- subset(signature, Signal == -1)$Gene
+  mtx <- as.matrix(mtx) 
+  
+  up_genes <- signature[signature[["Signal"]] == 1, "Gene"]
+  down_genes <- signature[signature[["Signal"]] == -1, "Gene"]
+  
 
   ################## ssGSEA for UP genes ##################
 

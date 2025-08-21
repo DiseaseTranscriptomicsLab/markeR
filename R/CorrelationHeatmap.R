@@ -138,7 +138,7 @@ CorrelationHeatmap <- function(data, metadata = NULL, genes, separate.by = NULL,
 
   # Subset data to selected genes
   #data <- data[rownames(data) %in% genes, , drop = FALSE]
-  data <- na.omit(as.data.frame(data[genes,])) # to keep input order
+  data <- stats::na.omit(as.data.frame(data[genes,])) # to keep input order
 
   if (!is.null(separate.by) && is.null(metadata)) {
     stop("separate.by is not NULL but metadata is missing. Please specify metadata.")

@@ -259,9 +259,9 @@ ROCandAUCplot <- function(data, metadata,
 
     legend_position <- if (length(unique(roc_df[[group_var]])) > 1 && group_var != "All") "bottom" else "none"
 
-    roc_plot_local <- ggplot2::ggplot(roc_df, ggplot2::aes(x = FPR, y = TPR, color = Group, group = Group)) +
+    roc_plot_local <- ggplot2::ggplot(roc_df, ggplot2::aes(x = .data$FPR, y = .data$TPR, color = .data$Group, group = .data$Group)) +
       ggplot2::geom_line(size = 1) +
-      ggplot2::facet_wrap(~ Gene, scales = "free", ncol = roc_params_local$ncol, nrow = roc_params_local$nrow) +
+      ggplot2::facet_wrap(~ .data$Gene, scales = "free", ncol = roc_params_local$ncol, nrow = roc_params_local$nrow) +
       ggplot2::theme_minimal() +
       ggplot2::labs(
         title = final_title,
@@ -356,7 +356,7 @@ ROCandAUCplot <- function(data, metadata,
 
     fillcolor <- ifelse(is.null(auc_params$colors), "#3B415B", auc_params$colors[1])
 
-    barplot <- ggplot2::ggplot(auc_sorted, ggplot2::aes(y = reorder(Gene, AUC), x = AUC)) +
+    barplot <- ggplot2::ggplot(auc_sorted, ggplot2::aes(y = stats::reorder(.data$Gene, .data$AUC), x = .data$AUC)) +
       ggplot2::geom_bar(stat = "identity", fill = fillcolor) +
       #ggplot2::coord_flip()  +
       coord_cartesian(xlim = c(0.5, 1))+

@@ -1,37 +1,19 @@
 ---
 title: "Discovery Mode Tutorial"
-output: rmarkdown::html_document
-vignette: >
-  %\VignetteIndexEntry{Discovery Mode Tutorial}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+author: "Rita M. Silva"
+date: "`r Sys.Date()`"
 ---
 
-```{r setup, include=FALSE}
+
+```{r, include = FALSE}
 knitr::opts_chunk$set(
-  dev = "png",
-  dpi = 72, 
-  fig.retina = 1
+  collapse = TRUE,
+  comment = "#>"
 )
 ```
 
 This vignette provides a comprehensive introduction to the **markeR** package, focusing on its **Discovery Mode**. The discovery mode was designed for users who are interested in quantifying a known, robust gene set in a given dataset to explore associations with other phenotypic or clinical variables. This approach is particularly suited to hypothesis generation where the phenotype marked by the gene set is of known biological or clinical relevance.
- 
-# Installation 
-
-The user can install the development version of markeR from [GitHub](https://github.com/) with:
-   
- 
-```{r, include = FALSE }
-library(markeR)
-```
-
-``` r
-# install.packages("devtools")
-devtools::install_github("DiseaseTranscriptomicsLab/markeR")
-```
-
- 
+  
 # Case-study: Senescence
 
 We will be using an already pre-processed gene expression dataset, derived from the Marthandan et al. (2016) study (GSE63577), that includes human fibroblast samples cultured under two different conditions: replicative senescence and proliferative control. The dataset has already been filtered and normalized using the `edgeR` package. For more information about the dataset structure, see the help pages for `?counts_example` and `?metadata_example`.
@@ -177,7 +159,7 @@ Depending on the statistic used (`t` or `B`), the interpretation of results vari
 The following code evaluates how three phenotypic variables — `Condition`, `Researcher`, and `DaysToSequencing` — are associated with the **HernandezSegura** gene set:
 
 ```{r GSEA_varassoc, fig.width=6, fig.height=6, out.width="60%", warning=FALSE, message=FALSE}
-VariableAssociation(
+varassoc_gsea <- VariableAssociation(
   data = counts_example,
   metadata = metadata_example,
   method = "GSEA",
@@ -193,7 +175,8 @@ VariableAssociation(
   titlesize = 14,
   pointSize = 5
 )
- 
+
+varassoc_gsea$data
 ```
  
 # Session Information

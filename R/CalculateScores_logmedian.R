@@ -93,13 +93,13 @@ calculateScore_logmedian_bidirectional <- function(data, signature) {
   signaturegenes_down <- signature[signature[, 2] == -1, ]
 
   # Compute log-median scores for upregulated genes
-  data_subset_up <- na.omit(subset(log2(data + 1), row.names(data) %in% signaturegenes_up[, 1]))
-  data_subset_up <- data_subset_up - apply(data_subset_up, 1, median)
+  data_subset_up <- stats::na.omit(subset(log2(data + 1), row.names(data) %in% signaturegenes_up[, 1]))
+  data_subset_up <- data_subset_up - apply(data_subset_up, 1, stats::median)
   score_up <- colSums(data_subset_up) / nrow(data_subset_up)
 
   # Compute log-median scores for downregulated genes
-  data_subset_down <- na.omit(subset(log2(data + 1), row.names(data) %in% signaturegenes_down[, 1]))
-  data_subset_down <- data_subset_down - apply(data_subset_down, 1, median)
+  data_subset_down <- stats::na.omit(subset(log2(data + 1), row.names(data) %in% signaturegenes_down[, 1]))
+  data_subset_down <- data_subset_down - apply(data_subset_down, 1, stats::median)
   score_down <- colSums(data_subset_down) / nrow(data_subset_down)
 
   score <- score_up - score_down
@@ -125,9 +125,9 @@ calculateScore_logmedian_unidirectional <- function(data, signature) {
   data <- as.data.frame(data) # Ensure data is a data frame
   if (is.data.frame(signature)) signature <- as.vector(signature[, 1])
 
-  data_subset <- na.omit(subset(log2(data + 1), row.names(data) %in% signature))
+  data_subset <- stats::na.omit(subset(log2(data + 1), row.names(data) %in% signature))
   # Center gene in its log2 median
-  data_subset <- data_subset - apply(data_subset, 1, median)
+  data_subset <- data_subset - apply(data_subset, 1, stats::median)
   # Normalize by signature size
   dfScore <- colSums(data_subset) / nrow(data_subset)
   dfScore <- data.frame(sample = names(dfScore), score = dfScore)
