@@ -14,7 +14,7 @@ markeR.BiocCheck/
 /Meta/
 markeR.Rproj
 .DS_Store
-**/.DS_Store
+**/.DS_Store 
 inst/doc
 data_aux
-markeR.Rcheck
+markeR.Rcheck 
