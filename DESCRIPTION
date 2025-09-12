@@ -59,7 +59,8 @@ Suggests:
     roxygen2,
     mockery,
     covr,
-    magick
+    magick,
+    BiocStyle
 Config/testthat/edition: 3
 Depends: 
     R (>= 4.5.0)
