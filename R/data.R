@@ -15,6 +15,7 @@
 #'   for senescent samples, "young" for proliferative).}
 #' }
 #'
+#' 
 #' @source \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE63577}
 #'
 #' @references  Marthandan S, Priebe S, Baumgart M, Groth M et al. Similarities
@@ -24,8 +25,8 @@
 #' @references  Marthandan S, Baumgart M, Priebe S, Groth M et al. Conserved
 #'   Senescence Associated Genes and Pathways in Primary Human Fibroblasts
 #'   Detected by RNA-Seq. PLoS One 2016;11(5):e0154531. PMID: 27140416
-#'
-#' @keywords datasets
+#'   
+#' @usage data(metadata_example)
 "metadata_example"
 
 #' Gene Expression Counts for Marthandan et al. (2016) RNA-Seq Data
@@ -52,7 +53,7 @@
 #'
 #' @format A numeric matrix with rows as genes (gene symbols) and columns as
 #'   samples (sample IDs).
-#'
+#'  
 #' @source \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE63577}
 #'
 #' @references Marthandan S, Priebe S, Baumgart M, Groth M et al. Similarities
@@ -63,8 +64,8 @@
 #'   Senescence Associated Genes and Pathways in Primary Human Fibroblasts
 #'   Detected by RNA-Seq.
 #' *PLoS One* 2016;11(5):e0154531. PMID: 27140416
-#'
-#' @keywords datasets
+#' 
+#' @usage data(counts_example)
 "counts_example"
 
 #' Example Gene Sets for Cellular Senescence
@@ -79,11 +80,11 @@
 #'   \item{HernandezSegura}{A data frame with columns `gene` and `direction`.
 #'   A gene set from Hernandez-Segura et al. (2017), with directionality (+1 or -1).}
 #' }
-#'
+#' 
 #' @references Hernandez-Segura A, de Jong TV, Melov S, Guryev V, Campisi J,
 #'   Demaria M. Unmasking Transcriptional Heterogeneity in Senescent Cells.
 #' *Curr Biol.* 2017 Sep 11;27(17):2652-2660.e4. doi: 10.1016/j.cub.2017.07.033.
 #' Epub 2017 Aug 30. PMID: 28844647; PMCID: PMC5788810.
-#' @keywords datasets
+#' @usage data(genesets_example)
 "genesets_example"
 
