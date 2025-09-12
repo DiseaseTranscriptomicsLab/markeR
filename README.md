@@ -27,7 +27,7 @@ compute performance metrics and visualize results.
 > Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). *markeR: an R
 > Toolkit for Evaluating Gene Sets as Phenotypic Markers*. Gulbenkian
 > Institute for Molecular Medicine, Faculdade de Medicina, Universidade
-> de Lisboa, Lisbon, Portugal. R package version 0.99.3,
+> de Lisboa, Lisbon, Portugal. R package version 0.99.4,
 > <https://github.com/DiseaseTranscriptomicsLab/markeR>.
 
 The folder `inst/Paper/` is in the **paper** branch and contains all
@@ -166,7 +166,7 @@ metadata
 
 - **Discovery Mode**: Explore how a single, well-characterised gene set
   relates to a specific variable of interest. Suitable for hypothesis
-  generation or signature projection.
+  generation.
 
 - **Benchmarking Mode**: Evaluate one or more gene sets against multiple
   metadata variables using a standardised scoring and effect size
