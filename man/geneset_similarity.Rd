@@ -15,7 +15,9 @@ geneset_similarity(
   pval_threshold = 0.05,
   limits = NULL,
   title_size = 12,
-  color_values = c("#F9F4AE", "#B44141"),
+  color = "#B44141",
+  neutral_color = "white",
+  cold_color = "#4173B4",
   title = NULL,
   jaccard_threshold = 0,
   msig_subset = NULL,
@@ -48,15 +50,42 @@ Odds Ratio required for a gene set to be included in the plot. Default is
 1.}
 
 \item{pval_threshold}{(only if method == "odds_ratio" only) Numeric. Maximum
-adjusted p-value to show a label. Default is 0.05.}
+adjusted p-value required for a gene set to be included in the plot.
+Default is 0.05.}
 
-\item{limits}{Numeric vector of length 2. Limits for color scale.}
+\item{limits}{Numeric vector of length 2. Limits for color scale. If \code{NULL},
+is automatically set to c(0,1) for Jaccard or the range of OR for odds
+ratio.}
 
 \item{title_size}{Integer specifying the font size for the plot title.
 Default is \code{12}.}
 
-\item{color_values}{Character vector of colors used for the fill gradient.
-Default is \code{c("#F9F4AE", "#B44141")}.}
+\item{color}{Character. The color for the maximum of the scale. Default is
+\code{red.}
+\itemize{
+\item If \code{method = "jaccard"}, the scale goes from \code{neutral_color} to \code{color}.
+\item If \code{method = "odds_ratio"} and any OR >= 1, the scale ends at \code{color}.
+\item If \code{method = "odds_ratio"} and all OR <= 1, \code{color} is not used; instead, the scale
+runs from \code{cold_color} (minimum) to \code{neutral_color} (OR = 1, if present;
+otherwise \code{neutral_color} is the maximum).
+}}
+
+\item{neutral_color}{Character. The neutral reference color. Default is
+\code{white}.
+\itemize{
+\item If \code{method = "jaccard"}, this is the minimum of the scale.
+\item If \code{method = "odds_ratio"} and any OR >= 1, this corresponds to OR = 1 if such values exist; otherwise it is the minimum of the scale.
+\item If \code{method = "odds_ratio"} and all OR <= 1, this corresponds to OR = 1 if such values exist; otherwise it is the maximum of the scale (with \code{cold_color} as the minimum).
+}}
+
+\item{cold_color}{Character. The color for values below OR = 1 (only used
+when \code{method = "odds_ratio"}). Default is \code{blue}.
+\itemize{
+\item If \code{method = "odds_ratio"} and any OR < 1, the scale runs from \code{cold_color}
+(minimum) to \code{neutral_color} (OR = 1 if present; otherwise \code{neutral_color}
+is the maximum).
+\item Ignored if \code{method = "jaccard"} or if all OR >= 1.
+}}
 
 \item{title}{Optional. Custom title for the plot. If \code{NULL}, the title
 defaults to \code{"Signature Overlap"}.}
@@ -81,7 +110,7 @@ Invisibly returns a list containing:
 \describe{
 \item{\code{plot}}{The \pkg{ggplot2} object of the similarity heatmap.}
 \item{\code{data}}{The data frame object containing the similarity
-scores aper pair of gene sets.}
+scores per pair of gene sets.}
 }
 }
 \description{

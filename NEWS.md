@@ -1,3 +1,20 @@
+# markeR 0.99.5 (17 Sep, 2025)
+
+- Minor fix in `.onAttach()` to avoid errors when checking `ggplot2` version and ensure the startup warning works correctly.
+
+# markeR 0.99.4 (17 Sep, 2025)
+
+## General
+- Addressed feedback from the Bioconductor review process with updates to documentation and vignette style.  
+
+## Documentation and vignette
+- Updated vignette style to **Bioconductor’s BiocStyle** with automatic table of contents.  
+- Improved vignette content with small corrections.
+- Revised dataset documentation by adding explicit `usage: data(object)` entries.  
+
+## Functions
+- Updated `geneset_similarity()` color handling: replaced the single `color_values` parameter with three new parameters — `color`, `neutral_color`, and `cold_color`, for more interpretable visualization.  
+
 # markeR 0.99.3 (21 Aug, 2025)
 
 ## Package size and structure
