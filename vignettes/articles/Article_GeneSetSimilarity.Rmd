@@ -75,7 +75,8 @@ geneset_similarity(
   subcollection = "CP:KEGG_LEGACY", 
   jaccard_threshold = 0,
   msig_subset = c("KEGG_MTOR_SIGNALING_PATHWAY", "KEGG_APOPTOSIS", "NON_EXISTENT_PATHWAY"), 
-  metric = "jaccard"
+  metric = "jaccard",
+  limits=c(0,0.1)
 )$plot
  
 ```
@@ -84,14 +85,14 @@ geneset_similarity(
 
 # Similarity via Log Odds Ratio
 
-The log odds ratio (logOR) provides a statistically grounded alternative for assessing gene set similarity. It measures **enrichment of one set within another**, relative to a defined background or **gene universe**, using a 2×2 contingency table and a one-sided **Fisher’s exact test**.
+The log odds ratio (logOR) provides a statistically grounded alternative for assessing gene set similarity. It measures **enrichment of one set within another**, relative to a defined background or **gene universe**, using a 2×2 contingency table.
 
 - **Log odds ratio (logOR)**:  
   Derived from contingency tables using:
   - Genes in both sets
   - Genes in one but not the other
   - Gene universe as background  
-  Log-transformed odds ratios are visualized; statistical significance is assessed via the adjusted p-value.
+  Log-transformed odds ratios are visualized.
 
 > **Note**: When using `metric = "odds_ratio"`, the `universe` parameter **must** be supplied.
 
@@ -114,13 +115,14 @@ geneset_similarity(
     msigdbr::msigdbr(species = "Homo sapiens", category = "C2")$gene_symbol
   )),
   or_threshold = 100, #log10OR = 2
-  pval_threshold = 0.05, 
-  width_text=50
+  width_text=50, 
+  pval_threshold = 0.05 
 )$plot
 
 ```
 
 
+ 
 # Session Information
 
 ```{r}

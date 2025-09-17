@@ -31,8 +31,9 @@
 
 #' Gene Expression Counts for Marthandan et al. (2016) RNA-Seq Data
 #'
-#' A numeric matrix containing filtered and normalized gene expression data from
-#' the Marthandan et al. (2016) study (GEO accession GSE63577).
+#' A numeric matrix containing filtered and normalized (non log-transformed) 
+#' gene expression data from the Marthandan et al. (2016) study (GEO accession 
+#' GSE63577).
 #'
 #' Raw FASTQ files were downloaded using `fasterq-dump` (v2.11.0) and processed
 #' in a reproducible conda environment (Python v3.11.5). Quality control was
@@ -40,8 +41,7 @@
 #' Pseudo-alignment to the RefSeq transcriptome (NCBI release 109) was performed
 #' using kallisto (v0.44.0). Genes with low expression (mean count < 70 in all
 #' conditions) were filtered out. Count normalization factors were calculated
-#' with `edgeR::calcNormFactors`, and log2-transformed values were obtained via
-#' `limma::voom`.
+#' with `edgeR::calcNormFactors`.
 #'
 #' Intermediate time points for HFF and MRC5 cell lines were excluded, resulting
 #' in a final dataset with 45 high-quality samples across proliferative,
@@ -76,7 +76,7 @@
 #'   curated gene set of commonly reported senescence markers,
 #'   with directionality (+1 or -1).}
 #'   \item{REACTOME_Senescence}{Character vector of gene symbols. The
-#'   REACTOME_CELLULAR_SENESCENCE from MSigDB pathway. No directionality.}
+#'   REACTOME_CELLULAR_SENESCENCE from MSigDB database No directionality.}
 #'   \item{HernandezSegura}{A data frame with columns `gene` and `direction`.
 #'   A gene set from Hernandez-Segura et al. (2017), with directionality (+1 or -1).}
 #' }
