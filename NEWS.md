@@ -1,3 +1,7 @@
+# markeR 0.99.5 (17 Sep, 2025)
+
+- Minor fix in `.onAttach()` to avoid errors when checking `ggplot2` version and ensure the startup warning works correctly.
+
 # markeR 0.99.4 (17 Sep, 2025)
 
 ## General
