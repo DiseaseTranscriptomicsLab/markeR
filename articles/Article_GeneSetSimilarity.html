@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">markeR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,7 +76,7 @@
                         <h4 data-toc-skip class="author">Rita M.
 Silva</h4>
             
-            <h4 data-toc-skip class="date">2025-08-21</h4>
+            <h4 data-toc-skip class="date">2025-09-17</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/DiseaseTranscriptomicsLab/markeR/blob/default/vignettes/articles/Article_GeneSetSimilarity.Rmd" class="external-link"><code>vignettes/articles/Article_GeneSetSimilarity.Rmd</code></a></small>
       <div class="d-none name"><code>Article_GeneSetSimilarity.Rmd</code></div>
@@ -124,7 +124,8 @@ package.</li>
 <h3 id="example-1-compare-against-user-defined-and-msigdb-gene-sets">Example 1: Compare against user-defined and MSigDB gene sets<a class="anchor" aria-label="anchor" href="#example-1-compare-against-user-defined-and-msigdb-gene-sets"></a>
 </h3>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://diseasetranscriptomicslab.github.io/markeR/">markeR</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://diseasetranscriptomicslab.github.io/markeR/">markeR</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: markeR has been tested with ggplot2 &lt;= 3.5.2. Using newer versions may cause incompatibilities.</span></span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Example data</span></span>
 <span><span class="va">signature1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"TP53"</span>, <span class="st">"BRCA1"</span>, <span class="st">"MYC"</span>, <span class="st">"EGFR"</span>, <span class="st">"CDK2"</span><span class="op">)</span></span>
@@ -160,7 +161,8 @@ package.</li>
 <span>  subcollection <span class="op">=</span> <span class="st">"CP:KEGG_LEGACY"</span>, </span>
 <span>  jaccard_threshold <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  msig_subset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"KEGG_MTOR_SIGNALING_PATHWAY"</span>, <span class="st">"KEGG_APOPTOSIS"</span>, <span class="st">"NON_EXISTENT_PATHWAY"</span><span class="op">)</span>, </span>
-<span>  metric <span class="op">=</span> <span class="st">"jaccard"</span></span>
+<span>  metric <span class="op">=</span> <span class="st">"jaccard"</span>,</span>
+<span>  limits<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">0.1</span><span class="op">)</span></span>
 <span><span class="op">)</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <p><img src="Article_GeneSetSimilarity_files/figure-html/unnamed-chunk-3-1.png" width="60%"></p>
 </div>
@@ -172,8 +174,7 @@ package.</li>
 alternative for assessing gene set similarity. It measures
 <strong>enrichment of one set within another</strong>, relative to a
 defined background or <strong>gene universe</strong>, using a 2×2
-contingency table and a one-sided <strong>Fisher’s exact
-test</strong>.</p>
+contingency table.</p>
 <ul>
 <li>
 <strong>Log odds ratio (logOR)</strong>:<br>
@@ -182,8 +183,7 @@ Derived from contingency tables using:
 <li>Genes in both sets</li>
 <li>Genes in one but not the other</li>
 <li>Gene universe as background<br>
-Log-transformed odds ratios are visualized; statistical significance is
-assessed via the adjusted p-value.</li>
+Log-transformed odds ratios are visualized.</li>
 </ul>
 </li>
 </ul>
@@ -210,8 +210,8 @@ supplied.</p>
 <span>    <span class="fu">msigdbr</span><span class="fu">::</span><span class="fu"><a href="https://igordot.github.io/msigdbr/reference/msigdbr.html" class="external-link">msigdbr</a></span><span class="op">(</span>species <span class="op">=</span> <span class="st">"Homo sapiens"</span>, category <span class="op">=</span> <span class="st">"C2"</span><span class="op">)</span><span class="op">$</span><span class="va">gene_symbol</span></span>
 <span>  <span class="op">)</span><span class="op">)</span>,</span>
 <span>  or_threshold <span class="op">=</span> <span class="fl">100</span>, <span class="co">#log10OR = 2</span></span>
-<span>  pval_threshold <span class="op">=</span> <span class="fl">0.05</span>, </span>
-<span>  width_text<span class="op">=</span><span class="fl">50</span></span>
+<span>  width_text<span class="op">=</span><span class="fl">50</span>, </span>
+<span>  pval_threshold <span class="op">=</span> <span class="fl">0.05</span> </span>
 <span><span class="op">)</span><span class="op">$</span><span class="va">plot</span></span>
 <span><span class="co">#&gt; Warning: The `category` argument of `msigdbr()` is deprecated as of msigdbr 10.0.0.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Please use the `collection` argument instead.</span></span>
@@ -228,7 +228,7 @@ supplied.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R version 4.5.1 (2025-06-13)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
-<span><span class="co">#&gt; Running under: Ubuntu 24.04.2 LTS</span></span>
+<span><span class="co">#&gt; Running under: Ubuntu 24.04.3 LTS</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Matrix products: default</span></span>
 <span><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
@@ -247,44 +247,44 @@ supplied.</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] markeR_0.99.3</span></span>
+<span><span class="co">#&gt; [1] markeR_0.99.5</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;   [1] pROC_1.19.0.1         gridExtra_2.3         rlang_1.1.6          </span></span>
-<span><span class="co">#&gt;   [4] magrittr_2.0.3        clue_0.3-66           GetoptLong_1.0.5     </span></span>
+<span><span class="co">#&gt;   [4] magrittr_2.0.4        clue_0.3-66           GetoptLong_1.0.5     </span></span>
 <span><span class="co">#&gt;   [7] msigdbr_25.1.1        matrixStats_1.5.0     compiler_4.5.1       </span></span>
 <span><span class="co">#&gt;  [10] png_0.1-8             systemfonts_1.2.3     vctrs_0.6.5          </span></span>
-<span><span class="co">#&gt;  [13] reshape2_1.4.4        stringr_1.5.1         pkgconfig_2.0.3      </span></span>
+<span><span class="co">#&gt;  [13] reshape2_1.4.4        stringr_1.5.2         pkgconfig_2.0.3      </span></span>
 <span><span class="co">#&gt;  [16] shape_1.4.6.1         crayon_1.5.3          fastmap_1.2.0        </span></span>
 <span><span class="co">#&gt;  [19] backports_1.5.0       labeling_0.4.3        effectsize_1.0.1     </span></span>
-<span><span class="co">#&gt;  [22] rmarkdown_2.29        ragg_1.4.0            purrr_1.1.0          </span></span>
+<span><span class="co">#&gt;  [22] rmarkdown_2.29        ragg_1.5.0            purrr_1.1.0          </span></span>
 <span><span class="co">#&gt;  [25] xfun_0.53             cachem_1.1.0          jsonlite_2.0.0       </span></span>
-<span><span class="co">#&gt;  [28] BiocParallel_1.42.1   broom_1.0.9           parallel_4.5.1       </span></span>
+<span><span class="co">#&gt;  [28] BiocParallel_1.42.2   broom_1.0.10          parallel_4.5.1       </span></span>
 <span><span class="co">#&gt;  [31] cluster_2.1.8.1       R6_2.6.1              bslib_0.9.0          </span></span>
 <span><span class="co">#&gt;  [34] stringi_1.8.7         RColorBrewer_1.1-3    limma_3.64.3         </span></span>
 <span><span class="co">#&gt;  [37] car_3.1-3             jquerylib_0.1.4       Rcpp_1.1.0           </span></span>
 <span><span class="co">#&gt;  [40] assertthat_0.2.1      iterators_1.0.14      knitr_1.50           </span></span>
-<span><span class="co">#&gt;  [43] parameters_0.28.0     IRanges_2.42.0        Matrix_1.7-3         </span></span>
+<span><span class="co">#&gt;  [43] parameters_0.28.2     IRanges_2.42.0        Matrix_1.7-3         </span></span>
 <span><span class="co">#&gt;  [46] tidyselect_1.2.1      abind_1.4-8           yaml_2.3.10          </span></span>
 <span><span class="co">#&gt;  [49] doParallel_1.0.17     codetools_0.2-20      curl_7.0.0           </span></span>
 <span><span class="co">#&gt;  [52] lattice_0.22-7        tibble_3.3.0          plyr_1.8.9           </span></span>
-<span><span class="co">#&gt;  [55] withr_3.0.2           bayestestR_0.16.1     evaluate_1.0.4       </span></span>
-<span><span class="co">#&gt;  [58] desc_1.4.3            circlize_0.4.16       pillar_1.11.0        </span></span>
-<span><span class="co">#&gt;  [61] ggpubr_0.6.1          carData_3.0-5         foreach_1.5.2        </span></span>
-<span><span class="co">#&gt;  [64] stats4_4.5.1          insight_1.4.0         generics_0.1.4       </span></span>
-<span><span class="co">#&gt;  [67] S4Vectors_0.46.0      ggplot2_3.5.2         scales_1.4.0         </span></span>
-<span><span class="co">#&gt;  [70] glue_1.8.0            tools_4.5.1           data.table_1.17.8    </span></span>
-<span><span class="co">#&gt;  [73] fgsea_1.34.2          locfit_1.5-9.12       ggsignif_0.6.4       </span></span>
-<span><span class="co">#&gt;  [76] babelgene_22.9        fs_1.6.6              fastmatch_1.1-6      </span></span>
-<span><span class="co">#&gt;  [79] cowplot_1.2.0         grid_4.5.1            tidyr_1.3.1          </span></span>
-<span><span class="co">#&gt;  [82] datawizard_1.2.0      edgeR_4.6.3           colorspace_2.1-1     </span></span>
-<span><span class="co">#&gt;  [85] Formula_1.2-5         cli_3.6.5             textshaping_1.0.1    </span></span>
-<span><span class="co">#&gt;  [88] ComplexHeatmap_2.24.1 dplyr_1.1.4           gtable_0.3.6         </span></span>
-<span><span class="co">#&gt;  [91] ggh4x_0.3.1           rstatix_0.7.2         sass_0.4.10          </span></span>
-<span><span class="co">#&gt;  [94] digest_0.6.37         BiocGenerics_0.54.0   ggrepel_0.9.6        </span></span>
-<span><span class="co">#&gt;  [97] rjson_0.2.23          htmlwidgets_1.6.4     farver_2.1.2         </span></span>
-<span><span class="co">#&gt; [100] htmltools_0.5.8.1     pkgdown_2.1.3         lifecycle_1.0.4      </span></span>
-<span><span class="co">#&gt; [103] GlobalOptions_0.1.2   statmod_1.5.0</span></span></code></pre></div>
+<span><span class="co">#&gt;  [55] withr_3.0.2           bayestestR_0.17.0     S7_0.2.0             </span></span>
+<span><span class="co">#&gt;  [58] evaluate_1.0.5        desc_1.4.3            circlize_0.4.16      </span></span>
+<span><span class="co">#&gt;  [61] pillar_1.11.1         ggpubr_0.6.1          carData_3.0-5        </span></span>
+<span><span class="co">#&gt;  [64] foreach_1.5.2         stats4_4.5.1          insight_1.4.2        </span></span>
+<span><span class="co">#&gt;  [67] generics_0.1.4        S4Vectors_0.46.0      ggplot2_4.0.0        </span></span>
+<span><span class="co">#&gt;  [70] scales_1.4.0          glue_1.8.0            tools_4.5.1          </span></span>
+<span><span class="co">#&gt;  [73] data.table_1.17.8     fgsea_1.34.2          locfit_1.5-9.12      </span></span>
+<span><span class="co">#&gt;  [76] ggsignif_0.6.4        babelgene_22.9        fs_1.6.6             </span></span>
+<span><span class="co">#&gt;  [79] fastmatch_1.1-6       cowplot_1.2.0         grid_4.5.1           </span></span>
+<span><span class="co">#&gt;  [82] tidyr_1.3.1           datawizard_1.2.0      edgeR_4.6.3          </span></span>
+<span><span class="co">#&gt;  [85] colorspace_2.1-1      Formula_1.2-5         cli_3.6.5            </span></span>
+<span><span class="co">#&gt;  [88] textshaping_1.0.3     ComplexHeatmap_2.24.1 dplyr_1.1.4          </span></span>
+<span><span class="co">#&gt;  [91] gtable_0.3.6          ggh4x_0.3.1           rstatix_0.7.2        </span></span>
+<span><span class="co">#&gt;  [94] sass_0.4.10           digest_0.6.37         BiocGenerics_0.54.0  </span></span>
+<span><span class="co">#&gt;  [97] ggrepel_0.9.6         rjson_0.2.23          htmlwidgets_1.6.4    </span></span>
+<span><span class="co">#&gt; [100] farver_2.1.2          htmltools_0.5.8.1     pkgdown_2.1.3        </span></span>
+<span><span class="co">#&gt; [103] lifecycle_1.0.4       GlobalOptions_0.1.2   statmod_1.5.0</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

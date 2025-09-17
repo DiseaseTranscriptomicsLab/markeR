@@ -11,7 +11,7 @@ or Fisher's Odds Ratio. Produces a heatmap of pairwise similarity metrics."><met
 
     <a class="navbar-brand me-2" href="../index.html">markeR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,7 +68,9 @@ or Fisher's Odds Ratio. Produces a heatmap of pairwise similarity metrics.</p>
 <span>  pval_threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>  limits <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  title_size <span class="op">=</span> <span class="fl">12</span>,</span>
-<span>  color_values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#F9F4AE"</span>, <span class="st">"#B44141"</span><span class="op">)</span>,</span>
+<span>  color <span class="op">=</span> <span class="st">"#B44141"</span>,</span>
+<span>  neutral_color <span class="op">=</span> <span class="st">"white"</span>,</span>
+<span>  cold_color <span class="op">=</span> <span class="st">"#4173B4"</span>,</span>
 <span>  title <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  jaccard_threshold <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  msig_subset <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -120,11 +122,14 @@ Odds Ratio required for a gene set to be included in the plot. Default is
 
 <dt id="arg-pval-threshold">pval_threshold<a class="anchor" aria-label="anchor" href="#arg-pval-threshold"></a></dt>
 <dd><p>(only if method == "odds_ratio" only) Numeric. Maximum
-adjusted p-value to show a label. Default is 0.05.</p></dd>
+adjusted p-value required for a gene set to be included in the plot.
+Default is 0.05.</p></dd>
 
 
 <dt id="arg-limits">limits<a class="anchor" aria-label="anchor" href="#arg-limits"></a></dt>
-<dd><p>Numeric vector of length 2. Limits for color scale.</p></dd>
+<dd><p>Numeric vector of length 2. Limits for color scale. If <code>NULL</code>,
+is automatically set to c(0,1) for Jaccard or the range of OR for odds
+ratio.</p></dd>
 
 
 <dt id="arg-title-size">title_size<a class="anchor" aria-label="anchor" href="#arg-title-size"></a></dt>
@@ -132,9 +137,31 @@ adjusted p-value to show a label. Default is 0.05.</p></dd>
 Default is <code>12</code>.</p></dd>
 
 
-<dt id="arg-color-values">color_values<a class="anchor" aria-label="anchor" href="#arg-color-values"></a></dt>
-<dd><p>Character vector of colors used for the fill gradient.
-Default is <code>c("#F9F4AE", "#B44141")</code>.</p></dd>
+<dt id="arg-color">color<a class="anchor" aria-label="anchor" href="#arg-color"></a></dt>
+<dd><p>Character. The color for the maximum of the scale. Default is
+<code>red.</code></p><ul><li><p>If <code>method = "jaccard"</code>, the scale goes from <code>neutral_color</code> to <code>color</code>.</p></li>
+<li><p>If <code>method = "odds_ratio"</code> and any OR &gt;= 1, the scale ends at <code>color</code>.</p></li>
+<li><p>If <code>method = "odds_ratio"</code> and all OR &lt;= 1, <code>color</code> is not used; instead, the scale
+runs from <code>cold_color</code> (minimum) to <code>neutral_color</code> (OR = 1, if present;
+otherwise <code>neutral_color</code> is the maximum).</p></li>
+</ul></dd>
+
+
+<dt id="arg-neutral-color">neutral_color<a class="anchor" aria-label="anchor" href="#arg-neutral-color"></a></dt>
+<dd><p>Character. The neutral reference color. Default is
+<code>white</code>.</p><ul><li><p>If <code>method = "jaccard"</code>, this is the minimum of the scale.</p></li>
+<li><p>If <code>method = "odds_ratio"</code> and any OR &gt;= 1, this corresponds to OR = 1 if such values exist; otherwise it is the minimum of the scale.</p></li>
+<li><p>If <code>method = "odds_ratio"</code> and all OR &lt;= 1, this corresponds to OR = 1 if such values exist; otherwise it is the maximum of the scale (with <code>cold_color</code> as the minimum).</p></li>
+</ul></dd>
+
+
+<dt id="arg-cold-color">cold_color<a class="anchor" aria-label="anchor" href="#arg-cold-color"></a></dt>
+<dd><p>Character. The color for values below OR = 1 (only used
+when <code>method = "odds_ratio"</code>). Default is <code>blue</code>.</p><ul><li><p>If <code>method = "odds_ratio"</code> and any OR &lt; 1, the scale runs from <code>cold_color</code>
+(minimum) to <code>neutral_color</code> (OR = 1 if present; otherwise <code>neutral_color</code>
+is the maximum).</p></li>
+<li><p>Ignored if <code>method = "jaccard"</code> or if all OR &gt;= 1.</p></li>
+</ul></dd>
 
 
 <dt id="arg-title">title<a class="anchor" aria-label="anchor" href="#arg-title"></a></dt>
@@ -172,7 +199,7 @@ collections.</p></dd>
 
 <dt><code>data</code></dt>
 <dd><p>The data frame object containing the similarity
-scores aper pair of gene sets.</p></dd>
+scores per pair of gene sets.</p></dd>
 
 
 </dl></div>
@@ -198,40 +225,23 @@ scores aper pair of gene sets.</p></dd>
 <span class="r-plt img"><img src="geneset_similarity-1.png" alt="" width="700" height="433"></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $data</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Reference_Signature                  Compared_Signature       Score Label</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6           SignatureA             HALLMARK_APICAL_SURFACE 0.020833333  0.02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7           SignatureA                  HALLMARK_APOPTOSIS 0.012195122  0.01</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9           SignatureA    HALLMARK_CHOLESTEROL_HOMEOSTASIS 0.000000000  0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13          SignatureA                HALLMARK_E2F_TARGETS 0.014851485  0.01</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 33          SignatureA             HALLMARK_MYC_TARGETS_V2 0.016129032  0.02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 40          SignatureA    HALLMARK_PI3K_AKT_MTOR_SIGNALING 0.018518519  0.02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 41          SignatureA          HALLMARK_PROTEIN_SECRETION 0.010000000  0.01</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 49          SignatureA HALLMARK_WNT_BETA_CATENIN_SIGNALING 0.044444444  0.04</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 56          SignatureB             HALLMARK_APICAL_SURFACE 0.000000000  0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 57          SignatureB                  HALLMARK_APOPTOSIS 0.006097561  0.01</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 59          SignatureB    HALLMARK_CHOLESTEROL_HOMEOSTASIS 0.012987013  0.01</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 63          SignatureB                HALLMARK_E2F_TARGETS 0.000000000  0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 83          SignatureB             HALLMARK_MYC_TARGETS_V2 0.000000000  0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 90          SignatureB    HALLMARK_PI3K_AKT_MTOR_SIGNALING 0.000000000  0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 91          SignatureB          HALLMARK_PROTEIN_SECRETION 0.000000000  0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 99          SignatureB HALLMARK_WNT_BETA_CATENIN_SIGNALING 0.000000000  0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Pval</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6    NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7    NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9    NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13   NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 33   NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 40   NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 41   NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 49   NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 56   NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 57   NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 59   NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 63   NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 83   NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 90   NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 91   NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 99   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Reference_Signature                  Compared_Signature       Score Pval</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6           SignatureA             HALLMARK_APICAL_SURFACE 0.020833333   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7           SignatureA                  HALLMARK_APOPTOSIS 0.012195122   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9           SignatureA    HALLMARK_CHOLESTEROL_HOMEOSTASIS 0.000000000   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 13          SignatureA                HALLMARK_E2F_TARGETS 0.014851485   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 33          SignatureA             HALLMARK_MYC_TARGETS_V2 0.016129032   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 40          SignatureA    HALLMARK_PI3K_AKT_MTOR_SIGNALING 0.018518519   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 41          SignatureA          HALLMARK_PROTEIN_SECRETION 0.010000000   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 49          SignatureA HALLMARK_WNT_BETA_CATENIN_SIGNALING 0.044444444   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 56          SignatureB             HALLMARK_APICAL_SURFACE 0.000000000   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 57          SignatureB                  HALLMARK_APOPTOSIS 0.006097561   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 59          SignatureB    HALLMARK_CHOLESTEROL_HOMEOSTASIS 0.012987013   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 63          SignatureB                HALLMARK_E2F_TARGETS 0.000000000   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 83          SignatureB             HALLMARK_MYC_TARGETS_V2 0.000000000   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 90          SignatureB    HALLMARK_PI3K_AKT_MTOR_SIGNALING 0.000000000   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 91          SignatureB          HALLMARK_PROTEIN_SECRETION 0.000000000   NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 99          SignatureB HALLMARK_WNT_BETA_CATENIN_SIGNALING 0.000000000   NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span></span></span>
@@ -254,112 +264,112 @@ scores aper pair of gene sets.</p></dd>
 <span class="r-plt img"><img src="geneset_similarity-2.png" alt="" width="700" height="433"></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $data</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>              Reference_Signature                  Compared_Signature    Score</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio1           SignatureA        HALLMARK_ALLOGRAFT_REJECTION 1.872334</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio4           SignatureA            HALLMARK_APICAL_JUNCTION 1.444325</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio5           SignatureA             HALLMARK_APICAL_SURFACE 2.111516</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio6           SignatureA                  HALLMARK_APOPTOSIS 1.968824</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio8           SignatureA    HALLMARK_CHOLESTEROL_HOMEOSTASIS     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio10          SignatureA                 HALLMARK_COMPLEMENT     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio11          SignatureA                 HALLMARK_DNA_REPAIR 1.571111</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio12          SignatureA                HALLMARK_E2F_TARGETS 2.226011</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio14          SignatureA    HALLMARK_ESTROGEN_RESPONSE_EARLY 1.444325</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio17          SignatureA             HALLMARK_G2M_CHECKPOINT 1.444325</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio18          SignatureA                 HALLMARK_GLYCOLYSIS 1.444325</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio21          SignatureA                    HALLMARK_HYPOXIA 1.444325</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio22          SignatureA        HALLMARK_IL2_STAT5_SIGNALING 1.446527</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio24          SignatureA      HALLMARK_INFLAMMATORY_RESPONSE 1.444325</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio26          SignatureA  HALLMARK_INTERFERON_GAMMA_RESPONSE     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio31          SignatureA             HALLMARK_MYC_TARGETS_V1 1.872334</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio32          SignatureA             HALLMARK_MYC_TARGETS_V2 1.989696</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio36          SignatureA                HALLMARK_P53_PATHWAY 1.444325</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio39          SignatureA    HALLMARK_PI3K_AKT_MTOR_SIGNALING 2.158469</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio40          SignatureA          HALLMARK_PROTEIN_SECRETION 1.767411</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio42          SignatureA            HALLMARK_SPERMATOGENESIS     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio44          SignatureA    HALLMARK_TNFA_SIGNALING_VIA_NFKB 1.444325</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio45          SignatureA  HALLMARK_UNFOLDED_PROTEIN_RESPONSE     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio46          SignatureA             HALLMARK_UV_RESPONSE_DN 1.588870</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio47          SignatureA             HALLMARK_UV_RESPONSE_UP 1.548242</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio48          SignatureA HALLMARK_WNT_BETA_CATENIN_SIGNALING 2.564626</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio51          SignatureB        HALLMARK_ALLOGRAFT_REJECTION     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio54          SignatureB            HALLMARK_APICAL_JUNCTION     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio55          SignatureB             HALLMARK_APICAL_SURFACE     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio56          SignatureB                  HALLMARK_APOPTOSIS 1.664703</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio58          SignatureB    HALLMARK_CHOLESTEROL_HOMEOSTASIS 2.005430</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio60          SignatureB                 HALLMARK_COMPLEMENT 1.569432</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio61          SignatureB                 HALLMARK_DNA_REPAIR     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio62          SignatureB                HALLMARK_E2F_TARGETS     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio64          SignatureB    HALLMARK_ESTROGEN_RESPONSE_EARLY     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio67          SignatureB             HALLMARK_G2M_CHECKPOINT     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio68          SignatureB                 HALLMARK_GLYCOLYSIS     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio71          SignatureB                    HALLMARK_HYPOXIA     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio72          SignatureB        HALLMARK_IL2_STAT5_SIGNALING 1.571635</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio74          SignatureB      HALLMARK_INFLAMMATORY_RESPONSE     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio76          SignatureB  HALLMARK_INTERFERON_GAMMA_RESPONSE 1.569432</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio81          SignatureB             HALLMARK_MYC_TARGETS_V1     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio82          SignatureB             HALLMARK_MYC_TARGETS_V2     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio86          SignatureB                HALLMARK_P53_PATHWAY     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio89          SignatureB    HALLMARK_PI3K_AKT_MTOR_SIGNALING     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio90          SignatureB          HALLMARK_PROTEIN_SECRETION     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio92          SignatureB            HALLMARK_SPERMATOGENESIS 1.741937</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio94          SignatureB    HALLMARK_TNFA_SIGNALING_VIA_NFKB     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio95          SignatureB  HALLMARK_UNFOLDED_PROTEIN_RESPONSE 1.820410</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio96          SignatureB             HALLMARK_UV_RESPONSE_DN     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio97          SignatureB             HALLMARK_UV_RESPONSE_UP 1.672889</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio98          SignatureB HALLMARK_WNT_BETA_CATENIN_SIGNALING     -Inf</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>              Label         Pval</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio1    1.9 7.806230e-04</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio4    1.4 4.389316e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio5    2.1 9.792064e-03</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio6    2.0 5.070186e-04</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio8        1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio10       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio11   1.6 3.306730e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio12   2.2 6.937697e-06</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio14   1.4 4.389316e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio17   1.4 4.389316e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio18   1.4 4.389316e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio21   1.4 4.389316e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio22   1.4 4.367760e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio24   1.4 4.389316e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio26       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio31   1.9 7.806230e-04</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio32   2.0 1.289158e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio36   1.4 4.389316e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio39   2.2 2.160134e-04</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio40   1.8 2.126545e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio42       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio44   1.4 4.389316e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio45       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio46   1.6 3.176163e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio47   1.5 3.480600e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio48   2.6 3.425629e-05</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio51       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio54       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio55       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio56   1.7 2.846729e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio58   2.0 1.316093e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio60   1.6 3.527066e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio61       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio62       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio64       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio67       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio68       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio71       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio72   1.6 3.509666e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio74       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio76   1.6 3.527066e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio81       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio82       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio86       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio89       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio90       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio92   1.7 2.391177e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio94       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio95   1.8 2.004460e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio96       1.000000e+00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio97   1.7 2.794247e-02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio98       1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              Reference_Signature                  Compared_Signature     Score</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio1           SignatureA        HALLMARK_ALLOGRAFT_REJECTION  74.53052</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio4           SignatureA            HALLMARK_APICAL_JUNCTION  27.81796</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio5           SignatureA             HALLMARK_APICAL_SURFACE 129.27542</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio6           SignatureA                  HALLMARK_APOPTOSIS  93.07309</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio8           SignatureA    HALLMARK_CHOLESTEROL_HOMEOSTASIS   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio10          SignatureA                 HALLMARK_COMPLEMENT   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio11          SignatureA                 HALLMARK_DNA_REPAIR  37.24872</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio12          SignatureA                HALLMARK_E2F_TARGETS 168.27177</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio14          SignatureA    HALLMARK_ESTROGEN_RESPONSE_EARLY  27.81796</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio17          SignatureA             HALLMARK_G2M_CHECKPOINT  27.81796</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio18          SignatureA                 HALLMARK_GLYCOLYSIS  27.81796</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio21          SignatureA                    HALLMARK_HYPOXIA  27.81796</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio22          SignatureA        HALLMARK_IL2_STAT5_SIGNALING  27.95932</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio24          SignatureA      HALLMARK_INFLAMMATORY_RESPONSE  27.81796</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio26          SignatureA  HALLMARK_INTERFERON_GAMMA_RESPONSE   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio31          SignatureA             HALLMARK_MYC_TARGETS_V1  74.53052</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio32          SignatureA             HALLMARK_MYC_TARGETS_V2  97.65540</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio36          SignatureA                HALLMARK_P53_PATHWAY  27.81796</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio39          SignatureA    HALLMARK_PI3K_AKT_MTOR_SIGNALING 144.03523</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio40          SignatureA          HALLMARK_PROTEIN_SECRETION  58.53435</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio42          SignatureA            HALLMARK_SPERMATOGENESIS   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio44          SignatureA    HALLMARK_TNFA_SIGNALING_VIA_NFKB  27.81796</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio45          SignatureA  HALLMARK_UNFOLDED_PROTEIN_RESPONSE   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio46          SignatureA             HALLMARK_UV_RESPONSE_DN  38.80346</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio47          SignatureA             HALLMARK_UV_RESPONSE_UP  35.33803</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio48          SignatureA HALLMARK_WNT_BETA_CATENIN_SIGNALING 366.96608</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio51          SignatureB        HALLMARK_ALLOGRAFT_REJECTION   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio54          SignatureB            HALLMARK_APICAL_JUNCTION   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio55          SignatureB             HALLMARK_APICAL_SURFACE   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio56          SignatureB                  HALLMARK_APOPTOSIS  46.20645</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio58          SignatureB    HALLMARK_CHOLESTEROL_HOMEOSTASIS 101.25816</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio60          SignatureB                 HALLMARK_COMPLEMENT  37.10497</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio61          SignatureB                 HALLMARK_DNA_REPAIR   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio62          SignatureB                HALLMARK_E2F_TARGETS   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio64          SignatureB    HALLMARK_ESTROGEN_RESPONSE_EARLY   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio67          SignatureB             HALLMARK_G2M_CHECKPOINT   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio68          SignatureB                 HALLMARK_GLYCOLYSIS   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio71          SignatureB                    HALLMARK_HYPOXIA   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio72          SignatureB        HALLMARK_IL2_STAT5_SIGNALING  37.29368</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio74          SignatureB      HALLMARK_INFLAMMATORY_RESPONSE   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio76          SignatureB  HALLMARK_INTERFERON_GAMMA_RESPONSE  37.10497</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio81          SignatureB             HALLMARK_MYC_TARGETS_V1   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio82          SignatureB             HALLMARK_MYC_TARGETS_V2   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio86          SignatureB                HALLMARK_P53_PATHWAY   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio89          SignatureB    HALLMARK_PI3K_AKT_MTOR_SIGNALING   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio90          SignatureB          HALLMARK_PROTEIN_SECRETION   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio92          SignatureB            HALLMARK_SPERMATOGENESIS  55.19975</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio94          SignatureB    HALLMARK_TNFA_SIGNALING_VIA_NFKB   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio95          SignatureB  HALLMARK_UNFOLDED_PROTEIN_RESPONSE  66.13172</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio96          SignatureB             HALLMARK_UV_RESPONSE_DN   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio97          SignatureB             HALLMARK_UV_RESPONSE_UP  47.08572</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio98          SignatureB HALLMARK_WNT_BETA_CATENIN_SIGNALING   0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      Pval</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio1  7.806230e-04</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio4  4.389316e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio5  9.792064e-03</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio6  5.070186e-04</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio8  1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio10 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio11 3.306730e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio12 6.937697e-06</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio14 4.389316e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio17 4.389316e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio18 4.389316e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio21 4.389316e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio22 4.367760e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio24 4.389316e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio26 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio31 7.806230e-04</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio32 1.289158e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio36 4.389316e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio39 2.160134e-04</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio40 2.126545e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio42 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio44 4.389316e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio45 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio46 3.176163e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio47 3.480600e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio48 3.425629e-05</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio51 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio54 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio55 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio56 2.846729e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio58 1.316093e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio60 3.527066e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio61 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio62 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio64 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio67 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio68 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio71 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio72 3.509666e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio74 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio76 3.527066e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio81 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio82 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio86 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio89 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio90 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio92 2.391177e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio94 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio95 2.004460e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio96 1.000000e+00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio97 2.794247e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> odds ratio98 1.000000e+00</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="index.html">markeR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -79,12 +79,12 @@
 <!-- badges: start -->
 
 <!-- badges: end -->
-<p><strong>markeR</strong> provides a suite of methods for using gene sets to quantify and evaluate the extent to which a given gene signature marks a specific phenotype from gene expression data. The package implements various scoring, enrichment and classification approaches, along with tools to compute performance metrics and visualize results.</p>
+<p><strong><code>markeR</code></strong> is an R package that provides a modular and extensible framework for the systematic evaluation of gene sets as phenotypic markers using transcriptomic data. The package is designed to support both quantitative analyses and visual exploration of gene set behaviour across experimental and clinical phenotypes.</p>
 <blockquote>
-<p><strong>To cite markeR please use:</strong></p>
-<p>Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). <em>markeR: an R Toolkit for Evaluating Gene Sets as Phenotypic Markers</em>. Gulbenkian Institute for Molecular Medicine, Faculdade de Medicina, Universidade de Lisboa, Lisbon, Portugal. R package version 0.99.3, <a href="https://github.com/DiseaseTranscriptomicsLab/markeR" class="external-link uri">https://github.com/DiseaseTranscriptomicsLab/markeR</a>.</p>
+<p><strong>To cite <code>markeR</code> please use:</strong></p>
+<p>Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). <em>markeR: an R Toolkit for Evaluating Gene Sets as Phenotypic Markers</em>. Gulbenkian Institute for Molecular Medicine, Faculdade de Medicina, Universidade de Lisboa, Lisbon, Portugal. R package version 0.99.5, <a href="https://github.com/DiseaseTranscriptomicsLab/markeR" class="external-link uri">https://github.com/DiseaseTranscriptomicsLab/markeR</a>.</p>
 </blockquote>
-<p>The folder <code>inst/Paper/</code> is in the <strong>paper</strong> branch and contains all scripts and materials used in the original markeR paper to reproduce analyses and figures. You can browse it <a href="https://github.com/DiseaseTranscriptomicsLab/markeR/tree/paper/inst/Paper" class="external-link">here</a>.</p>
+<p>The folder <code>inst/Paper/</code> is in the <strong>paper</strong> branch and contains all scripts and materials used in the original <code>markeR</code> paper to reproduce analyses and figures. You can browse it <a href="https://github.com/DiseaseTranscriptomicsLab/markeR/tree/paper/inst/Paper" class="external-link">here</a>.</p>
 <p><img src="reference/figures/Workflow.png"></p>
 <div class="section level2">
 <h2 id="table-of-contents">Table of Contents<a class="anchor" aria-label="anchor" href="#table-of-contents"></a>
@@ -158,7 +158,6 @@
 <div class="section level2">
 <h2 id="common-workflow">Common Workflow<a class="anchor" aria-label="anchor" href="#common-workflow"></a>
 </h2>
-<p><code>markeR</code> provides a modular pipeline to quantify transcriptomic signatures and assess their association with phenotypic or clinical variables. The typical workflow includes the following steps:</p>
 <div class="section level3">
 <h3 id="id_1-input-requirements">1. Input Requirements<a class="anchor" aria-label="anchor" href="#id_1-input-requirements"></a>
 </h3>
@@ -187,8 +186,10 @@ A named list where each element represents one gene set:</p>
 <span><span class="co">#&gt; 3 GeneZ         1</span></span></code></pre></div>
 <ul>
 <li>
-<strong>Expression Data Frame</strong>:<br>
-A filtered and normalised gene expression data frame (genes × samples). Row names must be gene identifiers, and column names must match the sample IDs in the metadata.</li>
+<p><strong>Expression Data Frame</strong>:<br>
+A filtered and normalised, non log-transformed, gene expression matrix (genes × samples). Row names must be gene identifiers; column names must match sample IDs in the metadata.</p>
+<p><strong>Warning:</strong> If you are using microarray data or outputs from common RNA-seq pipelines (<em>e.g.</em>, edgeR), note that the expression values may already be log2-normalised. The input to <code>markeR</code> must necessarily be <strong>non-log-transformed</strong>. If your data are log2-transformed, you can revert them by applying <code>2^data</code>.</p>
+</li>
 </ul>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">expr_df</span><span class="op">)</span></span>
@@ -202,7 +203,7 @@ A filtered and normalised gene expression data frame (genes × samples). Row nam
 <ul>
 <li>
 <strong>Sample Metadata</strong>:<br>
-A data frame with annotations for each sample, with the sample ID in the first column. The row names must match the column names of the expression matrix.</li>
+A data frame with samples as rows and annotations as columns. The first column should contain sample IDs matching the expression matrix column names.</li>
 </ul>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">metadata</span></span>
@@ -216,36 +217,32 @@ A data frame with annotations for each sample, with the sample ID in the first c
 <div class="section level3">
 <h3 id="id_2-select-mode-of-analysis">2. Select Mode of Analysis<a class="anchor" aria-label="anchor" href="#id_2-select-mode-of-analysis"></a>
 </h3>
+<p><code>markeR</code> provides two modes of operation:</p>
 <ul>
-<li><p><strong>Discovery Mode</strong>: Explore how a single, well-characterised gene set relates to a specific variable of interest. Suitable for hypothesis generation or signature projection.</p></li>
-<li><p><strong>Benchmarking Mode</strong>: Evaluate one or more gene sets against multiple metadata variables using a standardised scoring and effect size framework. This mode provides comprehensive visualisations and comparisons across methods.</p></li>
+<li><p><strong>Benchmarking</strong>: evaluates gene sets’ performance in marking a metadata variable, <em>i.e.</em>, a phenotype, returning comparative visualisations across scoring and enrichment methods.</p></li>
+<li><p><strong>Discovery</strong>: examines the relationship between a gene set and one or more variables of interest, suitable for exploratory or hypothesis-generating analyses.</p></li>
 </ul>
 </div>
 <div class="section level3">
 <h3 id="id_3-choose-a-quantification-approach">3. Choose a Quantification Approach<a class="anchor" aria-label="anchor" href="#id_3-choose-a-quantification-approach"></a>
 </h3>
-<p><code>markeR</code> supports two complementary strategies for quantifying the association between gene sets and phenotypes:</p>
+<p>Two complementary strategies are implemented for quantifying associations between gene sets and phenotypes:</p>
 <div class="section level4">
 <h4 id="id_31-score-based-approach">3.1 Score-Based Approach<a class="anchor" aria-label="anchor" href="#id_31-score-based-approach"></a>
 </h4>
-<p>This strategy generates a <strong>single numeric score per sample</strong>, reflecting the activity of a gene set. It enables flexible downstream analyses, including comparisons across phenotypic groups.</p>
-<p>Three scoring methods are available:</p>
+<p>A score summarising the collective expression of a gene set therein is assigned <strong>to each sample</strong>. Scores can be visualised using built-in functions, or used directly in downstream analyses (<em>e.g.</em>, comparisons between phenotypic groups of samples, correlations with numerical phenotypes).</p>
+<p>Available methods:</p>
 <ul>
-<li><p><strong>Log2-median</strong>: Calculates the median log2 expression of the genes in the set. Sensitive to absolute shifts in expression.</p></li>
-<li><p><strong>Ranking</strong>: Ranks all genes within each sample and averages the ranks of gene set members. Captures relative ordering rather than magnitude.</p></li>
-<li><p><strong>ssGSEA</strong>: Computes a single-sample gene set enrichment score using the ssGSEA algorithm. Reflects the coordinated up- or down-regulation of the set in each sample.</p></li>
+<li><p><strong>Log2-median</strong>: mean of the across-sample normalised log2 median-centred expression levels of the genes in the set; for bidirectional gene sets, the sample score is the partial score for the subset of putatively upregulated genes minus that of the downregulated subset.</p></li>
+<li><p><strong>Ranking</strong>: mean expression rank of gene set members in each sample; for bidirectional gene sets, the sample score is the partial score for the subset of putatively upregulated genes minus that of the downregulated subset, and normalised by the number of genes in the set.</p></li>
+<li><p><strong>ssGSEA</strong>: single-sample gene set enrichment score using ssGSEA; for bidirectional gene sets, the sample score is the partial score for the subset of putatively upregulated genes minus that of the downregulated subset.</p></li>
 </ul>
-<p>These methods vary in assumptions and sensitivity. Robust gene sets are expected to perform consistently across all three.</p>
+<p>Gene sets that are robust phenotypic markers are expected to yield consistently high scores across methods.</p>
 </div>
 <div class="section level4">
 <h4 id="id_32-enrichment-based-approach">3.2 Enrichment-Based Approach<a class="anchor" aria-label="anchor" href="#id_32-enrichment-based-approach"></a>
 </h4>
-<p>This approach uses a classical <strong>gene set enrichment analysis (GSEA)</strong> framework to evaluate whether the gene set is significantly overrepresented at the top or bottom of a ranked list of genes (e.g., ranked by fold change or correlation with phenotype).</p>
-<ul>
-<li>
-<strong>GSEA</strong>: Computes a Normalised Enrichment Score (NES) for each contrast or variable of interest, adjusting for gene set size and multiple testing.</li>
-</ul>
-<p>Use this approach when interested in collective behaviour of gene sets in relation to ranked differential signals.</p>
+<p>Enrichment-based methods implement <strong>Gene Set Enrichment Analysis (GSEA)</strong>. Genes are ranked according to differential expression statistics, and a Normalised Enrichment Score (NES) per variable of interest is computed, accompanied by a p-value adjusted for multiple hypothesis testing.</p>
 </div>
 </div>
 <div class="section level3">
@@ -253,44 +250,44 @@ A data frame with annotations for each sample, with the sample ID in the first c
 </h3>
 <p>In <strong>Benchmarking Mode</strong>, <code>markeR</code> offers a range of visual summaries:</p>
 <ul>
-<li>Violin or scatter plots showing score distributions by phenotype</li>
-<li>Volcano plots and heatmaps based on effect sizes (Cohen’s <em>d</em> or <em>f</em>)</li>
-<li>ROC curves and AUC values</li>
-<li>Null distribution testing using random gene sets matched for size and directionality</li>
-<li>Lollipop plots summarising enrichment scores (NES) with adjusted p-values</li>
-<li>Enrichment plots showing running enrichment scores across ranked gene lists</li>
-<li>Volcano plots</li>
+<li>Violin plots of score distributions by categorical phenotype;</li>
+<li>Scatter plots of association between scores and numerical phenotypes;</li>
+<li>Volcano plots and heatmaps of scores or differential gene set expression based on effect sizes (Cohen’s <em>d</em> or <em>f</em>);</li>
+<li>ROC curves and respective AUC values of gene sets’ phenotypic classification performance;</li>
+<li>Violin plots of effect size distributions (Cohen’s <em>d</em>) for pairwise group differences in scores, for original and simulated gene sets;</li>
+<li>Plots summarising NES alongside adjusted p-values (<em>e.g.</em>, lollipop plots);</li>
+<li>GSEA plots showing running enrichment scores across ranked gene lists.</li>
 </ul>
 <p>In <strong>Discovery Mode</strong>, the output focuses on a single gene set:</p>
 <ul>
-<li>Score distributions by phenotype</li>
-<li>Pairwise contrasts (Cohen’s <em>d</em>) and overall effect sizes (Cohen’s <em>f</em>)</li>
-<li>Enrichment score summaries (NES) with adjusted p-values (e.g., lollipop plots)</li>
+<li>Score distributions stratified by variable;</li>
+<li>Effect sizes for pairwise and multiple-group differences (Cohen’s <em>d</em> and <em>f</em>, respectively);</li>
+<li>Cross-variable summaries of NES and adjusted p-values (<em>e.g.</em>, lollipop plots).</li>
 </ul>
-<p>Benchmarking mode offers the most comprehensive set of features and allows users to seamlessly move from discovery to benchmarking mode once a variable of interest has been identified and further testing is required. The main difference from Discovery mode is that Benchmarking is designed to evaluate multiple gene sets simultaneously, whereas Discovery mode focuses on quantifying a single, robust gene set.</p>
+<p>The Benchmarking Mode offers the most comprehensive set of features. Users are allowed to seamlessly move from Discovery to Benchmarking once a variable of interest has been identified and further testing is required. Benchmarking is designed to evaluate multiple gene sets simultaneously, whereas Discovery focuses on the performance of a single gene set.</p>
 </div>
 <div class="section level3">
 <h3 id="id_5-individual-gene-exploration">5. Individual Gene Exploration<a class="anchor" aria-label="anchor" href="#id_5-individual-gene-exploration"></a>
 </h3>
-<p>To better understand the contribution of individual genes within a gene set and identify whether specific genes drive the overall signal, <code>markeR</code> offers a suite of gene-level exploratory analyses, including:</p>
+<p>To better understand the contribution of individual genes within a gene set, and identify whether specific genes drive the set’s collective signal, <code>markeR</code> provides <code>VisualiseIndividualGenes.</code> Available options include:</p>
 <ul>
-<li>Expression heatmaps of genes across samples and groups</li>
-<li>Violin plots showing expression distributions of individual genes</li>
-<li>Correlation heatmaps to reveal co-expression patterns among genes in the set</li>
-<li>ROC curves and AUC values for individual genes to evaluate their discriminatory power</li>
-<li>Effect size calculations (Cohen’s <em>d</em>) per gene to quantify differential expression</li>
-<li>Principal Component Analysis (PCA) on gene set genes to assess variance explained and sample clustering</li>
+<li>Expression heatmaps of genes across samples or groups of samples;</li>
+<li>Violin plots showing cross-sample expression distributions of individual genes;</li>
+<li>Heatmaps of pairwise cross-sample expression correlation between genes in the set;</li>
+<li>ROC curves and AUC values to evaluate single genes’ performance as phenotypic markers;</li>
+<li>Effect size estimation (Cohen’s <em>d</em>) of expression differences between groups of samples;</li>
+<li>Principal Component Analysis (PCA) of expression of genes in the set, to evaluate which genes dominate collective variance and how samples separate according to the gene set’s expression.</li>
 </ul>
 </div>
 <div class="section level3">
 <h3 id="id_6-compare-with-reference-gene-sets">6. Compare with Reference Gene Sets<a class="anchor" aria-label="anchor" href="#id_6-compare-with-reference-gene-sets"></a>
 </h3>
-<p><code>markeR</code> allows comparison of user-defined gene sets to reference sets (e.g., from MSigDB) using:</p>
+<p><code>markeR</code> also supports comparison of user-defined gene sets against reference collections (e.g., MSigDB). Two complementary similarity metrics are implemented:</p>
 <ul>
-<li><p><strong>Jaccard Index</strong>: Measures gene overlap relative to union size.</p></li>
-<li><p><strong>Log Odds Ratio (logOR)</strong>: Computes enrichment using a user-defined gene universe and Fisher’s exact test.</p></li>
+<li><p><strong>Jaccard Index</strong>: the ratio of the number of genes in common over the total number of genes in the two sets.</p></li>
+<li><p><strong>Log Odds Ratio (logOR)</strong> from Fisher’s exact test of association between gene sets, given a specified gene universe.</p></li>
 </ul>
-<p>Filters can be applied based on similarity thresholds (e.g., minimum Jaccard, OR, or p-value).</p>
+<p>Filters can be applied based on similarity thresholds (e.g., minimum Jaccard, OR, or Fisher’s test p-value).</p>
 </div>
 </div>
 <div class="section level2">
