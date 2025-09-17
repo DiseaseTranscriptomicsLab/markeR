@@ -27,13 +27,13 @@ fig.retina = 1
  
 # Introduction
 
-**markeR** is an R package that provides a modular and extensible framework for the systematic evaluation of gene sets as phenotypic markers using transcriptomic data. The package is designed to support both quantitative analyses and visual exploration of gene set behaviour across experimental and clinical phenotypes.
+**`markeR`** is an R package that provides a modular and extensible framework for the systematic evaluation of gene sets as phenotypic markers using transcriptomic data. The package is designed to support both quantitative analyses and visual exploration of gene set behaviour across experimental and clinical phenotypes.
 
-In this vignette, we demonstrate the core functionalities of markeR using a pre-processed gene expression dataset and associated metadata from Marthandan et al. (2016) (GSE63577). This dataset comprises human fibroblast samples cultured under two experimental conditions: replicative senescence and proliferative control.
+In this vignette, we demonstrate the core functionalities of `markeR` using a pre-processed gene expression dataset and associated metadata from Marthandan et al. (2016) (GSE63577). This dataset comprises human fibroblast samples cultured under two experimental conditions: replicative senescence and proliferative control.
 
 ## Primary Objectives
 
-The primary objectives of **markeR** are to:
+The primary objectives of **`markeR`** are to:
 
 - Establish a reproducible and standardised framework for quantifying gene sets as phenotypic markers across transcriptomic datasets.
 - Provide a unified interface for complementary analytical strategies, including score-based and enrichment-based methods.
@@ -62,7 +62,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 BiocManager::install("markeR")
 ```
 
-Or install the latest development release of markeR from [GitHub](https://github.com/) with:
+Or install the latest development release of `markeR` from [GitHub](https://github.com/) with:
 
 ```r
 devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
@@ -145,7 +145,7 @@ head(metadata_example)
 
 ## Select Mode of Analysis
 
-markeR provides two modes of operation:
+`markeR` provides two modes of operation:
 
 * **Benchmarking**:
 evaluates gene sets' performance in marking a metadata variable, *i.e.*, a phenotype, returning comparative visualisations across scoring and enrichment methods.
@@ -457,7 +457,7 @@ For a complete overview, see `?VisualiseIndividualGenes` and the extended online
  
 ## Compare with Reference Gene Sets  
 
-markeR also supports comparison of user-defined gene sets against reference collections (e.g., MSigDB). Two complementary similarity metrics are implemented:
+`markeR` also supports comparison of user-defined gene sets against reference collections (e.g., MSigDB). Two complementary similarity metrics are implemented:
 
 * **Jaccard Index**:
 the ratio of the number of genes in common over the total number of genes in the two sets.
