@@ -21,7 +21,7 @@ for senescent samples, "young" for proliferative).}
 \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE63577}
 }
 \usage{
-metadata_example
+data(metadata_example)
 }
 \description{
 A data frame containing metadata for samples from the Marthandan et al.

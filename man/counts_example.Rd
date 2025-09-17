@@ -12,11 +12,12 @@ samples (sample IDs).
 \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE63577}
 }
 \usage{
-counts_example
+data(counts_example)
 }
 \description{
-A numeric matrix containing filtered and normalized gene expression data from
-the Marthandan et al. (2016) study (GEO accession GSE63577).
+A numeric matrix containing filtered and normalized (non log-transformed)
+gene expression data from the Marthandan et al. (2016) study (GEO accession
+GSE63577).
 }
 \details{
 Raw FASTQ files were downloaded using \code{fasterq-dump} (v2.11.0) and processed
@@ -25,8 +26,7 @@ conducted using FastQC (v0.12.1) and summarised with MultiQC (v1.14).
 Pseudo-alignment to the RefSeq transcriptome (NCBI release 109) was performed
 using kallisto (v0.44.0). Genes with low expression (mean count < 70 in all
 conditions) were filtered out. Count normalization factors were calculated
-with \code{edgeR::calcNormFactors}, and log2-transformed values were obtained via
-\code{limma::voom}.
+with \code{edgeR::calcNormFactors}.
 
 Intermediate time points for HFF and MRC5 cell lines were excluded, resulting
 in a final dataset with 45 high-quality samples across proliferative,

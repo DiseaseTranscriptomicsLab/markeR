@@ -786,16 +786,16 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
   if (!is.null(title)) title <- wrap_title(title, width = widthTitle)
 
   # Create label for y axis based on method.
-  if (method == "ssGSEA") {
-    ylab <- "ssGSEA Enrichment Score"
-  } else if (method == "logmedian") {
-    ylab <- "Normalised Signature Score"
-  } else if (method == "ranking") {
-    ylab <- "Signature Genes' Ranking"
-  }
+  # if (method == "ssGSEA") {
+  #   ylab <- "ssGSEA Enrichment Score"
+  # } else if (method == "logmedian") {
+  #   ylab <- "Normalised Signature Score"
+  # } else if (method == "ranking") {
+  #   ylab <- "Signature Genes' Ranking"
+  # }
 
   combined_plot <- ggpubr::annotate_figure(combined_plot,
-                                           left = grid::textGrob(ylab,
+                                           left = grid::textGrob(paste0("Gene Set's Score (", method, ")"),
                                                                  rot = 90, vjust = 1,
                                                                  gp = grid::gpar(cex = 1.3,
                                                                                  fontsize = labsize)),
@@ -1093,16 +1093,16 @@ PlotScores_Numeric <- function(data,
   if (!is.null(title)) title <- wrap_title(title, width = widthTitle)
 
   # Create label for y axis based on method.
-  if (method == "ssGSEA") {
-    ylab <- "ssGSEA Enrichment Score"
-  } else if (method == "logmedian") {
-    ylab <- "Normalised Signature Score"
-  } else if (method == "ranking") {
-    ylab <- "Signature Genes' Ranking"
-  }
+  # if (method == "ssGSEA") {
+  #   ylab <- "ssGSEA Enrichment Score"
+  # } else if (method == "logmedian") {
+  #   ylab <- "Normalised Signature Score"
+  # } else if (method == "ranking") {
+  #   ylab <- "Signature Genes' Ranking"
+  # }
 
   combined_plot <- ggpubr::annotate_figure(combined_plot,
-                                           left = grid::textGrob(ylab,
+                                           left = grid::textGrob(paste0("Gene Set's Score (", method, ")"),
                                                                  rot = 90,
                                                                  vjust = 1,
                                                                  gp = grid::gpar(cex = 1.3,
