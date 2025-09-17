@@ -1,6 +1,6 @@
 Package: markeR
 Title: An R Toolkit for Evaluating Gene Signatures as Phenotypic Markers
-Version: 0.99.5
+Version: 0.99.3
 Authors@R: 
     c(
       person("Rita", "Martins-Silva", 
@@ -58,9 +58,7 @@ Suggests:
     rmarkdown, 
     roxygen2,
     mockery,
-    covr,
-    magick,
-    BiocStyle
+    covr
 Config/testthat/edition: 3
 Depends: 
     R (>= 4.5.0)

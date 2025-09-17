@@ -16,6 +16,39 @@ test_that("geneset_similarity returns jaccard 1 for identical sets", {
   expect_equal(sim, 1)
 })
 
+test_that("geneset_similarity pval_threshold filters labels as expected for odds_ratio", {
+  # Fake simple signatures to ensure overlap
+  sig1 <- c("GENE1", "GENE2", "GENE3", "GENE4", "GENE5")
+  sig2 <- c("GENE1", "GENE2", "GENE6", "GENE7", "GENE8")
+  signatures <- list(A = sig1)
+  others <- list(B = sig2)
+  # Large universe to ensure non-perfect overlap
+  universe <- toupper(paste0("GENE", 1:50))
+
+  # Run with a permissive pval_threshold (should label if pval < threshold)
+  res <- geneset_similarity(
+    signatures = signatures,
+    other_user_signatures = others,
+    metric = "odds_ratio",
+    universe = universe,
+    pval_threshold = 1 # allow all p-values
+  )
+  d <- res$data
+  expect_true(any(d$Label != "")) # Some label should be shown
+
+  # Run with a restrictive pval_threshold (should blank out most labels)
+  res2 <- geneset_similarity(
+    signatures = signatures,
+    other_user_signatures = others,
+    metric = "odds_ratio",
+    universe = universe,
+    pval_threshold = 1e-10 # extremely small, almost nothing will label
+  )
+  d2 <- res2$data
+  expect_true(all(d2$Label == "")) # All labels should be blank
+})
+
+
 test_that("geneset_similarity returns expected odds ratio values", {
   # Simple signatures with known overlap
   sig1 <- c("GENE1", "GENE2", "GENE3", "GENE4")
@@ -34,19 +67,19 @@ test_that("geneset_similarity returns expected odds ratio values", {
   cont_tbl <- matrix(c(2, 2, 2, 4), nrow = 2)
   fisher_res <- fisher.test(cont_tbl)
   expected_or <- as.numeric(fisher_res$estimate)
- 
+  expected_log10or <- log10(expected_or)
+
   # Run the function
   res <- geneset_similarity(
     signatures = signatures,
     other_user_signatures = others,
     metric = "odds_ratio",
-    universe = universe,
-    pval_threshold=1
+    universe = universe
   )
   d <- res$data
 
   # Check the actual odds ratio (on log10 scale) is close to expected
-  expect_equal(d$Score, expected_or, tolerance = 1e-6)
+  expect_equal(d$Score, expected_log10or, tolerance = 1e-6)
 })
 
 test_that("geneset_similarity returns expected Jaccard index values with H collection", {
@@ -71,8 +104,7 @@ test_that("geneset_similarity returns expected Jaccard index values with H colle
     signatures = signatures,
     metric = "jaccard",
     collection = "H",
-    msig_subset = "HALLMARK_MYC_TARGETS_V1",
-    pval_threshold=1
+    msig_subset = "HALLMARK_MYC_TARGETS_V1"
   )
   d <- res$data
   # Find the row for this comparison

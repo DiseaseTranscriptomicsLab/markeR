@@ -108,7 +108,7 @@ utils::globalVariables(c( "cohen", "method", "contrast" ))
 #' @export
 #'
 FPR_Simulation <- function(data, metadata, original_signatures, Variable,
-                           gene_list = NULL, number_of_sims=100, title=NULL,
+                           gene_list = NULL, number_of_sims=10, title=NULL,
                            widthTitle = 30, titlesize = 12,  pointSize = 2,
                            labsize = 10,mode = c( "none","simple","medium","extensive"),
                            ColorValues=NULL, ncol=NULL, nrow=NULL) {

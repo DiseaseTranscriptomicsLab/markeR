@@ -10,7 +10,7 @@ FPR_Simulation(
   original_signatures,
   Variable,
   gene_list = NULL,
-  number_of_sims = 100,
+  number_of_sims = 10,
   title = NULL,
   widthTitle = 30,
   titlesize = 12,
