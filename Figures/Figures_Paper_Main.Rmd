@@ -33,9 +33,27 @@ library(purrr)
 library(edgeR)
 library(RColorBrewer)
 library(pROC) 
+#devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
+
 ```
 
 ### Functions
+ 
+Load markeR functions directly
+
+```{r}
+# Path to your folder with functions
+fun_dir <- "functions_Sept18_2025"
+
+# Get all .R files in the folder
+files <- list.files(paste0("../",fun_dir), pattern = "\\.R$", full.names = TRUE)
+
+# Source them one by one
+invisible(lapply(files, source))
+
+```
+
+
 
 ```{r}
 identify_variable_type <- function(df, cols = NULL) {

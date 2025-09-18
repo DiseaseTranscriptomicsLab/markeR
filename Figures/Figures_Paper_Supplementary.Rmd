@@ -1458,15 +1458,15 @@ COMPARTMENTS: https://academic.oup.com/database/article/doi/10.1093/database/bau
 Human Protein Atlas: https://www.proteinatlas.org/about/assays+annotation#ih_reliability
 
 ```{r}
-gene_annotations <- as.data.frame(fread("../../../../data/BioMart_Gene_Characterisation_March2024.txt"))
+gene_annotations <- as.data.frame(fread("../data_aux/BioMart_Gene_Characterisation_March2024.txt"))
 gene_annotations <- subset(gene_annotations, gene_annotations$`Protein stable ID`!="")
 
 
-protein_localisation <- as.data.frame(fread("../../../../data/human_compartment_knowledge_full.tsv"))
+protein_localisation <- as.data.frame(fread("../data_aux/human_compartment_knowledge_full.tsv"))
 protein_localisation <- subset(protein_localisation, V5 == "UniProtKB")
 protein_localisation <- subset(protein_localisation, V6 %in% c("CURATED")) #c("CURATED", "IDA", "TAS", "NAS")  
 
-protein_localisation_HumanAtlas_all <- as.data.frame(fread("../../../../data/HumanAtlas_subcellular_location.tsv"))
+protein_localisation_HumanAtlas_all <- as.data.frame(fread("../data_aux/HumanAtlas_subcellular_location.tsv"))
 protein_localisation_HumanAtlas <- subset(protein_localisation_HumanAtlas_all, Reliability != "Uncertain")
 ```
 
@@ -1697,7 +1697,7 @@ gene_sets <- lapply(signatures_bidirectional, function(x) {
 
 ```{r fig.width=8, fig.height=16}
  
-(plt_logodds <- signature_similarity(
+(plt_logodds <- geneset_similarity(
   signatures = gene_sets,
   other_user_signatures = NULL,
   collection = "H",
@@ -1708,13 +1708,11 @@ gene_sets <- lapply(signatures_bidirectional, function(x) {
   pval_threshold = 0.05,
   limits = NULL,
   title_size = 12,
-  color_values = c("#F9F4AE", "#B44141"),
   title = "",
-  num_sigs_toplot = NULL,
   jaccard_threshold = 0.1,
   msig_subset = NULL,
   width_text = 28
-))
+)$plot)
 ```
  
 
