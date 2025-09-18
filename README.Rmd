@@ -33,16 +33,6 @@ The repository is organized into two main folders: **`preprocessing`** and **`Fi
 
 ---
 
-## Table of Contents
-1. [Data Availability](#data-availability)  
-2. [Alignment](#alignment)  
-3. [Pre-processing](#pre-processing)  
-4. [Generating Figures](#generating-figures)  
-5. [Installation](#installation)  
-6. [References](#references)  
-
----
-
 ## Data Availability
 
 No data has been generated for this manuscript. The senescence compendium was compiled using publicly available RNA-seq datasets accessed under the following accession codes: `E-MTAB-5403, E-MTAB-9714, GSE175533, GSE60340, GSE63577, GSE64553, GSE214410, GSE222400, GSE224070, GSE230181, GSE235768, GSE247831, GSE74324, GSE75643, GSE94928, GSE130727, GSE250224, GSE196724, GSE206677, GSE217718, GSE110268, 200213323, E-MTAB-10969`. This data includes six cell types (fibroblast [n=384], endothelial [n=90], keratinocyte [n=36], melanocyte [n=12], mesenchymal [n=12], and neuronal [n=11]) and three cellular states: senescent (n = 240), proliferative (n = 272), and quiescent (n = 33).

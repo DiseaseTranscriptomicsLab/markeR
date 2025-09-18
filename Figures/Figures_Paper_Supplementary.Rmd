@@ -1824,7 +1824,291 @@ ggplot2::ggsave("Figs/SupFigure2_GeneSets_Function_Localisation_alternative.png"
 ```
 
 
-## Supplementary Figure 3 - Score Distribution on Different Senescence-Inducing Factors
+## Supplementary Figure 3 - Score distribution and correlations
+
+
+
+
+```{r}
+ 
+flat_df_scores <- imap_dfr(scoresList, function(signature_list, method_name) {
+  imap_dfr(signature_list, function(signature_df, signature_name) {
+    signature_df %>%
+      mutate(
+        Method = method_name,
+        Signature = signature_name
+      )
+  })
+})
+
+flat_df_scores
+
+```
+```{r fig.width=16, fig.height=12}
+# Get the unique signatures
+signatures <- unique(flat_df_scores$Signature)
+
+# Create an empty list to store plots
+plot_list <- list()
+
+# Loop over each signature
+for (sig in signatures) {
+  df_sig <- flat_df_scores[flat_df_scores$Signature == sig, ]
+
+  p <- ggplot(df_sig, aes(x = Condition, y = score)) +
+    geom_jitter(size=2, aes(color = CellType), alpha=0.7)+
+    geom_violin(trim = FALSE, alpha=0.6, scale = "width") +  
+    stat_summary(aes(group = CellType, color = CellType),
+                                     fun.y = median, geom = "line", size = 1.5, alpha = 0.75,
+                                     show.legend = FALSE) +
+    stat_summary(fun = median, fun.min = median, fun.max = median,
+                                   geom = "crossbar", width = 0.25,
+                                   position = position_dodge(width = 0.13)) +
+    facet_wrap(~ Method, scales = "free_y") +
+    scale_color_manual(values = CellTypecols_alt) +
+    theme_minimal(base_size = 16) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      strip.text = element_text(face = "bold"),
+      legend.position = "right",
+      plot.title = ggplot2::element_text(hjust = 0.5),
+
+    ) +
+    labs(
+      title = wrap_title(sig, width = 28),
+      x = "",
+      y = "Score",
+      color = ""
+    ) + 
+    guides(color = guide_legend(nrow = 1, override.aes = list(size = 4)))
+
+  plot_list[[sig]] <- p
+}
+
+
+# Arrange all plots in a grid with ggarrange
+plt_scores_2 <- ggarrange(plotlist = plot_list, ncol = 3, nrow=3, common.legend = T, legend = "top", align="h")
+plt_scores_2
+
+```
+
+
+
+```{r}
+(scores_logmedian <- CalculateScores(data = corrcounts, 
+                                     metadata = metadata, 
+                                     method = "logmedian", 
+                                     gene_sets = signatures_bidirectional))
+
+(scores_ssGSEA <- CalculateScores(data = corrcounts, 
+                                     metadata = metadata, 
+                                     method = "ssGSEA", 
+                                     gene_sets = signatures_bidirectional))
+
+(scores_ranking <- CalculateScores(data = corrcounts, 
+                                     metadata = metadata, 
+                                     method = "ranking", 
+                                     gene_sets = signatures_bidirectional))
+
+scoresList <- list(logmedian=scores_logmedian,
+               ssGSEA=scores_ssGSEA,
+               ranking=scores_ranking)
+```
+
+```{r fig.width=8, fig.height=4}
+library(dplyr)
+library(tidyr)
+ 
+ 
+
+df_all <- lapply(names(scoresList$logmedian), function(gene_set) {
+  
+  df_logmedian <- scoresList$logmedian[[gene_set]] %>%
+    select(sample, score, SenescentType) %>%
+    rename(logmedian = score)
+  
+  df_ssGSEA <- scoresList$ssGSEA[[gene_set]] %>%
+    select(sample, score) %>%
+    rename(ssGSEA = score)
+  
+  df_ranking <- scoresList$ranking[[gene_set]] %>%
+    select(sample, score) %>%
+    rename(ranking = score)
+  
+  # merge all three by sampleID
+  df <- df_logmedian %>%
+    inner_join(df_ssGSEA, by = "sample") %>%
+    inner_join(df_ranking, by = "sample") %>%
+    mutate(GeneSet = gene_set)
+  
+  return(df)
+})
+
+df_combined <- bind_rows(df_all)
+
+ 
+library(ggplot2)
+library(ggpubr)
+library(dplyr)
+library(patchwork)
+library(scales)  # Make sure this is loaded
+
+# Create darker colors
+darker_geneSet_colors <- darken(geneSet_colors, amount = 0.3)
+ 
+df_combined$GeneSet <-  vapply(df_combined$GeneSet, FUN = function(x) wrap_title(x,28),"character")
+
+
+# Plot
+p1 <- ggplot(df_combined, aes(x = logmedian, y = ssGSEA)) +
+  geom_point(aes(color = GeneSet), alpha = 0.6) +
+  scale_color_manual(values = geneSet_colors) +
+ guides(color = guide_legend(nrow = 3, override.aes = list(size = 4))) +
+  ggnewscale::new_scale_color() +
+  geom_smooth(aes(color = GeneSet), method = "lm", se = FALSE, show.legend = FALSE) +
+  scale_color_manual(values = darker_geneSet_colors) +
+  theme_classic() +
+  labs(title = "logmedian vs ssGSEA", x = "logmedian score", y = "ssGSEA score") +
+  theme(
+    legend.position = "bottom",
+    legend.background = element_rect(fill = "white"),
+    legend.title = element_blank()
+  ) 
+
+
+p2 <- ggplot(df_combined, aes(x = logmedian, y = ranking)) +
+  geom_point(aes(color = GeneSet), alpha = 0.6) +
+  scale_color_manual(values = geneSet_colors) +
+  guides(color = guide_legend(nrow = 3, override.aes = list(size = 4)))+
+  ggnewscale::new_scale_color() +
+  geom_smooth(aes(color = GeneSet), method = "lm", se = FALSE, show.legend = FALSE) +
+  scale_color_manual(values = darker_geneSet_colors) +
+  theme_classic() +
+  labs(title = "logmedian vs ranking", x = "logmedian score", y = "ranking score") +
+  theme(
+    legend.position = "bottom",
+    legend.background = element_rect(fill = "white"),
+    legend.title = element_blank())
+   
+
+p3 <- ggplot(df_combined, aes(x = ssGSEA, y = ranking)) +
+  geom_point(aes(color = GeneSet), alpha = 0.4, size=2) +
+  scale_color_manual(values = geneSet_colors) +
+  guides(color = guide_legend(nrow = 3, override.aes = list(size = 4))) +
+  ggnewscale::new_scale_color() +
+  geom_smooth(aes(color = GeneSet), method = "lm", se = FALSE, show.legend = FALSE) +
+  scale_color_manual(values = darker_geneSet_colors) +
+  theme_classic() +
+  labs(title = "ssGSEA vs ranking", x = "ssGSEA score", y = "ranking score") +
+  theme(
+    legend.position = "bottom",
+    legend.background = element_rect(fill = "white"),
+    legend.title = element_blank()
+  )  
+
+
+
+
+# Arrange the three plots in a single row with common legend
+(plt_corr_methods <- ggarrange(p1, p2, p3, nrow = 1, common.legend = TRUE, legend = "none"))
+
+
+
+```
+
+```{r fig.width=10, fig.height=5}
+
+library(purrr)
+
+# Compute Spearman correlations for each gene set
+cor_table <- df_combined %>%
+  group_by(GeneSet) %>%
+  summarise(
+    "logmedian vs ssGSEA" = cor.test(logmedian, ssGSEA, method = "spearman") %>%
+      {sprintf("ρ=%.2f, p=%.2g", .$estimate, .$p.value)},
+    "logmedian vs ranking" = cor.test(logmedian, ranking, method = "spearman") %>%
+      {sprintf("ρ=%.2f, p=%.2g", .$estimate, .$p.value)},
+    "ssGSEA vs ranking" = cor.test(ssGSEA, ranking, method = "spearman") %>%
+      {sprintf("ρ=%.2f, p=%.2g", .$estimate, .$p.value)}
+  )
+
+cor_table
+
+
+# Assuming cor_table already exists
+
+# Convert to long format for plotting
+cor_long <- cor_table %>%
+  pivot_longer(
+    cols = -GeneSet,
+    names_to = "Comparison",
+    values_to = "Correlation"
+  )
+
+# Plot
+(plt_table_methods <- ggplot(cor_long, aes(x = Comparison, y = GeneSet)) +
+  geom_tile(fill = "white", color = "black") +  # background rectangles for readability
+  geom_text(aes(label = Correlation), size = 5) +   # display correlation text
+  theme_minimal(base_size = 14) +
+  labs(title = "Spearman Correlations by Gene Set",
+       x = "Comparison",
+       y = "Gene Set") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  ))
+
+
+```
+
+
+```{r fig.width = 6, fig.height=4}
+
+
+ 
+# Create a long-format correlation table
+cor_long <- df_combined %>%
+  group_by(GeneSet) %>%
+  summarise(
+    `logmedian vs ssGSEA` = cor(logmedian, ssGSEA, method = "spearman"),
+    `logmedian vs ranking` = cor(logmedian, ranking, method = "spearman"),
+    `ssGSEA vs ranking` = cor(ssGSEA, ranking, method = "spearman")
+  ) %>%
+  pivot_longer(-GeneSet, names_to = "Comparison", values_to = "SpearmanRho")
+
+
+cor_long$GeneSet <-  vapply(cor_long$GeneSet, FUN = function(x) wrap_title(x,20),"character")
+
+
+# Violin plot
+(plt_violin_methods <- ggplot(cor_long, aes(x = Comparison, y = SpearmanRho)) +
+  geom_jitter(aes(color = GeneSet), width = 0.2, size = 3) +
+  geom_violin(fill = "grey80", color = "grey50", alpha=0.4) +
+  theme_minimal() +
+  labs(x = "Method Comparison", y = "Spearman ρ" ) +
+  theme(
+    legend.position = c(0.5, 0.3),   # inside top-right
+    legend.title = element_blank(),
+    legend.background = element_rect(color = alpha('black', 0.5))  
+  ) +
+  scale_color_manual(values = geneSet_colors, guide = guide_legend(nrow = 3)) +
+  ylim(c(0,1)) )
+
+```
+
+```{r fig.width=16, fig.height=4}
+(plt_scorecorrelations <- ggarrange(plt_corr_methods, plt_violin_methods, nrow=1, widths = c(0.6,0.4)))
+```
+```{r fig.width=16, fig.height=15}
+(supfig3_new <- ggarrange(plt_scores_2, plt_scorecorrelations, ncol=1, heights=c(0.8,0.2), labels = "AUTO",font.label = list(size = 20)))
+```
+```{r}
+ggplot2::ggsave("Figs/SupFigure3_ScoreDistribution_Correlations.png",
+                supfig3_new,
+                width = 16, height=15, bg = 'white')
+```
+
+## Supplementary Figure 4 - Score Distribution on Different Senescence-Inducing Factors
 
 
 
@@ -1940,13 +2224,13 @@ plt_ranking_stressors_2 <-  PlotScores_adapted(data = corrcounts,
 ```
 
 ```{r}
-ggplot2::ggsave("../Figures/Figs/SupFigure3_Scores_SenescenceStressors.png",
+ggplot2::ggsave("../Figures/Figs/SupFigure4_Scores_SenescenceStressors.png",
                 supfigure_3,
                 width = 12, height=20, bg = 'white')
 ```
 
 
-## Supplementary Figure 4 - Cohen's d and AUC for all signatures (scores)
+## Supplementary Figure 5 - Cohen's d and AUC for all signatures (scores)
 
 
 ```{r  fig.width=8, fig.height=8}
@@ -1997,12 +2281,12 @@ plt_auc_heatmap
 ```
 
 ```{r}
-ggplot2::ggsave("../Figures/Figs/SupFigure4_Scores_AUCCohen.png",
+ggplot2::ggsave("../Figures/Figs/SupFigure5_Scores_AUCCohen.png",
                 supfig4,
                 width = 11, height=12, bg = 'white')
 ```
 
-## Supplementary Figure 5 - FPR for all signatures
+## Supplementary Figure 6 - FPR for all signatures
 
  
 ```{r fig.width=12, fig.height=18}
@@ -2028,13 +2312,13 @@ plt_fdrsim_allsignatures_v2
 ```
 
 ```{r}
-ggplot2::ggsave("Figs/SupFigure5_FPRsimulations.png",
+ggplot2::ggsave("Figs/SupFigure6_FPRsimulations.png",
                 plt_fdrsim_allsignatures_v2,
                 width = 12, height=18, bg = 'white')
 ```
 
 
-## Supplementary Figure 6 - SenMayo for GTEx
+## Supplementary Figure 7 - SenMayo for GTEx
  
  
 
@@ -2293,7 +2577,7 @@ plt_scoredistribution_SenMayo_GTEx
  # sup figure?
 
 (supfig6 <-  ggarrange(plt_gtex_scores_SenMayo,plt_scoredistribution_SenMayo_GTEx, heights=c(0.35,0.65), labels = c("A","B"), nrow=2))
-ggplot2::ggsave("../Figures/Figs/SupFigure6_GTEx_SenMayo.png",
+ggplot2::ggsave("../Figures/Figs/SupFigure7_GTEx_SenMayo.png",
                 supfig6,
                 width = 13, height=15, bg = 'white')
 
@@ -2301,7 +2585,7 @@ ggplot2::ggsave("../Figures/Figs/SupFigure6_GTEx_SenMayo.png",
 
 
 
-###SenMayo with and without inflammation genes
+## Supplementary Figure 8 - SenMayo with and without inflammation genes
 
 
 ```{r}

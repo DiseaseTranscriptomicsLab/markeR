@@ -14,33 +14,22 @@ senescence-associated gene sets using the **`markeR`** package.
 The repository is organized into two main folders: **`preprocessing`**
 and **`Figures`**.
 
-- **`preprocessing`**: Contains scripts to download, align,
-  quality-check, filter, normalize, and batch-correct RNA-seq datasets,
-  producing the processed data used for analysis.
-  - `Download_Alignment_QC`: Includes `Metadata.csv`,
-    `pipeline_download_processing.sh`, and `sampleIDs.txt` for
-    retrieving raw datasets from GEO and ArrayExpress and performing
-    alignment and quality control.  
-  - `Filtering_Normalisation_Batch`: Includes
-    `Preprocessing_SenescenceDatasets.Rmd`, which performs
-    low-expression filtering, normalization, and batch effect
-    correction.
-- **`Figures`**: Contains scripts and outputs for generating manuscript
-  figures.
-  - `Figures_Paper_Main.Rmd` and `Figures_Paper_Supplementary.Rmd`
-    contain the figure-generation code.  
-  - `Figs/` stores the resulting `.png` images.
-
-------------------------------------------------------------------------
-
-## Table of Contents
-
-1.  [Data Availability](#data-availability)  
-2.  [Alignment](#alignment)  
-3.  [Pre-processing](#pre-processing)  
-4.  [Generating Figures](#generating-figures)  
-5.  [Installation](#installation)  
-6.  [References](#references)
+-   **`preprocessing`**: Contains scripts to download, align,
+    quality-check, filter, normalize, and batch-correct RNA-seq
+    datasets, producing the processed data used for analysis.
+    -   `Download_Alignment_QC`: Includes `Metadata.csv`,
+        `pipeline_download_processing.sh`, and `sampleIDs.txt` for
+        retrieving raw datasets from GEO and ArrayExpress and performing
+        alignment and quality control.  
+    -   `Filtering_Normalisation_Batch`: Includes
+        `Preprocessing_SenescenceDatasets.Rmd`, which performs
+        low-expression filtering, normalization, and batch effect
+        correction.
+-   **`Figures`**: Contains scripts and outputs for generating
+    manuscript figures.
+    -   `Figures_Paper_Main.Rmd` and `Figures_Paper_Supplementary.Rmd`
+        contain the figure-generation code.  
+    -   `Figs/` stores the resulting `.png` images.
 
 ------------------------------------------------------------------------
 
@@ -89,7 +78,7 @@ RefSeq human transcriptome (NCBI release 109) using `kallisto` v0.44.0.
 ## Pre-processing
 
 Lowly expressed genes were removed by retaining only genes with an
-average of \>70 reads in at least one condition (proliferative,
+average of &gt;70 reads in at least one condition (proliferative,
 quiescent, or senescent). Normalization factors were calculated using
 `calcNormFactors` from **edgeR**, and counts were log2-transformed with
 **voom** from **limma**. Batch effects were corrected using a modified
