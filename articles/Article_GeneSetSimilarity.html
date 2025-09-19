@@ -76,9 +76,9 @@
                         <h4 data-toc-skip class="author">Rita M.
 Silva</h4>
             
-            <h4 data-toc-skip class="date">2025-09-17</h4>
+            <h4 data-toc-skip class="date">2025-09-19</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/DiseaseTranscriptomicsLab/markeR/blob/v0.99.5/vignettes/articles/Article_GeneSetSimilarity.Rmd" class="external-link"><code>vignettes/articles/Article_GeneSetSimilarity.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/DiseaseTranscriptomicsLab/markeR/blob/default/vignettes/articles/Article_GeneSetSimilarity.Rmd" class="external-link"><code>vignettes/articles/Article_GeneSetSimilarity.Rmd</code></a></small>
       <div class="d-none name"><code>Article_GeneSetSimilarity.Rmd</code></div>
     </div>
 
@@ -87,15 +87,19 @@ Silva</h4>
 <p>Even if a user-defined gene signature demonstrates strong
 discriminatory power between conditions, it may reflect known biological
 pathways rather than novel mechanisms. To address this, the
-<code><a href="../reference/geneset_similarity.html">geneset_similarity()</a></code> function computes pairwise
-<strong>Jaccard indices</strong> or <strong>log odds ratios
-(logOR)</strong> between user-provided gene signatures and a reference
-set, quantifying their overlap as a percentage or a statistical
-enrichment.</p>
+<code><a href="../reference/geneset_similarity.html">geneset_similarity()</a></code> function implements two complementary
+similarity metrics:</p>
+<ul>
+<li><p><strong>Jaccard Index</strong>: the ratio of the number of genes
+in common over the total number of genes in the two sets.</p></li>
+<li><p><strong>Log Odds Ratio (logOR)</strong> from Fisher’s exact test
+of association between gene sets, given a specified gene
+universe.</p></li>
+</ul>
 <p>Users can compare their signatures to:</p>
 <ul>
 <li>
-<strong>Custom gene sets</strong>, defined manually, or<br>
+<strong>Custom gene sets</strong>, defined manually;<br>
 </li>
 <li>
 <strong>MSigDB collections</strong>, via the <a href="https://cran.r-project.org/package=msigdbr" class="external-link"><code>msigdbr</code></a>
@@ -104,14 +108,10 @@ package.</li>
 <p>The function provides options to:</p>
 <ul>
 <li>Filter by <strong>Jaccard index threshold</strong>, using
-<code>jaccard_threshold</code><br>
-</li>
+<code>jaccard_threshold</code>;</li>
 <li>Filter by <strong>odds ratio and p-value</strong>, using
-<code>or_threshold</code> and <code>pval_threshold</code><br>
-</li>
-<li>Limit the number of top-matching reference signatures shown, using
-<code>num_sigs_toplot</code>
-</li>
+<code>or_threshold</code> and <code>pval_threshold</code>,
+respectively.</li>
 </ul>
 <div class="section level2">
 <h2 id="similarity-via-jaccard-index">Similarity via Jaccard Index<a class="anchor" aria-label="anchor" href="#similarity-via-jaccard-index"></a>
@@ -182,8 +182,7 @@ Derived from contingency tables using:
 <ul>
 <li>Genes in both sets</li>
 <li>Genes in one but not the other</li>
-<li>Gene universe as background<br>
-Log-transformed odds ratios are visualized.</li>
+<li>Gene universe as background</li>
 </ul>
 </li>
 </ul>
