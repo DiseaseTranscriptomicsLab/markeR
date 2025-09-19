@@ -11,18 +11,22 @@ knitr::opts_chunk$set(
 )
 ```
 
-Even if a user-defined gene signature demonstrates strong discriminatory power between conditions, it may reflect known biological pathways rather than novel mechanisms. To address this, the `geneset_similarity()` function computes pairwise **Jaccard indices** or **log odds ratios (logOR)** between user-provided gene signatures and a reference set, quantifying their overlap as a percentage or a statistical enrichment.
+Even if a user-defined gene signature demonstrates strong discriminatory power between conditions, it may reflect known biological pathways rather than novel mechanisms. To address this, the `geneset_similarity()` function implements two complementary similarity metrics:
 
+* **Jaccard Index**:
+the ratio of the number of genes in common over the total number of genes in the two sets.
+
+* **Log Odds Ratio (logOR)** from Fisher’s exact test of association between gene sets, given a specified gene universe.
+ 
 Users can compare their signatures to:
 
-* **Custom gene sets**, defined manually, or  
+* **Custom gene sets**, defined manually;  
 * **MSigDB collections**, via the [`msigdbr`](https://cran.r-project.org/package=msigdbr) package.
 
 The function provides options to:
 
-* Filter by **Jaccard index threshold**, using `jaccard_threshold`  
-* Filter by **odds ratio and p-value**, using `or_threshold` and `pval_threshold`  
-* Limit the number of top-matching reference signatures shown, using `num_sigs_toplot`  
+* Filter by **Jaccard index threshold**, using `jaccard_threshold`;
+* Filter by **odds ratio and p-value**, using `or_threshold` and `pval_threshold`, respectively.   
 
 # Similarity via Jaccard Index
 
@@ -92,10 +96,8 @@ The log odds ratio (logOR) provides a statistically grounded alternative for ass
   - Genes in both sets
   - Genes in one but not the other
   - Gene universe as background  
-  Log-transformed odds ratios are visualized.
 
 > **Note**: When using `metric = "odds_ratio"`, the `universe` parameter **must** be supplied.
-
 
 
 ## Example 3:  Compare against user-defined and MSigDB gene sets
