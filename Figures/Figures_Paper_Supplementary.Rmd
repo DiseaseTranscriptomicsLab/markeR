@@ -20,6 +20,9 @@ library("scater")
 library("reshape2")
 library("data.table")
 library("edgeR")
+library(ggpubr)
+library(cowplot)
+
 ```
 
 
@@ -1160,7 +1163,8 @@ df_avg_expr <- data.frame(expression = c(avg_expr_quiesc, avg_expr_prol, avg_exp
   ylab("Density") +
   geom_vline(xintercept = log10(70), linetype = "dotted", color = "black", size = 1) +
   scale_fill_manual(values = Condition_colors) +
-  theme(legend.position="bottom", legend.title = element_blank()))
+  theme(legend.position="bottom", legend.title = element_blank())+ theme( legend.text.align = 0, 
+         legend.key.width  = unit(0.8, "cm") ))
  
 # Average expression per gene per condition
 avg_expr_quiesc <- log10(rowMeans(filtered_counts[, metadata$Condition == "Quiescent"] + 1))
@@ -1180,7 +1184,8 @@ df_avg_expr <- data.frame(expression = c(avg_expr_quiesc, avg_expr_prol, avg_exp
   ylab("Density") +
   geom_vline(xintercept = log10(70), linetype = "dotted", color = "black", size = 1) +
   scale_fill_manual(values = Condition_colors) +
-  theme(legend.position="bottom", legend.title = element_blank() ))
+  theme(legend.position="bottom", legend.title = element_blank() )+ theme( legend.text.align = 0, 
+         legend.key.width  = unit(0.8, "cm") ))
 
 ```
 
@@ -1263,7 +1268,8 @@ pc2 = round(100*ev[2]/sum(ev),2)
   geom_vline(xintercept=0, linetype="dotted") + 
   geom_hline(yintercept=0, linetype="dotted") + 
     scale_fill_manual(values = dataset_colors) +
-  theme( legend.title = element_blank())+ guides(fill=guide_legend(ncol=2,byrow=TRUE)))
+  theme( legend.title = element_blank())+ guides(fill=guide_legend(ncol=2,byrow=TRUE))+ theme( legend.text.align = 0, 
+         legend.key.width  = unit(0.8, "cm") ))
 
 (PCA_beforeBEC_Conditon <- ggplot(PCAData_beforeBC, aes(PC1,PC2))+
   geom_point(aes(fill=Condition), size=5, alpha=0.6, shape=21)+ 
@@ -1274,7 +1280,8 @@ pc2 = round(100*ev[2]/sum(ev),2)
   geom_vline(xintercept=0, linetype="dotted") + 
   geom_hline(yintercept=0, linetype="dotted") + 
     scale_fill_manual(values = Condition_colors) +
-  theme( legend.title = element_blank()))
+  theme( legend.title = element_blank())+ theme( legend.text.align = 0, 
+         legend.key.width  = unit(0.8, "cm") ))
 
 (PCA_beforeBEC_CellType <- ggplot(PCAData_beforeBC, aes(PC1,PC2))+
   geom_point(aes(fill=CellType), size=5, alpha=0.6, shape=21)+ 
@@ -1285,8 +1292,14 @@ pc2 = round(100*ev[2]/sum(ev),2)
   geom_vline(xintercept=0, linetype="dotted") + 
   geom_hline(yintercept=0, linetype="dotted") + 
     scale_fill_manual(values = CellTypecols_alt) +
-  theme( legend.title = element_blank()))
+  theme( legend.title = element_blank())+
+      theme(
+    legend.text.align = 0,                   # left-align text 
+    legend.key.width  = unit(0.8, "cm")      # keep box size compact
+  ))
  
+
+
  
 ```
 
@@ -1316,7 +1329,8 @@ pc2 = round(100*ev[2]/sum(ev),2)
   geom_vline(xintercept=0, linetype="dotted") + 
   geom_hline(yintercept=0, linetype="dotted") + 
     scale_fill_manual(values = dataset_colors) +
-  theme( legend.title = element_blank())+ guides(fill=guide_legend(ncol=3,byrow=TRUE)))
+  theme( legend.title = element_blank())+ guides(fill=guide_legend(ncol=3,byrow=TRUE))+ theme( legend.text.align = 0, 
+         legend.key.width  = unit(0.8, "cm") ))
 
 (PCA_afterBEC_Conditon <- ggplot(PCAData_afterBC, aes(PC1,PC2))+
   geom_point(aes(fill=Condition), size=5, alpha=0.6, shape=21)+ 
@@ -1327,7 +1341,8 @@ pc2 = round(100*ev[2]/sum(ev),2)
   geom_vline(xintercept=0, linetype="dotted") + 
   geom_hline(yintercept=0, linetype="dotted") + 
     scale_fill_manual(values = Condition_colors) +
-  theme( legend.title = element_blank()))
+  theme( legend.title = element_blank())+ theme( legend.text.align = 0, 
+         legend.key.width  = unit(0.8, "cm") ))
 
 (PCA_afterBEC_CellType <- ggplot(PCAData_afterBC, aes(PC1,PC2))+
   geom_point(aes(fill=CellType), size=5, alpha=0.6, shape=21)+ 
@@ -1338,7 +1353,8 @@ pc2 = round(100*ev[2]/sum(ev),2)
   geom_vline(xintercept=0, linetype="dotted") + 
   geom_hline(yintercept=0, linetype="dotted") + 
     scale_fill_manual(values = CellTypecols_alt) +
-  theme( legend.title = element_blank()))
+  theme( legend.title = element_blank())+ theme( legend.text.align = 0, 
+         legend.key.width  = unit(0.8, "cm") ))
  
  
 ```
@@ -1407,34 +1423,121 @@ vars <- c("DatasetID","Condition","CellType")
 
 
 
-```{r fig.width=16, fig.height=16}
+<!-- ```{r fig.width=16, fig.height=16} -->
+<!-- # filtering -->
+<!-- (panelA <- ggarrange(plt_beforefilt,plt_afterfilt, ncol=1, common.legend = T, legend="bottom")) -->
+<!-- # normalisation -->
+<!-- (panelB <- ggarrange(plt_beforenorm,plt_afternorm,ncol=1, common.legend = T, legend="bottom")) -->
+<!-- (panelAB <- ggarrange(panelA,panelB,nrow=1, widths=c(0.3,0.7), labels = c("A","B"), -->
+<!--                       font.label = list(size = 18, face = "bold"))) -->
+<!-- # before BEC -->
+<!-- (panelC_left <- ggarrange(PCA_beforeBEC_Dataset+ -->
+<!--   theme(plot.margin = margin(t = 5, r = 5, b = 5, l = 30)),PCA_beforeBEC_Conditon, ncol = 1, heights=c(0.7,0.3) )) -->
+<!-- (panelC_right <- ggarrange(PCA_beforeBEC_CellType,var_beforeBEC, ncol=1, heights=c(0.45,0.55) )) -->
+<!-- (panelC <- ggarrange(panelC_left,panelC_right, ncol=2  )) -->
+
+<!-- # after BEC -->
+<!-- (panelD_bottom <- ggarrange(PCA_afterBEC_Dataset,var_afterBEC, nrow=1, widths=c(0.6,0.4))) -->
+<!-- (panelD <- ggarrange(plt_afterBEC,panelD_bottom,ncol=1, heights = c(0.4,0.6))) -->
+<!-- (panelCD <- ggarrange( -->
+<!--   panelC, panelD, -->
+<!--   labels = c("C", "D"), -->
+<!--   font.label = list(size = 18, face = "bold") -->
+<!-- ))   -->
+<!-- (plt_sup1 <- ggarrange(panelAB,panelCD, ncol=1, heights=c(0.45,0.65))) -->
+<!-- ``` -->
+
+
+Bigger spacing and labels for each panel
+ 
+
+```{r fig.width=18, fig.height=18}
+ 
+
+## Define a blank spacer
+spacer <- ggplot() + theme_void()
+
 # filtering
-(panelA <- ggarrange(plt_beforefilt,plt_afterfilt, ncol=1, common.legend = T, legend="bottom"))
+panelA <- ggarrange(
+  plt_beforefilt, spacer, plt_afterfilt,
+  ncol = 1, heights = c(1, 0.02, 1),
+  common.legend = TRUE, legend = "bottom"
+)
+
 # normalisation
-(panelB <- ggarrange(plt_beforenorm,plt_afternorm,ncol=1, common.legend = T, legend="bottom"))
-(panelAB <- ggarrange(panelA,panelB,nrow=1, widths=c(0.3,0.7), labels = c("A","B"),
-                      font.label = list(size = 18, face = "bold")))
+panelB <- ggarrange(
+  plt_beforenorm, spacer, plt_afternorm,
+  ncol = 1, heights = c(1, 0.02, 1),
+  common.legend = TRUE, legend = "bottom"
+)
+
+panelAB <- ggarrange(
+  panelA, spacer, panelB,
+  nrow = 1, widths = c(0.3, 0.02, 0.7),
+  labels = c("A", "", "B"),
+  font.label = list(size = 24, face = "bold"),
+  label.x = -0.03,
+  label.y = 1.05
+)
+
 # before BEC
-(panelC_left <- ggarrange(PCA_beforeBEC_Dataset+
-  theme(plot.margin = margin(t = 5, r = 5, b = 5, l = 30)),PCA_beforeBEC_Conditon, ncol = 1, heights=c(0.7,0.3) ))
-(panelC_right <- ggarrange(PCA_beforeBEC_CellType,var_beforeBEC, ncol=1, heights=c(0.45,0.55) ))
-(panelC <- ggarrange(panelC_left,panelC_right, ncol=2  ))
+panelC_left <- ggarrange(
+  PCA_beforeBEC_Dataset + theme(plot.margin = margin(t = 20, r = 5, b = 5, l = 40)),
+  spacer,
+  PCA_beforeBEC_Conditon,
+  ncol = 1, heights = c(0.7, 0.02, 0.3)
+)
+
+panelC_right <- ggarrange(
+  PCA_beforeBEC_CellType, spacer, var_beforeBEC,
+  ncol = 1, heights = c(0.45, 0.02, 0.55)
+)
+
+panelC <- ggarrange(
+  panelC_left, spacer, panelC_right,
+  ncol = 3, widths = c(1, 0.02, 1)
+)
 
 # after BEC
-(panelD_bottom <- ggarrange(PCA_afterBEC_Dataset,var_afterBEC, nrow=1, widths=c(0.6,0.4)))
-(panelD <- ggarrange(plt_afterBEC,panelD_bottom,ncol=1, heights = c(0.4,0.6)))
-(panelCD <- ggarrange(
-  panelC, panelD,
-  labels = c("C", "D"),
-  font.label = list(size = 18, face = "bold")
-))  
-(plt_sup1 <- ggarrange(panelAB,panelCD, ncol=1, heights=c(0.45,0.65)))
+panelD_bottom <- ggarrange(
+  PCA_afterBEC_Dataset, spacer, var_afterBEC,
+  nrow = 1, widths = c(0.6, 0.02, 0.4)
+)
+
+panelD <- ggarrange(
+  plt_afterBEC, spacer, panelD_bottom,
+  ncol = 1, heights = c(0.4, 0.02, 0.6)
+)
+
+panelCD <- ggarrange(
+  panelC, spacer, panelD,
+  ncol = 3, widths = c(1, 0.02, 1),
+  labels = c("C", "", "D"),
+  font.label = list(size = 24, face = "bold"),
+  label.x = -0.03,
+  label.y = 1.05
+)  
+
+plt_sup1 <- ggarrange(
+  panelAB, spacer, panelCD,
+  ncol = 1, heights = c(0.45, 0.02, 0.65)
+)
+
+# Add extra margins so labels A and C don’t get cropped
+plt_sup1 <- annotate_figure(
+  plt_sup1,
+  fig.lab = NULL,
+  fig.lab.face = "bold",
+  fig.lab.size = 24
+) + theme(plot.margin = margin(t = 20, r = 20, b = 20, l = 40))
+
+plt_sup1
 ```
 
 ```{r}
 ggplot2::ggsave("../Figures/Figs/Sup1_Preprocessing.png",
                 plt_sup1,
-                width = 19, height=16, bg = 'white')
+                width = 20, height=18, bg = 'white')
 ```
 
 

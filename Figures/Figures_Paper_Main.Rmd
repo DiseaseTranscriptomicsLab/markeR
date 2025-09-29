@@ -1438,7 +1438,7 @@ for (name in names(signatures_bidirectional)) {
   
   summary_list[[name]] <- data.frame(
     signature_plt = name,
-    enrichment = c("Enriched", "Depleted", "Unknown"),
+    enrichment = c("Upregulated", "Downregulated", "Unknown"),
     count = c(up_count, down_count, no_direction),
     stringsAsFactors = FALSE
   )
@@ -1456,6 +1456,7 @@ summary_df$signature_plt <- factor(summary_df$signature_plt, levels = order_sign
 # Step 1: Compute total gene count per signature using base R
 totals_df <- aggregate(count ~ signature_plt, data = summary_df, sum)
 
+ 
 # Step 2: Plot with ggplot2
 plt_nb_genes2 <- ggplot(summary_df, aes(x = count, y = signature_plt, fill = enrichment)) +
   geom_col() +
@@ -1468,10 +1469,11 @@ plt_nb_genes2 <- ggplot(summary_df, aes(x = count, y = signature_plt, fill = enr
   theme_classic() +
   theme(legend.position = "top") +
   scale_fill_manual(values = c(
-    "Enriched" = "#1BAA7A",
-    "Depleted" = "#C83C3C",
+    "Upregulated" = "#1BAA7A",
+    "Downregulated" = "#C83C3C",
     "Unknown" = "#C9C9C9"
-  )) +
+  ), 
+    breaks = c("Upregulated", "Downregulated", "Unknown") ) +
   #labs(fill = "") +
   scale_x_break(c(600, 1100), space = 0.2, expand = c(0, 0), ticklabels = c(1200, 1500)) +
   scale_x_continuous(
@@ -1544,7 +1546,7 @@ plt_heatmap <- ggplot(heatmap_data, aes(x = dataset_j, y = dataset_i, fill = per
   geom_tile(data = subset(heatmap_data, dataset_i == dataset_j), fill = "#F1F1F1", color = "black") +
   geom_text(data = subset(heatmap_data, dataset_i != dataset_j),
             aes(label = paste0(sprintf("%.1f", percentage), "%\n(", nb_common_genes, ")")), size = 3) +
-  scale_fill_gradient(low = "white", high = "#699B91", name = "Overlap (%)", na.value = "#F1F1F1") +
+  scale_fill_gradient(low = "white", high = "#699B91", name = "Gene Overlap (%)   ", na.value = "#F1F1F1") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1)) +
   xlab("") + ylab("")
@@ -1805,7 +1807,7 @@ pca_PC12_divided
 ```{r fig.width=12, fig.height=7}
 plt_genesets2 <- ggarrange( plt_heatmap + theme(legend.position = "top"),
                             plt_nb_genes2 + theme(legend.position = "top",axis.text.y=element_blank())  +scale_x_continuous(position = "top", limits = c(0,1650)) , nrow=1, align = "h",
-                            widths=c(0.7,0.3))
+                            widths=c(0.65,0.35))
 plt_genesets2
 ```
 
