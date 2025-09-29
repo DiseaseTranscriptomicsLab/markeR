@@ -312,7 +312,7 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
       
       # Customize the plot appearance.
       p <- p + ggplot2::theme_classic() +
-        ggplot2::labs(title = wrapped_title, color = "", x = "", y = "") +
+        ggplot2::labs(title = wrapped_title, color = "Cell Type", x = "", y = "") +
         ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = labsize - .5),
                        axis.text.y = ggplot2::element_text(  size = labsize - .5),
                        plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize-1),
@@ -494,7 +494,7 @@ PlotScores_Categorical_adapted <- function(data, metadata, gene_sets,
                      axis.text.y = ggplot2::element_text(  size = labsize),
                      plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize-1),
                      plot.subtitle = ggplot2::element_text(hjust = 0.5, size = titlesize - 1.5, face = "italic")) +
-      ggplot2::labs(title = wrapped_title, subtitle = subtitle, color = "", x = "", y = "")
+      ggplot2::labs(title = wrapped_title, subtitle = subtitle, color = "Cell Type", x = "", y = "")
     
     # If ColorValues is provided, use a manual color scale; otherwise, if ColorVariable is provided,
     # use a default brewer palette.
@@ -911,7 +911,7 @@ PlotScores_Categorical_adapted_noX <- function(data, metadata, gene_sets,
       
       # Customize the plot appearance.
       p <- p + ggplot2::theme_classic() +
-        ggplot2::labs(title = wrapped_title, color = "", x = "", y = "") +
+        ggplot2::labs(title = wrapped_title, color = "Cell Type", x = "", y = "") +
         ggplot2::theme(axis.text.x = ggplot2::element_blank(),
                        axis.text.y = ggplot2::element_text(  size = labsize - .5),
                        plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize-1),
@@ -1094,7 +1094,7 @@ PlotScores_Categorical_adapted_noX <- function(data, metadata, gene_sets,
                      axis.text.y = ggplot2::element_text(  size = labsize),
                      plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize-1),
                      plot.subtitle = ggplot2::element_text(hjust = 0.5, size = titlesize - 1.5, face = "italic")) +
-      ggplot2::labs(title = wrapped_title, subtitle = subtitle, color = "", x = "", y = "")  
+      ggplot2::labs(title = wrapped_title, subtitle = subtitle, color = "Cell Type", x = "", y = "")  
     
     # If ColorValues is provided, use a manual color scale; otherwise, if ColorVariable is provided,
     # use a default brewer palette.
@@ -2442,11 +2442,19 @@ plt_ranking_simpler2 <-  PlotScores_adapted(data = corrcounts,
            legend_nrow = 1, 
            compute_cohen=F,
            pointSize=2,
-           titlesize=10, xlab = " ")
+           titlesize=10, xlab = "Cellular State")
 
-(plt_ranking_simpler <- ggarrange(plt_ranking_simpler1,plt_ranking_simpler2, ncol=1, heights=c(0.6,0.4 )))
-(plt_ranking_simpler <- ggpubr::annotate_figure(plt_ranking_simpler, left = grid::textGrob("Gene Set's Score (logmedian)",
-                                                                 rot = 90, vjust = 1, gp = grid::gpar(cex = 1.3, fontsize = 10))))
+plt_ranking_simpler <- ggarrange(plt_ranking_simpler1,plt_ranking_simpler2, ncol=1, heights=c(0.6,0.4 ))
+(plt_ranking_simpler <- ggpubr::annotate_figure(
+  plt_ranking_simpler,
+  left = grid::textGrob(
+    expression(log[2]~"- median score"),  # log₂-median score
+    rot = 90,
+    vjust = 1,
+    gp = grid::gpar(cex = 1.3, fontsize = 10)
+  ) 
+))
+
  
 
 ```
@@ -2474,13 +2482,13 @@ p1 <- ggplot(cellage_bidirect, aes(x = Condition, y = score, color = Condition))
   geom_violin(alpha = 0.5) +
   stat_summary(fun = median, geom = "crossbar", width = 0.3, color = "black", size = 0.7) +
   scale_color_manual(values = Condition_colors) +
-  theme_minimal() +
+  theme_bw() +
   theme(
     plot.title = element_text(hjust = 0.5),
     legend.position = "none"
   ) +
   xlab("") +
-  ylab("Gene Set's Score (logmedian)") +
+  ylab(expression(log[2]~"- median score")) +
   ggtitle("With Specified Direction")
 
 p2 <- ggplot(cellage_nodir, aes(x = Condition, y = score, color = Condition)) + 
@@ -2488,13 +2496,13 @@ p2 <- ggplot(cellage_nodir, aes(x = Condition, y = score, color = Condition)) +
   geom_violin(alpha = 0.5) +
   stat_summary(fun = median, geom = "crossbar", width = 0.3, color = "black", size = 0.7) +
   scale_color_manual(values = Condition_colors) +
-  theme_minimal() +
+  theme_bw() +
   theme(
     plot.title = element_text(hjust = 0.5),
     legend.position = "none"
   ) +
   xlab("") +
-  ylab("Gene Set's Score (logmedian)") +
+  ylab(expression(log[2]~"- median score")) +
   ggtitle("Without Specified Direction")
 
 # Combine plots side-by-side without legend
@@ -2508,6 +2516,23 @@ print(combined_plot_cellagescores)
 ```{r fig.width=5, fig.height=4}
 # Make sure Condition is a factor with two levels
 # Assuming "Control" and "Case" or similar
+
+ 
+cellage_bidirect <- CalculateScores(data = corrcounts, 
+                                     metadata = metadata, 
+                                     method = "logmedian", 
+                                    gene_sets = list(CellAge=signatures_bidirectional$CellAge))
+(cellage_bidirect$CellAge <- subset(cellage_bidirect$CellAge, Condition!="Quiescent" ))
+cellage_bidirect <- cellage_bidirect$CellAge 
+
+cellage_nodir <- CalculateScores(data = corrcounts, 
+                                     metadata = metadata, 
+                                     method = "logmedian", 
+                                     gene_sets = list(CellAge_nodir=signatures_nodir$CellAge))
+(cellage_nodir$CellAge_nodir <- subset(cellage_nodir$CellAge_nodir, Condition!="Quiescent" ))
+cellage_nodir <- cellage_nodir$CellAge_nodir
+
+
 
 cellage_bidirect <- cellage_bidirect %>%
   mutate(Condition_binary = ifelse(Condition == "Senescent", 1, 0))
@@ -2571,6 +2596,118 @@ roccurve_cellagescores <- ggplot(roc_df, aes(x = 1 - specificity, y = sensitivit
 print(roccurve_cellagescores)
 
 ```
+
+
+```{r} 
+ 
+
+# Compute scores
+cellage_bidirect <- CalculateScores(
+  data = corrcounts, 
+  metadata = metadata, 
+  method = "logmedian", 
+  gene_sets = list(CellAge = signatures_bidirectional$CellAge)
+)
+cellage_bidirect <- subset(cellage_bidirect$CellAge, Condition != "Quiescent")
+
+cellage_nodir <- CalculateScores(
+  data = corrcounts, 
+  metadata = metadata, 
+  method = "logmedian", 
+  gene_sets = list(CellAge_nodir = signatures_nodir$CellAge)
+)
+cellage_nodir <- subset(cellage_nodir$CellAge_nodir, Condition != "Quiescent")
+
+# Create binary variable
+cellage_bidirect <- cellage_bidirect %>%
+  mutate(Condition_binary = ifelse(Condition == "Senescent", 1, 0))
+
+cellage_nodir <- cellage_nodir %>%
+  mutate(Condition_binary = ifelse(Condition == "Senescent", 1, 0))
+
+# Compute ROC curves with explicit positive class and direction
+roc_bidirect <- roc(
+  response = cellage_bidirect$Condition_binary,
+  predictor = cellage_bidirect$score,
+  levels = c(0, 1),      # 0 = Control, 1 = Senescent
+  direction = "<"
+)
+
+roc_nodir <- roc(
+  response = cellage_nodir$Condition_binary,
+  predictor = cellage_nodir$score,
+  levels = c(0, 1),
+  direction = "<"
+)
+
+# Prepare data frames for plotting
+roc_bidirect_df <- data.frame(
+  FPR = 1 - roc_bidirect$specificities,
+  TPR = roc_bidirect$sensitivities,
+  group = "With Direction",
+  auc = as.numeric(auc(roc_bidirect))
+)
+
+roc_nodir_df <- data.frame(
+  FPR = 1 - roc_nodir$specificities,
+  TPR = roc_nodir$sensitivities,
+  group = "Without Direction",
+  auc = as.numeric(auc(roc_nodir))
+)
+
+# Flipped dashed line for "Without Direction"
+roc_nodir_flipped_df <- roc_nodir_df %>%
+  mutate(
+    FPR = 1 - FPR,
+    TPR = 1 - TPR
+  )
+
+# Colors
+colors <- c("With Direction" = "gray30", "Without Direction" = "gray70")
+
+# Extract numeric AUCs
+auc_bidirect_num <- as.numeric(auc(roc_bidirect))
+auc_nodir_num <- as.numeric(auc(roc_nodir))
+
+# Plot ROC curves
+roccurve_cellagescores <- ggplot() +
+geom_segment(aes(x = 0, y = 0, xend = 1, yend = 1), 
+             linetype = "dashed", color = "black")+
+  # With Direction
+  geom_line(data = roc_bidirect_df, aes(x = FPR, y = TPR), color = colors["With Direction"], size = 1.2) +
+  # Without Direction: actual ROC
+  geom_line(data = roc_nodir_df, aes(x = FPR, y = TPR), color = colors["Without Direction"], size = 1.2) +
+  # Without Direction: flipped dashed line
+  geom_line(data = roc_nodir_flipped_df, aes(x = FPR, y = TPR), color = colors["Without Direction"], size = 1.2, linetype = "dotted") +
+  # Diagonal
+  theme_bw() +
+  labs(
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)"
+  ) +
+  theme(legend.position = "none") +
+  annotate(
+    "text", x = 0.54, y = 0.08,
+    label = sprintf("AUC = %.3f", auc_bidirect_num),
+    color = colors["With Direction"],
+    hjust = 0,
+    size = 4
+  ) +
+  annotate(
+    "text", x = 0.54, y = 0.01,
+    label = sprintf("AUC = %.3f", auc_nodir_num),
+    color = colors["Without Direction"],
+    hjust = 0,
+    size = 4
+  )+
+  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1))
+
+print(roccurve_cellagescores)
+
+
+```
+
+
 ```{r fig.width=3, fig.height=9}
 (plt_cellagedirnodir <- ggarrange(combined_plot_cellagescores, roccurve_cellagescores, ncol=1, heights=c(0.65,0.35)))
 ```
