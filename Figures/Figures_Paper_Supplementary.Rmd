@@ -1208,7 +1208,7 @@ filtcounts_ggplot <- merge(filtcounts_ggplot,metadata, by="sampleID")
 (plt_beforenorm <- ggplot(filtcounts_ggplot, aes(sampleID,expression)) + 
     geom_boxplot(aes(fill=DatasetID))+ 
     xlab("Samples") + 
-    ylab("Gene Expression \n(log2(CPM))")    +  
+    ylab("Gene Expression \n(log2(counts))")    +  
     theme(axis.text.x = element_text(angle = 45, hjust=1))+
   theme_bw(base_size = 14)+ 
   theme(plot.title = element_text(hjust = 0.5),
@@ -1400,7 +1400,12 @@ vars <- c("DatasetID","Condition","CellType")
   scale_fill_manual(values = c("#F4C430", "#E07A5F", "#3D84A8") )+
     guides(fill = guide_legend(title = "Variable"))+
     ylim(c(0,100)) + 
-    theme(legend.position = "none"))
+    theme(legend.position = "none")+
+  scale_x_discrete(labels = c(
+    "DatasetID" = "Dataset ID",
+    "CellType"  = "Cell Type",
+    "Condition" = "Cellular State"
+  )))
 
 
 (var_afterBEC <- ggplot(df_variance_corrcounts, aes(x = reorder(Variable, -VarianceExplained), y = VarianceExplained, fill = Variable)) +
@@ -1414,7 +1419,12 @@ vars <- c("DatasetID","Condition","CellType")
     scale_fill_manual(values = c("#F4C430", "#E07A5F", "#3D84A8")) +
     guides(fill = guide_legend(title = "Variable"))+
     ylim(c(0,100))+ 
-    theme(legend.position = "none"))
+    theme(legend.position = "none")+
+  scale_x_discrete(labels = c(
+    "DatasetID" = "Dataset ID",
+    "CellType"  = "Cell Type",
+    "Condition" = "Cellular State"
+  )))
 
 
 
@@ -1480,23 +1490,61 @@ panelAB <- ggarrange(
   label.y = 1.05
 )
 
-# before BEC
-panelC_left <- ggarrange(
-  PCA_beforeBEC_Dataset + theme(plot.margin = margin(t = 20, r = 5, b = 5, l = 40)),
-  spacer,
-  PCA_beforeBEC_Conditon,
-  ncol = 1, heights = c(0.7, 0.02, 0.3)
+# # before BEC
+# panelC_left <- ggarrange(
+#   PCA_beforeBEC_Dataset + theme(plot.margin = margin(t = 20, r = 5, b = 5, l = 40)),
+#   spacer,
+#   PCA_beforeBEC_Conditon,
+#   ncol = 1, heights = c(0.7, 0.02, 0.3)
+# )
+# 
+# panelC_right <- ggarrange(
+#   PCA_beforeBEC_CellType, spacer, var_beforeBEC,
+#   ncol = 1, heights = c(0.45, 0.02, 0.55)
+# )
+# 
+# panelC <- ggarrange(
+#   panelC_left, spacer, panelC_right,
+#   ncol = 3, widths = c(1, 0.02, 1)
+# )
+
+# Extract legend
+legend_big <- cowplot::get_legend(
+  PCA_beforeBEC_Dataset + theme(legend.position = "right")
 )
 
-panelC_right <- ggarrange(
-  PCA_beforeBEC_CellType, spacer, var_beforeBEC,
-  ncol = 1, heights = c(0.45, 0.02, 0.55)
+# Remove legend from plot
+PCA_big_noleg <- PCA_beforeBEC_Dataset + theme(legend.position = "none")
+
+# Top row: PCA (left) + legend (right)
+panelC_top <- ggarrange(
+  PCA_big_noleg,
+  as_ggplot(legend_big),
+  ncol = 2,
+  widths = c(0.5, 0.5) # adjust as needed
 )
 
+# Bottom row: stacked PCAs (left) + barplot (right)
+panelC_bottom <- ggarrange(
+  ggarrange(
+    PCA_beforeBEC_Conditon,
+    PCA_beforeBEC_CellType,
+    ncol = 1,
+    heights = c(0.48, 0.52)
+  ),
+  var_beforeBEC,
+  ncol = 2,
+  widths = c(1, 1)
+)
+
+# Combine top + bottom
 panelC <- ggarrange(
-  panelC_left, spacer, panelC_right,
-  ncol = 3, widths = c(1, 0.02, 1)
+  panelC_top,
+  panelC_bottom,
+  ncol = 1,
+  heights = c(0.3, 0.7) # equal height for top and bottom rows
 )
+
 
 # after BEC
 panelD_bottom <- ggarrange(
@@ -1511,7 +1559,7 @@ panelD <- ggarrange(
 
 panelCD <- ggarrange(
   panelC, spacer, panelD,
-  ncol = 3, widths = c(1, 0.02, 1),
+  ncol = 3, widths = c(1, 0.02, 1.1),
   labels = c("C", "", "D"),
   font.label = list(size = 24, face = "bold"),
   label.x = -0.03,
