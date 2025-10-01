@@ -2941,7 +2941,7 @@ ggplot2::ggsave("../Figures/Figs/Figure4_Enrichment_alternative.png",
 
 ## Figure 5 - Comparative Performance of Senescence Signatures
 
-```{r fig.width=12, fig.height=4}
+```{r fig.width=10, fig.height=4}
 
 degenes_SP <- degenes$`Senescent-Proliferative`
 degenes_SP$gene <- row.names(degenes_SP)
@@ -3033,8 +3033,19 @@ plt_scatter_REACTOME <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) +
                                                 compute_cohen=F,
                                                 pointSize=2,
                                                 titlesize=12,
+                                                xlab = "Cellular State",
                                                 cond_cohend = list(A="Senescent",B="Quiescent"),
                                                 pvalcalc = F, ColorValues = "pink"))
+
+(plot_logmedian_SeneQuest <- ggpubr::annotate_figure(
+  plot_logmedian_SeneQuest,
+  left = grid::textGrob(
+    expression(log[2]~"- median score"),  # log₂-median score
+    rot = 90,
+    vjust = 1,
+    gp = grid::gpar(cex = 1.3, fontsize = 10)
+  ) 
+))
 
 ```
 
@@ -3071,8 +3082,19 @@ plt_scatter_REACTOME <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) +
                                                 compute_cohen=F,
                                                 pointSize=2,
                                                 titlesize=12,
+                                                xlab = "Cellular State",
                                                 cond_cohend = list(A="Senescent",B="Quiescent"),
                                                 pvalcalc = F, ColorValues = "pink"))
+
+(plot_logmedian_HernandezSegura <- ggpubr::annotate_figure(
+  plot_logmedian_HernandezSegura,
+  left = grid::textGrob(
+    expression(log[2]~"- median score"),  # log₂-median score
+    rot = 90,
+    vjust = 1,
+    gp = grid::gpar(cex = 1.3, fontsize = 10)
+  ) 
+))
 
 ```
 
@@ -3179,7 +3201,9 @@ df_signatures$Quality <- ifelse(
     ) +
     coord_fixed() +
     theme_classic(base_size = 12) +
-    theme(legend.position = "top"))
+    theme(legend.position = "top")+
+    xlim(c(-4,4))+
+    ylim(c(-4,4)))
 
 ```
 
@@ -3204,7 +3228,7 @@ df_signatures$Quality <- ifelse(
 #                                                          SeneQuest=signatures_bidirectional$SeneQuest
 #                               ),
 #                               gene_list = row.names(corrcounts),
-#                               number_of_sims = 5,
+#                               number_of_sims = 100,
 #                               widthTitle = 30,
 #                               Variable = "Condition",
 #                               titlesize = 12,
@@ -3215,8 +3239,123 @@ df_signatures$Quality <- ifelse(
 #                               ncol=NULL,
 #                               nrow=1 )
 
-plt_fdrsim_subset_v2 <- readRDS("../data/plt_fdrsim_subset_v2.rds")
-plt_fdrsim_subset_v2
+# plt_fdrsim_subset_v2 <- readRDS("../data_aux/plt_fdrsim_subset_v2.rds")
+# plt_fdrsim_subset_v2
+
+plt_fdrsim_subset_v3 <- readRDS("../data_aux/FPRsim_100_data_and_plot_Sept30_2025_allsigs.rds")
+plt_fdrsim_subset_v3
+
+df <- data.frame(NULL)
+for (sig in names(plt_fdrsim_subset_v3$data)){
+  if (!sig %in% c("CellAge","HernandezSegura","SAUL_SEN_MAYO","SeneQuest")) next
+  df_sig <- plt_fdrsim_subset_v3$data[[sig]]
+  df_sig$originalsig <- sig
+  df <- rbind(df,df_sig)
+  
+}
+
+df <- subset(df, contrast == "Quiescent - Senescent")
+
+df
+
+
+```
+```{r fig.width=12, fig.height=3}
+library(ggplot2)
+library(dplyr)
+library(ggpubr)
+
+# Garantir ordem dos fatores
+df$method <- factor(df$method, levels = c("ssGSEA", "logmedian", "ranking"))
+df$type <- factor(df$type, levels = c("Simulated", "Original"))
+
+# Função para criar plot de uma assinatura
+make_plot <- function(df_sig) {
+  
+  # calcular máximos e thresholds só para esta assinatura
+  all_max <- df_sig %>%
+    group_by(method) %>%
+    summarise(cohen_max = max(cohen, na.rm = TRUE), .groups = "drop") %>%
+    left_join(
+      df_sig %>% filter(type == "Original") %>% select(method, FPR),
+      by = "method"
+    ) %>%
+    mutate(
+      label = sprintf("FPR=%.2f", FPR),
+      y = cohen_max + 0.3
+    )
+  
+  q_data <- df_sig %>%
+    filter(type == "Simulated") %>%
+    group_by(method) %>%
+    summarise(q95 = quantile(cohen, 0.95, na.rm = TRUE), .groups = "drop") %>%
+    mutate(
+      xpos = as.numeric(method),
+      xmin = xpos - 0.3,
+      xmax = xpos + 0.3
+    )
+  
+  ggplot() +
+    # pontos simulados
+    geom_jitter(
+      data = df_sig %>% filter(type == "Simulated"),
+      aes(x = method, y = cohen, color = type),
+      width = 0.3, size = 3, alpha = 0.5
+    ) +
+    # violino simulados
+    geom_violin(
+      data = df_sig,
+      aes(x = method, y = cohen),
+      fill = "#F0F0F0", color = "black", alpha = 0.5
+    ) +
+    # pontos originais
+    geom_jitter(
+      data = df_sig %>% filter(type == "Original"),
+      aes(x = method, y = cohen, color = type),
+      width = 0.3, size = 3
+    ) +
+    # threshold 95% (linha vermelha)
+    geom_segment(
+      data = q_data,
+      aes(x = xmin, xend = xmax, y = q95, yend = q95),
+      inherit.aes = FALSE,
+      colour = "red", linetype = "dashed", linewidth = 0.5
+    ) +
+    # labels FPR
+    geom_text(
+      data = all_max,
+      aes(x = method, y = y, label = label),
+      size = 3
+    ) +
+    labs(
+      y = "|Cohen's d|",
+      x = "Method",
+      color = ""
+    ) +
+    ggtitle(unique(df_sig$originalsig)) +
+    theme_classic() +
+    theme(
+      axis.text = element_text(size = 10),
+      plot.title = element_text(size = 14,hjust = 0.5),
+      legend.position = "top"
+    ) +
+    scale_color_manual(values = c("Original" = "#68B393", "Simulated" = "#666666"))
+}
+
+# Criar lista de plots
+plots_list <- lapply(split(df, df$originalsig), make_plot)
+
+# Juntar todos com ggarrange
+combined <- ggarrange(
+  plotlist = plots_list,
+  nrow = 1,
+  common.legend = TRUE,
+  legend = "top"
+)
+
+print(combined)
+
+
 ```
 
 <!-- # ```{r} -->
@@ -3277,25 +3416,27 @@ plt_fdrsim_subset_v2
 
 
 
-```{r fig.width=15, fig.height=16}
+```{r fig.width=15, fig.height=13}
 
 plt_scores <- ggarrange(plot_logmedian_SeneQuest, plot_logmedian_HernandezSegura, nrow=1, labels=c("C","D"))
 
-plt_senequest <- ggarrange(plt_scores,plt_tstats, ncol=1, heights=c(0.6,0.45), labels=c("","E"))
+plt_senequest <- ggarrange(plt_scores,plt_tstats, ncol=1, heights=c(0.6,0.5), labels=c("","E"))
 
 (plt_fig5_alternative <- ggarrange(plt_expectations,
                                    plt_senequest,
-                                   plt_fdrsim_subset_v2,
+                                   combined,
                                    labels=c("","","F"),
                                    ncol=1,
-                                   heights=c(0.2,0.35,0.35)))
+                                   heights=c(0.26,0.5,0.2)))
 ```
+
+ 
 
 
 ```{r}
 ggplot2::ggsave("../Figures/Figs/Figure5_ComparisonSigs.png",
                 plt_fig5_alternative,
-                width = 15, height=16, bg = 'white')
+                width = 15, height=13, bg = 'white')
  
 ```
 

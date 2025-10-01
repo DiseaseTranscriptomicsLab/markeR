@@ -2456,12 +2456,13 @@ ggplot2::ggsave("../Figures/Figs/SupFigure5_Scores_AUCCohen.png",
 #                               nrow=3 )
 
 
-plt_fdrsim_allsignatures_v2
+plt_fdrsim_allsignatures_v3 <-readRDS("../data_aux/FPRsim_100_data_and_plot_Sept30_2025_allsigs.rds")
+(plt_fdrsim_allsignatures_v3 <- plt_fdrsim_allsignatures_v3$plot)
 ```
 
 ```{r}
 ggplot2::ggsave("Figs/SupFigure6_FPRsimulations.png",
-                plt_fdrsim_allsignatures_v2,
+                plt_fdrsim_allsignatures_v3,
                 width = 12, height=18, bg = 'white')
 ```
 
