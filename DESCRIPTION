@@ -14,10 +14,11 @@ Authors@R:
                comment=c(ORCID="0000-0002-1215-0538"))
     )
 Description: 
-    markeR is an R package that provides a modular and extensible framework for 
-    the systematic evaluation of gene sets as phenotypic markers using transcriptomic 
-    data. The package is designed to support both quantitative analyses and visual 
-    exploration of gene set behaviour across experimental and clinical phenotypes.
+    markeR is an R package that provides a modular and extensible framework for the systematic evaluation of gene sets as 
+    phenotypic markers using transcriptomic data. The package is designed to support both quantitative analyses and visual exploration of 
+    gene set behaviour across experimental and clinical phenotypes. It implements multiple methods, including score-based and enrichment 
+    approaches, and also allows the exploration of expression behaviour of individual genes. In addition, users can assess the 
+    similarity of their own gene sets against established collections (e.g., those from MSigDB), facilitating biological interpretation.
 License: Artistic-2.0
 biocViews: GeneExpression, Transcriptomics, Visualization, Software, GeneSetEnrichment, Classification
 Encoding: UTF-8
