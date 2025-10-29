@@ -1,6 +1,6 @@
 Package: markeR
 Title: An R Toolkit for Evaluating Gene Signatures as Phenotypic Markers
-Version: 0.99.6
+Version: 1.0.0
 Authors@R: 
     c(
       person("Rita", "Martins-Silva", 
