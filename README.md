@@ -5,14 +5,14 @@
 
 <!-- badges: start -->
 
-![](https://img.shields.io/badge/status-development-yellowgreen)
+<!--![](https://img.shields.io/badge/status-development-yellowgreen)-->
+
 [![Pkgdown](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://diseasetranscriptomicslab.github.io/markeR/)
 ![Minimal R
 Version](https://img.shields.io/badge/min%20R-4.5.0-blue.svg)
 [![codecov](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR/graph/badge.svg?token=7T1I4JCJG6)](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR)
-[![R-CMD-check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml)
-[![Bioconductor
-Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml)
+<!-- [![R-CMD-check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml)-->
+<!-- [![Bioconductor Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml) -->
 
 <!-- badges: end -->
 
@@ -27,7 +27,7 @@ across experimental and clinical phenotypes.
 > Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). *markeR: an R
 > Toolkit for Evaluating Gene Sets as Phenotypic Markers*. Gulbenkian
 > Institute for Molecular Medicine, Faculdade de Medicina, Universidade
-> de Lisboa, Lisbon, Portugal. R package version 0.99.5,
+> de Lisboa, Lisbon, Portugal. R package version 1.0.0,
 > <https://github.com/DiseaseTranscriptomicsLab/markeR>.
 
 The folder `inst/Paper/` is in the **paper** branch and contains all
@@ -58,7 +58,18 @@ analyses and figures. You can browse it
 
 ## Installation
 
-Install the latest development release of markeR from [GitHub](https://github.com/) with:
+Install the latest release from Bioconductor:
+
+``` r
+# Install from Bioconductor
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("markeR")
+library(markeR)
+```
+
+Or install the latest development release of `markeR` from
+[GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")

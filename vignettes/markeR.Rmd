@@ -53,7 +53,16 @@ The package is implemented with flexibility and extensibility as core design pri
 
 # Installation
 
-Install the latest development release of `markeR` from [GitHub](https://github.com/) with:
+Install the latest release from Bioconductor:
+
+```{r, eval=FALSE}
+# Install from Bioconductor
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("markeR")
+```
+
+Or install the latest development release of `markeR` from [GitHub](https://github.com/) with:
 
 ```r
 devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
