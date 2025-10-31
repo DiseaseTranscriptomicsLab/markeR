@@ -27,7 +27,7 @@ across experimental and clinical phenotypes.
 > Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). *markeR: an R
 > Toolkit for Evaluating Gene Sets as Phenotypic Markers*. Gulbenkian
 > Institute for Molecular Medicine, Faculdade de Medicina, Universidade
-> de Lisboa, Lisbon, Portugal. R package version 0.99.6,
+> de Lisboa, Lisbon, Portugal. R package version 1.0.0,
 > <https://github.com/DiseaseTranscriptomicsLab/markeR>.
 
 The folder `inst/Paper/` is in the **paper** branch and contains all
