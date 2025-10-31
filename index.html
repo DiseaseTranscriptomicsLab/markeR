@@ -17,8 +17,8 @@
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><link href="extra.css" rel="stylesheet">
 <meta property="og:title" content="An R Toolkit for Evaluating Gene Signatures as Phenotypic Markers">
-<meta name="description" content="A suite of methods for using gene sets to quantify and evaluate the extent to which a given gene signature marks a specific phenotype. The package implements various scoring, enrichment and classification approaches, along with tools to compute performance metrics and visualize results, making it a valuable resource for transcriptomics research (bulk RNA-seq).">
-<meta property="og:description" content="A suite of methods for using gene sets to quantify and evaluate the extent to which a given gene signature marks a specific phenotype. The package implements various scoring, enrichment and classification approaches, along with tools to compute performance metrics and visualize results, making it a valuable resource for transcriptomics research (bulk RNA-seq).">
+<meta name="description" content="markeR is an R package that provides a modular and extensible framework for the systematic evaluation of gene sets as phenotypic markers using transcriptomic data. The package is designed to support both quantitative analyses and visual exploration of gene set behaviour across experimental and clinical phenotypes. It implements multiple methods, including score-based and enrichment approaches, and also allows the exploration of expression behaviour of individual genes. In addition, users can assess the similarity of their own gene sets against established collections (e.g., those from MSigDB), facilitating biological interpretation.">
+<meta property="og:description" content="markeR is an R package that provides a modular and extensible framework for the systematic evaluation of gene sets as phenotypic markers using transcriptomic data. The package is designed to support both quantitative analyses and visual exploration of gene set behaviour across experimental and clinical phenotypes. It implements multiple methods, including score-based and enrichment approaches, and also allows the exploration of expression behaviour of individual genes. In addition, users can assess the similarity of their own gene sets against established collections (e.g., those from MSigDB), facilitating biological interpretation.">
 <meta property="og:image" content="https://diseasetranscriptomicslab.github.io/markeR/logo.png">
 </head>
 <body>
@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="index.html">markeR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.99.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,12 +77,13 @@
 </h1>
 </div>
 <!-- badges: start -->
+<!--![](https://img.shields.io/badge/status-development-yellowgreen)-->
 
 <!-- badges: end -->
 <p><strong><code>markeR</code></strong> is an R package that provides a modular and extensible framework for the systematic evaluation of gene sets as phenotypic markers using transcriptomic data. The package is designed to support both quantitative analyses and visual exploration of gene set behaviour across experimental and clinical phenotypes.</p>
 <blockquote>
 <p><strong>To cite <code>markeR</code> please use:</strong></p>
-<p>Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). <em>markeR: an R Toolkit for Evaluating Gene Sets as Phenotypic Markers</em>. Gulbenkian Institute for Molecular Medicine, Faculdade de Medicina, Universidade de Lisboa, Lisbon, Portugal. R package version 0.99.5, <a href="https://github.com/DiseaseTranscriptomicsLab/markeR" class="external-link uri">https://github.com/DiseaseTranscriptomicsLab/markeR</a>.</p>
+<p>Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). <em>markeR: an R Toolkit for Evaluating Gene Sets as Phenotypic Markers</em>. Gulbenkian Institute for Molecular Medicine, Faculdade de Medicina, Universidade de Lisboa, Lisbon, Portugal. R package version 1.0.0, <a href="https://github.com/DiseaseTranscriptomicsLab/markeR" class="external-link uri">https://github.com/DiseaseTranscriptomicsLab/markeR</a>.</p>
 </blockquote>
 <p>The folder <code>inst/Paper/</code> is in the <strong>paper</strong> branch and contains all scripts and materials used in the original <code>markeR</code> paper to reproduce analyses and figures. You can browse it <a href="https://github.com/DiseaseTranscriptomicsLab/markeR/tree/paper/inst/Paper" class="external-link">here</a>.</p>
 <p><img src="reference/figures/Workflow.png"></p>
@@ -134,8 +135,15 @@
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>Install the latest development release of markeR from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
+<p>Install the latest release from Bioconductor:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Install from Bioconductor</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"BiocManager"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"BiocManager"</span><span class="op">)</span></span>
+<span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"markeR"</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://diseasetranscriptomicslab.github.io/markeR/">markeR</a></span><span class="op">)</span></span></code></pre></div>
+<p>Or install the latest development release of <code>markeR</code> from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"DiseaseTranscriptomicsLab/markeR@*release"</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -173,7 +181,7 @@ A named list where each element represents one gene set:</p>
 </li>
 </ul>
 <p>This structure supports both <strong>Discovery Mode</strong> (single gene set) and <strong>Benchmarking Mode</strong> (multiple gene sets).</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Example </span></span>
 <span><span class="va">gene_sets</span></span>
 <span><span class="co">#&gt; $Set1</span></span>
@@ -191,7 +199,7 @@ A filtered and normalised, non log-transformed, gene expression matrix (genes ×
 <p><strong>Warning:</strong> If you are using microarray data or outputs from common RNA-seq pipelines (<em>e.g.</em>, edgeR), note that the expression values may already be log2-normalised. The input to <code>markeR</code> must necessarily be <strong>non-log-transformed</strong>. If your data are log2-transformed, you can revert them by applying <code>2^data</code>.</p>
 </li>
 </ul>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">expr_df</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        Sample1  Sample2  Sample3  Sample4  Sample5</span></span>
 <span><span class="co">#&gt; GeneA 3.879049 7.448164 2.864353 5.852928 3.610586</span></span>
@@ -205,7 +213,7 @@ A filtered and normalised, non log-transformed, gene expression matrix (genes ×
 <strong>Sample Metadata</strong>:<br>
 A data frame with samples as rows and annotations as columns. The first column should contain sample IDs matching the expression matrix column names.</li>
 </ul>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">metadata</span></span>
 <span><span class="co">#&gt;   SampleID Condition Age</span></span>
 <span><span class="co">#&gt; 1  Sample1   Control  49</span></span>
@@ -301,6 +309,7 @@ Email: <a href="mailto:rita.silva@medicina.ulisboa.pt" class="email">rita.silva@
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
+<li><a href="https://www.bioconductor.org/packages/markeR" class="external-link">View on Bioconductor</a></li>
 <li><a href="https://github.com/DiseaseTranscriptomicsLab/markeR/" class="external-link">Browse source code</a></li>
 <li><a href="https://github.com/DiseaseTranscriptomicsLab/markeR/issues" class="external-link">Report a bug</a></li>
 </ul>
@@ -335,8 +344,6 @@ Email: <a href="mailto:rita.silva@medicina.ulisboa.pt" class="email">rita.silva@
 <ul class="list-unstyled">
 <li><a href="https://diseasetranscriptomicslab.github.io/markeR/"><img src="https://img.shields.io/badge/docs-pkgdown-blue.svg" alt="Pkgdown"></a></li>
 <li><a href="https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR" class="external-link"><img src="https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR/graph/badge.svg?token=7T1I4JCJG6" alt="codecov"></a></li>
-<li><a href="https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
-<li><a href="https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml" class="external-link"><img src="https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg" alt="Bioconductor Check"></a></li>
 </ul>
 </div>
 
