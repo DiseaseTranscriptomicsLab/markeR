@@ -1382,6 +1382,52 @@ corrcounts_ggplot <- merge(corrcounts_ggplot,metadata, by="sampleID")
 ```
 
 
+```{r}
+# Local job (lost in the meantime, this is a good approximation)
+
+#' Estimate variance explained by each metadata variable
+#'
+#' @param expr numeric matrix or data.frame of normalized expression (genes × samples)
+#' @param meta data.frame with sample-level metadata (rows = samples)
+#' @param nPC integer; number of top principal components to consider
+#' @param scale logical; whether to scale genes before PCA (default FALSE)
+#' @return data.frame with variables and % variance explained
+#' @examples
+#' res <- explained_variance(expr, coldata)
+#' print(res)
+# explained_variance <- function(expr, meta, nPC = 10, scale = FALSE) {
+#   stopifnot(all(colnames(expr) %in% rownames(meta)))
+#   meta <- meta[colnames(expr), , drop = FALSE]
+#   
+#   # PCA
+#   pca <- prcomp(t(expr), scale. = scale)
+#   pcs <- pca$x[, seq_len(min(nPC, ncol(pca$x))), drop = FALSE]
+#   var_exp <- (pca$sdev^2 / sum(pca$sdev^2))[seq_len(ncol(pcs))]
+#   
+#   # helper to compute R² between numeric vectors
+#   r2 <- function(x, y) {
+#     if (length(unique(y)) < 2) return(0)
+#     mod <- summary(lm(x ~ y))
+#     mod$r.squared
+#   }
+#   
+#   res <- sapply(meta, function(v) {
+#     if (is.character(v) || is.factor(v)) v <- as.factor(v)
+#     if (is.numeric(v)) {
+#       mean(sapply(as.data.frame(pcs), function(pc) r2(pc, v) * var_exp))
+#     } else {
+#       mean(sapply(as.data.frame(pcs), function(pc) r2(pc, model.matrix(~ v)[, -1, drop = FALSE]) * var_exp))
+#     }
+#   })
+#   
+#   res <- sort(res, decreasing = TRUE)
+#   data.frame(variable = names(res), variance_explained = res, row.names = NULL)
+# }
+#  
+
+
+```
+
 
 ```{r fig.width=4, fig.height=4}
 
@@ -2440,21 +2486,23 @@ ggplot2::ggsave("../Figures/Figs/SupFigure5_Scores_AUCCohen.png",
 ```{r fig.width=12, fig.height=18}
  
 # Local job
-# plt_fdrsim_allsignatures_v2 <- FPR_Simulation(data = corrcounts,
-#                               metadata = metadata,
-#                               original_signatures = signatures_bidirectional,
-#                               gene_list = row.names(corrcounts),
-#                               number_of_sims = 100,
-#                               widthTitle = 30,
-#                               Variable = "Condition",
-#                               titlesize = 12,
-#                               pointSize = 4,
-#                               labsize = 10,
-#                               mode = "simple",
-#                               ColorValues=NULL,
-#                               ncol=NULL,
-#                               nrow=3 )
+set.seed("12345678")
 
+# plt_fdrsim_allsignatures_v3 <- FPR_Simulation(data = corrcounts,
+#                                          metadata = metadata,
+#                                          original_signatures = signatures_bidirectional,
+#                                          gene_list = row.names(corrcounts),
+#                                          number_of_sims = 100,
+#                                          widthTitle = 30,
+#                                          Variable = "Condition",
+#                                          titlesize = 12,
+#                                          pointSize = 3,
+#                                          labsize = 10,
+#                                          mode = "simple",
+#                                          ColorValues=NULL,
+#                                          ncol=NULL,
+#                                          nrow=3 )
+ 
 
 plt_fdrsim_allsignatures_v3 <-readRDS("../data_aux/FPRsim_100_data_and_plot_Sept30_2025_allsigs.rds")
 (plt_fdrsim_allsignatures_v3 <- plt_fdrsim_allsignatures_v3$plot)
