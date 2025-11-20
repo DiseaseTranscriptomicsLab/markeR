@@ -1425,6 +1425,60 @@ corrcounts_ggplot <- merge(corrcounts_ggplot,metadata, by="sampleID")
 # }
 #  
 
+# Another option, I think is not correct...
+
+# 
+# explained_variance <- function(expr, meta, nPC = 10, scale = F) {
+#   stopifnot(is.matrix(expr) || is.data.frame(expr))
+#   stopifnot(is.data.frame(meta))
+#   stopifnot(all(colnames(expr) %in% rownames(meta)))
+#   meta <- meta[colnames(expr), , drop = FALSE]
+# 
+#   # PCA on samples
+#   pca <- prcomp(t(as.matrix(expr)), scale. = scale)
+#   nPCuse <- min(nPC, ncol(pca$x))
+#   pcs <- pca$x[, seq_len(nPCuse), drop = FALSE]        # samples × PCs
+#   var_exp <- (pca$sdev^2 / sum(pca$sdev^2))[seq_len(nPCuse)]
+# 
+#   # helper: compute R² of pc ~ predictor
+#   r2_single <- function(pc, pred) {
+#     # pred can be vector, factor, matrix, or data.frame of predictors
+#     if (is.null(ncol(pred))) {
+#       # single column predictor (vector or factor)
+#       df <- data.frame(.pred = pred)
+#       fit <- lm(pc ~ .pred, data = df)
+#     } else {
+#       # multi-column predictor (matrix/data.frame from model.matrix)
+#       df <- as.data.frame(pred)
+#       fit <- lm(pc ~ ., data = df)
+#     }
+#     summary(fit)$r.squared
+#   }
+# 
+#   # iterate over metadata variables
+#   res <- sapply(names(meta), function(varname) {
+#     v <- meta[[varname]]
+#     # prepare predictor: for factors, use model matrix without intercept,
+#     # for numeric keep as vector
+#     if (is.factor(v) || is.character(v)) {
+#       pred <- model.matrix(~ v)[, -1, drop = FALSE]
+#       if (ncol(pred) == 0) return(0) # e.g. all NA or single level
+#     } else {
+#       pred <- v
+#     }
+#     # compute R2 for each PC, weight by var_exp, and sum
+#     r2_per_pc <- vapply(seq_len(ncol(pcs)), function(k) {
+#       r2_single(pcs[, k], pred)
+#     }, numeric(1))
+#     sum(r2_per_pc * var_exp)
+#   }, USE.NAMES = TRUE)
+# 
+#   # return as percentages
+#   df <- data.frame(variable = names(res),
+#                    perc_variance_explained = unname(res) * 100,
+#                    row.names = NULL)
+#   df[order(df$perc_variance_explained, decreasing = TRUE), , drop = FALSE]
+# }
 
 ```
 

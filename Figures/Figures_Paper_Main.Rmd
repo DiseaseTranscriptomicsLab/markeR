@@ -22,7 +22,7 @@ library("colorspace")
 library("scales")
 library("scater") 
 library("reshape2")
-library("markeR")
+#library("markeR")
 library("ggbreak")
 library("ggnewscale")
 library("dplyr")
@@ -3564,7 +3564,7 @@ for (sig_name in names(gene_sets)) {
 
 ```{r}
 #(results <- readRDS("data/Tradeoffs_v1.rds"))
-(results <- readRDS("../data/Tradeoffs_v3.rds"))
+(results <- readRDS("../data_aux/Tradeoffs_v3.rds"))
 results$p_score <- p.adjust(results$p_score, method = "BH")
 results$p_enrich <- p.adjust(results$p_enrich, method = "BH")
 ```
@@ -3669,11 +3669,154 @@ plt_genepct <- ggplot(results_long %>% filter(sample_pct == 100),
 
 (plt_tradeoffs <- ggarrange(plt_samplepct,plt_genepct, common.legend = T, nrow=1, legend="top", labels="AUTO"))
 ```
+```{r fig.width=12, fig.height=4}
+# --- Reshape for effect size metrics ---
+results_long_eff <- results %>%
+  mutate(
+    NES = NES,        # already present
+    cohend = cohend   # already present
+  ) %>%
+  pivot_longer(
+    cols = c(NES, cohend),
+    names_to = "method", values_to = "effect"
+  ) %>%
+  mutate(method = recode(method,
+                         NES = "Enrichment (NES)",
+                         cohend = "Score (Cohen's d)"))
+
+# --- Plot: effect vs sample_pct (gene_pct fixed) ---
+plt_samplepct_eff <- ggplot(
+  results_long_eff %>% filter(gene_pct == 100),
+  aes(x = sample_pct, y = effect, color = signature)
+) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  facet_wrap(~method, scales = "free") +
+  scale_color_manual(values = Signature_colors) +
+  labs(
+    x = "Sample Subset (% of Total Samples)",
+    y = "Effect size",
+    color = "Signature"
+  ) +
+  theme_classic(base_size = 13)
+
+# --- Plot: effect vs gene_pct (sample_pct fixed) ---
+plt_genepct_eff <- ggplot(
+  results_long_eff %>% filter(sample_pct == 100),
+  aes(x = gene_pct, y = effect, color = signature)
+) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  facet_wrap(~method, scales = "free") +
+  scale_color_manual(values = Signature_colors) +
+  labs(
+    x = "Gene Subset (% of Signature Genes)",
+    y = "Effect size",
+    color = "Signature"
+  ) +
+  theme_classic(base_size = 13)
+
+# --- Arrange ---
+plt_tradeoffs_eff <- ggarrange(
+  plt_samplepct_eff,
+  plt_genepct_eff,
+  common.legend = TRUE,
+  nrow = 1,
+  legend = "top",
+  labels = "AUTO"
+)
+
+plt_tradeoffs_eff
+```
 
 
+```{r fig.width=12, fig.height=5} 
 
 
+# Filters
+dfA <- results %>% filter(gene_pct == 100)   # sample_pct varies
+dfB <- results %>% filter(sample_pct == 100) # gene_pct varies
 
+# -----------------------------
+# Function to create plots
+# -----------------------------
+make_plot <- function(data, xvar, yexpr, ylab, show_legend=FALSE) {
+  ggplot(data, aes_string(x=xvar, y=yexpr, color="signature")) +
+    geom_line(size=1) +
+    geom_point(size=2) +
+    scale_color_manual(values=Signature_colors) +
+    labs(x=NULL, y=ylab, color="Signature") +
+    theme_bw(base_size=13) +
+    theme(
+      legend.position = if(show_legend) "top" else "none",
+      axis.title.x = element_blank()#,
+      #axis.text.x = element_blank()
+    )
+}
+
+# -----------------------------
+# Row 1: Effect sizes
+# -----------------------------  
+p1 <- make_plot(dfA, "sample_pct", "NES", "NES", show_legend=TRUE) +
+  ggtitle("Enrichment") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  expand_limits(y = 0)
+
+p2 <- make_plot(dfA, "sample_pct", "cohend", "Cohen's d") +
+  ggtitle("Score") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  expand_limits(y = 0)
+
+p3 <- make_plot(dfB, "gene_pct", "NES", "NES") +
+  ggtitle("Enrichment") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  expand_limits(y = 0)
+
+p4 <- make_plot(dfB, "gene_pct", "cohend", "Cohen's d") +
+  ggtitle("Score") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  expand_limits(y = 0)
+
+# Row 2: P-values
+p5 <- make_plot(dfA, "sample_pct", "-log10(p_enrich)", expression(-log[10]*"(p-value)")) +
+  geom_hline(yintercept = -log10(0.05), linetype="dashed", color="gray40")
+
+p6 <- make_plot(dfA, "sample_pct", "-log10(p_score)", expression(-log[10]*"(p-value)")) +
+  geom_hline(yintercept = -log10(0.05), linetype="dashed", color="gray40")
+
+p7 <- make_plot(dfB, "gene_pct", "-log10(p_enrich)", expression(-log[10]*"(p-value)")) +
+  geom_hline(yintercept = -log10(0.05), linetype="dashed", color="gray40")
+
+p8 <- make_plot(dfB, "gene_pct", "-log10(p_score)", expression(-log[10]*"(p-value)")) +
+  geom_hline(yintercept = -log10(0.05), linetype="dashed", color="gray40")
+
+# -----------------------------
+# Combine all 8 plots in 2x4 grid
+# -----------------------------
+grid_plots <- ggarrange(
+  p1, p2, p3, p4,
+  p5, p6, p7, p8,
+  ncol=4, nrow=2,
+  common.legend=TRUE,
+  legend="top",
+  align="v", labels = c("A","","B","","","","","")
+)
+
+# -----------------------------
+# Add shared x-axis labels for columns 1–2 and 3–4
+# -----------------------------
+final_plot <- annotate_figure(
+  grid_plots,
+  bottom = text_grob(
+    "                         Sample Subset (% of Total Samples)                                                Gene Subset (% of Signature Genes)",
+    x=0.5, hjust=0.5, face="plain", size=13
+  )
+)
+
+final_plot
+```
+
+ 
 
 
 ### Scores: Not coordinated acrivation of gene set
