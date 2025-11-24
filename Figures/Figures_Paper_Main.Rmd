@@ -33,6 +33,8 @@ library(purrr)
 library(edgeR)
 library(RColorBrewer)
 library(pROC) 
+library("ggforce")
+library(ggrepel)
 #devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
 
 ```
@@ -1915,7 +1917,7 @@ sen_type_counts <- sen_type_counts %>%
 
 ```{r  fig.width=14, fig.height=12}
 plt_row1 <- ggarrange(plt_genesets2,plt1_pcas, widths=c(0.7,0.3), labels=c("A","B"))
-plt_row2 <- ggarrange(pca_PC12_divided,sentypes_plt, widths=c(0.6,0.4), labels=c("C","D"))
+plt_row2 <- ggarrange(pca_PC12_divided,sentypes_plt, widths=c(0.6,0.4), labels=c("C","   D"))
 
 (plt_fig2_alt <- ggarrange(plt_row1,plt_row2, ncol=1, heights=c(0.6,0.4)))
 ```
@@ -1923,6 +1925,11 @@ plt_row2 <- ggarrange(pca_PC12_divided,sentypes_plt, widths=c(0.6,0.4), labels=c
 
 ```{r}
 ggplot2::ggsave("../Figures/Figs/Figure2_GeneSets_Datasets.png",
+                plt_fig2_alt,
+                width = 14, height=12, bg = 'white')
+
+
+ggplot2::ggsave("../Figures/Figs/Figure2_GeneSets_Datasets.pdf",
                 plt_fig2_alt,
                 width = 14, height=12, bg = 'white')
 ```
@@ -2394,6 +2401,10 @@ plt_fig3_alt
 ggplot2::ggsave("../Figures/Figs/Figure3_Scores_alt.png",
                 plt_fig3_alt,
                 width = 18, height=16, bg = 'white')
+
+ggplot2::ggsave("../Figures/Figs/Figure3_Scores_alt.pdf",
+                plt_fig3_alt,
+                width = 18, height=16, bg = 'white')
 ```
 
 
@@ -2714,11 +2725,15 @@ print(roccurve_cellagescores)
 
 ```{r fig.width=10, fig.height=8}
 (plt_fig3_new <- ggarrange(plt_ranking_simpler, plt_cellagedirnodir+ 
-  theme(plot.margin = unit(c(0, 5, 35, 15), "pt")), nrow=1, widths = c(0.7,0.3), labels = "AUTO"))
+  theme(plot.margin = unit(c(0, 5, 35, 15), "pt")), nrow=1, widths = c(0.7,0.3), labels = c("A","   B")))
 ```
 
 ```{r}
 ggplot2::ggsave("Figs/Figure3_Scores_simpler_Sept2025.png",
+                plt_fig3_new,
+                width = 11, height=9, bg = 'white')
+
+ggplot2::ggsave("Figs/Figure3_Scores_simpler_Sept2025.pdf",
                 plt_fig3_new,
                 width = 11, height=9, bg = 'white')
 ```
@@ -2838,19 +2853,19 @@ df_ggplot$significance <- df_ggplot$padj_Sen_vs_Prol <= 0.05 & df_ggplot$padj_Se
     geom_hline(yintercept = 0, size=0.6, linetype="dashed") +
     xlab("NES Senescence vs Proliferation")+
     ylab("NES Senescence vs Quiescence")+ 
-    scale_fill_manual(values = c("white","#934873"), name = "Adj. p-value <= 0.05    .")  +
+    scale_fill_manual(values = c("white","#934873"), name = "Adj. p-value <= 0.05   ")  +
     theme(legend.position = "top") + 
     theme( plot.title = element_text(hjust = 0.5 ) ) )
 ```
 
 
 ```{r fig.width=8, fig.height=12}
-
+ 
 plotvolcano_1 <- plotVolcano(DEResultsList=degenes, 
                              genes=signatures_bidirectional[1:3], 
                              N=NULL, 
                              x="logFC",
-                             y="-log10(adj.P.Val)", 
+                             y="-log10(adj. p-value)", 
                              pointSize=2, 
                              color="pink", 
                              highlightcolor="darkblue", 
@@ -2937,82 +2952,154 @@ plt_right <- ggarrange(plotNESlollipop_new,plt_scatter_gsea, ncol=1, labels=c("B
 ggplot2::ggsave("../Figures/Figs/Figure4_Enrichment_alternative.png",
                 plt_final,
                 width = 12, height=14, bg = 'white')
+
+ggplot2::ggsave("../Figures/Figs/Figure4_Enrichment_alternative.pdf",
+                plt_final,
+                width = 12, height=14, bg = 'white')
 ```
 
 ## Figure 5 - Comparative Performance of Senescence Signatures
 
 ```{r fig.width=10, fig.height=4}
-
-degenes_SP <- degenes$`Senescent-Proliferative`
-degenes_SP$gene <- row.names(degenes_SP)
-degenes_SQ <- degenes$`Senescent-Quiescent`
-degenes_SQ$gene <- row.names(degenes_SQ)
-
-degenes_SP_SQ <- merge(degenes_SP,degenes_SQ, by="gene")
-degenes_SP_SQ <- degenes_SP_SQ[,c("gene","t.x","t.y")]
-colnames(degenes_SP_SQ) <- c("gene","t_SP","t_SQ")
-
-degenes_SP_SQ
-
-plt_scatter_SeneQuest <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) + 
-  geom_point(size=3, alpha=0.6, color="#C2C2C2") +
-  theme_bw() +
-  xlab("t-statistic Senescent vs Proliferative")+
-  ylab("t-statistic Senescent \nvs Quiescent") + 
-  theme_bw()   +  
-  geom_density_2d(color="white") + 
-  theme(plot.title = element_text(hjust = 0.5, size=12),
-        plot.subtitle = element_text(hjust = 0.5),
-        text = element_text(size=12) ) + geom_point(data= degenes_SP_SQ[degenes_SP_SQ$gene %in% signatures_bidirectional$SeneQuest$gene,], fill="#96C29B", size=3, alpha=0.8, shape=21) + ggtitle("SeneQuest") +
-  geom_vline(xintercept = 0, color="black", size=0.8, linetype="dashed")+
-  geom_hline(yintercept = 0, color="black", size=0.8, linetype="dashed")
-
-plt_scatter_HernandezSegura <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) + 
-  geom_point(size=3, alpha=0.6, color="#C2C2C2") +
-  theme_bw() +
-  xlab("t-statistic Senescent vs Proliferative")+
-  ylab("t-statistic Senescent \nvs Quiescent") + 
-  theme_bw()   +  
-  geom_density_2d(color="white") + 
-  theme(plot.title = element_text(hjust = 0.5, size=12),
-        plot.subtitle = element_text(hjust = 0.5),
-        text = element_text(size=12) ) + geom_point(data= degenes_SP_SQ[degenes_SP_SQ$gene %in% signatures_bidirectional$HernandezSegura$gene,], fill="#96C29B", size=3, alpha=0.8, shape=21) + ggtitle("HernandezSegura") +
-  geom_vline(xintercept = 0, color="black", size=0.8, linetype="dashed")+
-  geom_hline(yintercept = 0, color="black", size=0.8, linetype="dashed")
 # 
+# degenes_SP <- degenes$`Senescent-Proliferative`
+# degenes_SP$gene <- row.names(degenes_SP)
+# degenes_SQ <- degenes$`Senescent-Quiescent`
+# degenes_SQ$gene <- row.names(degenes_SQ)
 # 
-# plt_scatter_SAUL_SEN_MAYO <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) + 
+# degenes_SP_SQ <- merge(degenes_SP,degenes_SQ, by="gene")
+# degenes_SP_SQ <- degenes_SP_SQ[,c("gene","t.x","t.y")]
+# colnames(degenes_SP_SQ) <- c("gene","t_SP","t_SQ")
+# 
+# degenes_SP_SQ
+# 
+# plt_scatter_SeneQuest <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) + 
 #   geom_point(size=3, alpha=0.6, color="#C2C2C2") +
 #   theme_bw() +
-#   xlab("t-statistic Senescent vs Proliferative")+
-#   ylab("t-statistic Senescent \nvs Quiescent") + 
+#   xlab("t-statistic \nSenescent vs Proliferative")+
+#   ylab("t-statistic \nSenescent vs Quiescent") + 
 #   theme_bw()   +  
 #   geom_density_2d(color="white") + 
 #   theme(plot.title = element_text(hjust = 0.5, size=12),
 #         plot.subtitle = element_text(hjust = 0.5),
-#         text = element_text(size=12)) + geom_point(data= degenes_SP_SQ[degenes_SP_SQ$gene %in% signatures_bidirectional$SAUL_SEN_MAYO$gene,], fill="#96C29B", size=3, alpha=0.8, shape=21) + ggtitle("SAUL_SEN_MAYO") +
+#         text = element_text(size=12) ) + geom_point(data= degenes_SP_SQ[degenes_SP_SQ$gene %in% signatures_bidirectional$SeneQuest$gene,], fill="#96C29B", size=3, alpha=0.8, shape=21) + ggtitle("SeneQuest") +
 #   geom_vline(xintercept = 0, color="black", size=0.8, linetype="dashed")+
 #   geom_hline(yintercept = 0, color="black", size=0.8, linetype="dashed")
-
-
-plt_scatter_REACTOME <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) + 
-  geom_point(size=3, alpha=0.6, color="#C2C2C2") +
-  theme_bw() +
-  xlab("t-statistic Senescent vs Proliferative")+
-  ylab("t-statistic Senescent \nvs Quiescent") + 
-  theme_bw()   +  
-  geom_density_2d(color="white") + 
-  theme(plot.title = element_text(hjust = 0.5, size=12),
-        plot.subtitle = element_text(hjust = 0.5),
-        text = element_text(size=12)) + geom_point(data= degenes_SP_SQ[degenes_SP_SQ$gene %in% signatures_bidirectional$REACTOME_CELLULAR_SENESCENCE,], fill="#96C29B", size=3, alpha=0.8, shape=21) + ggtitle("REACTOME_CELLULAR_SENESCENCE") +
-  geom_vline(xintercept = 0, color="black", size=0.8, linetype="dashed")+
-  geom_hline(yintercept = 0, color="black", size=0.8, linetype="dashed")
-
-(plt_tstats <- ggarrange(plt_scatter_SeneQuest,plt_scatter_HernandezSegura,plt_scatter_REACTOME, nrow=1))
-
+# 
+# plt_scatter_HernandezSegura <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) + 
+#   geom_point(size=3, alpha=0.6, color="#C2C2C2") +
+#   theme_bw() +
+#   xlab("t-statistic \nSenescent vs Proliferative")+
+#   ylab("t-statistic \nSenescent vs Quiescent") + 
+#   theme_bw()   +  
+#   geom_density_2d(color="white") + 
+#   theme(plot.title = element_text(hjust = 0.5, size=12),
+#         plot.subtitle = element_text(hjust = 0.5),
+#         text = element_text(size=12) ) + geom_point(data= degenes_SP_SQ[degenes_SP_SQ$gene %in% signatures_bidirectional$HernandezSegura$gene,], fill="#96C29B", size=3, alpha=0.8, shape=21) + ggtitle("HernandezSegura") +
+#   geom_vline(xintercept = 0, color="black", size=0.8, linetype="dashed")+
+#   geom_hline(yintercept = 0, color="black", size=0.8, linetype="dashed")
+# # 
+# # 
+# # plt_scatter_SAUL_SEN_MAYO <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) + 
+# #   geom_point(size=3, alpha=0.6, color="#C2C2C2") +
+# #   theme_bw() +
+# #   xlab("t-statistic Senescent vs Proliferative")+
+# #   ylab("t-statistic Senescent \nvs Quiescent") + 
+# #   theme_bw()   +  
+# #   geom_density_2d(color="white") + 
+# #   theme(plot.title = element_text(hjust = 0.5, size=12),
+# #         plot.subtitle = element_text(hjust = 0.5),
+# #         text = element_text(size=12)) + geom_point(data= degenes_SP_SQ[degenes_SP_SQ$gene %in% signatures_bidirectional$SAUL_SEN_MAYO$gene,], fill="#96C29B", size=3, alpha=0.8, shape=21) + ggtitle("SAUL_SEN_MAYO") +
+# #   geom_vline(xintercept = 0, color="black", size=0.8, linetype="dashed")+
+# #   geom_hline(yintercept = 0, color="black", size=0.8, linetype="dashed")
+# 
+# 
+# plt_scatter_REACTOME <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) + 
+#   geom_point(size=3, alpha=0.6, color="#C2C2C2") +
+#   theme_bw() +
+#   xlab("t-statistic \nSenescent vs Proliferative")+
+#   ylab("t-statistic \nSenescent vs Quiescent") + 
+#   theme_bw()   +  
+#   geom_density_2d(color="white") + 
+#   theme(plot.title = element_text(hjust = 0.5, size=12),
+#         plot.subtitle = element_text(hjust = 0.5),
+#         text = element_text(size=12)) + geom_point(data= degenes_SP_SQ[degenes_SP_SQ$gene %in% signatures_bidirectional$REACTOME_CELLULAR_SENESCENCE,], fill="#96C29B", size=3, alpha=0.8, shape=21) + ggtitle("REACTOME_CELLULAR_SENESCENCE") +
+#   geom_vline(xintercept = 0, color="black", size=0.8, linetype="dashed")+
+#   geom_hline(yintercept = 0, color="black", size=0.8, linetype="dashed")
+# 
+# (plt_tstats <- ggarrange(plt_scatter_SeneQuest,plt_scatter_HernandezSegura,plt_scatter_REACTOME, nrow=1))
+# 
 
 ```
 
+
+
+```{r fig.width=10, fig.height=4}
+
+
+# Add a column for plotting color based on signature and direction
+degenes_SP_SQ_colored <- degenes_SP_SQ %>%
+  mutate(color_SeneQuest = ifelse(gene %in% signatures_bidirectional$SeneQuest$gene,
+                                  ifelse(signatures_bidirectional$SeneQuest$enrichment[match(gene, signatures_bidirectional$SeneQuest$gene)] == 1, "Upregulated", "Downregulated"),
+                                  NA),
+         color_HernandezSegura = ifelse(gene %in% signatures_bidirectional$HernandezSegura$gene,
+                                        ifelse(signatures_bidirectional$HernandezSegura$enrichment[match(gene, signatures_bidirectional$HernandezSegura$gene)] == 1, "Upregulated", "Downregulated"),
+                                        NA),
+         color_REACTOME = ifelse(gene %in% signatures_bidirectional$REACTOME_CELLULAR_SENESCENCE, "REACTOME", NA)
+  )
+
+colors <- c("Upregulated" = "#1BAA7A",
+            "Downregulated" = "#C83C3C",
+            "REACTOME" = "#96C29B")
+
+# Plot SeneQuest
+plt_scatter_SeneQuest <- ggplot(degenes_SP_SQ_colored, aes(x=t_SP, y=t_SQ)) + 
+  geom_point(size=3, alpha=0.6, color="#C2C2C2") + # background points
+  geom_density_2d(color="white") +
+  geom_point(data=subset(degenes_SP_SQ_colored, !is.na(color_SeneQuest)), 
+             aes(fill=color_SeneQuest), size=3, alpha=0.8, shape=21) +
+  scale_fill_manual(values=colors) + 
+  geom_vline(xintercept = 0, linetype="dashed") +
+  geom_hline(yintercept = 0, linetype="dashed") +
+  theme_bw() +
+  labs(x="t-statistic \nSenescent vs Proliferative", y="t-statistic \nSenescent vs Quiescent", fill="") +
+  ggtitle("SeneQuest") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Plot HernandezSegura
+plt_scatter_HernandezSegura <- ggplot(degenes_SP_SQ_colored, aes(x=t_SP, y=t_SQ)) + 
+  geom_point(size=3, alpha=0.6, color="#C2C2C2") +
+  geom_density_2d(color="white") +
+  geom_point(data=subset(degenes_SP_SQ_colored, !is.na(color_HernandezSegura)), 
+             aes(fill=color_HernandezSegura), size=3, alpha=0.8, shape=21) +
+  scale_fill_manual(values=colors) +
+  
+  geom_vline(xintercept = 0, linetype="dashed") +
+  geom_hline(yintercept = 0, linetype="dashed") +
+  theme_bw() +
+  labs(x="t-statistic \nSenescent vs Proliferative", y="t-statistic \nSenescent vs Quiescent", fill="") +
+  ggtitle("HernandezSegura") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Plot REACTOME (gray points)
+plt_scatter_REACTOME <- ggplot(degenes_SP_SQ_colored, aes(x=t_SP, y=t_SQ)) +
+  
+  geom_point(size=3, alpha=0.6, color="#C2C2C2") +
+  geom_density_2d(color="white") +
+  geom_point(data=subset(degenes_SP_SQ_colored, !is.na(color_REACTOME)), 
+             aes(fill=color_REACTOME), size=3, alpha=0.8, shape=21) +
+  scale_fill_manual(values=colors) + 
+  geom_vline(xintercept = 0, linetype="dashed") +
+  geom_hline(yintercept = 0, linetype="dashed") +
+  theme_bw() +
+  labs(x="t-statistic \nSenescent vs Proliferative", y="t-statistic \nSenescent vs Quiescent", fill="") +
+  ggtitle("REACTOME_CELLULAR_SENESCENCE") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Arrange plots
+plt_tstats <- ggarrange(plt_scatter_SeneQuest, plt_scatter_HernandezSegura, plt_scatter_REACTOME, nrow=1, common.legend = T)
+plt_tstats
+```
 
 
 
@@ -3052,7 +3139,10 @@ plt_scatter_REACTOME <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) +
 
 
 ```{r fig.width=12, fig.height=6}
-(plt_fig5_senequest <- ggarrange(plt_tstats,plot_logmedian_SeneQuest, ncol=1, heights=c(0.45,0.55), labels=c("A","B")))
+
+blank <- ggplot() + theme_void()
+
+(plt_fig5_senequest <- ggarrange(plt_tstats,blank,plot_logmedian_SeneQuest, ncol=1, heights=c(0.45,0.02,0.55), labels=c("A","B")))
 ```
 
 
@@ -3210,7 +3300,7 @@ df_signatures$Quality <- ifelse(
 
 
 ```{r fig.width=12, fig.height=4}
-(plt_expectations <- ggarrange(plt_expectation_scores,plt_expectation_gsea, labels=c("A","B"), widths=c(0.65,0.35)))
+(plt_expectations <- ggarrange(plt_expectation_scores,plt_expectation_gsea, labels=c("A","              B"), widths=c(0.65,0.35)))
 ```
 
 
@@ -3416,18 +3506,23 @@ print(combined)
 
 
 
-```{r fig.width=15, fig.height=13}
+```{r fig.width=15, fig.height=15}
+
+blank <- ggplot() + theme_void() # for spacing
 
 plt_scores <- ggarrange(plot_logmedian_SeneQuest, plot_logmedian_HernandezSegura, nrow=1, labels=c("C","D"))
 
-plt_senequest <- ggarrange(plt_scores,plt_tstats, ncol=1, heights=c(0.6,0.5), labels=c("","E"))
+plt_senequest <- ggarrange(plt_scores,blank,plt_tstats, ncol=1, heights=c(0.6,0.02,0.8), labels=c("","E"))
 
-(plt_fig5_alternative <- ggarrange(plt_expectations,
-                                   plt_senequest,
-                                   combined,
-                                   labels=c("","","F"),
-                                   ncol=1,
-                                   heights=c(0.26,0.5,0.2)))
+(plt_fig5_alternative <- ggarrange(
+  plt_expectations, 
+  plt_senequest,
+  blank,                 # <-- spacer
+  combined,
+  labels = c("", "", "", "F"),
+  ncol = 1,
+  heights = c(0.26, 0.5, 0.02, 0.2)   # adjust 0.04 to control spacing
+))
 ```
 
  
@@ -3436,8 +3531,10 @@ plt_senequest <- ggarrange(plt_scores,plt_tstats, ncol=1, heights=c(0.6,0.5), la
 ```{r}
 ggplot2::ggsave("../Figures/Figs/Figure5_ComparisonSigs.png",
                 plt_fig5_alternative,
-                width = 15, height=13, bg = 'white')
- 
+                width = 15, height=15, bg = 'white')
+ ggplot2::ggsave("../Figures/Figs/Figure5_ComparisonSigs.pdf",
+                plt_fig5_alternative,
+                width = 15, height=15, bg = 'white')
 ```
 
 
@@ -3819,6 +3916,312 @@ final_plot
  
 
 
+```{r}
+# Run in local job, takes ~12 hours
+
+# # Expression data: genes (rows) × samples (columns)
+# df_expr <- corrcounts
+# 
+# # Class vector: named vector or factor
+# group_vec <-  metadata$Condition
+# names(group_vec) <- metadata$sampleID
+# 
+# # Signature gene sets
+# gene_sets <- list(
+#   CellAge = signatures_bidirectional$CellAge,
+#   HernandezSegura = signatures_bidirectional$HernandezSegura
+# )
+# 
+# # Percentages to evaluate
+# sample_pcts <- seq(1, 100, by = 1)
+# 
+# # Start at 5 genes, increment by 5 up to just below the smallest signature; 
+# #include the exact max of the small signature; add a few small steps above it; 
+# #then medium jumps to roughly half the largest signature; 
+# #finally, larger jumps up to the largest signature, including its maximum.
+# 
+# 
+# # Number of genes detected in the expression matrix
+# n_detected <- sapply(gene_sets, function(sig) {
+#   if (is.data.frame(sig)) {
+#     sum(sig[,1] %in% rownames(df_expr))
+#   } else {
+#     sum(sig %in% rownames(df_expr))
+#   }
+# })
+#  
+# len_HS <- n_detected["HernandezSegura"]
+# len_CA <- n_detected["CellAge"]
+# 
+# # 1. Small steps of 5 up to just below HS
+# vec1 <- seq(1, len_HS - 1, by=1)       # 5,10,…,50
+# 
+# # 2. Include the exact HS max
+# vec2 <- len_HS                           # 54
+# 
+# # 3. Slightly above HS
+# vec3 <- seq(len_HS + 1, len_HS + 15, by=1)  # 55, 59, etc.
+# 
+# # 4. Medium jumps to ~half of CellAge
+# vec4 <- seq(max(vec3)+10, round(len_CA/2), by=10)
+# 
+# # 5. Bigger jumps to max CellAge
+# vec5 <- seq(max(vec4)+50, len_CA, by=30)
+# vec5 <- vec5[vec5 <= len_CA]
+# 
+# # Combine
+# gene_numbers <- unique(c(vec1, vec2, vec3, vec4, vec5, len_CA))
+# gene_numbers
+# 
+# # testing
+# #gene_numbers <- c(5,54,500, 1206)
+# #sample_pcts <-  c(10,50,100)
+# 
+# # Result container
+# results <- data.frame()
+# 
+# # Loop through gene sets
+# for (sig_name in names(gene_sets)) {
+#   
+#   siggenes_original <- gene_sets[[sig_name]]
+#   
+#   # Subset to genes that exist in your expression matrix
+#   if (is.data.frame(siggenes_original)){
+#     full_genes <- siggenes_original[siggenes_original[,1] %in% row.names(df_expr),]
+#     n_full <- nrow(full_genes)
+#   } else {
+#     full_genes <- intersect(siggenes_original, rownames(df_expr))
+#     n_full <- length(full_genes)
+#   }
+#   
+#   # Define the number of genes to sample for this signature
+#   if (sig_name == "HernandezSegura") {
+#     n_genes_vec <- gene_numbers[gene_numbers <= n_full]  # don't exceed signature length
+#   } else {
+#     n_genes_vec <- gene_numbers[gene_numbers <= n_full]
+#   }
+#   
+#   # Loop over absolute gene numbers instead of percentages
+#   for (n_genes_to_sample in n_genes_vec) {
+#     
+#     set.seed(12345)
+#     if (is.data.frame(full_genes)){
+#       sel_genes <- full_genes[sample(1:nrow(full_genes), n_genes_to_sample),]
+#     } else {
+#       sel_genes <- sample(full_genes, n_genes_to_sample)
+#     }
+#     
+#     sigs_list <- list(sel_genes)
+#     names(sigs_list) <- sig_name
+#     
+#     # Loop over sample percentages as before
+#     for (s_pct in sample_pcts) {
+#       
+#       print(paste0("Percentage Samples: ", s_pct,"% | Genes sampled: ", n_genes_to_sample))
+#       
+#       # Subset samples
+#       group1 <- names(group_vec[group_vec == "Senescent"])
+#       group2 <- names(group_vec[group_vec == "Proliferative"])
+#       
+#       set.seed(12345)
+#       sel_group1 <- sample(group1, max(2, round(length(group1) * s_pct / 100)))
+#       set.seed(12345)
+#       sel_group2 <- sample(group2, max(2, round(length(group2) * s_pct / 100)))
+#       
+#       sel_samples <- c(sel_group1, sel_group2)
+#       
+#       df_subset <- df_expr[, sel_samples]
+#       metadata_subset <- metadata[metadata$sampleID %in% sel_samples, c("sampleID","Condition")]
+#       
+#       # SCORE approach
+#       df_Scores <- CalculateScores(data = df_subset[, metadata_subset$sampleID],
+#                                    metadata = metadata_subset,
+#                                    method = "logmedian",
+#                                    gene_sets = sigs_list)
+#       df_Scores <- as.data.frame(df_Scores[[sig_name]])
+#       cohen_d_score <- compute_cohens_d(df_Scores[df_Scores$Condition == "Senescent","score"], 
+#                                         df_Scores[df_Scores$Condition == "Proliferative","score"])
+#       
+#       p_score <- tryCatch({
+#         t.test(df_Scores$score ~ df_Scores$Condition)$p.value
+#       }, error = function(e) NA)
+#       
+#       # ENRICHMENT approach
+#       DEGs <- calculateDE(data = df_subset[, metadata_subset$sampleID],
+#                           metadata = metadata_subset,
+#                           variables = "Condition",
+#                           contrasts = c("Senescent - Proliferative"))
+#       
+#       res <- runGSEA(DEGList = DEGs, gene_sets = sigs_list)
+#       res <- res$`Senescent-Proliferative`
+#       
+#       NES <- res$NES
+#       p_enrich <- res$pval
+#       
+#       # Save
+#       results <- rbind(results, data.frame(
+#         signature = sig_name,
+#         gene_n = n_genes_to_sample,  # note change: store number of genes instead of percentage
+#         sample_pct = s_pct,
+#         cohend = cohen_d_score,
+#         p_score = p_score,
+#         NES = NES,
+#         p_enrich = p_enrich
+#       ))
+#       
+#       
+#     }
+#   }
+# }
+# 
+# 
+# saveRDS(results, "../data_aux/results_tradeoffs_absolutenbgenes_biggerres.rds")
+```
+
+```{r}
+results_tradeoffs_absolutenbgenes <-  readRDS("~/VersionControl/markeR/markeR_Sept2025/markeR/data_aux/results_tradeoffs_absolutenbgenes_biggerres.rds")
+
+```
+ 
+
+ 
+
+
+
+
+
+```{r fig.width=14, fig.height=5}
+ 
+# -----------------------------
+# Data prep
+# -----------------------------
+dfA <- results_tradeoffs_absolutenbgenes %>%
+  group_by(signature) %>%
+  filter(gene_n == max(gene_n)) %>%
+  ungroup()
+
+dfB <- results_tradeoffs_absolutenbgenes %>%
+  filter(sample_pct == 100)
+
+# Colors
+Signature_colors <- c(
+  "CellAge" = "#872341",  # Bordeaux / wine red
+  "HernandezSegura" = "#6CA0DC"  # Light cornflower blue
+)
+# -----------------------------
+# Main plotting function
+# -----------------------------
+make_plot <- function(data, xvar, yvar, ylab, show_legend=FALSE){
+  ggplot(data, aes_string(x=xvar, y=yvar, color="signature")) +
+    geom_line(size=1.5) +
+    geom_point(size=1.2) +
+    scale_color_manual(values=Signature_colors) +
+    labs(x=NULL, y=ylab, color="Gene Set") +
+    theme_classic(base_size=13) +
+    theme(
+      legend.position = if(show_legend) "top" else "none",
+      plot.title = element_text(hjust=0.5)
+    )
+}
+
+# -----------------------------
+# Function to create zoom grob
+# -----------------------------
+make_zoom_grob <- function(data, xvar, yvar, xlim, ylim, colors){
+  ggplotGrob(
+    ggplot(data, aes_string(x=xvar, y=yvar, color="signature")) +
+      geom_line(size=1.6) +
+      geom_point(size=1) +
+      scale_color_manual(values=colors) +
+      coord_cartesian(xlim=xlim, ylim=ylim) +
+      theme_classic(base_size=8) +
+      theme(
+        legend.position="none",
+        axis.title=element_blank(),
+        axis.text=element_text(size=8),
+        plot.background = element_rect(color="black", size=0.7)
+      )
+  )
+}
+
+# -----------------------------
+# Panel A plots (effect vs sample_pct)
+# -----------------------------
+p1 <- make_plot(dfA, "sample_pct", "NES", "NES", show_legend=TRUE) +
+      ggtitle("Enrichment") + expand_limits(y=0)
+p2 <- make_plot(dfA, "sample_pct", "cohend", "Cohen's d") +
+      ggtitle("Score") + expand_limits(y=0)
+p5 <- make_plot(dfA, "sample_pct", "-log10(p_enrich)", expression(-log[10]*"(p-value)")) +
+      geom_hline(yintercept=-log10(0.05), linetype="dashed", color="gray40")
+p6 <- make_plot(dfA, "sample_pct", "-log10(p_score)", expression(-log[10]*"(p-value)")) +
+      geom_hline(yintercept=-log10(0.05), linetype="dashed", color="gray40")
+
+# -----------------------------
+# Panel B plots (effect vs gene_n)
+# -----------------------------
+p3_main <- make_plot(dfB, "gene_n", "NES", "NES") + ggtitle("Enrichment") + expand_limits(y=0)
+p4_main <- make_plot(dfB, "gene_n", "cohend", "Cohen's d") + ggtitle("Score") + expand_limits(y=0)
+p7_main <- make_plot(dfB, "gene_n", "-log10(p_enrich)", expression(-log[10]*"(p-value)")) +
+           geom_hline(yintercept=-log10(0.05), linetype="dashed", color="gray40")
+p8_main <- make_plot(dfB, "gene_n", "-log10(p_score)", expression(-log[10]*"(p-value)")) +
+           geom_hline(yintercept=-log10(0.05), linetype="dashed", color="gray40")
+
+# Zoom ranges
+zoom_x <- c(0,60)
+zoom_y_NES <- range(dfB$NES[dfB$gene_n<=60], na.rm=TRUE)
+zoom_y_Cohen <- range(dfB$cohend[dfB$gene_n<=60], na.rm=TRUE)
+zoom_y_p <- range(-log10(dfB$p_enrich[dfB$gene_n<=60]), na.rm=TRUE)
+zoom_y_p_score <- range(-log10(dfB$p_score[dfB$gene_n<=60]), na.rm=TRUE)
+
+# Create zoom grobs
+zoom_grob_NES <- make_zoom_grob(dfB, "gene_n", "NES", xlim=zoom_x, ylim=zoom_y_NES, colors=Signature_colors)
+zoom_grob_Cohen <- make_zoom_grob(dfB, "gene_n", "cohend", xlim=zoom_x, ylim=zoom_y_Cohen, colors=Signature_colors)
+zoom_grob_p <- make_zoom_grob(dfB, "gene_n", "-log10(p_enrich)", xlim=zoom_x, ylim=zoom_y_p, colors=Signature_colors)
+zoom_grob_p_score <- make_zoom_grob(dfB, "gene_n", "-log10(p_score)", xlim=zoom_x, ylim=zoom_y_p_score, colors=Signature_colors)
+
+# Overlay zoom insets using annotation_custom
+p3 <- p3_main + annotation_custom(zoom_grob_NES, xmin=500, xmax=1200, ymin=-0.1, ymax=2.8)
+p4 <- p4_main + annotation_custom(zoom_grob_Cohen, xmin=500, xmax=1200, ymin=0.3, ymax=1.5)
+p7 <- p7_main + annotation_custom(zoom_grob_p, xmin=500, xmax=1200, ymin=5, ymax=35)
+p8 <- p8_main + annotation_custom(zoom_grob_p_score, xmin=500, xmax=1200, ymin=5, ymax=48)
+
+# Fix x-axis breaks for Panel B
+panelB_xbreaks <- c(0, 250, 500, 750, 1000)
+p3 <- p3 + scale_x_continuous(breaks=panelB_xbreaks)
+p4 <- p4 + scale_x_continuous(breaks=panelB_xbreaks)
+p7 <- p7 + scale_x_continuous(breaks=panelB_xbreaks)
+p8 <- p8 + scale_x_continuous(breaks=panelB_xbreaks)
+
+# -----------------------------
+# Combine all 8 plots in 2x4 grid
+# -----------------------------
+grid_plots <- ggarrange(
+  p1, p2, p3, p4,
+  p5, p6, p7, p8,
+  ncol=4, nrow=2,
+  common.legend=TRUE,
+  legend="top",
+  align="v",
+  labels = c("A","","B","","","","","")
+)
+
+# Add shared x-axis labels
+final_plot_tradeoffs_final <- annotate_figure(
+  grid_plots,
+  bottom = text_grob(
+    "   Sample Subset (% of Total Samples)                                                                                 Gene Subset (# Genes)",
+    x=0.5, hjust=0.5, face="plain", size=13
+  )
+)
+
+final_plot_tradeoffs_final
+```
+
+
+
+
+
+
 ### Scores: Not coordinated acrivation of gene set
 
 A senescence signature with both upregulated and downregulated genes — and a sample where only the upregulated genes are expressed highly.
@@ -4121,13 +4524,17 @@ GSEAresults_radiation
 
 ### All
 
-```{r fig.width=14, fig.height=10}
-(fig5_tradeoffs <- ggarrange(plt_tradeoffs,plt_impact_score_cellage, plt_impact_enrichment, ncol=1, heights=c(0.3,0.3,0.45), labels=c("","C","D")))
+```{r fig.width=14, fig.height=12}
+(fig5_tradeoffs <- ggarrange(final_plot_tradeoffs_final,plt_impact_score_cellage, plt_impact_enrichment, ncol=1, heights=c(0.5,0.3,0.45), labels=c("","C","D")))
 ```
 ```{r}
 ggplot2::ggsave("../Figures/Figs/Figure6_tradeoffs.png",
                 fig5_tradeoffs,
-                width = 14, height=10, bg = 'white')
+                width = 14, height=12, bg = 'white')
+
+ggplot2::ggsave("../Figures/Figs/Figure6_tradeoffs.pdf",
+                fig5_tradeoffs,
+                width = 14, height=12, bg = 'white')
 ```
 
 
@@ -4291,8 +4698,8 @@ df_Scores_hs
 
 
 ```{r}
-results_df_score <- readRDS("../data/results_df_score_GTEx_FPR.rds")
-results_df_gsea <- readRDS("../data/results_df_gsea_GTEx_FPR.rds")
+results_df_score <- readRDS("../data_aux/results_df_score_GTEx_FPR.rds")
+results_df_gsea <- readRDS("../data_aux/results_df_gsea_GTEx_FPR.rds")
 
 
 results_df_gsea <- results_df_gsea %>%
@@ -4413,7 +4820,8 @@ for (tissue in tissues_signif_HS){
     pltlist_aux[[method]] <- ggplot(scores_df$HernandezSegura, aes(x=AGE, y=score)) +
       geom_jitter(size=2, color="#8F95B1")+ # to preserve the donor's age; correlation was calculated with "real" data
       geom_density2d( colour="white", size=0.3) +
-      ggplot2::geom_smooth(method = "lm", col = "black", se = FALSE, size=1.3)+ ggpubr::stat_cor(aes(label = ..r.label..),  
+      ggplot2::geom_smooth(method = "lm", col = "black", se = FALSE, size=1.3)+ ggpubr::stat_cor(aes(label = ..r.label..), method = "spearman",
+                                                                                                     cor.coef.name="rho",  
                                                                                                  label.x = 20, size=4) +  
     xlab("Age (years)") + ylab("Score") +
       theme_bw() +
@@ -4452,6 +4860,10 @@ plt_row2 <- ggarrange(plt_gtex_scores_HS,plt_scoredistribution_HS_GTEx, widths=c
 ```{r}
  
 ggplot2::ggsave("../Figures/Figs/Figure7_GTEx.png",
+                fig7,
+                width = 13, height=14, bg = 'white') # this one gets a little unformatted; nucleus accumbens gets cropped; use the pdf version
+
+ggplot2::ggsave("../Figures/Figs/Figure7_GTEx.pdf",
                 fig7,
                 width = 13, height=14, bg = 'white')
 ```
