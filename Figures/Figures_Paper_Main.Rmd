@@ -45,7 +45,7 @@ Load markeR functions directly
 
 ```{r}
 # Path to your folder with functions
-fun_dir <- "functions_Sept18_2025"
+fun_dir <- "functions_Sept18_2025/"
 
 # Get all .R files in the folder
 files <- list.files(paste0("../",fun_dir), pattern = "\\.R$", full.names = TRUE)
@@ -1264,6 +1264,120 @@ PlotScores_adapted_noX <- function(data, metadata, gene_sets,
 ```
 
 
+```{r}
+ 
+plotNESlollipop_fdr <- function(GSEA_results,
+                            signif_color = "red", nonsignif_color = "white",
+                            sig_threshold = 0.05, saturation_value=NULL, pointSize=5,
+                            grid = FALSE, nrow = NULL, ncol = NULL, widthlabels=18,
+                            title=NULL, titlesize=12) {
+
+
+  plot_list <- list()
+
+  for (contrast in names(GSEA_results)) {
+    res <- GSEA_results[[contrast]]
+
+    if(is.null(saturation_value)){
+      if (min(res$padj)>sig_threshold){
+        limit_pval <- 0.001
+      } else{
+        limit_pval <- min(res$padj)
+      }
+
+    } else {
+      limit_pval <- saturation_value
+    }
+
+    # Ensure contrast ordering
+    # res$pathway <- sapply(res$pathway, function(x) wrap_title(x, widthlabels))
+    res$pathway <- vapply(res$pathway,
+                          function(x) wrap_title(x, widthlabels),
+                          FUN.VALUE = character(1))
+    
+    res$pathway <- factor(res$pathway, levels = res$pathway[order(res$NES)])
+
+    plot <- ggplot2::ggplot(res, ggplot2::aes(x = .data$NES, y = .data$pathway, fill = -log10(.data$padj))) +
+
+      # Add a condition for dashed lines and points for B statistic and negative NES
+      ggplot2::geom_segment(ggplot2::aes(yend = .data$pathway,
+                                         xend = 0,
+                                         linetype = ifelse(.data$stat_used == "B" & .data$NES < 0,
+                                                           "dashed", "solid")),
+                            size = .5,
+                            color = ifelse(res$stat_used == "B" & res$NES < 0,
+                                           "darkgrey", "black")) + # Fixed color to grey/black
+      ggplot2::geom_point(
+        shape = 21,
+        stroke = 1.2,
+        size = 4,
+        ggplot2::aes(color = ifelse(.data$stat_used == "B" & .data$NES < 0,
+                                    "darkgrey", "black")) # Points color for B and negative NES
+      ) +
+
+      ggplot2::scale_fill_gradient2(low = nonsignif_color,
+                                      mid = nonsignif_color,
+                                      high = signif_color,
+                                      midpoint = -log10(sig_threshold),
+                                      limits=c(0,-log10(limit_pval)),
+                                      na.value = signif_color) +
+
+      # Plot title and axis labels
+      ggplot2::labs(title = contrast,
+                    x = "Normalized Enrichment Score (NES)",
+                    y = "Gene Set",
+                    fill = "-log10(FDR)") +
+
+      # Facet vertically based on the statistic used (T or B)
+      ggplot2::facet_grid(stat_used ~.,
+                          labeller = ggplot2::labeller(stat_used =
+                                                         c("t" = "Enriched/Depleted", "B" = "Altered")),
+                          scales = "free", switch = "y", space='free') + # Faceting on the y-axis
+
+      # Minimal theme and legend position
+      ggplot2::theme_bw() +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, face = "bold", size=titlesize-1.5),
+        legend.position = "right"
+      ) +
+      ggplot2::scale_linetype_identity() + # to remove aes for linetype and color
+      ggplot2::scale_color_identity()+
+      theme(strip.background =element_rect(fill="white")) # change background facet wrap labels
+
+
+    plot_list[[contrast]] <- plot
+
+  }
+
+  # Arrange plots in grid if requested
+  if (grid && length(plot_list) > 1) {
+    n <- length(plot_list)
+
+    if (is.null(ncol) && is.null(nrow)) {
+      ncol <- ceiling(sqrt(n))
+      nrow <- ceiling(n / ncol)
+    } else if (is.null(ncol)) {
+      ncol <- ceiling(n / nrow)
+    } else if (is.null(nrow)) {
+      nrow <- ceiling(n / ncol)
+    }
+
+    combined_plot <- ggpubr::ggarrange(plotlist = plot_list, ncol = ncol,
+                                       nrow = nrow, align = "hv",
+                                       common.legend = TRUE, legend = "right")
+    if (!is.null(title)) combined_plot <- ggpubr::annotate_figure(combined_plot,
+                                                top = grid::textGrob(title,
+                                                                     gp = grid::gpar(cex = 1.3,
+                                                                                     fontsize = titlesize)))
+
+    return(combined_plot)
+  }
+
+  return(plot_list)  # Return list if not in grid mode
+}
+
+```
+
 ### Load relevant data
 
 ```{r}
@@ -2459,7 +2573,7 @@ plt_ranking_simpler <- ggarrange(plt_ranking_simpler1,plt_ranking_simpler2, ncol
 (plt_ranking_simpler <- ggpubr::annotate_figure(
   plt_ranking_simpler,
   left = grid::textGrob(
-    expression(log[2]~"- median score"),  # log₂-median score
+    expression(log[2]*"-median score"),  # log₂-median score
     rot = 90,
     vjust = 1,
     gp = grid::gpar(cex = 1.3, fontsize = 10)
@@ -2499,7 +2613,7 @@ p1 <- ggplot(cellage_bidirect, aes(x = Condition, y = score, color = Condition))
     legend.position = "none"
   ) +
   xlab("") +
-  ylab(expression(log[2]~"- median score")) +
+  ylab(expression(log[2]*"-median score")) +
   ggtitle("With Specified Direction")
 
 p2 <- ggplot(cellage_nodir, aes(x = Condition, y = score, color = Condition)) + 
@@ -2513,7 +2627,7 @@ p2 <- ggplot(cellage_nodir, aes(x = Condition, y = score, color = Condition)) +
     legend.position = "none"
   ) +
   xlab("") +
-  ylab(expression(log[2]~"- median score")) +
+  ylab(expression(log[2]*"-median score")) +
   ggtitle("Without Specified Direction")
 
 # Combine plots side-by-side without legend
@@ -2853,7 +2967,7 @@ df_ggplot$significance <- df_ggplot$padj_Sen_vs_Prol <= 0.05 & df_ggplot$padj_Se
     geom_hline(yintercept = 0, size=0.6, linetype="dashed") +
     xlab("NES Senescence vs Proliferation")+
     ylab("NES Senescence vs Quiescence")+ 
-    scale_fill_manual(values = c("white","#934873"), name = "Adj. p-value <= 0.05   ")  +
+    scale_fill_manual(values = c("white","#934873"), name = "FDR <= 0.05   ")  +
     theme(legend.position = "top") + 
     theme( plot.title = element_text(hjust = 0.5 ) ) )
 ```
@@ -2865,7 +2979,7 @@ plotvolcano_1 <- plotVolcano(DEResultsList=degenes,
                              genes=signatures_bidirectional[1:3], 
                              N=NULL, 
                              x="logFC",
-                             y="-log10(adj. p-value)", 
+                             y="-log10(adj.P.Val)", 
                              pointSize=2, 
                              color="pink", 
                              highlightcolor="darkblue", 
@@ -2933,10 +3047,10 @@ plotvolcano_3 <- plotVolcano(DEResultsList=degenes,
 
 ```{r fig.width=5, fig.height=10}
 
-(plotNESlollipop_1 <- plotNESlollipop(GSEA_results=list("Senescent-Proliferative"=GSEAresults$`Senescent-Proliferative`), sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "#934873",
+(plotNESlollipop_1 <- plotNESlollipop_fdr(GSEA_results=list("Senescent-Proliferative"=GSEAresults$`Senescent-Proliferative`), sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "#934873",
                                       grid = T, nrow = 1, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
 
-(plotNESlollipop_2 <- plotNESlollipop(GSEA_results=list("Senescent-Quiescent"=GSEAresults$`Senescent-Quiescent`), sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "#934873",
+(plotNESlollipop_2 <- plotNESlollipop_fdr(GSEA_results=list("Senescent-Quiescent"=GSEAresults$`Senescent-Quiescent`), sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "#934873",
                                       grid = T, nrow = 1, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
 
 (plotNESlollipop_new <- ggarrange(plotNESlollipop_1$`Senescent-Proliferative`,plotNESlollipop_2$`Senescent-Quiescent`,ncol=1, common.legend = T))
@@ -2958,20 +3072,235 @@ ggplot2::ggsave("../Figures/Figs/Figure4_Enrichment_alternative.pdf",
                 width = 12, height=14, bg = 'white')
 ```
 
+
+
+### Alternative 2
+
+```{r fig.width=6, fig.height=15}
+library(ggplot2)
+library(ggpubr)
+library(grid)
+
+## ------------------------------------------------------------------
+## Single volcano plot generator
+## ------------------------------------------------------------------
+plot_one_volcano <- function(df, genes = NULL, direction = NULL,
+                             pointSize = 1.8,
+                             nointerest = "#B7B7B7",
+                             col_up = "#038C65",
+                             col_down = "#8C0303",
+                             col_other = "#05254A") {
+  
+  base <- ggplot(df, aes(x = logFC, y = -log10(adj.P.Val))) +
+    geom_point(color = nointerest, alpha = 0.35, size = pointSize) +
+    theme_bw() +
+    theme(
+      plot.margin = unit(c(1,1,1,1), "mm"),
+      axis.title = element_blank() 
+    )
+  
+  if (is.null(genes)) return(base)
+  
+  if (is.null(direction)) {
+    return(base + geom_point(data = df[rownames(df) %in% genes, ],
+                             color = col_other, size = pointSize))
+  }
+  
+  up   <- genes[direction == 1]
+  down <- genes[direction == -1]
+  oth  <- genes[!direction %in% c(1, -1)]
+  
+  base +
+    geom_point(data = df[rownames(df) %in% up, ],   color = col_up,   size = pointSize) +
+    geom_point(data = df[rownames(df) %in% down, ], color = col_down, size = pointSize) +
+    geom_point(data = df[rownames(df) %in% oth, ],  color = col_other, size = pointSize)
+}
+
+## ------------------------------------------------------------------
+## Helper to parse signatures (vector or data.frame with direction)
+## ------------------------------------------------------------------
+prep_signature <- function(sig) {
+  if (is.vector(sig)) {
+    list(genes = sig, direction = NULL)
+  } else if (is.data.frame(sig)) {
+    list(genes = sig[[1]], direction = sig[[2]])
+  } else stop("Signature must be a vector or data.frame.")
+}
+
+## ------------------------------------------------------------------
+## Build rows with left + right volcano + rotated signature label
+## ------------------------------------------------------------------
+row_list <- list()
+
+for (sig_name in names(signatures_bidirectional)) {
+  
+  sig_info <- prep_signature(signatures_bidirectional[[sig_name]])
+  
+  ## left volcano
+  p_left <- plot_one_volcano(
+    df = degenes2[["Senescent-Proliferative"]],
+    genes = sig_info$genes,
+    direction = sig_info$direction
+  )
+  
+  ## right volcano
+  p_right <- plot_one_volcano(
+    df = degenes2[["Senescent-Quiescent"]],
+    genes = sig_info$genes,
+    direction = sig_info$direction
+  )
+  
+  ## create rotated, wrapped signature name for the right, top-aligned and smaller
+sig_lab <- textGrob(
+  wrap_title(sig_name, width = 20),
+  rot = 90,
+  gp = gpar(cex = 0.7),
+  just = "centre",  # horizontal alignment relative to grob
+  y = 0.5           # vertical centre of the column
+)
+  
+row_pair <- ggarrange(p_left, p_right, sig_lab,
+                      ncol = 3,
+                      widths = c(1, 1, 0.25))
+  
+  row_list[[length(row_list) + 1]] <- row_pair
+}
+
+## ------------------------------------------------------------------
+## Combine all rows vertically
+## ------------------------------------------------------------------
+main_grid <- ggarrange(plotlist = row_list, ncol = 1)
+
+## ------------------------------------------------------------------
+## Add top column titles and common axis labels
+## ------------------------------------------------------------------
+ 
+
+# Assume main_grid is your 9x2 volcano plots with signature labels
+# Reserve extra space for top titles
+top_titles <- arrangeGrob(
+  textGrob(" Senescence vs Proliferation" ),
+  textGrob("  Senescence vs Quiescence" ),
+  ncol = 3,
+  widths = c(1, 1, 0.25)
+)
+
+# Combine top titles and main grid
+final_grid <- ggarrange(
+  top_titles,     # top row with titles
+  main_grid,      # your volcano plots with signature labels
+  ncol = 1,
+  heights = c(0.02, 1)  # give extra height to top row
+)
+
+# Add common axes with annotate_figure
+final_grid <- annotate_figure(
+  final_grid,
+  left = textGrob("-log10(FDR)", rot = 90, gp = gpar(cex = 1.1)),
+  bottom = textGrob("logFC", gp = gpar(cex = 1.1))
+)
+ 
+
+## ------------------------------------------------------------------
+## Render
+## ------------------------------------------------------------------
+final_grid
+
+
+ 
+## ------------------------------------------------------------------
+## Create dummy plot for the legend
+## ------------------------------------------------------------------
+legend_df <- data.frame(
+  x = 1:3, y = 1:3,
+  Direction = factor(c("Upregulated", "Downregulated", "Unknown"),
+                     levels = c("Upregulated", "Downregulated", "Unknown"))
+)
+
+col_mapping <- c("Upregulated" = "#038C65",
+                 "Downregulated" = "#8C0303",
+                 "Unknown" = "#05254A")
+
+dummy_plot <- ggplot(legend_df, aes(x = x, y = y, color = Direction)) +
+  geom_point(size = 3) +
+  scale_color_manual(values = col_mapping) +
+  theme_void() +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    legend.direction = "horizontal",
+    legend.text = element_text(size = 10)
+  )
+
+legend_grob <- ggpubr::get_legend(dummy_plot)
+
+## ------------------------------------------------------------------
+## Combine your final_grid and legend at the bottom
+## ------------------------------------------------------------------
+final_plot_with_legend <- ggarrange(
+  final_grid,
+  legend_grob,
+  ncol = 1,
+  heights = c(1, 0.03)  # adjust height for the legend row
+)
+
+## ------------------------------------------------------------------
+## Render
+## ------------------------------------------------------------------
+final_plot_with_legend
+```
+
+```{r fig.height=15, fig.width=11}
+ 
+
+plt_right <- ggarrange(
+  plotNESlollipop_new,
+  plt_scatter_gsea,
+  ncol = 1,
+  labels = c("B", "C"),
+  heights = c(0.7, 0.3)
+)
+
+# Add space between the columns
+plt_final <- ggarrange(
+  final_plot_with_legend,
+  NULL,          # spacer
+  plt_right,
+  labels = c("A", "", ""),
+  nrow=1,
+  widths = c(0.45, 0.02, 0.4)  # adjust middle width for spacing
+)
+
+plt_final
+```
+
+
+```{r}
+ggplot2::ggsave("../Figures/Figs/Figure4_Enrichment.png",
+                plt_final,
+                width = 11, height=15, bg = 'white')
+
+ggplot2::ggsave("../Figures/Figs/Figure4_Enrichment.pdf",
+                plt_final,
+                width = 11, height=15, bg = 'white')
+```
+
+
+
 ## Figure 5 - Comparative Performance of Senescence Signatures
 
 ```{r fig.width=10, fig.height=4}
-# 
-# degenes_SP <- degenes$`Senescent-Proliferative`
-# degenes_SP$gene <- row.names(degenes_SP)
-# degenes_SQ <- degenes$`Senescent-Quiescent`
-# degenes_SQ$gene <- row.names(degenes_SQ)
-# 
-# degenes_SP_SQ <- merge(degenes_SP,degenes_SQ, by="gene")
-# degenes_SP_SQ <- degenes_SP_SQ[,c("gene","t.x","t.y")]
-# colnames(degenes_SP_SQ) <- c("gene","t_SP","t_SQ")
-# 
-# degenes_SP_SQ
+
+degenes_SP <- degenes$`Senescent-Proliferative`
+degenes_SP$gene <- row.names(degenes_SP)
+degenes_SQ <- degenes$`Senescent-Quiescent`
+degenes_SQ$gene <- row.names(degenes_SQ)
+
+degenes_SP_SQ <- merge(degenes_SP,degenes_SQ, by="gene")
+degenes_SP_SQ <- degenes_SP_SQ[,c("gene","t.x","t.y")]
+colnames(degenes_SP_SQ) <- c("gene","t_SP","t_SQ")
+
+degenes_SP_SQ
 # 
 # plt_scatter_SeneQuest <- ggplot(degenes_SP_SQ, aes(x=t_SP,y=t_SQ)) + 
 #   geom_point(size=3, alpha=0.6, color="#C2C2C2") +
@@ -3050,7 +3379,7 @@ degenes_SP_SQ_colored <- degenes_SP_SQ %>%
 
 colors <- c("Upregulated" = "#1BAA7A",
             "Downregulated" = "#C83C3C",
-            "REACTOME" = "#96C29B")
+            "REACTOME" = "#05254A")
 
 # Plot SeneQuest
 plt_scatter_SeneQuest <- ggplot(degenes_SP_SQ_colored, aes(x=t_SP, y=t_SQ)) + 
@@ -3064,7 +3393,8 @@ plt_scatter_SeneQuest <- ggplot(degenes_SP_SQ_colored, aes(x=t_SP, y=t_SQ)) +
   theme_bw() +
   labs(x="t-statistic \nSenescent vs Proliferative", y="t-statistic \nSenescent vs Quiescent", fill="") +
   ggtitle("SeneQuest") +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.position = "none")
 
 # Plot HernandezSegura
 plt_scatter_HernandezSegura <- ggplot(degenes_SP_SQ_colored, aes(x=t_SP, y=t_SQ)) + 
@@ -3079,7 +3409,8 @@ plt_scatter_HernandezSegura <- ggplot(degenes_SP_SQ_colored, aes(x=t_SP, y=t_SQ)
   theme_bw() +
   labs(x="t-statistic \nSenescent vs Proliferative", y="t-statistic \nSenescent vs Quiescent", fill="") +
   ggtitle("HernandezSegura") +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.position = "none")
 
 # Plot REACTOME (gray points)
 plt_scatter_REACTOME <- ggplot(degenes_SP_SQ_colored, aes(x=t_SP, y=t_SQ)) +
@@ -3094,11 +3425,57 @@ plt_scatter_REACTOME <- ggplot(degenes_SP_SQ_colored, aes(x=t_SP, y=t_SQ)) +
   theme_bw() +
   labs(x="t-statistic \nSenescent vs Proliferative", y="t-statistic \nSenescent vs Quiescent", fill="") +
   ggtitle("REACTOME_CELLULAR_SENESCENCE") +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.position = "none")
 
 # Arrange plots
-plt_tstats <- ggarrange(plt_scatter_SeneQuest, plt_scatter_HernandezSegura, plt_scatter_REACTOME, nrow=1, common.legend = T)
+plt_tstats <- ggarrange(plt_scatter_SeneQuest, plt_scatter_HernandezSegura, plt_scatter_REACTOME, nrow=1, common.legend = F)
+
+
+
+
+## ------------------------------------------------------------------
+## Create dummy plot for the legend
+## ------------------------------------------------------------------
+legend_df <- data.frame(
+  x = 1:3, y = 1:3,
+  Direction = factor(c("Upregulated", "Downregulated", "Unknown"),
+                     levels = c("Upregulated", "Downregulated", "Unknown"))
+)
+
+col_mapping <- c("Upregulated" = "#038C65",
+                 "Downregulated" = "#8C0303",
+                 "Unknown" = "#05254A")
+
+dummy_plot <- ggplot(legend_df, aes(x = x, y = y, color = Direction)) +
+  geom_point(size = 3) +
+  scale_color_manual(values = col_mapping) +
+  theme_void() +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    legend.direction = "horizontal",
+    legend.text = element_text(size = 10)
+  )
+
+legend_grob <- ggpubr::get_legend(dummy_plot)
+
+## ------------------------------------------------------------------
+## Combine your final_grid and legend at the bottom
+## ------------------------------------------------------------------
+plt_tstats <- ggarrange(
+  legend_grob,
+  plt_tstats,
+    ncol = 1,
+  heights = c(0.05,1)  # adjust height for the legend row
+)
+
+## ------------------------------------------------------------------
+## Render
+## ------------------------------------------------------------------
 plt_tstats
+
+
 ```
 
 
@@ -3127,7 +3504,7 @@ plt_tstats
 (plot_logmedian_SeneQuest <- ggpubr::annotate_figure(
   plot_logmedian_SeneQuest,
   left = grid::textGrob(
-    expression(log[2]~"- median score"),  # log₂-median score
+    expression(log[2]*"-median score"),  # log₂-median score
     rot = 90,
     vjust = 1,
     gp = grid::gpar(cex = 1.3, fontsize = 10)
@@ -3179,7 +3556,7 @@ blank <- ggplot() + theme_void()
 (plot_logmedian_HernandezSegura <- ggpubr::annotate_figure(
   plot_logmedian_HernandezSegura,
   left = grid::textGrob(
-    expression(log[2]~"- median score"),  # log₂-median score
+    expression(log[2]*"-median score"),  # log₂-median score
     rot = 90,
     vjust = 1,
     gp = grid::gpar(cex = 1.3, fontsize = 10)
@@ -3332,7 +3709,7 @@ df_signatures$Quality <- ifelse(
 # plt_fdrsim_subset_v2 <- readRDS("../data_aux/plt_fdrsim_subset_v2.rds")
 # plt_fdrsim_subset_v2
 
-plt_fdrsim_subset_v3 <- readRDS("../data_aux/FPRsim_100_data_and_plot_Sept30_2025_allsigs.rds")
+plt_fdrsim_subset_v3 <- readRDS("../data_aux/FPRsim_100_data_and_plot_Dec1_2025_allsigs.rds")
 plt_fdrsim_subset_v3
 
 df <- data.frame(NULL)
@@ -3429,7 +3806,12 @@ make_plot <- function(df_sig) {
       plot.title = element_text(size = 14,hjust = 0.5),
       legend.position = "top"
     ) +
-    scale_color_manual(values = c("Original" = "#68B393", "Simulated" = "#666666"))
+    scale_color_manual(values = c("Original" = "#68B393", "Simulated" = "#666666"))+
+    scale_x_discrete(labels = c(
+    logmedian = expression(log[2]*"-median"),
+    ranking   = "ranking",
+    ssGSEA    = "ssGSEA"
+  ))
 }
 
 # Criar lista de plots
@@ -3510,18 +3892,19 @@ print(combined)
 
 blank <- ggplot() + theme_void() # for spacing
 
-plt_scores <- ggarrange(plot_logmedian_SeneQuest, plot_logmedian_HernandezSegura, nrow=1, labels=c("C","D"))
+plt_scores <- ggarrange(plot_logmedian_SeneQuest, NULL, plot_logmedian_HernandezSegura, nrow=1, labels=c("C",""," D"), widths=c(1,0.03,1))
 
-plt_senequest <- ggarrange(plt_scores,blank,plt_tstats, ncol=1, heights=c(0.6,0.02,0.8), labels=c("","E"))
+plt_senequest <- ggarrange(plt_scores,blank,plt_tstats, ncol=1, heights=c(0.6,0.06,0.8), labels=c("","","E"))
 
 (plt_fig5_alternative <- ggarrange(
   plt_expectations, 
+  NULL,
   plt_senequest,
   blank,                 # <-- spacer
   combined,
-  labels = c("", "", "", "F"),
+  labels = c("", "", "","", "F"),
   ncol = 1,
-  heights = c(0.26, 0.5, 0.02, 0.2)   # adjust 0.04 to control spacing
+  heights = c(0.26, 0.02,0.5, 0.02, 0.2)   # adjust 0.04 to control spacing
 ))
 ```
 
@@ -4151,20 +4534,16 @@ p1 <- make_plot(dfA, "sample_pct", "NES", "NES", show_legend=TRUE) +
       ggtitle("Enrichment") + expand_limits(y=0)
 p2 <- make_plot(dfA, "sample_pct", "cohend", "Cohen's d") +
       ggtitle("Score") + expand_limits(y=0)
-p5 <- make_plot(dfA, "sample_pct", "-log10(p_enrich)", expression(-log[10]*"(p-value)")) +
-      geom_hline(yintercept=-log10(0.05), linetype="dashed", color="gray40")
-p6 <- make_plot(dfA, "sample_pct", "-log10(p_score)", expression(-log[10]*"(p-value)")) +
-      geom_hline(yintercept=-log10(0.05), linetype="dashed", color="gray40")
+p5 <- make_plot(dfA, "sample_pct", "-log10(p_enrich)", expression(-log[10]*"(p-value)"))  
+p6 <- make_plot(dfA, "sample_pct", "-log10(p_score)", expression(-log[10]*"(p-value)"))  
 
 # -----------------------------
 # Panel B plots (effect vs gene_n)
 # -----------------------------
 p3_main <- make_plot(dfB, "gene_n", "NES", "NES") + ggtitle("Enrichment") + expand_limits(y=0)
 p4_main <- make_plot(dfB, "gene_n", "cohend", "Cohen's d") + ggtitle("Score") + expand_limits(y=0)
-p7_main <- make_plot(dfB, "gene_n", "-log10(p_enrich)", expression(-log[10]*"(p-value)")) +
-           geom_hline(yintercept=-log10(0.05), linetype="dashed", color="gray40")
-p8_main <- make_plot(dfB, "gene_n", "-log10(p_score)", expression(-log[10]*"(p-value)")) +
-           geom_hline(yintercept=-log10(0.05), linetype="dashed", color="gray40")
+p7_main <- make_plot(dfB, "gene_n", "-log10(p_enrich)", expression(-log[10]*"(p-value)")) 
+p8_main <- make_plot(dfB, "gene_n", "-log10(p_score)", expression(-log[10]*"(p-value)"))  
 
 # Zoom ranges
 zoom_x <- c(0,60)
@@ -4517,7 +4896,7 @@ GSEAresults_radiation
 
 ```{r fig.width=12, fig.height=4.5}
 
-(plt_impact_enrichment <- plotNESlollipop(GSEA_results=GSEAresults_radiation, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "#934873",
+(plt_impact_enrichment <- plotNESlollipop_fdr(GSEA_results=GSEAresults_radiation, sig_threshold = 0.05,saturation_value=0.00001, nonsignif_color = "white", signif_color = "#934873",
                                           grid = T, nrow = 1, ncol = NULL, widthlabels=20, title=NULL, titlesize=14))
 
 ```
@@ -4528,17 +4907,29 @@ GSEAresults_radiation
 (fig5_tradeoffs <- ggarrange(final_plot_tradeoffs_final,plt_impact_score_cellage, plt_impact_enrichment, ncol=1, heights=c(0.5,0.3,0.45), labels=c("","C","D")))
 ```
 ```{r}
-ggplot2::ggsave("../Figures/Figs/Figure6_tradeoffs.png",
-                fig5_tradeoffs,
-                width = 14, height=12, bg = 'white')
+# ggplot2::ggsave("../Figures/Figs/Figure6_tradeoffs.png",
+#                 fig5_tradeoffs,
+#                 width = 14, height=12, bg = 'white')
+# 
+# ggplot2::ggsave("../Figures/Figs/Figure6_tradeoffs.pdf",
+#                 fig5_tradeoffs,
+#                 width = 14, height=12, bg = 'white')
+```
 
-ggplot2::ggsave("../Figures/Figs/Figure6_tradeoffs.pdf",
-                fig5_tradeoffs,
-                width = 14, height=12, bg = 'white')
+```{r fig.width=14, fig.height=10}
+(fig5_tradeoffs_withoutc <- ggarrange(final_plot_tradeoffs_final, plt_impact_enrichment, ncol=1, heights=c(0.5,0.5), labels=c("","C")))
 ```
 
 
+```{r}
+ggplot2::ggsave("../Figures/Figs/Figure6_tradeoffs.png",
+                fig5_tradeoffs_withoutc,
+                width = 14, height=10, bg = 'white')
 
+ggplot2::ggsave("../Figures/Figs/Figure6_tradeoffs.pdf",
+                fig5_tradeoffs_withoutc,
+                width = 14, height=10, bg = 'white')
+```
 
 ## Figure 7 - Translation potential to human data
 
@@ -4557,13 +4948,15 @@ df_Scores_alltissues <- CalculateScores(data = GTEx_alltissues,
    # add dashed horizontal line for median across all tissues
    geom_hline(yintercept = median(df_Scores_alltissues$HernandezSegura$score), linetype = "dashed", color = "#888888") +
    geom_violin(alpha=0.4, fill="#4E9B62")+ 
-   labs( x = "",
-         y = "Normalised \nSignature \nScore") +
+   labs(
+     x = "",
+     y = expression(atop(log[2]*"-median", "score"))  # <- breaks into two lines
+   ) +
    theme_minimal() +
    # x axis text 45 degrees
    theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
    # add median with line
-   stat_summary(fun = median, geom = "crossbar", width = 0.1, color = "black")   +
+   stat_summary(fun = median, geom = "crossbar", width = 0.1, color = "black") +
    theme(text = element_text(size=14)))
 
 
@@ -4725,7 +5118,7 @@ results_df_score
 
 
 ```{r fig.width=6, fig.height=10}
-
+ 
 
 # Ensure correct factor levels for method and tissue
 results_df_score$method <- factor(results_df_score$method, levels = c("logmedian", "ranking", "ssGSEA"))
@@ -4752,13 +5145,17 @@ for (sig in sigs) {
     geom_tile(color = "gray90") +
     geom_text(aes(label = signif), size = 6, vjust = 0.8, hjust = 0.5) +
     scale_fill_gradient(low = "white", high = "#49B0AB", name = "Cohen's f", limits=c(0,0.4)) +
+    scale_x_discrete(labels = c(
+      logmedian = expression(log[2]*"-median"),
+      ranking   = "ranking",
+      ssGSEA    = "ssGSEA"
+    )) + 
     theme_minimal(base_size = 12) +
-    #labs(title = "Score") +
     theme(axis.title = element_blank(),
           axis.text.x = element_text(angle = 45, hjust = 1, size=12),
-          axis.text.y = element_text(size=12)) +
-    # center main title of the plot
-    theme( plot.title = element_text(hjust = 0.5))
+          axis.text.y = element_text(size=12),
+        plot.title = element_text(hjust = 0.5))
+
   
   # Create GSEA plot
   p_gsea <- ggplot(gsea_data, aes(x = method, y = tissue, fill = abs(NES))) +
@@ -4815,25 +5212,26 @@ for (tissue in tissues_signif_HS){
     scores_df <- CalculateScores(data = subset_data,
                                  metadata = subset_metadata,
                                  gene_sets = list(HernandezSegura=signatures_bidirectional$HernandezSegura), method = method)
-     
+    
+    # Define the title
+    method_title <- if(method == "logmedian") expression(log[2]*"-median") else method
     
     pltlist_aux[[method]] <- ggplot(scores_df$HernandezSegura, aes(x=AGE, y=score)) +
-      geom_jitter(size=2, color="#8F95B1")+ # to preserve the donor's age; correlation was calculated with "real" data
-      geom_density2d( colour="white", size=0.3) +
-      ggplot2::geom_smooth(method = "lm", col = "black", se = FALSE, size=1.3)+ ggpubr::stat_cor(aes(label = ..r.label..), method = "spearman",
-                                                                                                     cor.coef.name="rho",  
-                                                                                                 label.x = 20, size=4) +  
-    xlab("Age (years)") + ylab("Score") +
+      geom_jitter(size=2, color="#8F95B1")+ 
+      geom_density2d(colour="white", size=0.3) +
+      geom_smooth(method = "lm", col = "black", se = FALSE, size=1.3) + 
+      ggpubr::stat_cor(aes(label = ..r.label..), method = "spearman",
+                       cor.coef.name="rho", label.x = 20, size=4) +  
+      xlab("Age (years)") + ylab("Score") +
       theme_bw() +
-      ggtitle(method) +
-      #center title 
-      theme(plot.title = element_text(hjust = 0.5 ),
+      ggtitle(method_title) +  # <-- formatted title here
+      theme(plot.title = element_text(hjust = 0.5),
             base_size = 16,
-            axis.text.x = element_text( size=12),
+            axis.text.x = element_text(size=12),
             axis.text.y = element_text(size=12),
             axis.title.x = element_text(size=14),
             axis.title.y = element_text(size=14)) 
-  }
+}
   
   pltlist[[tissue]] <- ggarrange(plotlist = pltlist_aux, ncol = 3, nrow = 1, common.legend = TRUE) +
     ggtitle( tissue)  + theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
@@ -4850,10 +5248,10 @@ plt_scoredistribution_HS_GTEx
 
 
 
-```{r fig.width=12, fig.height=13}
+```{r fig.width=12, fig.height=14}
 plt_row1 <- ggarrange(plt_gtex_score_alltissues, plt_densities_celltype_HS, widths=c(0.75,0.25), ncol=2, labels=c("A","B"), vjust = 1 )
 plt_row2 <- ggarrange(plt_gtex_scores_HS,plt_scoredistribution_HS_GTEx, widths=c(0.5,0.5), ncol=2, labels=c("C","D"))  
-(fig7 <- ggarrange(plt_row1,plt_row2, heights=c(0.3,0.63), ncol=1))
+(fig7 <- ggarrange(plt_row1,plt_row2, heights=c(0.32,0.63), ncol=1))
 
 ```
 
