@@ -1326,7 +1326,7 @@ plotNESlollipop_fdr <- function(GSEA_results,
       ggplot2::labs(title = contrast,
                     x = "Normalized Enrichment Score (NES)",
                     y = "Gene Set",
-                    fill = "-log10(FDR)") +
+                    fill = expression("-"*log[10]*"(FDR)")) +
 
       # Facet vertically based on the statistic used (T or B)
       ggplot2::facet_grid(stat_used ~.,
@@ -3063,11 +3063,11 @@ plt_right <- ggarrange(plotNESlollipop_new,plt_scatter_gsea, ncol=1, labels=c("B
 ```
 
 ```{r}
-ggplot2::ggsave("../Figures/Figs/Figure4_Enrichment_alternative.png",
+ggplot2::ggsave("../Figures/Figs/Figure4_Enrichment.png",
                 plt_final,
                 width = 12, height=14, bg = 'white')
 
-ggplot2::ggsave("../Figures/Figs/Figure4_Enrichment_alternative.pdf",
+ggplot2::ggsave("../Figures/Figs/Figure4_Enrichment.pdf",
                 plt_final,
                 width = 12, height=14, bg = 'white')
 ```
@@ -4534,16 +4534,16 @@ p1 <- make_plot(dfA, "sample_pct", "NES", "NES", show_legend=TRUE) +
       ggtitle("Enrichment") + expand_limits(y=0)
 p2 <- make_plot(dfA, "sample_pct", "cohend", "Cohen's d") +
       ggtitle("Score") + expand_limits(y=0)
-p5 <- make_plot(dfA, "sample_pct", "-log10(p_enrich)", expression(-log[10]*"(p-value)"))  
-p6 <- make_plot(dfA, "sample_pct", "-log10(p_score)", expression(-log[10]*"(p-value)"))  
+p5 <- make_plot(dfA, "sample_pct", "-log10(p_enrich)", expression(-log[10]*"(p)"))  
+p6 <- make_plot(dfA, "sample_pct", "-log10(p_score)", expression(-log[10]*"(p)"))  
 
 # -----------------------------
 # Panel B plots (effect vs gene_n)
 # -----------------------------
 p3_main <- make_plot(dfB, "gene_n", "NES", "NES") + ggtitle("Enrichment") + expand_limits(y=0)
 p4_main <- make_plot(dfB, "gene_n", "cohend", "Cohen's d") + ggtitle("Score") + expand_limits(y=0)
-p7_main <- make_plot(dfB, "gene_n", "-log10(p_enrich)", expression(-log[10]*"(p-value)")) 
-p8_main <- make_plot(dfB, "gene_n", "-log10(p_score)", expression(-log[10]*"(p-value)"))  
+p7_main <- make_plot(dfB, "gene_n", "-log10(p_enrich)", expression(-log[10]*"(p)")) 
+p8_main <- make_plot(dfB, "gene_n", "-log10(p_score)", expression(-log[10]*"(p)"))  
 
 # Zoom ranges
 zoom_x <- c(0,60)

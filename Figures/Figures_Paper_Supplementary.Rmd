@@ -23,7 +23,7 @@ library("edgeR")
 library(ggpubr)
 library(cowplot)
 library(msigdbr)
-
+library(data.table)
 ```
 
 
@@ -3516,10 +3516,10 @@ rownames(df_OR) <- names(pathwaysHset)
 colnames(df_OR) <- names(gene_sets)
 
 # 6. Convert to long format
-df_pval_melt <- melt(df_pval)
+df_pval_melt <- reshape2::melt(df_pval)
 colnames(df_pval_melt) <- c("Pathway", "Signature", "pval")
 
-df_OR_melt <- melt(df_OR)
+df_OR_melt <- reshape2::melt(df_OR)
 colnames(df_OR_melt) <- c("Pathway", "Signature", "OR")
 
 # 7. Adjust p-values
@@ -3705,16 +3705,16 @@ final_plot_localisation2_2 <- ggarrange(plotlist = plot_list[!names(plot_list) %
 ```
 
 ```{r fig.width=15, fig.height=14}
-(plt_sup2_alternative <- ggarrange(final_plot_localisation2,plt_logodds, nrow=1, labels = "AUTO", font.label = list(size = 20), widths = c(0.5,0.5)))
+(plt_sup2_alternative <- ggarrange(final_plot_localisation2,plt_logodds, nrow=1, labels = "AUTO", font.label = list(size = 20), widths = c(0.6,0.5)))
 ```
 
 
 ```{r}
-ggplot2::ggsave("Figs/SupFigure2_GeneSets_Function_Localisation_alternative.png",
+ggplot2::ggsave("Figs/SupFigure2_GeneSets_Function_Localisation.png",
                 plt_sup2_alternative,
                 width = 15, height=14, bg = 'white')
 
-ggplot2::ggsave("Figs/SupFigure2_GeneSets_Function_Localisation_alternative.pdf",
+ggplot2::ggsave("Figs/SupFigure2_GeneSets_Function_Localisation.pdf",
                 plt_sup2_alternative,
                 width = 15, height=14, bg = 'white')
 ```
@@ -3991,8 +3991,16 @@ cor_long <- df_combined %>%
     `ssGSEA \nvs ranking` = cor(ssGSEA, ranking, method = "spearman")
   ) %>%
   pivot_longer(-GeneSet, names_to = "Comparison", values_to = "SpearmanRho")
+ 
 
+geneSet_colors2 <- geneSet_colors
+names(geneSet_colors2) <- unique(cor_long$GeneSet)[order(unique(cor_long$GeneSet))]
 
+# cor_long$GeneSet <- ifelse(cor_long$GeneSet=="GOBP_NEGATIVE_REGULATION_\nOF_CELLULAR_SENESCENCE", "\nGOBP_NEGATIVE_REGULATION_\nOF_CELLULAR_SENESCENCE\n",cor_long$GeneSet)
+# 
+# names(geneSet_colors2) <- ifelse(names(geneSet_colors2)=="GOBP_NEGATIVE_REGULATION_\nOF_CELLULAR_SENESCENCE", "\nGOBP_NEGATIVE_REGULATION_\nOF_CELLULAR_SENESCENCE\n",names(geneSet_colors2))
+# 
+# cor_long$GeneSet <- factor(cor_long$GeneSet, levels=c("CellAge","CSgene","GOBP_CELLULAR_SENESCENCE","\nGOBP_NEGATIVE_REGULATION_\nOF_CELLULAR_SENESCENCE\n", "GOBP_POSITIVE_REGULATION_\nOF_CELLULAR_SENESCENCE" ,"HernandezSegura","REACTOME_CELLULAR_SENESCENCE","SAUL_SEN_MAYO","SeneQuest" ))
 
 
 # -----------------------------
@@ -4008,8 +4016,7 @@ cor_long$Comparison <- factor(cor_long$Comparison, levels = names(comparison_lab
 
 
 
-geneSet_colors2 <- geneSet_colors
-names(geneSet_colors2) <- unique(cor_long$GeneSet)[order(unique(cor_long$GeneSet))]
+
 
 
 # -----------------------------
@@ -4032,27 +4039,73 @@ plt_violin_methods <- ggplot(cor_long, aes(x = Comparison, y = SpearmanRho)) +
   ylim(0,1) +
   theme(plot.margin = margin(5,5,5,5))
 
-# -----------------------------
-# Dummy legend on the right
-# -----------------------------
+# # -----------------------------
+# # Dummy legend on the right
+# # -----------------------------
+# gs_names <- unique(cor_long$GeneSet)[order(unique(cor_long$GeneSet))]
+# legend_df <- data.frame(
+#   x = 1,
+#   y = seq(length(gs_names), 1),
+#   GeneSet = factor(gs_names, levels = gs_names)
+# )
+# 
+# label_offset <- 0.3
+# x_right <- 1 + label_offset + max(nchar(as.vector(gs_names))) * 0.08
+# if (x_right < 2.5) x_right <- 2.5
+# 
+# dummy_legend_plot <- ggplot(legend_df, aes(x=x, y=y)) +
+#   geom_point(aes(color = GeneSet), size = 4) +
+#   geom_text(aes(label = GeneSet), hjust=0, nudge_x=label_offset, size=4) +
+#   scale_color_manual(values = geneSet_colors, guide="none") +
+#   theme_void() +
+#   coord_cartesian(xlim = c(0.8, x_right), clip = "off") +
+#   theme(plot.margin = margin(5, 20, 5, 5))
+
+
+
+# ------------------------------------------
+# Create ordered gene-set names
+# ------------------------------------------
 gs_names <- unique(cor_long$GeneSet)[order(unique(cor_long$GeneSet))]
+
+# Base y positions (top to bottom)
+y_base <- seq(length(gs_names), 1)
+
+# ------------------------------------------
+# Identify the two GOBP entries
+# ------------------------------------------
+idx_neg <- which(gs_names == "GOBP_NEGATIVE_REGULATION_\nOF_CELLULAR_SENESCENCE")
+idx_pos <- which(gs_names == "GOBP_POSITIVE_REGULATION_\nOF_CELLULAR_SENESCENCE")
+
+# ------------------------------------------
+# Increase spacing between negative → positive
+# and keep spacing uniform below
+# ------------------------------------------
+gap <- 0.35
+
+# shift positive and all *below* it
+y_base[idx_pos:length(gs_names)] <- y_base[idx_pos:length(gs_names)] - gap
+
+# ------------------------------------------
+# Build legend df
+# ------------------------------------------
 legend_df <- data.frame(
-  x = 1,
-  y = seq(length(gs_names), 1),
-  GeneSet = factor(gs_names, levels = gs_names)
+    x = 1,
+    y = y_base,
+    GeneSet = factor(gs_names, levels = gs_names)
 )
 
 label_offset <- 0.3
-x_right <- 1 + label_offset + max(nchar(gs_names)) * 0.08
+x_right <- 1 + label_offset + max(nchar(as.vector(gs_names))) * 0.08
 if (x_right < 2.5) x_right <- 2.5
 
 dummy_legend_plot <- ggplot(legend_df, aes(x=x, y=y)) +
-  geom_point(aes(color = GeneSet), size = 4) +
-  geom_text(aes(label = GeneSet), hjust=0, nudge_x=label_offset, size=4) +
-  scale_color_manual(values = geneSet_colors, guide="none") +
-  theme_void() +
-  coord_cartesian(xlim = c(0.8, x_right), clip = "off") +
-  theme(plot.margin = margin(5, 20, 5, 5))
+    geom_point(aes(color = GeneSet), size = 4) +
+    geom_text(aes(label = GeneSet), hjust=0, nudge_x=label_offset, size=4) +
+    scale_color_manual(values = geneSet_colors, guide="none") +
+    theme_void() +
+    coord_cartesian(xlim = c(0.8, x_right), clip = "off") +
+    theme(plot.margin = margin(5, 20, 5, 5))
 
 # -----------------------------
 # Combine main plot and dummy legend
@@ -4240,12 +4293,74 @@ legend_celltypes <- as_ggplot(legend_celltypes)
 
 legend_celltypes 
 
-supfigure_3 <- ggarrange(plt_logmedian_stressors,
-                         NULL,
-                         plt_ssGSEA_stressors,
-                         NULL,
-                         plt_ranking_stressors,  
-                         common.legend=T, nrow=1, widths=c(0.3,0.04,0.3,0.04,0.3), labels = c("A","","B","","C"),font.label = list(size = 16))
+# supfigure_3 <- ggarrange(plt_logmedian_stressors,
+#                          NULL,
+#                          plt_ssGSEA_stressors,
+#                          NULL,
+#                          plt_ranking_stressors,  
+#                          common.legend=T, nrow=1, widths=c(0.3,0.04,0.3,0.04,0.3), labels = c("A","","B","","C"),font.label = list(size = 16))
+
+
+# ---------------------------------------------------------------
+# Create title grobs
+# ---------------------------------------------------------------
+
+# log2 in subscript
+title_logmedian <- text_grob(
+    bquote(bold(log[2] * "-median")),
+    size = 14
+)
+
+title_ssgsea <- text_grob(
+    "         ssGSEA",
+    size = 14,
+    face="bold"
+)
+
+title_ranking <- text_grob(
+    "         ranking",
+    size = 14,
+    face="bold"
+    
+)
+
+# ---------------------------------------------------------------
+# Wrap each plot individually with annotate_figure()
+# Each receives its own top title.
+# ---------------------------------------------------------------
+
+plt_logmedian_stressors_titled <- annotate_figure(
+    plt_logmedian_stressors,
+    top = title_logmedian
+)
+
+plt_ssGSEA_stressors_titled <- annotate_figure(
+    plt_ssGSEA_stressors,
+    top = title_ssgsea
+)
+
+plt_ranking_stressors_titled <- annotate_figure(
+    plt_ranking_stressors,
+    top = title_ranking
+)
+
+# ---------------------------------------------------------------
+# Assemble final figure with NULL spacers as before
+# ---------------------------------------------------------------
+
+supfigure_3 <- ggarrange(
+    plt_logmedian_stressors_titled,
+    NULL,
+    plt_ssGSEA_stressors_titled,
+    NULL,
+    plt_ranking_stressors_titled,
+    common.legend = TRUE,
+    nrow = 1,
+    widths = c(0.3, 0.04, 0.3, 0.04, 0.3),
+    labels = c("A", "", "B", "", "C"),
+    font.label = list(size = 16)
+)
+
 
 (supfigure_3 <-
   ggarrange(
