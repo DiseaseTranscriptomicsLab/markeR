@@ -48,7 +48,9 @@ Imports:
     ggrepel,
     effectsize,
     msigdbr,
-    tibble
+    tibble,
+    shiny,
+    bslib
 Suggests: 
     devtools,
     markdown,
