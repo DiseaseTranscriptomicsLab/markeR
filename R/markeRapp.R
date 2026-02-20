@@ -830,9 +830,9 @@ server <- function(input, output, session) {
     )
   })
 
-  
+  # pop up window with gene set composition
  shiny::observeEvent(input$geneset_summary_rows_selected, {
-   shiny::req(input$geneset_summary_rows_selected)
+   shiny::req(input$geneset_summary_rows_selected) #input automatically created by DT
    gs <- gene_sets()
    
    # Get selected gene set name
@@ -861,7 +861,12 @@ server <- function(input, output, session) {
              options = list(
                pageLength = 10,
                scrollX = TRUE,
-               columnDefs = list(list(className = 'dt-center', targets = "_all"))  # center all columns
+               scrollY = "300px",        #  height of scrollable area
+               scrollCollapse = TRUE,    #  collapse if fewer rows
+               paging = FALSE,           #  optional, better for modal scroll
+               columnDefs = list(
+                 list(className = 'dt-center', targets = "_all")
+               )
              ),
              rownames = FALSE
            )
