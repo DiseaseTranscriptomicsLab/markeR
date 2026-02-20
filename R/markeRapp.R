@@ -1,6 +1,7 @@
 #' @importFrom bslib bs_theme
 #' @import shiny
 #' @import GEOquery
+#' @import DT
 
 ui <- bslib::page_navbar(
   
@@ -217,7 +218,7 @@ ui <- bslib::page_navbar(
                 )
               ),
               
-              shiny::conditionalPanel(
+              shiny::conditionalPanel( # id data comes from geo, user needs to have a section to then choose which file is the expression data and (optionally) which one is the metadata
                 "input.expr_source == 'geo'",
                 shiny::textInput(
                   "geo_accession",
@@ -319,25 +320,28 @@ ui <- bslib::page_navbar(
         ),
         
         
-        ###### MAIN PREVIEW AREA ###### 
-        
+        ###### > MAIN PREVIEW AREA ###### 
         
         bslib::card(
           bslib::card_header("Data Preview"),
           
-          shiny::uiOutput("summary_ui"),
-          
-          shiny::hr(),
-          
-          shiny::h5("Expression Preview"),
-          shiny::tableOutput("expr_preview"),
-          
-          shiny::h5("Metadata Preview"),
-          shiny::tableOutput("meta_preview"),
-          
-          shiny::h5("Gene Sets Overview"),
-          shiny::uiOutput("geneset_summary")
+          shiny::div(style = "overflow-y: auto; max-height: 900px;",  # <-- scrollable container
+                     shiny::uiOutput("summary_ui"),
+                     shiny::hr(),
+                     shiny::h5("Expression Preview"),
+                     DT::DTOutput("expr_preview"),
+                     shiny::h5("Metadata Preview"),
+                     DT::DTOutput("meta_preview"),
+                     shiny::h5("Gene Sets Overview"),
+                     shiny::tags$div(
+                       style = "margin-bottom: 10px; font-style: italic; color: #555;",
+                       "💡 Tip: Click on a gene set row to see its genes and expected direction of regulation change."
+                     ),
+                     DT::DTOutput("geneset_summary")
+          )
         )
+        
+        
       )
     )
   ),
@@ -375,35 +379,265 @@ ui <- bslib::page_navbar(
 )
 
 # ---- Server ----
+
 server <- function(input, output, session) {
   
-  ##### DATA IMPORT #####
+  ##### REACTIVE STORAGE CONTAINERS ##################################
+  expr_data   <- shiny::reactiveVal(NULL)  # Expression matrix/data.frame
+  meta_data   <- shiny::reactiveVal(NULL)  # Sample metadata
+  gene_sets   <- shiny::reactiveVal(NULL)  # Named list of gene sets
+  geo_objects <- shiny::reactiveVal(NULL)  # Raw GEO objects (can be multiple)
   
-  ######   EXAMPLE DATA  ######  
+  ##### HELPER FUNCTIONS (NOT REACTIVE) ##############################
+  clean_name <- function(x) tools::file_path_sans_ext(base::basename(x))
   
-  # import example data here
+  safe_read_table <- function(path) {
+    ext <- tolower(tools::file_ext(path))
+    if (ext == "csv") return(utils::read.csv(path, row.names = 1, check.names = FALSE))
+    if (ext == "rds") return(base::readRDS(path))
+    if (ext == "rda") {
+      e <- new.env()
+      base::load(path, envir = e)
+      return(e[[base::ls(e)[1]]])
+    }
+    stop("Unsupported file format.")
+  }
   
-  ######  GEO ###### 
+  parse_geneset_object <- function(obj, name_hint) {
+    if (is.character(obj)) return(stats::setNames(list(obj), name_hint))
+    if (is.data.frame(obj)) {
+      if (ncol(obj) == 1) return(stats::setNames(list(obj[[1]]), name_hint))
+      if (ncol(obj) >= 2) {
+        df <- obj[, 1:2]
+        colnames(df) <- c("gene", "direction")
+        return(stats::setNames(list(df), name_hint))
+      }
+    }
+    if (is.list(obj)) return(obj)
+    stop("Invalid gene set format.")
+  }
   
-  # import geo data here
+  ##### EXAMPLE DATA LOADING #########################################
+  observeEvent(input$expr_source, {
+    if (input$expr_source == "example") expr_data(matrix(rnorm(1000), nrow = 100))
+  })
   
-  ######   INPUT DATA  ######  
+  observeEvent(input$meta_source, {
+    if (input$meta_source == "example") meta_data(data.frame(sample = paste0("S", 1:10), group = rep(c("A","B"), 5)))
+  })
   
-  # input data
+  observeEvent(input$geneset_source, {
+    if (input$geneset_source == "example") gene_sets(list(Senescence = c("CDKN1A","CDKN2A","IL6")))
+  })
   
+  ##### FILE UPLOAD HANDLERS #########################################
   
-  ###### SUMMARY  ###### 
+  observeEvent(input$expr_file, {
+    req(input$expr_file)
+    expr_data(safe_read_table(input$expr_file$datapath))
+  })
   
-  # Number of Samples
-  # Number of genes
-  # Number of gene sets
+  observeEvent(input$meta_file, {
+    req(input$meta_file)
+    meta_data(safe_read_table(input$meta_file$datapath))
+  })
   
-  ####### PREVIEWS  ###### 
+  observeEvent(input$geneset_files, {
+    req(input$geneset_files)
+    compiled <- list()
+    for (i in seq_len(nrow(input$geneset_files))) {
+      path <- input$geneset_files$datapath[i]
+      name <- clean_name(input$geneset_files$name[i])
+      obj <- safe_read_table(path)
+      parsed <- parse_geneset_object(obj, name)
+      compiled <- c(compiled, parsed)
+    }
+    gene_sets(compiled)
+  })
   
+  observe({
+    shiny::req(gene_sets())       # stop if no gene sets
+    gs <- gene_sets()
+    
+    normalized <- lapply(names(gs), function(n) {
+      obj <- gs[[n]]
+      
+      if (is.data.frame(obj)) {
+        if (ncol(obj) > 2) {
+          shiny::showNotification(
+            paste0("Gene set '", n, "' has more than 2 columns. Only the first two will be used."),
+            type = "warning"
+          )
+          obj <- obj[, 1:2]
+        }
+        if (ncol(obj) == 2) colnames(obj) <- c("Gene", "Direction")
+        if (ncol(obj) == 1) obj <- as.vector(obj[[1]])
+      }
+      
+      obj
+    })
+    
+    names(normalized) <- names(gs)
+    gene_sets(normalized)   # overwrite reactiveVal
+  })
   
+  ##### GEO DOWNLOAD AND SELECTION ###################################
+  observeEvent(input$geo_fetch, {
+    req(input$geo_accession)
+    tryCatch({
+      g <- GEOquery::getGEO(input$geo_accession, GSEMatrix = TRUE)
+      geo_objects(g)
+    }, error = function(e) showNotification("Failed to download GEO dataset.", type = "error"))
+  })
   
+  output$geo_object_selector <- renderUI({
+    req(geo_objects())
+    selectInput("geo_selected_object", "Select GEO object:", choices = seq_along(geo_objects()))
+  })
+  
+  observeEvent(input$geo_selected_object, {
+    req(geo_objects())
+    idx <- as.numeric(input$geo_selected_object)
+    obj <- geo_objects()[[idx]]
+    expr_data(Biobase::exprs(obj))
+    meta_data(Biobase::pData(obj))
+  })
+  
+  ##### DATA SUMMARY (REACTIVE OUTPUT) ###############################
+  output$summary_ui <- renderUI({
+    expr <- expr_data()
+    meta <- meta_data()
+    gs   <- gene_sets()
+    tagList(
+      if (!is.null(expr)) p(strong("Expression data: "), nrow(expr), " genes × ", ncol(expr), " samples"),
+      if (!is.null(meta)) p(strong("Metadata: "), nrow(meta), " samples × ", ncol(meta), " variables"),
+      if (!is.null(gs))   p(strong("Gene sets loaded: "), length(gs))
+    )
+  })
+  
+  ##### PREVIEW TABLES ################################################
+  output$expr_preview <- DT::renderDT({
+    shiny::req(expr_data())
+    
+    DT::datatable(
+      expr_data(),
+      options = list(
+        pageLength = 5,
+        lengthMenu = c(5, 10, 20, 50),
+        scrollX = TRUE,
+        scrollY = "250px",      # <-- added vertical scroll
+        paging = TRUE
+      ),
+      rownames = TRUE
+    )
+  })
+  
+  output$meta_preview <- DT::renderDT({
+    shiny::req(meta_data())
+    
+    DT::datatable(
+      meta_data(),
+      options = list(
+        pageLength = 5,
+        lengthMenu = c(5, 10, 20, 50),
+        scrollX = TRUE,
+        scrollY = "250px",      # <-- added vertical scroll
+        paging = TRUE
+      ),
+      rownames = TRUE
+    )
+  })
+  
+  output$geneset_summary <- DT::renderDT({
+    shiny::req(gene_sets())  # ensures gene sets are ready and normalized
+    
+    gs <- gene_sets()        # always safe now: cleaned objects
+    
+    df <- do.call(rbind, lapply(names(gs), function(n) {
+      obj <- gs[[n]]
+      
+      if (is.data.frame(obj) && "Direction" %in% colnames(obj)) {
+        data.frame(
+          `Gene Set` = n,
+          Genes   = nrow(obj),
+          `Positive (+1)`     = sum(obj$Direction == 1, na.rm = TRUE),
+          `Negative (-1)`     = sum(obj$Direction == -1, na.rm = TRUE),
+          check.names = FALSE
+        )
+      } else {
+        data.frame(
+          `Gene Set` = n,
+          Genes   = length(obj),
+          `Positive (+1)`     = NA,
+          `Negative (-1)`     = NA,
+          check.names = FALSE
+        )
+      }
+    }))
+    
+    DT::datatable(
+      df,
+      selection = "single",
+      options = list(
+        pageLength = 5,
+        scrollX = TRUE,
+        scrollY = "250px",
+        lengthMenu = c(5, 10, 20, 50),
+        escape = FALSE  # allows + and parentheses to display properly
+        
+      ),
+      rownames = FALSE
+    )
+  })
+
+  
+ shiny::observeEvent(input$geneset_summary_rows_selected, {
+   shiny::req(input$geneset_summary_rows_selected)
+   gs <- gene_sets()
+   
+   # Get selected gene set name
+   selected_row <- input$geneset_summary_rows_selected
+   selected_name <- names(gs)[selected_row]
+   geneset_obj <- gs[[selected_name]]
+   
+   # Prepare table to show in modal
+   if (is.data.frame(geneset_obj) && "Direction" %in% colnames(geneset_obj)) {
+     modal_df <- geneset_obj
+   } else {
+     modal_df <- data.frame(Gene = geneset_obj)
+   }
+   
+   # Show modal
+   shiny::showModal(
+     shiny::modalDialog(
+       title = paste("Genes in set:", selected_name),
+       
+       # Wrap DT in a div to control width
+       shiny::tags$div(
+         style = "max-width: 700px; margin: auto;",  # narrow table, centered in modal
+         DT::renderDT({
+           DT::datatable(
+             modal_df,
+             options = list(
+               pageLength = 10,
+               scrollX = TRUE,
+               columnDefs = list(list(className = 'dt-center', targets = "_all"))  # center all columns
+             ),
+             rownames = FALSE
+           )
+         })
+       ),
+       
+       easyClose = TRUE,
+       size = "l"  # modal is large
+     )
+   )
+   
+   
+ })
   
 }
+
 # ---- Launcher ----
 markeRapp <- function(...){
   
@@ -419,6 +653,7 @@ markeRapp <- function(...){
     system.file("shiny/www", package = "markeR")   # points to inst/shiny/www/
   )
   
+  options(shiny.maxRequestSize = 1000 * 1024^2)
   
   app <- shiny::shinyApp(ui, server)
   shiny::runApp(app, ...)

@@ -51,7 +51,8 @@ Imports:
     tibble,
     shiny,
     bslib,
-    GEOquery
+    GEOquery,
+    DT
 Suggests: 
     devtools,
     markdown,
