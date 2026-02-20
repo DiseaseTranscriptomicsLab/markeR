@@ -200,9 +200,10 @@ ui <- bslib::page_navbar(
                 "expr_source",
                 "Source:",
                 choices = c(
-                  "Use Example Data" = "example",
-                  "Upload File"      = "upload",
-                  "Retrieve from GEO"= "geo"
+                  "Use Example Data \n(Unprocessed)" = "example_raw",
+                  "Use Example Data \n(Processed)"   = "example_proc",
+                  "Upload File"                    = "upload",
+                  "Retrieve from GEO"              = "geo"
                 )
               ),
               
@@ -321,6 +322,19 @@ ui <- bslib::page_navbar(
         
         
         ###### > MAIN PREVIEW AREA ###### 
+        tags$style(
+          HTML("
+    /* Make row names column wider ONLY for expr_preview */
+    #expr_preview table.dataTable th:first-child,
+    #expr_preview table.dataTable td:first-child {
+      width: 200px !important;   /* desired width */
+      max-width: 200px !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  ")
+        ),
         
         bslib::card(
           bslib::card_header("Data Preview"),
@@ -349,29 +363,29 @@ ui <- bslib::page_navbar(
   ##### PREPROCESSING #####
   bslib::nav_panel(
     "Preprocessing",
-    shiny::h4("About markeR"),
-    shiny::p("This app provides a graphical interface to evaluate gene sets as phenotype markers in R.")
+    shiny::h4("Coming soon..."),
+    shiny::h1("👁️👄👁")
   ),
   
   ##### GENE SETS #####
   bslib::nav_panel(
     "Gene Sets",
-    shiny::h4("About markeR"),
-    shiny::p("This app provides a graphical interface to evaluate gene sets as phenotype markers in R.")
+    shiny::h4("Coming soon..."),
+    shiny::h1("👁️👄👁")
   ),
   
   ##### BENCHMARKING MODE #####
   bslib::nav_panel(
     "Benchmarking Mode",
-    shiny::h4("About markeR"),
-    shiny::p("This app provides a graphical interface to evaluate gene sets as phenotype markers in R.")
+    shiny::h4("Coming soon..."),
+    shiny::h1("👁️👄👁")
   ),
   
   ##### DISCOVERY MODE #####
   bslib::nav_panel(
     "Discovery Mode",
-    shiny::h4("About markeR"),
-    shiny::p("This app provides a graphical interface to evaluate gene sets as phenotype markers in R.")
+    shiny::h4("Coming soon..."),
+    shiny::h1("👁️👄👁")
   ) 
   
   
@@ -419,15 +433,51 @@ server <- function(input, output, session) {
   
   ##### EXAMPLE DATA LOADING #########################################
   observeEvent(input$expr_source, {
-    if (input$expr_source == "example") expr_data(matrix(rnorm(1000), nrow = 100))
+    if (input$expr_source == "example_raw") {
+      shiny::withProgress(message = "Downloading unprocessed example data...", value = 0, {
+        tmp <- tempfile(fileext = ".rds")
+        utils::download.file(
+          url  = "https://zenodo.org/records/18714122/files/counts.rds?download=1",
+          destfile = tmp, mode = "wb"
+        )
+        expr_data(readRDS(tmp))
+      })
+    }
+    
+    if (input$expr_source == "example_proc") {
+      shiny::withProgress(message = "Downloading processed example data...", value = 0, {
+        tmp <- tempfile(fileext = ".rds")
+        utils::download.file(
+          url  = "https://zenodo.org/records/18714122/files/corrcounts.rds?download=1",
+          destfile = tmp, mode = "wb"
+        )
+        expr_data(readRDS(tmp))
+      })
+    }
   })
-  
   observeEvent(input$meta_source, {
-    if (input$meta_source == "example") meta_data(data.frame(sample = paste0("S", 1:10), group = rep(c("A","B"), 5)))
+    if (input$meta_source == "example") {
+      shiny::withProgress(message = "Downloading example metadata...", value = 0, {
+        tmp <- tempfile(fileext = ".rds")
+        utils::download.file(
+          url = "https://zenodo.org/records/18714122/files/metadata.rds?download=1",
+          destfile = tmp, mode = "wb"
+        )
+        meta_data(readRDS(tmp))
+      })
+    }
   })
-  
   observeEvent(input$geneset_source, {
-    if (input$geneset_source == "example") gene_sets(list(Senescence = c("CDKN1A","CDKN2A","IL6")))
+    if (input$geneset_source == "example") {
+      shiny::withProgress(message = "Downloading example gene sets...", value = 0, {
+        tmp <- tempfile(fileext = ".rds")
+        utils::download.file(
+          url = "https://zenodo.org/records/18714122/files/SenescenceGeneSets.rds?download=1",
+          destfile = tmp, mode = "wb"
+        )
+        gene_sets(readRDS(tmp))
+      })
+    }
   })
   
   ##### FILE UPLOAD HANDLERS #########################################
@@ -520,7 +570,7 @@ server <- function(input, output, session) {
     shiny::req(expr_data())
     
     DT::datatable(
-      expr_data(),
+      round(expr_data(),2),  # round for better display
       options = list(
         pageLength = 5,
         lengthMenu = c(5, 10, 20, 50),
