@@ -34,6 +34,7 @@ ui <- bslib::page_navbar(
   
   theme = bslib::bs_theme(bootswatch = "sketchy"),
   
+  
   # ---- Tabs ----
   
   ##### ABOUT #####
@@ -204,6 +205,34 @@ ui <- bslib::page_navbar(
                   "Use Example Data \n(Processed)"   = "example_proc",
                   "Upload File"                    = "upload",
                   "Retrieve from GEO"              = "geo"
+                )
+              ),
+              
+              # Help text for unprocessed example
+              shiny::conditionalPanel(
+                "input.expr_source == 'example_raw'",
+                shiny::helpText(
+                  shiny::tags$strong("Example Unprocessed Data:"),
+                  "This dataset is a manual compilation of RNA-seq experiments on senescence in human cell lines, treated with different senescence inducers and their respective proliferative and quiescent controls. ",
+                  "It has been used in Martins-Silva et al., 2026 (",
+                  shiny::tags$a(href="https://www.biorxiv.org/content/10.64898/2025.12.05.692517", "bioRxiv", target="_blank"),
+                  "). The raw read counts for all samples are available for download through ",
+                  shiny::tags$a(href="https://zenodo.org/records/18714122", "Zenodo", target="_blank"),
+                  ". Genes are in rows, samples in columns."
+                )
+              ),
+              
+              # Help text for processed example
+              shiny::conditionalPanel(
+                "input.expr_source == 'example_proc'",
+                shiny::helpText(
+                  shiny::tags$strong("Example Processed Data:"),
+                  "This dataset contains the same RNA-seq experiments on senescence in human cell lines, as described for the unprocessed data above, but filtered for lowly expressed genes, normalised, and batch-corrected. ",
+                  "Processing followed the methods described in Martins-Silva et al., 2026 (",
+                  shiny::tags$a(href="https://www.biorxiv.org/content/10.64898/2025.12.05.692517", "bioRxiv", target="_blank"),
+                  "). The processed data is available via ",
+                  shiny::tags$a(href="https://zenodo.org/records/18714122", "Zenodo", target="_blank"),
+                  ". Genes are in rows, samples in columns."
                 )
               ),
               
@@ -392,6 +421,21 @@ ui <- bslib::page_navbar(
   
 )
 
+# Then wrap whole page with head()
+ui <- tagList(
+  tags$head(
+    tags$style(HTML("
+      #shiny-notification-panel {
+        top: auto !important;
+        bottom: 50px !important;
+        right: 30px !important;
+        left: auto !important;
+      }
+    "))
+  ),
+  ui
+)
+
 # ---- Server ----
 
 server <- function(input, output, session) {
@@ -431,54 +475,200 @@ server <- function(input, output, session) {
     stop("Invalid gene set format.")
   }
   
-  ##### EXAMPLE DATA LOADING #########################################
+  ##### EXAMPLE DATA LOADING ######################################### 
+  
+  # Solution with "fake" progress bar for better UI experience 
+  
   observeEvent(input$expr_source, {
+    
+    # ---- UNPROCESSED DATA ----
     if (input$expr_source == "example_raw") {
-      shiny::withProgress(message = "Downloading unprocessed example data...", value = 0, {
-        tmp <- tempfile(fileext = ".rds")
-        utils::download.file(
-          url  = "https://zenodo.org/records/18714122/files/counts.rds?download=1",
-          destfile = tmp, mode = "wb"
-        )
-        expr_data(readRDS(tmp))
-      })
+      
+      shiny::withProgress(
+        message = "Downloading unprocessed example data...",
+        value = 0,
+        {
+          
+          incProgress(0.1, detail = "Preparing download...")
+          Sys.sleep(0.2)
+          
+          tmp <- tempfile(fileext = ".rds")
+          
+          incProgress(0.4, detail = "Downloading from Zenodo...")
+          utils::download.file(
+            url  = "https://zenodo.org/records/18714122/files/counts.rds?download=1",
+            destfile = tmp,
+            mode = "wb"
+          )
+          
+          incProgress(0.3, detail = "Loading expression matrix...")
+          expr_data(readRDS(tmp))
+          
+          incProgress(0.2, detail = "Finalizing...")
+        }
+      )
+      
+      showNotification(
+        "Unprocessed expression data loaded successfully.",
+        type = "default",
+        duration = 3
+      )
     }
     
+    
+    # ---- PROCESSED DATA ----
     if (input$expr_source == "example_proc") {
-      shiny::withProgress(message = "Downloading processed example data...", value = 0, {
-        tmp <- tempfile(fileext = ".rds")
-        utils::download.file(
-          url  = "https://zenodo.org/records/18714122/files/corrcounts.rds?download=1",
-          destfile = tmp, mode = "wb"
-        )
-        expr_data(readRDS(tmp))
-      })
+      
+      shiny::withProgress(
+        message = "Downloading processed example data...",
+        value = 0,
+        {
+          
+          incProgress(0.1, detail = "Preparing download...")
+          Sys.sleep(0.2)
+          
+          tmp <- tempfile(fileext = ".rds")
+          
+          incProgress(0.4, detail = "Downloading from Zenodo...")
+          utils::download.file(
+            url  = "https://zenodo.org/records/18714122/files/corrcounts.rds?download=1",
+            destfile = tmp,
+            mode = "wb"
+          )
+          
+          incProgress(0.3, detail = "Loading processed matrix...")
+          expr_data(readRDS(tmp))
+          
+          incProgress(0.2, detail = "Finalizing...")
+        }
+      )
+      
+      showNotification(
+        "Processed expression data loaded successfully.",
+        type = "default",
+        duration = 3
+      )
     }
   })
+   
   observeEvent(input$meta_source, {
+    
     if (input$meta_source == "example") {
-      shiny::withProgress(message = "Downloading example metadata...", value = 0, {
-        tmp <- tempfile(fileext = ".rds")
-        utils::download.file(
-          url = "https://zenodo.org/records/18714122/files/metadata.rds?download=1",
-          destfile = tmp, mode = "wb"
-        )
-        meta_data(readRDS(tmp))
-      })
+      
+      shiny::withProgress(
+        message = "Downloading example metadata...",
+        value = 0,
+        {
+          
+          incProgress(0.2, detail = "Preparing download...")
+          Sys.sleep(0.2)
+          
+          tmp <- tempfile(fileext = ".rds")
+          
+          incProgress(0.5, detail = "Downloading from Zenodo...")
+          utils::download.file(
+            url  = "https://zenodo.org/records/18714122/files/metadata.rds?download=1",
+            destfile = tmp,
+            mode = "wb"
+          )
+          
+          incProgress(0.2, detail = "Loading metadata...")
+          meta_data(readRDS(tmp))
+          
+          incProgress(0.1, detail = "Finalizing...")
+        }
+      )
+      
+      showNotification(
+        "Metadata loaded successfully.",
+        type = "default",
+        duration = 3
+      )
     }
   })
+   
   observeEvent(input$geneset_source, {
+    
     if (input$geneset_source == "example") {
-      shiny::withProgress(message = "Downloading example gene sets...", value = 0, {
-        tmp <- tempfile(fileext = ".rds")
-        utils::download.file(
-          url = "https://zenodo.org/records/18714122/files/SenescenceGeneSets.rds?download=1",
-          destfile = tmp, mode = "wb"
-        )
-        gene_sets(readRDS(tmp))
-      })
+      
+      shiny::withProgress(
+        message = "Downloading example gene sets...",
+        value = 0,
+        {
+          
+          incProgress(0.2, detail = "Preparing download...")
+          Sys.sleep(0.2)
+          
+          tmp <- tempfile(fileext = ".rds")
+          
+          incProgress(0.5, detail = "Downloading from Zenodo...")
+          utils::download.file(
+            url  = "https://zenodo.org/records/18714122/files/SenescenceGeneSets.rds?download=1",
+            destfile = tmp,
+            mode = "wb"
+          )
+          
+          incProgress(0.2, detail = "Loading gene sets...")
+          gene_sets(readRDS(tmp))
+          
+          incProgress(0.1, detail = "Finalizing...")
+        }
+      )
+      
+      showNotification(
+        "Gene sets loaded successfully.",
+        type = "default",
+        duration = 3
+      )
     }
   })
+  # observeEvent(input$expr_source, {
+  #   if (input$expr_source == "example_raw") {
+  #     shiny::withProgress(message = "Downloading unprocessed example data...", value = 0.7, {
+  #       tmp <- tempfile(fileext = ".rds")
+  #       utils::download.file(
+  #         url  = "https://zenodo.org/records/18714122/files/counts.rds?download=1",
+  #         destfile = tmp, mode = "wb"
+  #       )
+  #       expr_data(readRDS(tmp))
+  #     })
+  #   }
+  #   
+  #   if (input$expr_source == "example_proc") {
+  #     shiny::withProgress(message = "Downloading processed example data...", value = 0.7, {
+  #       tmp <- tempfile(fileext = ".rds")
+  #       utils::download.file(
+  #         url  = "https://zenodo.org/records/18714122/files/corrcounts.rds?download=1",
+  #         destfile = tmp, mode = "wb"
+  #       )
+  #       expr_data(readRDS(tmp))
+  #     })
+  #   }
+  # })
+  # observeEvent(input$meta_source, {
+  #   if (input$meta_source == "example") {
+  #     shiny::withProgress(message = "Downloading example metadata...", value = 0.7, {
+  #       tmp <- tempfile(fileext = ".rds")
+  #       utils::download.file(
+  #         url = "https://zenodo.org/records/18714122/files/metadata.rds?download=1",
+  #         destfile = tmp, mode = "wb"
+  #       )
+  #       meta_data(readRDS(tmp))
+  #     })
+  #   }
+  # })
+  # observeEvent(input$geneset_source, {
+  #   if (input$geneset_source == "example") {
+  #     shiny::withProgress(message = "Downloading example gene sets...", value = 0.7, {
+  #       tmp <- tempfile(fileext = ".rds")
+  #       utils::download.file(
+  #         url = "https://zenodo.org/records/18714122/files/SenescenceGeneSets.rds?download=1",
+  #         destfile = tmp, mode = "wb"
+  #       )
+  #       gene_sets(readRDS(tmp))
+  #     })
+  #   }
+  # })
   
   ##### FILE UPLOAD HANDLERS #########################################
   
@@ -594,7 +784,7 @@ server <- function(input, output, session) {
         scrollY = "250px",      # <-- added vertical scroll
         paging = TRUE
       ),
-      rownames = TRUE
+      rownames = FALSE
     )
   })
   
