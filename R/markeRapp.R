@@ -209,10 +209,11 @@ ui <- bslib::page_navbar(
                 "input.expr_source == 'upload'",
                 shiny::fileInput(
                   "expr_file",
-                  "Upload (.csv, .rds, .rda)"
+                  "Upload (.csv, .rds, .rda)",
+                  accept=c(".csv", ".rds", ".rda")
                 ),
                 shiny::helpText(
-                  "CSV: genes in rows, samples in columns."
+                  "Genes in rows, samples in columns."
                 )
               ),
               
@@ -220,7 +221,8 @@ ui <- bslib::page_navbar(
                 "input.expr_source == 'geo'",
                 shiny::textInput(
                   "geo_accession",
-                  "Enter GEO Accession (e.g., GSE12345)"
+                  "Enter GEO Accession (e.g., GSE130727)", #GSE130727
+                  placeholder = "GSE130727"
                 ),
                 shiny::actionButton(
                   "geo_fetch",
@@ -231,9 +233,9 @@ ui <- bslib::page_navbar(
               )
             ),
             
- 
+            
             ####### > METADATA #######
- 
+            
             
             bslib::accordion_panel(
               "Metadata",
@@ -252,14 +254,15 @@ ui <- bslib::page_navbar(
                 "input.meta_source == 'upload'",
                 shiny::fileInput(
                   "meta_file",
-                  "Upload (.csv, .rds)"
+                  "Upload (.csv, .rds)",
+                  accept = c(".csv", ".rds")
                 )
               )
             ),
             
- 
+            
             ####### > GENE SETS #######
- 
+            
             
             bslib::accordion_panel(
               "Gene Sets",
@@ -277,20 +280,47 @@ ui <- bslib::page_navbar(
                 "input.geneset_source == 'upload'",
                 shiny::fileInput(
                   "geneset_files",
-                  "Upload one or more files",
+                  "Upload one or more files (.csv, .rds, .rda)",
+                  accept = c(".csv", ".rds", ".rda"),
                   multiple = TRUE
                 ),
                 shiny::helpText(
-                  "Vector OR data.frame: col1=gene, col2=direction (+1/-1)"
+                  # string of text explaining that if the input is a csv it should have either one column with gene names, or two columns the first with gene names and the second with expected direction of change (+1/-1). If a .rds, can be either a vector of gene names, a data frame where the first column is gene names and the second the direction of change, or a named list with one entry per gene set (following the rules for vectors and data frames)
+                  
+                  shiny::helpText(
+                    shiny::tags$strong("Accepted input formats for gene sets:"),
+                    shiny::tags$ul(
+                      shiny::tags$li(
+                        shiny::strong(".csv files:"),
+                        " must contain either:",
+                        shiny::tags$ul(
+                          shiny::tags$li("One column with gene names"),
+                          shiny::tags$li("Two columns where the first column contains gene names and the second column contains the expected direction of enrichment (+1 or -1)")
+                        ),
+                        shiny::tags$em("The file name (without extension) will be used as the gene set name.")
+                      ),
+                      shiny::tags$li(
+                        shiny::strong(".rds/.rda files:"),
+                        " may contain:",
+                        shiny::tags$ul(
+                          shiny::tags$li("A character vector of gene names"),
+                          shiny::tags$li("A data frame (first column = gene names, second column = direction of change)"),
+                          shiny::tags$li("A named list of gene sets, where each element follows one of the formats above")
+                        ),
+                        shiny::tags$em("If uploading individual files, the file name will be used as the gene set name.")
+                      )
+                    )
+                  )
+                  
                 )
               )
             )
           )
         ),
         
- 
+        
         ###### MAIN PREVIEW AREA ###### 
- 
+        
         
         bslib::card(
           bslib::card_header("Data Preview"),
@@ -347,220 +377,33 @@ ui <- bslib::page_navbar(
 # ---- Server ----
 server <- function(input, output, session) {
   
-  ####################################################
-  # EXAMPLE DATA
-  ####################################################
+  ##### DATA IMPORT #####
   
-  example_expr <- matrix(
-    rnorm(1000),
-    nrow = 100,
-    dimnames = list(
-      paste0("Gene", 1:100),
-      paste0("Sample", 1:10)
-    )
-  )
+  ######   EXAMPLE DATA  ######  
   
-  example_meta <- data.frame(
-    Sample = paste0("Sample", 1:10),
-    Group  = rep(c("Control", "Senescent"), each = 5)
-  )
+  # import example data here
   
-  example_genesets <- list(
-    Senescence_Up = data.frame(
-      gene = paste0("Gene", 1:10),
-      direction = 1
-    ),
-    Senescence_Down = data.frame(
-      gene = paste0("Gene", 20:30),
-      direction = -1
-    )
-  )
+  ######  GEO ###### 
   
-  ####################################################
-  # GEO STORAGE (SIMULATED)
-  ####################################################
-  geo_objects <- shiny::reactiveVal(NULL)
+  # import geo data here
   
-  shiny::observeEvent(input$geo_fetch, {
-    req(input$geo_accession)
-    
-    shiny::withProgress(message = "Downloading GEO data...", {
-      gse_raw <- GEOquery::getGEO(input$geo_accession, GSEMatrix = TRUE, getGPL = FALSE)
-      
-      # Wrap single ExpressionSet into a list if needed
-      gse_list <- if (inherits(gse_raw, "ExpressionSet")) list(gse_raw) else gse_raw
-      
-      geo_objects(gse_list)
-    })
-  })
+  ######   INPUT DATA  ######  
+  
+  # input data
   
   
-  ####################################################
-  # EXPRESSION REACTIVE
-  ####################################################
+  ###### SUMMARY  ###### 
   
-  expr_data <- shiny::reactive({
-    
-    if (input$expr_source == "example")
-      return(example_expr)
-    
-    if (input$expr_source == "upload" &&
-        !is.null(input$expr_file)) {
-      
-      ext <- tools::file_ext(input$expr_file$name)
-      
-      if (ext == "csv")
-        return(as.matrix(utils::read.csv(
-          input$expr_file$datapath,
-          row.names = 1
-        )))
-      
-      if (ext == "rds")
-        return(readRDS(input$expr_file$datapath))
-    }
-    
-    if (input$expr_source == "geo") {
-      req(geo_objects())
-      return(geo_objects()[[input$geo_expr_choice]])
-    }
-    
-    NULL
-  })
+  # Number of Samples
+  # Number of genes
+  # Number of gene sets
   
-  ####################################################
-  # METADATA REACTIVE
-  ####################################################
+  ####### PREVIEWS  ###### 
   
-  meta_data <- shiny::reactive({
-    
-    if (input$meta_source == "example")
-      return(example_meta)
-    
-    if (input$meta_source == "upload" &&
-        !is.null(input$meta_file)) {
-      
-      ext <- tools::file_ext(input$meta_file$name)
-      
-      if (ext == "csv")
-        return(utils::read.csv(input$meta_file$datapath))
-      
-      if (ext == "rds")
-        return(readRDS(input$meta_file$datapath))
-    }
-    
-    if (input$meta_source == "geo") {
-      req(geo_objects())
-      return(geo_objects()[[input$geo_meta_choice]])
-    }
-    
-    NULL
-  })
   
-  ####################################################
-  # GENE SETS REACTIVE
-  ####################################################
   
-  gene_sets <- shiny::reactive({
-    
-    if (input$geneset_source == "example")
-      return(example_genesets)
-    
-    if (input$geneset_source == "upload" &&
-        !is.null(input$geneset_files)) {
-      
-      files <- input$geneset_files
-      out <- list()
-      
-      for (i in seq_len(nrow(files))) {
-        
-        ext <- tools::file_ext(files$name[i])
-        name <- tools::file_path_sans_ext(files$name[i])
-        
-        if (ext == "csv")
-          df <- utils::read.csv(files$datapath[i])
-        else if (ext == "rds")
-          df <- readRDS(files$datapath[i])
-        else next
-        
-        out[[name]] <- df
-      }
-      
-      return(out)
-    }
-    
-    NULL
-  })
-  
-  ####################################################
-  # SUMMARY
-  ####################################################
-  
-  output$summary_ui <- shiny::renderUI({
-    
-    shiny::tagList(
-      
-      if (!is.null(expr_data()))
-        shiny::p(
-          shiny::strong("Expression: "),
-          nrow(expr_data()), " genes | ",
-          ncol(expr_data()), " samples"
-        ),
-      
-      if (!is.null(meta_data()))
-        shiny::p(
-          shiny::strong("Metadata: "),
-          nrow(meta_data()), " samples | ",
-          ncol(meta_data()), " variables"
-        ),
-      
-      if (!is.null(gene_sets()))
-        shiny::p(
-          shiny::strong("Gene Sets: "),
-          length(gene_sets()), " sets"
-        )
-    )
-  })
-  
-  ####################################################
-  # PREVIEWS
-  ####################################################
-  
-  output$expr_preview <- shiny::renderTable({
-    req(expr_data())
-    head(expr_data()[, 1:min(5, ncol(expr_data()))])
-  }, rownames = TRUE)
-  
-  output$meta_preview <- shiny::renderTable({
-    req(meta_data())
-    head(meta_data())
-  })
-  
-  output$geneset_summary <- shiny::renderUI({
-    
-    gs <- gene_sets()
-    if (is.null(gs)) return(NULL)
-    
-    shiny::tagList(
-      lapply(names(gs), function(name) {
-        
-        df <- gs[[name]]
-        total <- nrow(df)
-        pos <- sum(df[,2] == 1, na.rm = TRUE)
-        neg <- sum(df[,2] == -1, na.rm = TRUE)
-        
-        shiny::div(
-          style = "margin-bottom:15px;",
-          shiny::h6(name),
-          shiny::p("Genes: ", total),
-          shiny::p("+1: ", pos, " | -1: ", neg),
-          shiny::tableOutput(NULL)
-        )
-      })
-    )
-  })
   
 }
-
 # ---- Launcher ----
 markeRapp <- function(...){
   
