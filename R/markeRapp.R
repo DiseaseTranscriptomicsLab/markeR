@@ -235,16 +235,40 @@ ui <- bslib::page_navbar(
                   ". Genes are in rows, samples in columns."
                 )
               ),
-              
               shiny::conditionalPanel(
                 "input.expr_source == 'upload'",
+                
                 shiny::fileInput(
                   "expr_file",
-                  "Upload (.csv, .rds, .rda)",
-                  accept=c(".csv", ".rds", ".rda")
+                  "Upload expression matrix (.csv, .txt, .rds)",
+                  accept = c(".csv", ".rds", ".txt")
                 ),
+                
                 shiny::helpText(
-                  "Genes in rows, samples in columns."
+                  
+                  shiny::tags$p(shiny::tags$b("💡 Expected structure:")),
+                  shiny::tags$ul(
+                    shiny::tags$li("Genes in rows"),
+                    shiny::tags$li("Samples in columns")
+                  ),
+                  
+                  shiny::tags$p(shiny::tags$b("Text or CSV files (.csv, .txt)")),
+                  shiny::tags$ul(
+                    shiny::tags$li("First column: gene names"),
+                    shiny::tags$li("First row: sample names"),
+                    shiny::tags$li("First cell can be empty or contain 'Gene'"),
+                    shiny::tags$li("Separator can be comma, semicolon, or tab (the app will try to detect it automatically)"),
+                    shiny::tags$li("Numeric values can use '.' or ',' as decimal separator"),
+                    shiny::tags$li("Trailing separators in a row will be ignored"),
+                    shiny::tags$li("Do not use quotation marks around values")
+                  ),
+                  
+                  shiny::tags$p(shiny::tags$b(".rds")),
+                  shiny::tags$ul(
+                    shiny::tags$li("Must contain a matrix or data frame"),
+                    shiny::tags$li("Gene names as row names"),
+                    shiny::tags$li("Sample names as column names")
+                  ),
                 )
               ),
               
@@ -287,6 +311,22 @@ ui <- bslib::page_navbar(
                   "meta_file",
                   "Upload (.csv, .rds)",
                   accept = c(".csv", ".rds")
+                )
+              ),
+              # Show GEO metadata column selection only if 'geo' is selected
+              # inside your Metadata accordion
+              # Use pickerInput for checkbox-style dropdown
+              shiny::conditionalPanel(
+                "input.meta_source == 'geo'",
+                shinyWidgets::pickerInput(
+                  inputId = "selected_meta_cols",
+                  label = "Select metadata columns to keep:",
+                  choices = NULL,       # will be populated dynamically in server
+                  multiple = TRUE,
+                  options = list(
+                    `actions-box` = TRUE,   # select/deselect all buttons
+                    `live-search` = TRUE    # allows search if many columns
+                  )
                 )
               )
             ),
@@ -440,26 +480,105 @@ ui <- tagList(
 
 server <- function(input, output, session) {
   
-  ##### REACTIVE STORAGE CONTAINERS ##################################
+  # REACTIVE STORAGE CONTAINERS 
   expr_data   <- shiny::reactiveVal(NULL)  # Expression matrix/data.frame
   meta_data   <- shiny::reactiveVal(NULL)  # Sample metadata
   gene_sets   <- shiny::reactiveVal(NULL)  # Named list of gene sets
   geo_objects <- shiny::reactiveVal(NULL)  # Raw GEO objects (can be multiple)
+  geo_meta_cols <- reactiveVal(NULL) # Will store the original metadata column names (excluding SampleID)
+  full_geo_meta <- reactiveVal(NULL)
   
-  ##### HELPER FUNCTIONS (NOT REACTIVE) ##############################
+  # HELPER FUNCTIONS (NOT REACTIVE 
+  
   clean_name <- function(x) tools::file_path_sans_ext(base::basename(x))
   
   safe_read_table <- function(path) {
-    ext <- tolower(tools::file_ext(path))
-    if (ext == "csv") return(utils::read.csv(path, row.names = 1, check.names = FALSE))
-    if (ext == "rds") return(base::readRDS(path))
-    if (ext == "rda") {
-      e <- new.env()
-      base::load(path, envir = e)
-      return(e[[base::ls(e)[1]]])
+    
+    ext <- tools::file_ext(path)
+    
+    if (ext %in% c("txt", "csv")) {
+      
+      # --- guess separator from first line ---
+      first_line <- readLines(path, n = 1)
+      sep <- if (grepl("\t", first_line)) {
+        "\t"
+      } else if (grepl(";", first_line)) {
+        ";"
+      } else if (grepl(",", first_line)) {
+        ","
+      } else {
+        ""  # fallback: any whitespace
+      }
+      
+      # --- read everything as character ---
+      df <- utils::read.table(
+        path,
+        header = TRUE,
+        row.names = 1,      # first column = gene names
+        check.names = FALSE,
+        stringsAsFactors = FALSE,
+        sep = sep,
+        comment.char = "",
+        quote = "\"",
+        fill = TRUE,
+        colClasses = "character"
+      )
+      
+      # --- remove empty trailing columns (from trailing separators) ---
+      df <- df[, colSums(!is.na(df) & df != "") > 0, drop = FALSE]
+      
+      # --- normalize decimals and coerce to numeric ---
+      df[] <- lapply(df, function(x) {
+        x <- gsub(",", ".", x)
+        as.numeric(x)
+      })
+      
+      # --- validation ---
+      if (!all(sapply(df, is.numeric))) {
+        stop(
+          "Uploaded file could not be parsed as numeric expression matrix. ",
+          "Check the first row, separator, and decimal symbols."
+        )
+      }
+      
+      if (is.null(rownames(df))) {
+        stop("First column must contain gene names.")
+      }
+      
+      return(base::as.data.frame(df))
+      
+    } else if (ext == "rds") {
+      
+      df <- readRDS(path)
+      
+      # if it’s a matrix, coerce to data.frame
+      if (inherits(df, "matrix")) {
+        df <- as.data.frame(df, stringsAsFactors = FALSE)
+      }
+      
+      # now check type: must be data.frame
+      if (!inherits(df, "data.frame")) {
+        stop("Uploaded RDS must contain a data.frame or matrix.")
+      }
+      
+      # validate row and column names
+      if (is.null(rownames(df)) || nrow(df) == 0) {
+        stop("Uploaded RDS must have row names (gene names).")
+      }
+      
+      if (is.null(colnames(df)) || ncol(df) == 0) {
+        stop("Uploaded RDS must have column names (sample names).")
+      }
+      
+      return(df)
+      
+    } else {
+      
+      stop("Unsupported file format.")
+      
     }
-    stop("Unsupported file format.")
   }
+  
   
   parse_geneset_object <- function(obj, name_hint) {
     if (is.character(obj)) return(stats::setNames(list(obj), name_hint))
@@ -475,13 +594,13 @@ server <- function(input, output, session) {
     stop("Invalid gene set format.")
   }
   
-  ##### EXAMPLE DATA LOADING ######################################### 
+  ##### DATA  ######################################### 
   
   # Solution with "fake" progress bar for better UI experience 
   
   observeEvent(input$expr_source, {
     
-    # ---- UNPROCESSED DATA ----
+    ######## > UNPROCESSED DATA  ####### 
     if (input$expr_source == "example_raw") {
       
       shiny::withProgress(
@@ -516,7 +635,7 @@ server <- function(input, output, session) {
     }
     
     
-    # ---- PROCESSED DATA ----
+    ######## > PROCESSED DATA    ####### 
     if (input$expr_source == "example_proc") {
       
       shiny::withProgress(
@@ -550,7 +669,125 @@ server <- function(input, output, session) {
       )
     }
   })
+  
+  ########## > INPUT DATA    ######## 
+  
+  observeEvent(input$expr_file, {
+    req(input$expr_file)
+    expr_data(safe_read_table(input$expr_file$datapath))
+  })
+  
+  
+  
+  
+  ########## > GEO DATA    ########  
    
+  
+  # Fetch GEO accession
+  observeEvent(input$geo_fetch, {
+    req(input$geo_accession)
+    
+    shiny::withProgress(
+      message = paste("Fetching GEO accession", input$geo_accession),
+      value = 0,
+      {
+        incProgress(0.1, detail = "Preparing download...")
+        Sys.sleep(0.1)
+        
+        tryCatch({
+          incProgress(0.4, detail = "Downloading GEO dataset...")
+          g <- GEOquery::getGEO(input$geo_accession, GSEMatrix = TRUE)
+          Sys.sleep(0.2)
+          
+          incProgress(0.3, detail = "Processing objects...")
+          geo_objects(g)
+          
+          incProgress(0.2, detail = "Finalizing...")
+          
+          showNotification(
+            paste("GEO dataset", input$geo_accession, "loaded successfully."),
+            type = "default",
+            duration = 4
+          )
+          
+        }, error = function(e) {
+          showNotification(
+            paste("Failed to download GEO dataset:", e$message),
+            type = "error",
+            duration = 5
+          )
+        })
+      }
+    )
+  })
+  
+  # Descriptive GEO object selection
+  output$geo_object_selector <- renderUI({
+    req(geo_objects())
+    objs <- geo_objects()
+    
+    obj_labels <- sapply(objs, function(obj) {
+      title <- tryCatch(Biobase::experimentData(obj)@title, error = function(e) "")
+      platform <- tryCatch(Biobase::annotation(obj), error = function(e) "")
+      paste0(title, " [", platform, "]")
+    })
+    
+    selectInput(
+      "geo_selected_object",
+      "Select GEO object (platform):",
+      choices = setNames(seq_along(objs), obj_labels)
+    )
+  })
+  
+  # Unpack expression & metadata with progress
+  observeEvent(input$geo_selected_object, {
+    req(geo_objects())
+    idx <- as.numeric(input$geo_selected_object)
+    obj <- geo_objects()[[idx]]
+    
+    shiny::withProgress(
+      message = "Loading expression and metadata...",
+      value = 0,
+      {
+        incProgress(0.3, detail = "Extracting expression matrix...")
+        Sys.sleep(0.1)
+        expr <- Biobase::exprs(obj)
+        expr_data(expr)
+        browser()
+        incProgress(0.3, detail = "Extracting sample metadata...")
+        Sys.sleep(0.1)
+        meta <- Biobase::pData(obj)
+        
+        # Store the full frozen metadata separately
+        full_geo_meta(meta)
+        
+        # Initialize meta_data with full metadata for downstream use
+        meta_data(cbind(SampleID = rownames(meta), meta))
+        
+        incProgress(0.4, detail = "Finalizing...")
+        Sys.sleep(0.1)
+        
+        # Automatically set metadata source to GEO
+        updateRadioButtons(
+          session,
+          inputId = "meta_source",
+          selected = "geo"
+        )
+        
+        showNotification(
+          "Expression and metadata loaded successfully.",
+          type = "default",
+          duration = 4
+        )
+      }
+    )
+  })
+  
+  
+  
+  ##### METADATA  ######################################### 
+  
+  
   observeEvent(input$meta_source, {
     
     if (input$meta_source == "example") {
@@ -586,7 +823,44 @@ server <- function(input, output, session) {
       )
     }
   })
-   
+  
+  
+  
+  observeEvent(input$meta_file, {
+    req(input$meta_file)
+    meta_data(safe_read_table(input$meta_file$datapath))
+  })
+  
+  # For GEO selection
+  # Populate pickerInput dynamically using frozen GEO metadata (excluding SampleID)
+  observe({
+    req(full_geo_meta(), input$meta_source)
+    
+    if (input$meta_source == "geo") {
+      cols <- setdiff(colnames(full_geo_meta()), "SampleID")
+      
+      shinyWidgets::updatePickerInput(
+        session,
+        "selected_meta_cols",
+        choices = cols,
+        selected = cols
+      )
+    }
+  })
+  
+  # Subset meta_data() based on pickerInput selection (only for GEO)
+  observe({
+    req(full_geo_meta(), input$selected_meta_cols, input$meta_source)
+    
+    if (!is.null(input$meta_source) && input$meta_source == "geo") {
+      subset_meta <- full_geo_meta()[, input$selected_meta_cols, drop = FALSE]
+      subset_meta <- cbind(SampleID = rownames(subset_meta), subset_meta)
+      meta_data(subset_meta)
+    }
+  })
+  
+  ##### GENE SETS  ######################################### 
+  
   observeEvent(input$geneset_source, {
     
     if (input$geneset_source == "example") {
@@ -622,65 +896,8 @@ server <- function(input, output, session) {
       )
     }
   })
-  # observeEvent(input$expr_source, {
-  #   if (input$expr_source == "example_raw") {
-  #     shiny::withProgress(message = "Downloading unprocessed example data...", value = 0.7, {
-  #       tmp <- tempfile(fileext = ".rds")
-  #       utils::download.file(
-  #         url  = "https://zenodo.org/records/18714122/files/counts.rds?download=1",
-  #         destfile = tmp, mode = "wb"
-  #       )
-  #       expr_data(readRDS(tmp))
-  #     })
-  #   }
-  #   
-  #   if (input$expr_source == "example_proc") {
-  #     shiny::withProgress(message = "Downloading processed example data...", value = 0.7, {
-  #       tmp <- tempfile(fileext = ".rds")
-  #       utils::download.file(
-  #         url  = "https://zenodo.org/records/18714122/files/corrcounts.rds?download=1",
-  #         destfile = tmp, mode = "wb"
-  #       )
-  #       expr_data(readRDS(tmp))
-  #     })
-  #   }
-  # })
-  # observeEvent(input$meta_source, {
-  #   if (input$meta_source == "example") {
-  #     shiny::withProgress(message = "Downloading example metadata...", value = 0.7, {
-  #       tmp <- tempfile(fileext = ".rds")
-  #       utils::download.file(
-  #         url = "https://zenodo.org/records/18714122/files/metadata.rds?download=1",
-  #         destfile = tmp, mode = "wb"
-  #       )
-  #       meta_data(readRDS(tmp))
-  #     })
-  #   }
-  # })
-  # observeEvent(input$geneset_source, {
-  #   if (input$geneset_source == "example") {
-  #     shiny::withProgress(message = "Downloading example gene sets...", value = 0.7, {
-  #       tmp <- tempfile(fileext = ".rds")
-  #       utils::download.file(
-  #         url = "https://zenodo.org/records/18714122/files/SenescenceGeneSets.rds?download=1",
-  #         destfile = tmp, mode = "wb"
-  #       )
-  #       gene_sets(readRDS(tmp))
-  #     })
-  #   }
-  # })
   
-  ##### FILE UPLOAD HANDLERS #########################################
   
-  observeEvent(input$expr_file, {
-    req(input$expr_file)
-    expr_data(safe_read_table(input$expr_file$datapath))
-  })
-  
-  observeEvent(input$meta_file, {
-    req(input$meta_file)
-    meta_data(safe_read_table(input$meta_file$datapath))
-  })
   
   observeEvent(input$geneset_files, {
     req(input$geneset_files)
@@ -719,29 +936,9 @@ server <- function(input, output, session) {
     
     names(normalized) <- names(gs)
     gene_sets(normalized)   # overwrite reactiveVal
-  })
+  }) 
   
-  ##### GEO DOWNLOAD AND SELECTION ###################################
-  observeEvent(input$geo_fetch, {
-    req(input$geo_accession)
-    tryCatch({
-      g <- GEOquery::getGEO(input$geo_accession, GSEMatrix = TRUE)
-      geo_objects(g)
-    }, error = function(e) showNotification("Failed to download GEO dataset.", type = "error"))
-  })
   
-  output$geo_object_selector <- renderUI({
-    req(geo_objects())
-    selectInput("geo_selected_object", "Select GEO object:", choices = seq_along(geo_objects()))
-  })
-  
-  observeEvent(input$geo_selected_object, {
-    req(geo_objects())
-    idx <- as.numeric(input$geo_selected_object)
-    obj <- geo_objects()[[idx]]
-    expr_data(Biobase::exprs(obj))
-    meta_data(Biobase::pData(obj))
-  })
   
   ##### DATA SUMMARY (REACTIVE OUTPUT) ###############################
   output$summary_ui <- renderUI({
@@ -756,6 +953,8 @@ server <- function(input, output, session) {
   })
   
   ##### PREVIEW TABLES ################################################
+  
+  
   output$expr_preview <- DT::renderDT({
     shiny::req(expr_data())
     
@@ -829,57 +1028,57 @@ server <- function(input, output, session) {
       rownames = FALSE
     )
   })
-
+  
   # pop up window with gene set composition
- shiny::observeEvent(input$geneset_summary_rows_selected, {
-   shiny::req(input$geneset_summary_rows_selected) #input automatically created by DT
-   gs <- gene_sets()
-   
-   # Get selected gene set name
-   selected_row <- input$geneset_summary_rows_selected
-   selected_name <- names(gs)[selected_row]
-   geneset_obj <- gs[[selected_name]]
-   
-   # Prepare table to show in modal
-   if (is.data.frame(geneset_obj) && "Direction" %in% colnames(geneset_obj)) {
-     modal_df <- geneset_obj
-   } else {
-     modal_df <- data.frame(Gene = geneset_obj)
-   }
-   
-   # Show modal
-   shiny::showModal(
-     shiny::modalDialog(
-       title = paste("Genes in set:", selected_name),
-       
-       # Wrap DT in a div to control width
-       shiny::tags$div(
-         style = "max-width: 700px; margin: auto;",  # narrow table, centered in modal
-         DT::renderDT({
-           DT::datatable(
-             modal_df,
-             options = list(
-               pageLength = 10,
-               scrollX = TRUE,
-               scrollY = "300px",        #  height of scrollable area
-               scrollCollapse = TRUE,    #  collapse if fewer rows
-               paging = FALSE,           #  optional, better for modal scroll
-               columnDefs = list(
-                 list(className = 'dt-center', targets = "_all")
-               )
-             ),
-             rownames = FALSE
-           )
-         })
-       ),
-       
-       easyClose = TRUE,
-       size = "l"  # modal is large
-     )
-   )
-   
-   
- })
+  shiny::observeEvent(input$geneset_summary_rows_selected, {
+    shiny::req(input$geneset_summary_rows_selected) #input automatically created by DT
+    gs <- gene_sets()
+    
+    # Get selected gene set name
+    selected_row <- input$geneset_summary_rows_selected
+    selected_name <- names(gs)[selected_row]
+    geneset_obj <- gs[[selected_name]]
+    
+    # Prepare table to show in modal
+    if (is.data.frame(geneset_obj) && "Direction" %in% colnames(geneset_obj)) {
+      modal_df <- geneset_obj
+    } else {
+      modal_df <- data.frame(Gene = geneset_obj)
+    }
+    
+    # Show modal
+    shiny::showModal(
+      shiny::modalDialog(
+        title = paste("Genes in set:", selected_name),
+        
+        # Wrap DT in a div to control width
+        shiny::tags$div(
+          style = "max-width: 700px; margin: auto;",  # narrow table, centered in modal
+          DT::renderDT({
+            DT::datatable(
+              modal_df,
+              options = list(
+                pageLength = 10,
+                scrollX = TRUE,
+                scrollY = "300px",        #  height of scrollable area
+                scrollCollapse = TRUE,    #  collapse if fewer rows
+                paging = FALSE,           #  optional, better for modal scroll
+                columnDefs = list(
+                  list(className = 'dt-center', targets = "_all")
+                )
+              ),
+              rownames = FALSE
+            )
+          })
+        ),
+        
+        easyClose = TRUE,
+        size = "l"  # modal is large
+      )
+    )
+    
+    
+  })
   
 }
 
