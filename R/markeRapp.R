@@ -2,6 +2,8 @@
 #' @import shiny
 #' @import GEOquery
 #' @import DT
+#' @importFrom readxl read_xls read_xlsx
+#' @importFrom R.utils gunzip
 
 ui <- bslib::page_navbar(
   
@@ -272,11 +274,11 @@ ui <- bslib::page_navbar(
                 )
               ),
               
-              shiny::conditionalPanel( # id data comes from geo, user needs to have a section to then choose which file is the expression data and (optionally) which one is the metadata
+              shiny::conditionalPanel(
                 "input.expr_source == 'geo'",
                 shiny::textInput(
                   "geo_accession",
-                  "Enter GEO Accession (e.g., GSE130727)", #GSE130727
+                  "Enter GEO Accession (e.g., GSE130727)",
                   placeholder = "GSE130727"
                 ),
                 shiny::actionButton(
@@ -284,7 +286,9 @@ ui <- bslib::page_navbar(
                   "Download GEO"
                 ),
                 shiny::hr(),
-                shiny::uiOutput("geo_object_selector")
+                shiny::uiOutput("geo_object_selector"),  # GEO object selection
+
+                shiny::uiOutput("geo_supp_selector")    # Supplementary file dropdown if needed
               )
             ),
             
@@ -314,19 +318,21 @@ ui <- bslib::page_navbar(
                 )
               ),
               # Show GEO metadata column selection only if 'geo' is selected
-              # inside your Metadata accordion
-              # Use pickerInput for checkbox-style dropdown
+              # Only show if using GEO as metadata source
               shiny::conditionalPanel(
                 "input.meta_source == 'geo'",
+                
+                # SampleID column selection
+                shiny::uiOutput("geo_sampleid_selector"),
+                
+                # Metadata columns selection
                 shinyWidgets::pickerInput(
                   inputId = "selected_meta_cols",
-                  label = "Select metadata columns to keep:",
-                  choices = NULL,       # will be populated dynamically in server
+                  label   = "Select metadata columns to keep:",
+                  choices = NULL,   # updated server-side
+                  selected = NULL,
                   multiple = TRUE,
-                  options = list(
-                    `actions-box` = TRUE,   # select/deselect all buttons
-                    `live-search` = TRUE    # allows search if many columns
-                  )
+                  options = list(`actions-box` = TRUE)
                 )
               )
             ),
@@ -579,6 +585,41 @@ server <- function(input, output, session) {
     }
   }
   
+  read_geo_supp_matrix <- function(path, original_name = NULL) { 
+    fname <- if (!is.null(original_name)) original_name else basename(path)
+    ext <- tolower(tools::file_ext(fname))
+    
+    # decompress gz first
+    if (ext == "gz" || grepl("\\.gz$", fname, ignore.case = TRUE)) {
+      tmp <- tempfile(fileext = sub("\\.gz$", "", fname))
+      R.utils::gunzip(path, destname = tmp, overwrite = TRUE, remove = FALSE)
+      path <- tmp
+      ext <- tolower(tools::file_ext(tmp))
+    }
+    
+    # read according to true extension
+    df <- switch(
+      ext,
+      "xls"  = readxl::read_xls(path),
+      "xlsx" = readxl::read_xlsx(path),
+      "csv"  = utils::read.csv(path, check.names = FALSE),
+      "tsv"  = utils::read.delim(path, check.names = FALSE),
+      "txt"  = utils::read.delim(path, check.names = FALSE),
+      stop("Unsupported supplementary file format: ", ext)
+    )
+    
+    # first column as rownames if needed
+    if (!all(sapply(df, is.numeric))) {
+      rownames(df) <- df[[1]]
+      df <- df[, -1, drop = FALSE]
+    }
+    
+    mat <- as.matrix(df)
+    if (!is.numeric(mat)) stop("Supplementary file does not contain numeric expression matrix.")
+    
+    return(mat)
+  }
+     
   
   parse_geneset_object <- function(obj, name_hint) {
     if (is.character(obj)) return(stats::setNames(list(obj), name_hint))
@@ -680,48 +721,43 @@ server <- function(input, output, session) {
   
   
   
-  ########## > GEO DATA    ########  
-   
+  ########## > GEO DATA ########  
   
-  # Fetch GEO accession
+  # Reactive values to store GEO objects, metadata, expression, and supplementary files
+  geo_objects     <- reactiveVal(NULL)
+  expr_data       <- reactiveVal(NULL)
+  meta_data       <- reactiveVal(NULL)
+  full_geo_meta   <- reactiveVal(NULL)
+  geo_supp_files  <- reactiveVal(NULL)
+  
+  # --- 1. Fetch GEO accession ---
   observeEvent(input$geo_fetch, {
     req(input$geo_accession)
     
-    shiny::withProgress(
-      message = paste("Fetching GEO accession", input$geo_accession),
-      value = 0,
-      {
-        incProgress(0.1, detail = "Preparing download...")
-        Sys.sleep(0.1)
-        
-        tryCatch({
-          incProgress(0.4, detail = "Downloading GEO dataset...")
-          g <- GEOquery::getGEO(input$geo_accession, GSEMatrix = TRUE)
-          Sys.sleep(0.2)
-          
-          incProgress(0.3, detail = "Processing objects...")
-          geo_objects(g)
-          
-          incProgress(0.2, detail = "Finalizing...")
-          
-          showNotification(
-            paste("GEO dataset", input$geo_accession, "loaded successfully."),
-            type = "default",
-            duration = 4
-          )
-          
-        }, error = function(e) {
-          showNotification(
-            paste("Failed to download GEO dataset:", e$message),
-            type = "error",
-            duration = 5
-          )
-        })
-      }
-    )
+    shiny::withProgress(message = paste("Fetching GEO accession", input$geo_accession), value = 0, {
+      
+      # Temporary folder for this session
+      tmp_dir <- tempdir()
+      
+      incProgress(0.3, "Downloading GEO objects...")
+      objs <- GEOquery::getGEO(input$geo_accession, GSEMatrix = TRUE)
+      geo_objects(objs)
+      
+      incProgress(0.3, "Fetching supplementary files...")
+      # fetch without creating a GSE folder
+      supp <- GEOquery::getGEOSuppFiles(
+        input$geo_accession,
+        makeDirectory = FALSE,
+        baseDir = tmp_dir
+      )
+      geo_supp_files(supp)
+      
+      incProgress(0.4, "Done.")
+      showNotification("GEO accession loaded.", type = "message")
+    })
   })
   
-  # Descriptive GEO object selection
+  # --- 2. GEO object selection with descriptive labels ---
   output$geo_object_selector <- renderUI({
     req(geo_objects())
     objs <- geo_objects()
@@ -739,7 +775,7 @@ server <- function(input, output, session) {
     )
   })
   
-  # Unpack expression & metadata with progress
+  # --- 3. Load expression & metadata, handle empty expression matrices ---
   observeEvent(input$geo_selected_object, {
     req(geo_objects())
     idx <- as.numeric(input$geo_selected_object)
@@ -749,25 +785,35 @@ server <- function(input, output, session) {
       message = "Loading expression and metadata...",
       value = 0,
       {
-        incProgress(0.3, detail = "Extracting expression matrix...")
-        Sys.sleep(0.1)
-        expr <- Biobase::exprs(obj)
-        expr_data(expr)
-        browser()
+        # Metadata
         incProgress(0.3, detail = "Extracting sample metadata...")
         Sys.sleep(0.1)
         meta <- Biobase::pData(obj)
-        
-        # Store the full frozen metadata separately
         full_geo_meta(meta)
-        
-        # Initialize meta_data with full metadata for downstream use
         meta_data(cbind(SampleID = rownames(meta), meta))
+        
+        # Expression
+        incProgress(0.3, detail = "Extracting expression matrix...")
+        Sys.sleep(0.1)
+        expr <- Biobase::exprs(obj)
+        
+        if (nrow(expr) == 0) {
+          # Expression matrix empty -> show supplementary file dropdown
+          showNotification(
+            "Expression matrix is empty! Please select a supplementary file.",
+            type = "warning",
+            duration = 8
+          )
+          expr_data(NULL)
+        } else {
+          expr_data(expr)
+          geo_supp_files(NULL)  # no need for supplementary selection
+        }
         
         incProgress(0.4, detail = "Finalizing...")
         Sys.sleep(0.1)
         
-        # Automatically set metadata source to GEO
+        # Automatically switch metadata source to GEO
         updateRadioButtons(
           session,
           inputId = "meta_source",
@@ -775,7 +821,7 @@ server <- function(input, output, session) {
         )
         
         showNotification(
-          "Expression and metadata loaded successfully.",
+          "Metadata loaded successfully.",
           type = "default",
           duration = 4
         )
@@ -783,7 +829,54 @@ server <- function(input, output, session) {
     )
   })
   
+  # --- 4. Render supplementary file selector if expression matrix is empty ---
+  output$geo_supp_selector <- renderUI({
+    supp <- geo_supp_files()
+    req(supp)
+    
+    files <- rownames(supp)
+    if (length(files) == 0) return(NULL)
+    
+    # names = what user sees, values = full path
+    selectInput(
+      "geo_selected_supp",
+      "Select a supplementary file containing expression data:",
+      choices = setNames(files, basename(files))
+    )
+  })
   
+  # --- 5. Load selected supplementary file ---
+  observeEvent(input$geo_selected_supp, {
+    req(input$geo_selected_supp)
+    
+    file_path <- input$geo_selected_supp  # full path
+    expr <- NULL
+    
+    tryCatch({
+      expr <- read_geo_supp_matrix(
+        path = file_path,
+        original_name = basename(file_path)
+      )
+      
+      # Check if matrix is numeric and non-empty
+      if (!is.numeric(expr) || nrow(expr) == 0 || ncol(expr) == 0) {
+        stop("Selected supplementary file does not contain a valid numeric expression matrix. 
+             Please check if the selected file is gene expression data, or your access code 
+             contains a gene expression matrix in the supplementary files.")
+      }
+      
+      expr_data(expr)
+      showNotification("Expression data loaded from supplementary file.", type = "default")
+      
+    }, error = function(e) {
+      expr_data(NULL)
+      showNotification(
+        paste("Cannot load selected supplementary file:", e$message),
+        type = "error",
+        duration = 10
+      )
+    })
+  })
   
   ##### METADATA  ######################################### 
   
@@ -831,14 +924,36 @@ server <- function(input, output, session) {
     meta_data(safe_read_table(input$meta_file$datapath))
   })
   
-  # For GEO selection
-  # Populate pickerInput dynamically using frozen GEO metadata (excluding SampleID)
+
+  
+  # --- GEO metadata handling with SampleID mapping and subsetting ---
   observe({
     req(full_geo_meta(), input$meta_source)
     
     if (input$meta_source == "geo") {
-      cols <- setdiff(colnames(full_geo_meta()), "SampleID")
+      df <- full_geo_meta()
       
+      # Determine default SampleID column
+      default_sampleid <- if ("geo_accession" %in% colnames(df)) {
+        "geo_accession"
+      } else if ("SampleID" %in% colnames(df) && all(df$SampleID == rownames(df))) {
+        "SampleID"
+      } else {
+        rownames(df)
+      }
+      
+      # Render UI for SampleID column selection
+      output$geo_sampleid_selector <- renderUI({
+        selectInput(
+          inputId = "geo_sampleid_col",
+          label   = "Select column containing Sample IDs:",
+          choices = colnames(df),
+          selected = default_sampleid
+        )
+      })
+      
+      # Update pickerInput for metadata column selection (exclude SampleID)
+      cols <- setdiff(colnames(df), default_sampleid)
       shinyWidgets::updatePickerInput(
         session,
         "selected_meta_cols",
@@ -848,14 +963,25 @@ server <- function(input, output, session) {
     }
   })
   
-  # Subset meta_data() based on pickerInput selection (only for GEO)
+  # --- Update meta_data() based on SampleID and selected columns ---
   observe({
-    req(full_geo_meta(), input$selected_meta_cols, input$meta_source)
+    req(full_geo_meta(), input$geo_sampleid_col, input$selected_meta_cols, input$meta_source)
     
-    if (!is.null(input$meta_source) && input$meta_source == "geo") {
-      subset_meta <- full_geo_meta()[, input$selected_meta_cols, drop = FALSE]
-      subset_meta <- cbind(SampleID = rownames(subset_meta), subset_meta)
-      meta_data(subset_meta)
+    if (input$meta_source == "geo") {
+      df <- full_geo_meta()
+      
+      # Map SampleID column
+      sample_ids <- if (input$geo_sampleid_col %in% colnames(df)) {
+        df[[input$geo_sampleid_col]]
+      } else {
+        rownames(df)
+      }
+      
+      # Subset remaining metadata columns, ensuring SampleID is first
+      subset_cols <- setdiff(input$selected_meta_cols, input$geo_sampleid_col)
+      subset_meta <- df[, subset_cols, drop = FALSE]
+      
+      meta_data(cbind(SampleID = sample_ids, subset_meta))
     }
   })
   
