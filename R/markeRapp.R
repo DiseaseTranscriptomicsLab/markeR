@@ -493,6 +493,7 @@ server <- function(input, output, session) {
   geo_objects <- shiny::reactiveVal(NULL)  # Raw GEO objects (can be multiple)
   geo_meta_cols <- reactiveVal(NULL) # Will store the original metadata column names (excluding SampleID)
   full_geo_meta <- reactiveVal(NULL)
+  geo_supp_files  <- reactiveVal(NULL)
   
   # HELPER FUNCTIONS (NOT REACTIVE 
   
@@ -585,11 +586,13 @@ server <- function(input, output, session) {
     }
   }
   
-  read_geo_supp_matrix <- function(path, original_name = NULL) { 
+  # --- Helper function to read GEO supplementary files ---
+  read_geo_supp_matrix <- function(path, original_name = NULL, geo_accession = NULL) { 
+    
     fname <- if (!is.null(original_name)) original_name else basename(path)
     ext <- tolower(tools::file_ext(fname))
     
-    # decompress gz first
+    # --- Handle gz ---
     if (ext == "gz" || grepl("\\.gz$", fname, ignore.case = TRUE)) {
       tmp <- tempfile(fileext = sub("\\.gz$", "", fname))
       R.utils::gunzip(path, destname = tmp, overwrite = TRUE, remove = FALSE)
@@ -597,7 +600,122 @@ server <- function(input, output, session) {
       ext <- tolower(tools::file_ext(tmp))
     }
     
-    # read according to true extension
+    # --- Handle TAR archives ---
+    if (ext == "tar") {
+      extract_dir <- tempfile()
+      dir.create(extract_dir)
+      utils::untar(path, exdir = extract_dir)
+      
+      files <- list.files(extract_dir, full.names = TRUE, recursive = TRUE)
+      
+      # detect gz gene count files
+      gz_files <- files[grepl("_geneCOUNT\\.txt\\.gz$", files, ignore.case = TRUE)]
+      
+      # --- Warning if none of the files look like gene counts ---
+      if (length(gz_files) == 0) {
+        geo_link <- if (!is.null(geo_accession)) paste0(
+          "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", geo_accession
+        ) else "#"
+        showNotification(
+          HTML(paste0(
+            "⚠️ The TAR archive does not contain recognizable gene count files.<br>",
+            "Check the GEO entry: <a href='", geo_link, "' target='_blank'>", geo_accession, "</a><br>",
+            "If this is the correct dataset, format it as a gene × sample numeric matrix before uploading."
+          )),
+          type = "warning", duration = 10
+        )
+        
+        # Reset dropdown selection
+        updateSelectInput(
+          session,
+          "geo_selected_supp",
+          selected = ""
+        )
+        #stop("TAR archive does not contain recognizable gene count files.")
+        return(NULL)
+      }
+      
+      # Optional: warn if filenames don’t match expected RNA-seq naming
+      nonstandard_files <- gz_files[!grepl("_S\\d+_geneCOUNT", basename(gz_files))]
+      if (length(nonstandard_files) > 0) {
+        geo_link <- if (!is.null(geo_accession)) paste0(
+          "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", geo_accession
+        ) else "#"
+        showNotification(
+          HTML(paste0(
+            "⚠️ Some files in the TAR archive do not match expected RNA-seq count naming patterns.<br>",
+            "Check the GEO entry: <a href='", geo_link, "' target='_blank'>", geo_accession, "</a><br>",
+            "If correct, ensure these are gene × sample numeric matrices."
+          )),
+          type = "warning", duration = NULL
+        )
+        
+        # Reset dropdown selection
+        updateSelectInput(
+          session,
+          "geo_selected_supp",
+          selected = ""
+        )
+      }
+      
+      # --- Load all files ---
+      count_list <- list()
+      for (f in gz_files) {
+        tmp_txt <- tempfile(fileext = ".txt")
+        R.utils::gunzip(f, destname = tmp_txt, overwrite = TRUE, remove = FALSE)
+        
+        df <- read.delim(tmp_txt, header = TRUE, stringsAsFactors = FALSE)
+        gene_ids <- df[[1]]
+        counts   <- as.numeric(df[[2]])
+        
+        # extract GSM/sample ID from filename
+        sample_id <- sub("_.*", "", basename(f))
+        
+        count_list[[sample_id]] <- data.frame(
+          Gene = gene_ids,
+          Count = counts,
+          stringsAsFactors = FALSE
+        )
+      }
+      
+      # Rename counts column to sample names
+      count_list <- Map(function(df, sn) {
+        colnames(df)[2] <- sn
+        df
+      }, count_list, names(count_list))
+      
+      # Merge all by Gene
+      merged <- Reduce(function(x, y) merge(x, y, by = "Gene", all = FALSE), count_list)
+      
+      # Gene as rownames
+      rownames(merged) <- merged$Gene
+      merged$Gene <- NULL
+      
+      expr_matrix <- as.matrix(merged)
+      storage.mode(expr_matrix) <- "numeric"
+      
+      # Basic sanity check
+      if (!is.numeric(expr_matrix) || nrow(expr_matrix) == 0 || ncol(expr_matrix) == 0) {
+        geo_link <- if (!is.null(geo_accession)) paste0(
+          "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", geo_accession
+        ) else "#"
+        showNotification(
+          HTML(paste0(
+            "⚠️ Matrix is not numeric or empty.<br>",
+            "Check the GEO entry: <a href='", geo_link, "' target='_blank'>", geo_accession, "</a><br>",
+            "If correct, ensure these are gene × sample numeric matrices."
+          )),
+          type = "warning", duration = NULL
+        )
+        #stop("Matrix is not numeric or empty")
+        return()
+      }
+       
+      return(expr_matrix)
+      
+      
+    }
+     # --- Read according to extension ---
     df <- switch(
       ext,
       "xls"  = readxl::read_xls(path),
@@ -606,19 +724,73 @@ server <- function(input, output, session) {
       "tsv"  = utils::read.delim(path, check.names = FALSE),
       "txt"  = utils::read.delim(path, check.names = FALSE),
       stop("Unsupported supplementary file format: ", ext)
+      
+      
     )
     
-    # first column as rownames if needed
+    # First column as rownames if needed
     if (!all(sapply(df, is.numeric))) {
       rownames(df) <- df[[1]]
       df <- df[, -1, drop = FALSE]
     }
     
     mat <- as.matrix(df)
-    if (!is.numeric(mat)) stop("Supplementary file does not contain numeric expression matrix.")
+   
+    if (!is.numeric(mat)) {
+ 
+      geo_link <- if (!is.null(geo_accession)) paste0(
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", geo_accession
+      ) else "#"
+      showNotification(
+        HTML(paste0(
+          "⚠️ Extracted file does not contain a numeric expression matrix. <br>",
+          "Check the GEO entry: <a href='", geo_link, "' target='_blank'>", geo_accession, "</a><br>",
+          "If correct, ensure these are gene × sample numeric matrices."
+        )),
+        type = "warning", duration = NULL
+      )
+      return()
+      #stop("Extracted file does not contain a numeric expression matrix.")
+    }
     
     return(mat)
   }
+  
+  
+  # # --- Observer to load selected supplementary file ---
+  # observeEvent(input$geo_selected_supp, {
+  #   req(input$geo_selected_supp)
+  #   file_path <- input$geo_selected_supp
+  #   
+  #   withProgress(message = "Processing supplementary file...", value = 0, {
+  #     incProgress(0.2, detail = "Reading file...")
+  #     Sys.sleep(0.3)  # fake delay
+  #     
+  #     tryCatch({
+  #       expr <- read_geo_supp_matrix(
+  #         path = file_path,
+  #         original_name = basename(file_path),
+  #         geo_accession = input$geo_accession
+  #       )
+  #       
+  #       incProgress(0.3, detail = "Validating matrix...")
+  #       Sys.sleep(0.3)
+  #       
+  #       expr_data(expr)
+  #       showNotification("Expression data loaded from supplementary file.", type = "default")
+  #       
+  #     }, error = function(e) {
+  #       expr_data(NULL)
+  #       showNotification(
+  #         paste("Cannot load selected supplementary file:", e$message),
+  #         type = "error", duration = 10
+  #       )
+  #     })
+  #     
+  #     incProgress(0.5, detail = "Done.")
+  #     Sys.sleep(0.2)
+  #   })
+  # })
      
   
   parse_geneset_object <- function(obj, name_hint) {
@@ -722,29 +894,31 @@ server <- function(input, output, session) {
   
   
   ########## > GEO DATA ########  
-  
-  # Reactive values to store GEO objects, metadata, expression, and supplementary files
-  geo_objects     <- reactiveVal(NULL)
-  expr_data       <- reactiveVal(NULL)
-  meta_data       <- reactiveVal(NULL)
-  full_geo_meta   <- reactiveVal(NULL)
-  geo_supp_files  <- reactiveVal(NULL)
+   
   
   # --- 1. Fetch GEO accession ---
   observeEvent(input$geo_fetch, {
     req(input$geo_accession)
     
-    shiny::withProgress(message = paste("Fetching GEO accession", input$geo_accession), value = 0, {
+    withProgress(message = paste("Fetching GEO accession", input$geo_accession), value = 0, {
       
-      # Temporary folder for this session
       tmp_dir <- tempdir()
       
       incProgress(0.3, "Downloading GEO objects...")
       objs <- GEOquery::getGEO(input$geo_accession, GSEMatrix = TRUE)
       geo_objects(objs)
       
+      # ---- CHECK IF ANY OBJECT HAS EXPRESSION ----
+      has_expr <- FALSE
+      for (obj in objs) {
+        expr <- tryCatch(Biobase::exprs(obj), error = function(e) NULL)
+        if (!is.null(expr) && nrow(expr) > 0 && ncol(expr) > 0) {
+          has_expr <- TRUE
+          break
+        }
+      }
+      
       incProgress(0.3, "Fetching supplementary files...")
-      # fetch without creating a GSE folder
       supp <- GEOquery::getGEOSuppFiles(
         input$geo_accession,
         makeDirectory = FALSE,
@@ -752,10 +926,20 @@ server <- function(input, output, session) {
       )
       geo_supp_files(supp)
       
-      incProgress(0.4, "Done.")
-      showNotification("GEO accession loaded.", type = "message")
+      incProgress(0.4, "Finalizing...")
+      
+      if (!has_expr) {
+        showNotification(
+          "No expression matrix found in GEO object. Please select a supplementary file.",
+          type = "warning",
+          duration = 12
+        )
+      } else {
+        showNotification("GEO accession loaded.", type = "default")
+      }
     })
   })
+  
   
   # --- 2. GEO object selection with descriptive labels ---
   output$geo_object_selector <- renderUI({
@@ -777,6 +961,15 @@ server <- function(input, output, session) {
   
   # --- 3. Load expression & metadata, handle empty expression matrices ---
   observeEvent(input$geo_selected_object, {
+    
+    
+    # Reset supplementary selection whenever object changes
+    updateSelectInput(
+      session,
+      "geo_selected_supp",
+      selected = ""
+    )
+    
     req(geo_objects())
     idx <- as.numeric(input$geo_selected_object)
     obj <- geo_objects()[[idx]]
@@ -799,11 +992,11 @@ server <- function(input, output, session) {
         
         if (nrow(expr) == 0) {
           # Expression matrix empty -> show supplementary file dropdown
-          showNotification(
-            "Expression matrix is empty! Please select a supplementary file.",
-            type = "warning",
-            duration = 8
-          )
+          # showNotification(
+          #   "Expression matrix is empty! Please select a supplementary file.",
+          #   type = "warning",
+          #   duration = 8
+          # )
           expr_data(NULL)
         } else {
           expr_data(expr)
@@ -830,51 +1023,87 @@ server <- function(input, output, session) {
   })
   
   # --- 4. Render supplementary file selector if expression matrix is empty ---
-  output$geo_supp_selector <- renderUI({
+   output$geo_supp_selector <- renderUI({
     supp <- geo_supp_files()
     req(supp)
     
     files <- rownames(supp)
     if (length(files) == 0) return(NULL)
     
-    # names = what user sees, values = full path
     selectInput(
       "geo_selected_supp",
       "Select a supplementary file containing expression data:",
-      choices = setNames(files, basename(files))
+      choices = c("— Please choose a file —" = "",
+                  setNames(files, basename(files))),
+      selected = ""   # important
     )
   })
   
   # --- 5. Load selected supplementary file ---
-  observeEvent(input$geo_selected_supp, {
+   observeEvent(input$geo_selected_supp, {
+     req(input$geo_selected_supp != "")
     req(input$geo_selected_supp)
     
     file_path <- input$geo_selected_supp  # full path
     expr <- NULL
     
-    tryCatch({
-      expr <- read_geo_supp_matrix(
-        path = file_path,
-        original_name = basename(file_path)
-      )
+    withProgress(message = "Processing supplementary file...", value = 0, {
       
-      # Check if matrix is numeric and non-empty
-      if (!is.numeric(expr) || nrow(expr) == 0 || ncol(expr) == 0) {
-        stop("Selected supplementary file does not contain a valid numeric expression matrix. 
-             Please check if the selected file is gene expression data, or your access code 
-             contains a gene expression matrix in the supplementary files.")
-      }
+      incProgress(0.2, detail = "Reading file...")
+      Sys.sleep(0.3)  # fake delay for user experience
       
-      expr_data(expr)
-      showNotification("Expression data loaded from supplementary file.", type = "default")
+      tryCatch({
+        
+        # --- read gzipped or plain text files ---
+        expr <- read_geo_supp_matrix(
+          path = file_path,
+          original_name = basename(file_path),
+          geo_accession = input$geo_accession
+        )
+
+        incProgress(0.3, detail = "Validating matrix...")
+        Sys.sleep(0.3)
+        
+        # --- check numeric matrix ---
+        if (!is.numeric(expr) || nrow(expr) == 0 || ncol(expr) == 0) {
+          
+          # Reset dropdown selection
+          updateSelectInput(
+            session,
+            "geo_selected_supp",
+            selected = ""
+          )
+          
+           stop("Matrix not numeric or empty")
+        }
+ 
+        
+        incProgress(0.3, detail = "Finalizing matrix...")
+        Sys.sleep(0.3)
+        
+        if (is.null(expr)) return()
+        expr_data(expr)
+        showNotification("Expression data loaded from supplementary file.", type = "default")
+        
+      }, error = function(e) {
+        expr_data(NULL)
+        
+        # Reset dropdown selection
+        updateSelectInput(
+          session,
+          "geo_selected_supp",
+          selected = ""
+        )
+        
+        showNotification(
+          paste("Cannot load selected supplementary file:", e$message),
+          type = "error",
+          duration = 10
+        )
+      })
       
-    }, error = function(e) {
-      expr_data(NULL)
-      showNotification(
-        paste("Cannot load selected supplementary file:", e$message),
-        type = "error",
-        duration = 10
-      )
+      incProgress(0.2, detail = "Done.")
+      Sys.sleep(0.2)
     })
   })
   
