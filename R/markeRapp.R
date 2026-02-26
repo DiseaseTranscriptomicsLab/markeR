@@ -287,8 +287,9 @@ ui <- bslib::page_navbar(
                 ),
                 shiny::hr(),
                 shiny::uiOutput("geo_object_selector"),  # GEO object selection
-
-                shiny::uiOutput("geo_supp_selector")    # Supplementary file dropdown if needed
+                
+                shiny::uiOutput("geo_supp_selector"),    # Supplementary file dropdown if needed
+                shiny::uiOutput("geo_candidate_selector")  # Dropdown for multiple candidate files, only shows if needed
               )
             ),
             
@@ -486,7 +487,7 @@ ui <- tagList(
 
 server <- function(input, output, session) {
   
-  # REACTIVE STORAGE CONTAINERS 
+  ###### REACTIVE STORAGE CONTAINERS ######
   expr_data   <- shiny::reactiveVal(NULL)  # Expression matrix/data.frame
   meta_data   <- shiny::reactiveVal(NULL)  # Sample metadata
   gene_sets   <- shiny::reactiveVal(NULL)  # Named list of gene sets
@@ -495,7 +496,7 @@ server <- function(input, output, session) {
   full_geo_meta <- reactiveVal(NULL)
   geo_supp_files  <- reactiveVal(NULL)
   
-  # HELPER FUNCTIONS (NOT REACTIVE 
+  ###### HELPER FUNCTIONS ######
   
   clean_name <- function(x) tools::file_path_sans_ext(base::basename(x))
   
@@ -586,213 +587,6 @@ server <- function(input, output, session) {
     }
   }
   
-  # --- Helper function to read GEO supplementary files ---
-  read_geo_supp_matrix <- function(path, original_name = NULL, geo_accession = NULL) { 
-    
-    fname <- if (!is.null(original_name)) original_name else basename(path)
-    ext <- tolower(tools::file_ext(fname))
-    
-    # --- Handle gz ---
-    if (ext == "gz" || grepl("\\.gz$", fname, ignore.case = TRUE)) {
-      tmp <- tempfile(fileext = sub("\\.gz$", "", fname))
-      R.utils::gunzip(path, destname = tmp, overwrite = TRUE, remove = FALSE)
-      path <- tmp
-      ext <- tolower(tools::file_ext(tmp))
-    }
-    
-    # --- Handle TAR archives ---
-    if (ext == "tar") {
-      extract_dir <- tempfile()
-      dir.create(extract_dir)
-      utils::untar(path, exdir = extract_dir)
-      
-      files <- list.files(extract_dir, full.names = TRUE, recursive = TRUE)
-      
-      # detect gz gene count files
-      gz_files <- files[grepl("_geneCOUNT\\.txt\\.gz$", files, ignore.case = TRUE)]
-      
-      # --- Warning if none of the files look like gene counts ---
-      if (length(gz_files) == 0) {
-        geo_link <- if (!is.null(geo_accession)) paste0(
-          "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", geo_accession
-        ) else "#"
-        showNotification(
-          HTML(paste0(
-            "⚠️ The TAR archive does not contain recognizable gene count files.<br>",
-            "Check the GEO entry: <a href='", geo_link, "' target='_blank'>", geo_accession, "</a><br>",
-            "If this is the correct dataset, format it as a gene × sample numeric matrix before uploading."
-          )),
-          type = "warning", duration = 10
-        )
-        
-        # Reset dropdown selection
-        updateSelectInput(
-          session,
-          "geo_selected_supp",
-          selected = ""
-        )
-        #stop("TAR archive does not contain recognizable gene count files.")
-        return(NULL)
-      }
-      
-      # Optional: warn if filenames don’t match expected RNA-seq naming
-      nonstandard_files <- gz_files[!grepl("_S\\d+_geneCOUNT", basename(gz_files))]
-      if (length(nonstandard_files) > 0) {
-        geo_link <- if (!is.null(geo_accession)) paste0(
-          "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", geo_accession
-        ) else "#"
-        showNotification(
-          HTML(paste0(
-            "⚠️ Some files in the TAR archive do not match expected RNA-seq count naming patterns.<br>",
-            "Check the GEO entry: <a href='", geo_link, "' target='_blank'>", geo_accession, "</a><br>",
-            "If correct, ensure these are gene × sample numeric matrices."
-          )),
-          type = "warning", duration = NULL
-        )
-        
-        # Reset dropdown selection
-        updateSelectInput(
-          session,
-          "geo_selected_supp",
-          selected = ""
-        )
-      }
-      
-      # --- Load all files ---
-      count_list <- list()
-      for (f in gz_files) {
-        tmp_txt <- tempfile(fileext = ".txt")
-        R.utils::gunzip(f, destname = tmp_txt, overwrite = TRUE, remove = FALSE)
-        
-        df <- read.delim(tmp_txt, header = TRUE, stringsAsFactors = FALSE)
-        gene_ids <- df[[1]]
-        counts   <- as.numeric(df[[2]])
-        
-        # extract GSM/sample ID from filename
-        sample_id <- sub("_.*", "", basename(f))
-        
-        count_list[[sample_id]] <- data.frame(
-          Gene = gene_ids,
-          Count = counts,
-          stringsAsFactors = FALSE
-        )
-      }
-      
-      # Rename counts column to sample names
-      count_list <- Map(function(df, sn) {
-        colnames(df)[2] <- sn
-        df
-      }, count_list, names(count_list))
-      
-      # Merge all by Gene
-      merged <- Reduce(function(x, y) merge(x, y, by = "Gene", all = FALSE), count_list)
-      
-      # Gene as rownames
-      rownames(merged) <- merged$Gene
-      merged$Gene <- NULL
-      
-      expr_matrix <- as.matrix(merged)
-      storage.mode(expr_matrix) <- "numeric"
-      
-      # Basic sanity check
-      if (!is.numeric(expr_matrix) || nrow(expr_matrix) == 0 || ncol(expr_matrix) == 0) {
-        geo_link <- if (!is.null(geo_accession)) paste0(
-          "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", geo_accession
-        ) else "#"
-        showNotification(
-          HTML(paste0(
-            "⚠️ Matrix is not numeric or empty.<br>",
-            "Check the GEO entry: <a href='", geo_link, "' target='_blank'>", geo_accession, "</a><br>",
-            "If correct, ensure these are gene × sample numeric matrices."
-          )),
-          type = "warning", duration = NULL
-        )
-        #stop("Matrix is not numeric or empty")
-        return()
-      }
-       
-      return(expr_matrix)
-      
-      
-    }
-     # --- Read according to extension ---
-    df <- switch(
-      ext,
-      "xls"  = readxl::read_xls(path),
-      "xlsx" = readxl::read_xlsx(path),
-      "csv"  = utils::read.csv(path, check.names = FALSE),
-      "tsv"  = utils::read.delim(path, check.names = FALSE),
-      "txt"  = utils::read.delim(path, check.names = FALSE),
-      stop("Unsupported supplementary file format: ", ext)
-      
-      
-    )
-    
-    # First column as rownames if needed
-    if (!all(sapply(df, is.numeric))) {
-      rownames(df) <- df[[1]]
-      df <- df[, -1, drop = FALSE]
-    }
-    
-    mat <- as.matrix(df)
-   
-    if (!is.numeric(mat)) {
- 
-      geo_link <- if (!is.null(geo_accession)) paste0(
-        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", geo_accession
-      ) else "#"
-      showNotification(
-        HTML(paste0(
-          "⚠️ Extracted file does not contain a numeric expression matrix. <br>",
-          "Check the GEO entry: <a href='", geo_link, "' target='_blank'>", geo_accession, "</a><br>",
-          "If correct, ensure these are gene × sample numeric matrices."
-        )),
-        type = "warning", duration = NULL
-      )
-      return()
-      #stop("Extracted file does not contain a numeric expression matrix.")
-    }
-    
-    return(mat)
-  }
-  
-  
-  # # --- Observer to load selected supplementary file ---
-  # observeEvent(input$geo_selected_supp, {
-  #   req(input$geo_selected_supp)
-  #   file_path <- input$geo_selected_supp
-  #   
-  #   withProgress(message = "Processing supplementary file...", value = 0, {
-  #     incProgress(0.2, detail = "Reading file...")
-  #     Sys.sleep(0.3)  # fake delay
-  #     
-  #     tryCatch({
-  #       expr <- read_geo_supp_matrix(
-  #         path = file_path,
-  #         original_name = basename(file_path),
-  #         geo_accession = input$geo_accession
-  #       )
-  #       
-  #       incProgress(0.3, detail = "Validating matrix...")
-  #       Sys.sleep(0.3)
-  #       
-  #       expr_data(expr)
-  #       showNotification("Expression data loaded from supplementary file.", type = "default")
-  #       
-  #     }, error = function(e) {
-  #       expr_data(NULL)
-  #       showNotification(
-  #         paste("Cannot load selected supplementary file:", e$message),
-  #         type = "error", duration = 10
-  #       )
-  #     })
-  #     
-  #     incProgress(0.5, detail = "Done.")
-  #     Sys.sleep(0.2)
-  #   })
-  # })
-     
-  
   parse_geneset_object <- function(obj, name_hint) {
     if (is.character(obj)) return(stats::setNames(list(obj), name_hint))
     if (is.data.frame(obj)) {
@@ -807,13 +601,15 @@ server <- function(input, output, session) {
     stop("Invalid gene set format.")
   }
   
-  ##### DATA  ######################################### 
+  ###### DATA ######
   
-  # Solution with "fake" progress bar for better UI experience 
+  ####### > Example Data #######
   
   observeEvent(input$expr_source, {
     
-    ######## > UNPROCESSED DATA  ####### 
+    updateRadioButtons(session, "meta_source", selected = "example")
+    
+    # Unprocessed Data
     if (input$expr_source == "example_raw") {
       
       shiny::withProgress(
@@ -848,7 +644,7 @@ server <- function(input, output, session) {
     }
     
     
-    ######## > PROCESSED DATA    ####### 
+    # Processed Data
     if (input$expr_source == "example_proc") {
       
       shiny::withProgress(
@@ -883,20 +679,346 @@ server <- function(input, output, session) {
     }
   })
   
-  ########## > INPUT DATA    ######## 
+  ###### > User Input Data ######
   
   observeEvent(input$expr_file, {
     req(input$expr_file)
     expr_data(safe_read_table(input$expr_file$datapath))
   })
   
+  ###### > GEO data ######
+  
+  # --- Helper Functions -----
+  
+  # load_from_geo <- function(geo_accession) {
+  #   showNotification("Fetching GEO objects...", type = "message", duration = 2)
+  #   objs <- GEOquery::getGEO(geo_accession, GSEMatrix = TRUE)
+  #   geo_objects(objs)  # store internally for UI selection if needed
+  #   
+  #   for (obj in objs) {
+  #     expr <- tryCatch(Biobase::exprs(obj), error = function(e) NULL)
+  #     if (!is.null(expr) && nrow(expr) > 0 && ncol(expr) > 0) {
+  #       full_geo_meta(Biobase::pData(obj))
+  #       return(expr)
+  #     }
+  #   }
+  #   return(NULL)
+  # }
+  
+  read_geo_supp_matrix <- function(path, original_name = NULL, geo_accession = NULL) { 
+    fname <- if (!is.null(original_name)) original_name else basename(path)
+    ext <- tolower(tools::file_ext(fname))
+    
+    #showNotification(paste("Processing file:", fname), type = "message", duration = 2)
+    
+    # --- Handle gz ---
+    if (ext == "gz" || grepl("\\.gz$", fname, ignore.case = TRUE)) {
+      tmp <- tempfile(fileext = sub("\\.gz$", "", fname))
+      R.utils::gunzip(path, destname = tmp, overwrite = TRUE, remove = FALSE)
+      path <- tmp
+      ext <- tolower(tools::file_ext(tmp))
+    }
+    
+    # --- Handle TAR archives ---
+    if (ext == "tar") {
+      extract_dir <- tempfile()
+      dir.create(extract_dir)
+      utils::untar(path, exdir = extract_dir)
+      files <- list.files(extract_dir, full.names = TRUE, recursive = TRUE)
+      
+      # detect gz gene count files
+      gz_files <- files[grepl("_geneCOUNT\\.txt\\.gz$", files, ignore.case = TRUE)]
+      
+      if (length(gz_files) == 0) {
+        geo_link <- if (!is.null(geo_accession)) paste0(
+          "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", geo_accession
+        ) else "#"
+        showNotification(
+          HTML(paste0(
+            "⚠️ TAR archive has no recognized gene count files.<br>",
+            "Check GEO entry: <a href='", geo_link, "' target='_blank'>", geo_accession, "</a>"
+          )),
+          type = "warning", duration = 10
+        )
+        updateSelectInput(session, "geo_selected_supp", selected = "")
+        return(NULL)
+      }
+      
+      # Warn about nonstandard files
+      nonstandard_files <- gz_files[!grepl("_S\\d+_geneCOUNT", basename(gz_files))]
+      if (length(nonstandard_files) > 0) {
+        geo_link <- if (!is.null(geo_accession)) paste0(
+          "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", geo_accession
+        ) else "#"
+        showNotification(
+          HTML(paste0(
+            "⚠️ Some files in TAR archive do not match expected RNA-seq naming.<br>",
+            "Check GEO entry: <a href='", geo_link, "' target='_blank'>", geo_accession, "</a>"
+          )),
+          type = "warning", duration = NULL
+        )
+        updateSelectInput(session, "geo_selected_supp", selected = "")
+      }
+      
+      # --- Load all gene count files ---
+      count_list <- list()
+      for (f in gz_files) {
+        tmp_txt <- tempfile(fileext = ".txt")
+        R.utils::gunzip(f, destname = tmp_txt, overwrite = TRUE, remove = FALSE)
+        df <- read.delim(tmp_txt, header = TRUE, stringsAsFactors = FALSE)
+        gene_ids <- df[[1]]
+        counts   <- as.numeric(df[[2]])
+        sample_id <- sub("_.*", "", basename(f))
+        count_list[[sample_id]] <- data.frame(Gene = gene_ids, Count = counts, stringsAsFactors = FALSE)
+      }
+      
+      # Rename counts column to sample names
+      count_list <- Map(function(df, sn) { colnames(df)[2] <- sn; df }, count_list, names(count_list))
+      merged <- Reduce(function(x, y) merge(x, y, by = "Gene", all = FALSE), count_list)
+      rownames(merged) <- merged$Gene
+      merged$Gene <- NULL
+      expr_matrix <- as.matrix(merged)
+      storage.mode(expr_matrix) <- "numeric"
+      
+      if (!is.numeric(expr_matrix) || nrow(expr_matrix) == 0 || ncol(expr_matrix) == 0) {
+        geo_link <- if (!is.null(geo_accession)) paste0(
+          "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", geo_accession
+        ) else "#"
+        showNotification(
+          HTML(paste0(
+            "⚠️ Matrix is empty or non-numeric.<br>",
+            "Check GEO entry: <a href='", geo_link, "' target='_blank'>", geo_accession, "</a>"
+          )),
+          type = "warning", duration = NULL
+        )
+        return()
+      }
+      return(expr_matrix)
+    }
+    
+    # --- Read regular files ---
+    df <- switch(ext,
+                 "xls"  = readxl::read_xls(path),
+                 "xlsx" = readxl::read_xlsx(path),
+                 "csv"  = utils::read.csv(path, check.names = FALSE),
+                 "tsv"  = utils::read.delim(path, check.names = FALSE),
+                 "txt"  = utils::read.delim(path, check.names = FALSE),
+                 stop("Unsupported supplementary file format: ", ext)
+    )
+    
+    # First column as rownames if needed
+    if (!all(sapply(df, is.numeric))) {
+      rownames(df) <- df[[1]]
+      df <- df[, -1, drop = FALSE]
+    }
+    
+    mat <- as.matrix(df)
+    if (!is.numeric(mat)) {
+      geo_link <- if (!is.null(geo_accession)) paste0(
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", geo_accession
+      ) else "#"
+      showNotification(
+        HTML(paste0(
+          "⚠️ Extracted file not numeric.<br>",
+          "Check GEO entry: <a href='", geo_link, "' target='_blank'>", geo_accession, "</a>"
+        )),
+        type = "warning", duration = NULL
+      )
+      return()
+    }
+    
+    return(mat)
+  }
+  
+  # load_supplementary <- function(file_path, geo_accession = NULL) {
+  #   tryCatch({
+  #     mat <- read_geo_supp_matrix(file_path, basename(file_path), geo_accession)
+  #     if (!is.null(mat) && is.numeric(mat) && nrow(mat) > 0 && ncol(mat) > 0) return(mat)
+  #     stop("File could not be parsed as numeric matrix")
+  #   }, error = function(e) {
+  #     showNotification(paste("Supplementary file failed:", e$message),
+  #                      type = "warning", duration = 8)
+  #     return(NULL)
+  #   })
+  # }
+  
+  # --- Extraction helpers for archives ---
+  extract_files <- function(file_path) {
+    ext <- tolower(tools::file_ext(file_path))
+    files <- c()
+    
+    if (ext == "gz") {
+      tmp <- tempfile(fileext = sub("\\.gz$", "", basename(file_path)))
+      R.utils::gunzip(file_path, destname = tmp, overwrite = TRUE, remove = FALSE)
+      files <- tmp
+    } else if (ext %in% c("tar")) {
+      tmp_dir <- tempfile()
+      dir.create(tmp_dir)
+      utils::untar(file_path, exdir = tmp_dir)
+      files <- list.files(tmp_dir, full.names = TRUE, recursive = TRUE)
+    } else if (ext == "zip") {
+      tmp_dir <- tempfile()
+      dir.create(tmp_dir)
+      utils::unzip(file_path, exdir = tmp_dir)
+      files <- list.files(tmp_dir, full.names = TRUE, recursive = TRUE)
+    } else {
+      files <- file_path
+    }
+    
+    # Keep only likely table files
+    files[grepl("\\.txt$|\\.tsv$|\\.csv$|\\.xls$|\\.xlsx$", files, ignore.case = TRUE)]
+  }
+  
+  detect_expr_candidates <- function(file_paths) {
+    all_files <- unlist(lapply(file_paths, extract_files))
+    candidates <- data.frame(
+      file = all_files,
+      prob_expr = 0,
+      split_prob = 0,
+      stringsAsFactors = FALSE
+    )
+    
+    for (i in seq_along(all_files)) {
+      f <- all_files[i]
+      df <- tryCatch(read.delim(f, check.names = FALSE, stringsAsFactors = FALSE), error = function(e) NULL)
+      if (is.null(df)) next
+      
+      df <- df[, colSums(is.na(df)) < nrow(df), drop = FALSE]
+      numeric_fraction <- sapply(df, function(col) mean(suppressWarnings(!is.na(as.numeric(col)))))
+      
+      # Probability of being expression data
+      candidates$prob_expr[i] <- min(1, max(numeric_fraction) * ncol(df) / 10)
+      
+      # Probability that file is single-sample (split)
+      candidates$split_prob[i] <- ifelse(length(which(numeric_fraction > 0.8)) == 1, 0.9, 0.1)
+    }
+    
+    # Filter low probability
+    candidates <- candidates[candidates$prob_expr > 0.1, ]
+    candidates <- candidates[order(-candidates$prob_expr), ]
+    candidates
+  }
+  
+  read_expr_candidate <- function(file, split_prob = 0.1) {
+    df <- tryCatch(read.delim(file, check.names = FALSE, stringsAsFactors = FALSE), error = function(e) NULL)
+    if (is.null(df)) return(NULL)
+    
+    df <- df[, colSums(is.na(df)) < nrow(df), drop = FALSE]
+    numeric_fraction <- sapply(df, function(col) mean(suppressWarnings(!is.na(as.numeric(col)))))
+    numeric_cols <- which(numeric_fraction > 0.8)
+    gene_col <- which(numeric_fraction < 0.2)[1]
+    
+    if (is.na(gene_col) || length(numeric_cols) < 1) return(NULL)
+    
+    # Row names and numeric matrix
+    rownames(df) <- df[[gene_col]]
+    expr <- as.matrix(df[, numeric_cols])
+    storage.mode(expr) <- "numeric"
+    
+    expr
+  }
+  
+  combine_split_files <- function(files) {
+    expr_list <- lapply(files, read_expr_candidate)
+    expr_list <- expr_list[!sapply(expr_list, is.null)]
+    if (length(expr_list) == 0) return(NULL)
+    
+    # Combine by column-binding (assuming same genes in each file)
+    genes <- Reduce(intersect, lapply(expr_list, rownames))
+    expr_list <- lapply(expr_list, function(x) x[genes, , drop = FALSE])
+    expr <- do.call(cbind, expr_list)
+    expr
+  }
   
   
   
-  ########## > GEO DATA ########  
+  # --- Deterministic / LLM Rescue ---
+  try_deterministic_rescue <- function(file_paths) {
+    showNotification("Attempting deterministic rescue...", type = "warning", duration = 5)
+    
+    # Step 1: extract all possible table files
+    all_files <- unlist(lapply(file_paths, extract_files))
+    if (length(all_files) == 0) return(NULL)
+    
+    # Step 2: detect candidate expression files
+    candidates <- detect_expr_candidates(all_files)
+    if (nrow(candidates) == 0) return(NULL)
+    
+    # Step 3: split vs full file handling
+    split_files <- candidates$file[candidates$split_prob > 0.5]
+    full_files  <- candidates$file[candidates$split_prob <= 0.5]
+    
+    expr <- NULL
+    
+    # Step 4a: try single full file first
+    for (f in full_files) {
+      df <- tryCatch(read.delim(f, check.names = FALSE, stringsAsFactors = FALSE), error = function(e) NULL)
+      if (is.null(df)) next
+      df <- df[, colSums(is.na(df)) < nrow(df), drop = FALSE]
+      numeric_fraction <- sapply(df, function(col) mean(suppressWarnings(!is.na(as.numeric(col)))))
+      numeric_cols <- which(numeric_fraction > 0.8)
+      gene_col <- which(numeric_fraction < 0.2)[1]
+      
+      if (!is.na(gene_col) && length(numeric_cols) >= 2) {
+        rownames(df) <- df[[gene_col]]
+        expr <- as.matrix(df[, numeric_cols])
+        storage.mode(expr) <- "numeric"
+        return(expr)
+      }
+      
+      # transpose fallback
+      if (ncol(df) > nrow(df)) {
+        df_t <- as.data.frame(t(df))
+        numeric_fraction <- sapply(df_t, function(col) mean(suppressWarnings(!is.na(as.numeric(col)))))
+        numeric_cols <- which(numeric_fraction > 0.8)
+        gene_col <- which(numeric_fraction < 0.2)[1]
+        if (!is.na(gene_col) && length(numeric_cols) >= 2) {
+          rownames(df_t) <- df_t[[gene_col]]
+          expr <- as.matrix(df_t[, numeric_cols])
+          storage.mode(expr) <- "numeric"
+          return(expr)
+        }
+      }
+    }
+    
+    # Step 4b: try split files (combine multiple single-sample files)
+    if (length(split_files) > 0) {
+      expr <- combine_split_files(split_files)
+      if (!is.null(expr) && nrow(expr) > 0 && ncol(expr) > 0) return(expr)
+    }
+    
+    # nothing matched
+    return(NULL)
+  }
+  
+  load_llm_fallback <- function(file_paths) {
+    showNotification("Attempting LLM-based parsing...", type = "warning", duration = 5)
+    files <- unlist(lapply(file_paths, extract_files))
+    candidate_summaries <- list()
+    for (f in files) {
+      df <- tryCatch(read.delim(f, check.names = FALSE, stringsAsFactors = FALSE), error = function(e) NULL)
+      if (is.null(df) || nrow(df) < 2 || ncol(df) < 2) next
+      df <- df[, colSums(!is.na(df)) > 0, drop = FALSE]
+      summary_text <- paste0("File: ", basename(f), " | Rows: ", nrow(df), " | Columns: ", ncol(df),
+                             " | First 3 rows:\n", paste(capture.output(print(head(df, 3))), collapse = "\n"))
+      candidate_summaries[[f]] <- summary_text
+    }
+    if (length(candidate_summaries) == 0) return(NULL)
+    prompt <- paste(
+      "Parse gene expression matrices from the following files:\n\n",
+      paste(candidate_summaries, collapse = "\n\n"),
+      "\nReturn only numeric matrices with genes as rows and samples as columns."
+    )
+    parsed <- llm_call_to_parse_table(NULL, prompt)
+    if (!is.null(parsed) && is.numeric(parsed) && nrow(parsed) > 0 && ncol(parsed) > 0) return(parsed)
+    NULL
+  }
+  
+  load_auto_deterministic <- function(files_path) { try_deterministic_rescue(files_path) }
+  
    
   
-  # --- 1. Fetch GEO accession ---
+  # --- 1. Fetch GEO accession -----
   observeEvent(input$geo_fetch, {
     req(input$geo_accession)
     
@@ -908,7 +1030,7 @@ server <- function(input, output, session) {
       objs <- GEOquery::getGEO(input$geo_accession, GSEMatrix = TRUE)
       geo_objects(objs)
       
-      # ---- CHECK IF ANY OBJECT HAS EXPRESSION ----
+      # ---- CHECK IF ANY OBJECT HAS EXPRESSION 
       has_expr <- FALSE
       for (obj in objs) {
         expr <- tryCatch(Biobase::exprs(obj), error = function(e) NULL)
@@ -941,7 +1063,7 @@ server <- function(input, output, session) {
   })
   
   
-  # --- 2. GEO object selection with descriptive labels ---
+  # --- 2. GEO object selection with descriptive labels -----
   output$geo_object_selector <- renderUI({
     req(geo_objects())
     objs <- geo_objects()
@@ -959,7 +1081,7 @@ server <- function(input, output, session) {
     )
   })
   
-  # --- 3. Load expression & metadata, handle empty expression matrices ---
+  # --- 3. Load expression & metadata, handle empty expression matrices -----
   observeEvent(input$geo_selected_object, {
     
     
@@ -1022,26 +1144,38 @@ server <- function(input, output, session) {
     )
   })
   
-  # --- 4. Render supplementary file selector if expression matrix is empty ---
-   output$geo_supp_selector <- renderUI({
+  # --- 4. Render supplementary file selector if expression matrix is empty -----
+  output$geo_supp_selector <- renderUI({
     supp <- geo_supp_files()
-    req(supp)
+    if (is.null(supp) || nrow(supp) == 0) return(NULL)  # ensure files exist
     
     files <- rownames(supp)
-    if (length(files) == 0) return(NULL)
     
-    selectInput(
-      "geo_selected_supp",
-      "Select a supplementary file containing expression data:",
-      choices = c("— Please choose a file —" = "",
-                  setNames(files, basename(files))),
-      selected = ""   # important
+    tagList(
+      # --- Help text ---
+
+      # --- File selector ---
+      selectInput(
+        "geo_selected_supp",
+        "Select a supplementary file containing expression data:",
+        choices = c("— Please choose a file —" = "",
+                    setNames(files, basename(files))),
+        selected = ""
+      ),
+      helpText(
+        "Sometimes the GEO data doesn't appear in a standard format, and, as such, the usual workflow for reading supplementary files may fail. ",
+        "If it fails, please try the automatic detector, where we attempt different approaches (including LLM-based parsing) ",
+        "to infer the file organization and check if any files contain gene expression data."
+      ),
+      
+      # --- Automatic detection button ---
+      actionButton("try_auto_supp", "Try automatic detection/rescue")
     )
   })
   
-  # --- 5. Load selected supplementary file ---
-   observeEvent(input$geo_selected_supp, {
-     req(input$geo_selected_supp != "")
+  # --- 5. Load selected supplementary file -----
+  observeEvent(input$geo_selected_supp, {
+    req(input$geo_selected_supp != "")
     req(input$geo_selected_supp)
     
     file_path <- input$geo_selected_supp  # full path
@@ -1060,7 +1194,7 @@ server <- function(input, output, session) {
           original_name = basename(file_path),
           geo_accession = input$geo_accession
         )
-
+        
         incProgress(0.3, detail = "Validating matrix...")
         Sys.sleep(0.3)
         
@@ -1074,9 +1208,9 @@ server <- function(input, output, session) {
             selected = ""
           )
           
-           stop("Matrix not numeric or empty")
+          stop("Matrix not numeric or empty")
         }
- 
+        
         
         incProgress(0.3, detail = "Finalizing matrix...")
         Sys.sleep(0.3)
@@ -1105,6 +1239,89 @@ server <- function(input, output, session) {
       incProgress(0.2, detail = "Done.")
       Sys.sleep(0.2)
     })
+  })
+    
+  
+  # --- 6. Automatic deterministic / LLM rescue -----
+  observeEvent(input$try_auto_supp, {
+    supp <- geo_supp_files()
+    req(supp)
+    files_path <- rownames(supp)
+    
+    # First, try deterministic rescue
+    expr <- try_deterministic_rescue(files_path)
+    
+    if (!is.null(expr)) {
+      expr_data(expr)
+      showNotification("Expression matrix loaded via deterministic auto detection.", type = "default")
+    } else {
+      # fallback to LLM-based inference
+      expr <- load_llm_fallback(files_path)
+      
+      if (!is.null(expr)) {
+        expr_data(expr)
+        showNotification("Expression matrix loaded via LLM fallback.", type = "default")
+      } else {
+        showNotification(
+          HTML(paste0(
+            "<b>⚠️ Could not convert GEO data into matrix.</b><br>",
+            "Check your GEO entry: <a href='https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=",
+            input$geo_accession, "' target='_blank'>", input$geo_accession, "</a>.<br>",
+            "If the data exists in genes × samples format, format manually and upload."
+          )),
+          type = "error", duration = NULL
+        )
+      }
+    }
+  })
+  
+  output$geo_candidate_selector <- renderUI({
+    supp <- geo_supp_files()
+    req(supp)
+    
+    # Extract all possible files
+    all_files <- unlist(lapply(rownames(supp), extract_files))
+    candidates <- detect_expr_candidates(all_files)
+    if (nrow(candidates) == 0) return(NULL)
+    
+    # Build choices with probability display
+    choices <- paste0(
+      basename(candidates$file),
+      " (prob expr: ", round(candidates$expr_prob, 2),
+      ", split: ", round(candidates$split_prob, 2), ")"
+    )
+    names(choices) <- candidates$file
+    
+    tagList(
+      p("Multiple candidate expression files detected. You may choose one to load manually:"),
+      selectInput("geo_selected_candidate",
+                  "Candidate expression files:",
+                  choices = choices,
+                  selected = NULL)
+    )
+  })
+  
+  observeEvent(input$geo_selected_candidate, {
+    req(input$geo_selected_candidate)
+    
+    f <- input$geo_selected_candidate
+    df <- tryCatch(read.delim(f, check.names = FALSE, stringsAsFactors = FALSE), error = function(e) NULL)
+    if (is.null(df)) return()
+    
+    df <- df[, colSums(is.na(df)) < nrow(df), drop = FALSE]
+    numeric_fraction <- sapply(df, function(col) mean(suppressWarnings(!is.na(as.numeric(col)))))
+    numeric_cols <- which(numeric_fraction > 0.8)
+    gene_col <- which(numeric_fraction < 0.2)[1]
+    
+    if (!is.na(gene_col) && length(numeric_cols) >= 2) {
+      rownames(df) <- df[[gene_col]]
+      expr <- as.matrix(df[, numeric_cols])
+      storage.mode(expr) <- "numeric"
+      expr_data(expr)
+      showNotification("Expression matrix loaded from selected candidate file.", type = "default")
+    } else {
+      showNotification("Selected file does not appear to be a valid expression matrix.", type = "error")
+    }
   })
   
   ##### METADATA  ######################################### 
@@ -1153,7 +1370,7 @@ server <- function(input, output, session) {
     meta_data(safe_read_table(input$meta_file$datapath))
   })
   
-
+  
   
   # --- GEO metadata handling with SampleID mapping and subsetting ---
   observe({
