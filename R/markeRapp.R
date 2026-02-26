@@ -495,6 +495,7 @@ server <- function(input, output, session) {
   geo_meta_cols <- reactiveVal(NULL) # Will store the original metadata column names (excluding SampleID)
   full_geo_meta <- reactiveVal(NULL)
   geo_supp_files  <- reactiveVal(NULL)
+  expr_candidates_available <- reactiveVal(FALSE) # Flag to indicate multiple candidate files are available after auto detection
   
   ###### HELPER FUNCTIONS ######
   
@@ -843,30 +844,66 @@ server <- function(input, output, session) {
   # }
   
   # --- Extraction helpers for archives ---
-  extract_files <- function(file_path) {
+  extract_files <- function(file_path, depth = 0, max_depth = 5) {
+    
+    if (depth > max_depth) return(character(0))
+    if (!file.exists(file_path)) return(character(0))
+    
     ext <- tolower(tools::file_ext(file_path))
-    files <- c()
+    
+    # Create extraction directory
+    tmp_dir <- tempfile(pattern = "geo_extract_")
+    dir.create(tmp_dir)
+    
+    extracted_files <- character(0)
     
     if (ext == "gz") {
-      tmp <- tempfile(fileext = sub("\\.gz$", "", basename(file_path)))
-      R.utils::gunzip(file_path, destname = tmp, overwrite = TRUE, remove = FALSE)
-      files <- tmp
-    } else if (ext %in% c("tar")) {
-      tmp_dir <- tempfile()
-      dir.create(tmp_dir)
+      
+      # If .tar.gz, untar directly
+      if (grepl("\\.tar\\.gz$", file_path, ignore.case = TRUE)) {
+        utils::untar(file_path, exdir = tmp_dir)
+        extracted_files <- list.files(tmp_dir, full.names = TRUE, recursive = TRUE)
+      } else {
+        # plain .gz
+        out_file <- file.path(tmp_dir, tools::file_path_sans_ext(basename(file_path)))
+        R.utils::gunzip(file_path, destname = out_file, overwrite = TRUE, remove = FALSE)
+        extracted_files <- out_file
+      }
+      
+    } else if (ext == "tar") {
+      
       utils::untar(file_path, exdir = tmp_dir)
-      files <- list.files(tmp_dir, full.names = TRUE, recursive = TRUE)
+      extracted_files <- list.files(tmp_dir, full.names = TRUE, recursive = TRUE)
+      
     } else if (ext == "zip") {
-      tmp_dir <- tempfile()
-      dir.create(tmp_dir)
+      
       utils::unzip(file_path, exdir = tmp_dir)
-      files <- list.files(tmp_dir, full.names = TRUE, recursive = TRUE)
+      extracted_files <- list.files(tmp_dir, full.names = TRUE, recursive = TRUE)
+      
     } else {
-      files <- file_path
+      
+      # Not archive → return directly
+      extracted_files <- file_path
     }
     
-    # Keep only likely table files
-    files[grepl("\\.txt$|\\.tsv$|\\.csv$|\\.xls$|\\.xlsx$", files, ignore.case = TRUE)]
+    # --- Recursive extraction of nested archives ---
+    nested_archives <- extracted_files[
+      grepl("\\.(gz|tar|zip)$", extracted_files, ignore.case = TRUE)
+    ]
+    
+    if (length(nested_archives) > 0) {
+      nested_results <- unlist(
+        lapply(nested_archives, extract_files, depth = depth + 1)
+      )
+      extracted_files <- c(extracted_files, nested_results)
+    }
+    
+    # --- Keep only table-like files ---
+    extracted_files[
+      grepl("\\.(txt|tsv|csv|xls|xlsx)$",
+            extracted_files,
+            ignore.case = TRUE)
+    ]
   }
   
   detect_expr_candidates <- function(file_paths) {
@@ -899,34 +936,67 @@ server <- function(input, output, session) {
     candidates
   }
   
+  # --- Read single candidate expression file ---
   read_expr_candidate <- function(file, split_prob = 0.1) {
     df <- tryCatch(read.delim(file, check.names = FALSE, stringsAsFactors = FALSE), error = function(e) NULL)
     if (is.null(df)) return(NULL)
     
+    # Remove fully NA columns
     df <- df[, colSums(is.na(df)) < nrow(df), drop = FALSE]
+    
+    # Identify numeric vs gene columns
     numeric_fraction <- sapply(df, function(col) mean(suppressWarnings(!is.na(as.numeric(col)))))
     numeric_cols <- which(numeric_fraction > 0.8)
     gene_col <- which(numeric_fraction < 0.2)[1]
     
     if (is.na(gene_col) || length(numeric_cols) < 1) return(NULL)
     
-    # Row names and numeric matrix
-    rownames(df) <- df[[gene_col]]
-    expr <- as.matrix(df[, numeric_cols])
+    # Extract genes
+    genes <- as.character(df[[gene_col]])
+    
+    # Subset numeric expression data
+    expr <- as.matrix(df[, numeric_cols, drop = FALSE])
     storage.mode(expr) <- "numeric"
+    
+    # Set rownames as genes
+    rownames(expr) <- genes
+    
+    # --- Determine sample names ---
+    # Try to detect GSM code in file name
+    fname <- basename(file)
+    gsm_match <- regmatches(fname, regexpr("GSM[0-9]+", fname))
+    
+    if (length(gsm_match) == 1 && ncol(expr) == 1) {
+      sample_name <- gsm_match
+    } else if (length(gsm_match) >= 1) {
+      sample_name <- gsm_match
+      # If more columns than matches, append _1, _2...
+      if (length(sample_name) < ncol(expr)) {
+        sample_name <- paste0(sample_name[1], "_", seq_len(ncol(expr)))
+      }
+    } else {
+      # fallback: use file name + _1, _2 ...
+      sample_name <- if (ncol(expr) == 1) fname else paste0(fname, "_", seq_len(ncol(expr)))
+    }
+    
+    colnames(expr) <- sample_name
     
     expr
   }
   
+  # --- Combine multiple split single-sample files ---
   combine_split_files <- function(files) {
     expr_list <- lapply(files, read_expr_candidate)
     expr_list <- expr_list[!sapply(expr_list, is.null)]
     if (length(expr_list) == 0) return(NULL)
     
-    # Combine by column-binding (assuming same genes in each file)
-    genes <- Reduce(intersect, lapply(expr_list, rownames))
-    expr_list <- lapply(expr_list, function(x) x[genes, , drop = FALSE])
+    # Align genes across files
+    common_genes <- Reduce(intersect, lapply(expr_list, rownames))
+    expr_list <- lapply(expr_list, function(x) x[common_genes, , drop = FALSE])
+    
+    # Column-bind
     expr <- do.call(cbind, expr_list)
+    
     expr
   }
   
@@ -934,61 +1004,121 @@ server <- function(input, output, session) {
   
   # --- Deterministic / LLM Rescue ---
   try_deterministic_rescue <- function(file_paths) {
-    showNotification("Attempting deterministic rescue...", type = "warning", duration = 5)
     
-    # Step 1: extract all possible table files
+    showNotification("Attempting deterministic rescue...",
+                     type = "warning", duration = 5)
+    
+    # Step 1: Extract all table-like files
     all_files <- unlist(lapply(file_paths, extract_files))
-    if (length(all_files) == 0) return(NULL)
+    if (length(all_files) == 0)
+      return(NULL)
     
-    # Step 2: detect candidate expression files
+    # Step 2: Detect candidate expression files
     candidates <- detect_expr_candidates(all_files)
-    if (nrow(candidates) == 0) return(NULL)
+    if (is.null(candidates) || nrow(candidates) == 0)
+      return(NULL)
     
-    # Step 3: split vs full file handling
     split_files <- candidates$file[candidates$split_prob > 0.5]
     full_files  <- candidates$file[candidates$split_prob <= 0.5]
     
-    expr <- NULL
+    matrices <- list()
     
-    # Step 4a: try single full file first
+    # -----------------------------
+    # Step 3a: Process full matrices
+    # -----------------------------
     for (f in full_files) {
-      df <- tryCatch(read.delim(f, check.names = FALSE, stringsAsFactors = FALSE), error = function(e) NULL)
+      
+      df <- tryCatch(
+        read.delim(f, check.names = FALSE, stringsAsFactors = FALSE),
+        error = function(e) NULL
+      )
       if (is.null(df)) next
+      
       df <- df[, colSums(is.na(df)) < nrow(df), drop = FALSE]
-      numeric_fraction <- sapply(df, function(col) mean(suppressWarnings(!is.na(as.numeric(col)))))
+      
+      numeric_fraction <- sapply(df, function(col)
+        mean(suppressWarnings(!is.na(as.numeric(col)))))
+      
       numeric_cols <- which(numeric_fraction > 0.8)
-      gene_col <- which(numeric_fraction < 0.2)[1]
+      gene_col     <- which(numeric_fraction < 0.2)[1]
       
       if (!is.na(gene_col) && length(numeric_cols) >= 2) {
-        rownames(df) <- df[[gene_col]]
-        expr <- as.matrix(df[, numeric_cols])
+        
+        genes <- trimws(as.character(df[[gene_col]]))
+        valid <- !is.na(genes) & genes != ""
+        
+        expr <- as.matrix(df[valid, numeric_cols, drop = FALSE])
         storage.mode(expr) <- "numeric"
-        return(expr)
+        
+        genes <- genes[valid]
+        
+        # remove duplicates
+        dup <- duplicated(genes)
+        if (any(dup)) {
+          genes <- genes[!dup]
+          expr  <- expr[!dup, , drop = FALSE]
+        }
+        
+        rownames(expr) <- genes
+        
+        if (nrow(expr) > 1 && ncol(expr) > 1)
+          matrices[[basename(f)]] <- expr
       }
       
-      # transpose fallback
+      # Transpose fallback
       if (ncol(df) > nrow(df)) {
+        
         df_t <- as.data.frame(t(df))
-        numeric_fraction <- sapply(df_t, function(col) mean(suppressWarnings(!is.na(as.numeric(col)))))
+        
+        numeric_fraction <- sapply(df_t, function(col)
+          mean(suppressWarnings(!is.na(as.numeric(col)))))
+        
         numeric_cols <- which(numeric_fraction > 0.8)
-        gene_col <- which(numeric_fraction < 0.2)[1]
+        gene_col     <- which(numeric_fraction < 0.2)[1]
+        
         if (!is.na(gene_col) && length(numeric_cols) >= 2) {
-          rownames(df_t) <- df_t[[gene_col]]
-          expr <- as.matrix(df_t[, numeric_cols])
+          
+          genes <- trimws(as.character(df_t[[gene_col]]))
+          valid <- !is.na(genes) & genes != ""
+          
+          expr <- as.matrix(df_t[valid, numeric_cols, drop = FALSE])
           storage.mode(expr) <- "numeric"
-          return(expr)
+          
+          genes <- genes[valid]
+          
+          dup <- duplicated(genes)
+          if (any(dup)) {
+            genes <- genes[!dup]
+            expr  <- expr[!dup, , drop = FALSE]
+          }
+          
+          rownames(expr) <- genes
+          
+          if (nrow(expr) > 1 && ncol(expr) > 1)
+            matrices[[paste0(basename(f), "_transposed")]] <- expr
         }
       }
     }
     
-    # Step 4b: try split files (combine multiple single-sample files)
-    if (length(split_files) > 0) {
-      expr <- combine_split_files(split_files)
-      if (!is.null(expr) && nrow(expr) > 0 && ncol(expr) > 0) return(expr)
+    # -----------------------------
+    # Step 3b: Combine split files
+    # -----------------------------
+    if (length(split_files) > 1) {
+      
+      combined <- combine_split_files(split_files)
+      
+      if (!is.null(combined) &&
+          nrow(combined) > 1 &&
+          ncol(combined) > 1) {
+        
+        matrices[["Split_combined"]] <- combined
+      }
     }
     
-    # nothing matched
-    return(NULL)
+    if (length(matrices) == 0)
+      return(NULL)
+    
+    return(matrices)
   }
   
   load_llm_fallback <- function(file_paths) {
@@ -1016,8 +1146,7 @@ server <- function(input, output, session) {
   
   load_auto_deterministic <- function(files_path) { try_deterministic_rescue(files_path) }
   
-   
-  
+ 
   # --- 1. Fetch GEO accession -----
   observeEvent(input$geo_fetch, {
     req(input$geo_accession)
@@ -1243,51 +1372,92 @@ server <- function(input, output, session) {
     
   
   # --- 6. Automatic deterministic / LLM rescue -----
+  
+  # --- 0. Initialize reactive values ---
+  expr_candidates_available <- reactiveVal(FALSE)
+  geo_candidates <- reactiveVal(NULL)
+  
+  # --- 1. Automatic deterministic / LLM rescue ---
   observeEvent(input$try_auto_supp, {
+    
     supp <- geo_supp_files()
     req(supp)
+    
     files_path <- rownames(supp)
     
-    # First, try deterministic rescue
-    expr <- try_deterministic_rescue(files_path)
+    # Reset reactive flags
+    expr_candidates_available(FALSE)
+    geo_candidates(NULL)
     
-    if (!is.null(expr)) {
-      expr_data(expr)
-      showNotification("Expression matrix loaded via deterministic auto detection.", type = "default")
-    } else {
-      # fallback to LLM-based inference
-      expr <- load_llm_fallback(files_path)
+    # ----------------------------------
+    # Step 1: Deterministic rescue
+    # ----------------------------------
+    matrices <- try_deterministic_rescue(files_path)
+ 
+        # ----------------------------------
+    # Step 2: LLM fallback (only if needed)
+    # ----------------------------------
+    if (is.null(matrices)) {
       
-      if (!is.null(expr)) {
-        expr_data(expr)
-        showNotification("Expression matrix loaded via LLM fallback.", type = "default")
-      } else {
+      matrices <- load_llm_fallback(files_path)
+      
+      if (is.null(matrices)) {
+        
         showNotification(
           HTML(paste0(
             "<b>⚠️ Could not convert GEO data into matrix.</b><br>",
             "Check your GEO entry: <a href='https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=",
-            input$geo_accession, "' target='_blank'>", input$geo_accession, "</a>.<br>",
+            input$geo_accession,
+            "' target='_blank'>",
+            input$geo_accession,
+            "</a>.<br>",
             "If the data exists in genes × samples format, format manually and upload."
           )),
-          type = "error", duration = NULL
+          type = "error",
+          duration = NULL
         )
+        
+        return()
       }
+    }
+    
+    # ----------------------------------
+    # Step 3: Operate at MATRIX level
+    # ----------------------------------
+    if (length(matrices) == 1) {
+      
+      expr_data(matrices[[1]])
+      
+      showNotification(
+        "Expression matrix loaded automatically.",
+        type = "default"
+      )
+      
+    } else {
+      
+      # Multiple valid processed matrices
+      geo_candidates(matrices)
+      expr_candidates_available(TRUE)
+      
+      showNotification(
+        "Multiple expression matrices detected. Please select one.",
+        type = "message"
+      )
     }
   })
   
+  # --- 2. Candidate dropdown after automatic detection ---
   output$geo_candidate_selector <- renderUI({
-    supp <- geo_supp_files()
-    req(supp)
+    # Only build UI if multiple candidates are available
+    if (!expr_candidates_available()) return(NULL)
     
-    # Extract all possible files
-    all_files <- unlist(lapply(rownames(supp), extract_files))
-    candidates <- detect_expr_candidates(all_files)
-    if (nrow(candidates) == 0) return(NULL)
+    candidates <- geo_candidates()
+    req(candidates)
     
     # Build choices with probability display
     choices <- paste0(
       basename(candidates$file),
-      " (prob expr: ", round(candidates$expr_prob, 2),
+      " (prob expr: ", round(candidates$prob_expr, 2),
       ", split: ", round(candidates$split_prob, 2), ")"
     )
     names(choices) <- candidates$file
@@ -1301,22 +1471,13 @@ server <- function(input, output, session) {
     )
   })
   
+  # --- 3. Load selected candidate file ---
   observeEvent(input$geo_selected_candidate, {
     req(input$geo_selected_candidate)
-    
     f <- input$geo_selected_candidate
-    df <- tryCatch(read.delim(f, check.names = FALSE, stringsAsFactors = FALSE), error = function(e) NULL)
-    if (is.null(df)) return()
+    expr <- read_expr_candidate(f)
     
-    df <- df[, colSums(is.na(df)) < nrow(df), drop = FALSE]
-    numeric_fraction <- sapply(df, function(col) mean(suppressWarnings(!is.na(as.numeric(col)))))
-    numeric_cols <- which(numeric_fraction > 0.8)
-    gene_col <- which(numeric_fraction < 0.2)[1]
-    
-    if (!is.na(gene_col) && length(numeric_cols) >= 2) {
-      rownames(df) <- df[[gene_col]]
-      expr <- as.matrix(df[, numeric_cols])
-      storage.mode(expr) <- "numeric"
+    if (!is.null(expr)) {
       expr_data(expr)
       showNotification("Expression matrix loaded from selected candidate file.", type = "default")
     } else {
