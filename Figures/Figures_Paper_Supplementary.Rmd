@@ -5840,5 +5840,9 @@ ggplot2::ggsave("../Figures/Figs/SupFigure8_GTEx_SenMayo_Custom_alternative.pdf"
 
 
 
+## Session Info
+```{r}
+sessionInfo()
+```
 
 

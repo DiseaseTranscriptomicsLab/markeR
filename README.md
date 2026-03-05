@@ -32,6 +32,9 @@ and **`Figures`**.
 
   - `Figures_Paper_Main.Rmd` and `Figures_Paper_Supplementary.Rmd`
     contain the figure-generation code.  
+  - `Response_to_Reviewers.Rmd` contains the point-by-point response to
+    reviewers, including the code and outputs for all analyses and
+    figures generated during the revision.
   - `Figs/` stores the resulting `.png` images.
 
 - **`localjobs`**: Contains scripts auxiliary scripts for running
@@ -116,6 +119,14 @@ in the **`Figures`** folder:
 The resulting images are stored in the `Figs` subfolder. These scripts
 rely on the processed datasets generated in the **preprocessing**
 workflow, not included in this repository.
+
+## Response to Reviewers
+
+The point-by-point response to reviewers for the current paper
+submission can be found in the **`Figures`** folder:  
+- `Response_to_Reviewers.Rmd` contains the detailed responses to
+reviewer comments, including additional analyses and figure
+modifications made in response to feedback.
 
 ------------------------------------------------------------------------
 

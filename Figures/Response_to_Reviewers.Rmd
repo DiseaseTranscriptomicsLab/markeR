@@ -1,0 +1,1884 @@
+---
+title: "Response to Reviewers"
+author: "Rita Martins-Silva"
+date: "02/03/2026"
+output: html_document
+---
+
+
+# Response to Reviewers {.tabset .tabset-pills}
+
+## Set up {.tabset}
+
+```{r}
+setwd("../")
+```
+### Relevant Data
+
+```{r}
+signatures_bidirectional <- readRDS("../data/SenescenceSigntures_Bidirectional.rds")
+t2gene2 <- fread("../data_aux/RefSeq_Transcripts_To_Genes.csv")
+t2gene2 <- t2gene2[,c("name","name2")]
+colnames(t2gene2) <- c("transcript","gene")
+```
+
+### Libraries
+
+```{r}
+library(data.table)
+library("ggplot2")
+library("colorspace")
+library("scales")
+#library("scater") 
+library("reshape2")
+#library("markeR")
+#library("ggbreak")
+#library("ggnewscale")
+library("dplyr")
+library("tidyr")  
+library(patchwork)
+library("ggpubr") 
+library(purrr)
+library(edgeR)
+library(RColorBrewer)
+library(pROC) 
+#library("ggforce")
+library(ggrepel)
+#devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
+library(biomaRt)
+library("tximport")
+```
+
+### Functions
+
+Load markeR functions directly
+
+```{r}
+# Path to your folder with functions
+fun_dir <- "functions_Sept18_2025/"
+
+# Get all .R files in the folder
+files <- list.files(paste0("../",fun_dir), pattern = "\\.R$", full.names = TRUE)
+
+# Source them one by one
+invisible(lapply(files, source))
+
+```
+
+### Colors
+
+```{r}
+Condition_colors <- c(
+  "Senescent"     = "#F4A261",  # Soft orange (not goldenrod)
+  "Proliferative" = "#A1C298",  # Desaturated sage green
+  "Quiescent"     = "#9DB4C0"   # Dusty teal-gray
+)
+
+CellTypecols <- c(
+  "Fibroblast"   = "#E69F00",  # Orange
+  "Keratinocyte" = "#56B4E9",  # Sky Blue
+  "Melanocyte"   = "#009E73",  # Bluish Green
+  "Endothelial"  = "#F0E442",  # Yellow
+  "Neuronal"     = "#0072B2",  # Blue
+  "Mesenchymal"  = "#D55E00"   # Vermilion
+)
+
+CellTypecols_alt <- c(
+  "Fibroblast"   = "#1b9e77",  # Teal green
+  "Keratinocyte" = "#d95f02",  # Warm orange-brown
+  "Melanocyte"   = "#7570b3",  # Muted purple
+  "Endothelial"  = "#e7298a",  # Dark pink
+  "Neuronal"     = "#66a61e",  # Olive green
+  "Mesenchymal"  = "#e6ab02"   # Mustard
+)
+
+
+dataset_colors <- c(
+  "HernandezSegura" = "#8DD3C7",
+  "Mangelinck"      = "#FFFFB3",
+  "Chan"            = "#BEBADA",
+  "Purcell"         = "#FB8072",
+  "Marthandan2016"  = "#80B1D3",
+  "Marthandan2015"  = "#FDB462",
+  "Wang"            = "#B3DE69",
+  "Suda"            = "#FCCDE5",
+  "McHugh"          = "#D9D9D9",
+  "Savic"           = "#BC80BD",
+  "Skea"            = "#CCEBC5",
+  "Laurent"         = "#FFED6F",
+  "Tasdemir"        = "#D0B7E1",
+  "Lenain"          = "#FFB3BA",
+  "Aarts"           = "#C2C2F0",
+  "Casella"         = "#FFDAC1",
+  "Numa"            = "#C6E2FF",
+  "Admasu"          = "#F5CBA7",
+  "Urata"           = "#C7CEEA",
+  "Wang2023"        = "#E6B0AA",
+  "Fu"              = "#A9DFBF",
+  "Tanke"           = "#F9E79F",
+  "Bawens"          = "#AED6F1"
+)
+
+geneSet_colors <- brewer.pal(9, "Set1")  # 9 distinct colors, mostly bright and distinct
+
+```
+
+```{r}
+show_col(Condition_colors, ncol=3)
+show_col(CellTypecols)
+show_col(dataset_colors)
+show_col(geneSet_colors)
+```
+
+
+## Comment 3.3 — External validation on an independent dataset
+
+R.: Apply markeR's benchmarking mode to a senescence dataset not included in the original compendium, to evaluate whether HernandezSegura and SAUL_SEN_MAYO retain their discriminatory performance in a fully independent evaluation set. 
+
+
+
+### GSE297560 (Space Radiation)
+HiSat2 + feature counts, hg38
+
+#### Data
+
+```{r}
+data <- as.data.frame(fread("../data_aux/GSE297560_counts.txt")[,-c(2:6)])
+row.names(data) <- data$Geneid
+data$Geneid <-  NULL
+head(data)
+# Convert row names from ENSEMBL ID to Gene Name using biomaRt
+
+# Connect to Ensembl
+mart <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+
+# Query the conversion
+gene_conversion <- getBM(
+  attributes = c("ensembl_gene_id", "hgnc_symbol"),
+  filters    = "ensembl_gene_id",
+  values     = rownames(data),
+  mart       = mart
+)
+
+# Replace rownames — keeping only genes with a match and a non-empty symbol
+gene_conversion <- gene_conversion[!duplicated(gene_conversion$hgnc_symbol), ]
+data <- data[gene_conversion$ensembl_gene_id, ]
+rownames(data) <- gene_conversion$hgnc_symbol
+#remove .trimmed from sample names
+colnames(data) <- gsub("\\.trimmed", "", colnames(data))
+
+```
+
+
+- Healthy_CTRL: Low-passage fibroblasts that were never shipped. Represent the true untreated baseline but are not the appropriate matched control for irradiation comparisons, as any differences relative to irradiated samples would conflate shipping stress with radiation effects.
+
+- MOCK_CTRL: Fibroblasts that were shipped to the radiation facility but not irradiated, paired with the charged particle irradiation experiments (Hydrogen, Iron, Silicon). Control for the confounding effect of shipping stress, isolating the effect of radiation.
+
+- MOCKgamma_CTRL: Identical to MOCK_CTRL but paired specifically with the gamma irradiation experiment. Kept separate to maintain matched experimental pairing.
+
+```{r}
+# Load metadata
+metadata <- read.csv("../data_aux/GSE297560_metadata.csv")
+metadata <- metadata[,c("Run","Sample.Name","source_name", "treatment")]
+metadata$datasetID <- "GSE297560"
+
+metadata$condition <- ifelse(grepl("control", metadata$treatment, ignore.case = TRUE), "Proliferative", ifelse(grepl("irradiation", metadata$treatment, ignore.case = TRUE), "Senescent", "Proliferative"))
+
+
+# Attempt to match SRR with colnames
+sample_to_srr <- c(
+  "Healthy_CTRL_1_HISAT2"   = "SRR33626854",#
+  "Healthy_CTRL_2_HISAT2"   = "SRR33626853",#
+  "Healthy_CTRL_3_HISAT2"   = "SRR33626852",#
+  "4Hydrogen_1_HISAT2"      = "SRR33626842",#
+  "4Hydrogen_2_HISAT2"      = "SRR33626841",#
+  "4Hydrogen_3_HISAT2"      = "SRR33626840",#
+  "4Iron_1_HISAT2"          = "SRR33626845",#
+  "4Iron_2_HISAT2"          = "SRR33626844",#
+  "4Iron_3_HISAT2"          = "SRR33626843",#
+  "4Silicon_1_HISAT2"       = "SRR33626848",#
+  "4Silicon_2_HISAT2"       = "SRR33626847",#
+  "4Silicon_3_HISAT2"       = "SRR33626846",#
+  "MOCK_CTRL_1_HISAT2"      = "SRR33626857",#
+  "MOCK_CTRL_2_HISAT2"      = "SRR33626856",#
+  "MOCK_CTRL_3_HISAT2"      = "SRR33626855",#
+  "4Gamma_1_HISAT2"         = "SRR33626839",#
+  "4Gamma_3_HISAT2"         = "SRR33626838",#
+  "4Gamma_2_HISAT2"         = "SRR33626837",#
+  "MOCKgamma_CTRL_1_HISAT2" = "SRR33626851",
+  "MOCKgamma_CTRL_2_HISAT2" = "SRR33626850",
+  "MOCKgamma_CTRL_3_HISAT2" = "SRR33626849"
+)
+
+# Rename columns of your expression matrix
+colnames(data) <- sample_to_srr[colnames(data)]
+
+# Reorder metadata to match column order of your_df
+metadata <- metadata[match(colnames(data), metadata$Run), ]
+
+treatment_map <- c(
+  "Low passage\\, unshipped"                            = "Healthy_CTRL",
+  "Irradiation control shipped not irradiated"          = "MOCK_CTRL",
+  "Gamma irradiation control shipped not irradiated"    = "MOCKgamma_CTRL",
+  "4Gy Gamma irradiation"                               = "4Gy_Gamma",
+  "4Gy Hydrogen irradiation"                            = "4Gy_Hydrogen",
+  "4Gy Iron irradiation"                                = "4Gy_Iron",
+  "4Gy Silicon irradiation"                             = "4Gy_Silicon"
+)
+
+metadata$treatment_simple <- treatment_map[metadata$treatment]
+colnames(metadata)[1] <- "sampleID"
+```
+
+
+
+Remove Gamma and mock gamma, as in the paper the 4 gamma are not senescent...
+Remove also Healthy_CTRL, they don't validate those samples in the paper either
+
+```{r}
+metadata <- metadata[!grepl("Gamma", metadata$treatment_simple, ignore.case = T), ]
+metadata <- metadata[!grepl("Healthy_CTRL", metadata$treatment_simple, ignore.case = T), ]
+data <- data[,metadata$sampleID]
+```
+
+
+```{r}
+data
+metadata
+```
+
+#### Preprocessing
+
+
+##### Filtering
+
+```{r}
+# Plot
+(plt_beforefilt <- ggplot() + aes(x=log10(rowSums(data))) +
+   geom_density(fill="grey", alpha=0.5) + theme_bw() + 
+   theme(axis.text.x = element_text(angle = 45, hjust=1),
+         plot.title = element_text(hjust = 0.5),
+         plot.subtitle = element_text(hjust = 0.5)) +
+   ggtitle("Before Filtering") +
+   xlab(expression(log[10]~"(counts per gene)")) +
+   ylab("Frequency") + 
+   geom_vline(xintercept = 2.9, linetype="dotted",color = "black", size=1.5))
+
+```
+
+
+```{r}
+filtdata <- data[rowSums(data) > 10^2.9,]
+nrow(data)
+nrow(filtdata)
+
+
+cat("Number of genes before filtering:", nrow(data), "\n")
+cat("Number of genes after filtering:", nrow(filtdata), "\n")
+
+```
+
+
+```{r}
+
+# Plot
+(plt_afterfilt <- ggplot() + aes(x=log10(rowSums(filtdata))) +
+   geom_density(fill="grey", alpha=0.5) + theme_bw() + 
+   theme(axis.text.x = element_text(angle = 45, hjust=1),
+         plot.title = element_text(hjust = 0.5),
+         plot.subtitle = element_text(hjust = 0.5)) +
+   ggtitle("After Filtering") +
+   xlab(expression(log[10]~"(counts per gene)")) +
+   ylab("Frequency") )
+
+```
+
+
+
+##### Normalisation
+
+```{r fig.width=6, fig.height=4}
+
+filtcounts_ggplot <- stack(log2(filtdata))
+colnames(filtcounts_ggplot) <- c("expression", "sampleID")
+filtcounts_ggplot <- merge(filtcounts_ggplot,metadata, by="sampleID")
+
+
+(plt_beforenorm <- ggplot(filtcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(alpha=0.4)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+    theme_bw()+ 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle("Before Normalisation") )
+
+```
+
+
+```{r}
+dgelist_normcounts <- DGEList(filtdata) # the matrix with gene names as row names and counts in columns
+dgelist_normcounts <- calcNormFactors(dgelist_normcounts, method = "TMM") 
+normalised_counts <- as.data.frame(voom(dgelist_normcounts,plot=F)$E) 
+#normalised_counts <- as.data.frame(edgeR::cpm(dgelist_normcounts, log = FALSE)) 
+normdata <- 2^normalised_counts
+lognormdata <- log2(normdata+1)
+```
+
+
+```{r fig.width=6, fig.height=4}
+
+normcounts_ggplot <- stack(log2(normdata))
+colnames(normcounts_ggplot) <- c("expression", "sampleID")
+normcounts_ggplot <- merge(normcounts_ggplot,metadata, by="sampleID")
+
+
+(plt_afternorm <- ggplot(normcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(alpha=0.4)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+    theme_bw()+ 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle("After Normalisation") )
+
+```
+
+
+##### PCA
+
+```{r fig.width=6, fig.height=4}
+y <- DGEList(lognormdata, samples= metadata)
+PCA  <- prcomp(t(y$counts), scale=FALSE, center=TRUE)
+PCACounts  <- PCA$x
+PCACounts  <- as.data.frame(PCACounts )
+PCAData <-  cbind(PCACounts[1:10],y$samples) 
+
+ev = PCA$sdev^2 
+pc1= round(100*ev[1]/sum(ev),2) 
+pc2 = round(100*ev[2]/sum(ev),2) 
+pc3 = round(100*ev[3]/sum(ev),2) 
+pc4 = round(100*ev[4]/sum(ev),2) 
+pc5 = round(100*ev[5]/sum(ev),2) 
+pc6 = round(100*ev[6]/sum(ev),2)  
+
+
+(pltpca_1 <- ggplot(PCAData, aes(PC1,PC2))+
+    geom_point(aes(color=treatment_simple), size=5, alpha=0.6)+ 
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    guides(color = guide_legend(nrow = 2)) +
+    theme(legend.position="top", legend.box="vertical", legend.title = element_blank(), legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    geom_hline(yintercept=0, linetype="dotted") )
+
+(pltpca_2 <- ggplot(PCAData, aes(PC1,PC2))+
+    geom_point(aes(color=condition), size=5, alpha=0.6)+ 
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    theme(legend.position="top", legend.box="vertical", legend.title = element_blank(), legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    guides(color = guide_legend(nrow = 2)) +
+    geom_hline(yintercept=0, linetype="dotted") +
+    scale_color_manual(values=Condition_colors))
+
+
+```
+
+#### Calculate Scores
+
+```{r}
+(pltscores <- PlotScores(data = normdata, 
+                         metadata = metadata, 
+                         gene_sets = signatures_bidirectional[c("HernandezSegura", "SAUL_SEN_MAYO")],
+                         Variable = "condition",
+                         ColorVariable = "treatment_simple",
+                         method = "logmedian",
+                         xlab = "Cellular State", 
+                         labsize = 8))
+```
+
+```{r fig.width=11, fig.height=5}
+plt_filt <- ggarrange(plt_beforefilt,plt_afterfilt, nrow=1)
+plt_norm <- ggarrange(plt_beforenorm,plt_afternorm, nrow=1)
+plt_pca <- ggarrange(pltpca_1,pltpca_2, nrow=1)
+
+plt1 <- ggarrange(plt_filt, plt_norm, nrow=1)
+plt2 <- ggarrange(plt_pca, pltscores, nrow=1, widths=c(0.5,0.5))
+
+plt_GSE297560 <- ggarrange(plt1, plt2, ncol=1, heights = c(0.4,0.7))
+plt_GSE297560 <- annotate_figure(plt_GSE297560, top = text_grob("GSE297560: Space Radiation\n", face = "bold", size = 14))
+plt_GSE297560
+
+
+```
+
+### GSE288940 (IMR90 + Eto)
+
+My quantification pipeline 
+
+#### Data
+
+```{r}
+# Get a list of the paths to the samples. Each sample is inside its own folder, under the name "quant.sf"
+listfolders <- list.dirs("../data_aux/kallisto/Farr/")[-1] # remove "." directory
+listfolders <- paste0(listfolders,"/abundance.tsv")
+listfolders
+
+# Naming the files (important so that when using tximport each column has the corresponding sample name)
+samples <- gsub("../data_aux/kallisto/Farr//","",listfolders)
+samples <- gsub("/abundance.tsv","",samples)
+names(listfolders) <- samples
+listfolders
+
+# Merge all counts in an txi object. The argument txOut=TRUE allows to avoid gene-level summarization (we want the transcripts)
+txi.kallisto <- tximport(listfolders, type = "kallisto", txOut=FALSE, tx2gene = t2gene2)
+
+data <- as.data.frame(txi.kallisto$counts) 
+
+```
+
+```{r}
+metadata <- as.data.frame(fread("../data_aux/GSE288940_metadata.csv"))
+metadata <- metadata[,c("Run","Sample Name","cell_line","treatment")]
+colnames(metadata)[1] <- "sampleID"
+
+
+gsm_to_timepoint <- c(
+  "GSM8779535" = "D0",
+  "GSM8779536" = "D0",
+  "GSM8779537" = "D0",
+  "GSM8779538" = "D0",
+  "GSM8779539" = "D0",
+  "GSM8779540" = "D7",
+  "GSM8779541" = "D7",
+  "GSM8779542" = "D7",
+  "GSM8779543" = "D7",
+  "GSM8779544" = "D7",
+  "GSM8779545" = "D7",
+  "GSM8779546" = "D28",
+  "GSM8779547" = "D28",
+  "GSM8779548" = "D28",
+  "GSM8779549" = "D28",
+  "GSM8779550" = "D28",
+  "GSM8779551" = "D28"
+)
+
+metadata$timepoint <- gsm_to_timepoint[metadata$`Sample Name`]
+metadata$timepoint <- factor(metadata$timepoint, levels = c("D0", "D7", "D28"))
+
+metadata$condition2 <- ifelse(grepl("D0", metadata$timepoint), "Proliferative", ifelse(grepl("D7", metadata$timepoint), "Prol > Sen", "Senescent"))
+
+metadata$condition <- ifelse(grepl("D0", metadata$timepoint), "Proliferative",  "Senescent")
+
+data <- data[,metadata$sampleID]
+```
+
+
+```{r}
+data
+metadata
+```
+
+#### Preprocessing
+
+
+##### Filtering
+
+```{r}
+# Plot
+(plt_beforefilt <- ggplot() + aes(x=log10(rowSums(data))) +
+   geom_density(fill="grey", alpha=0.5) + theme_bw() + 
+   theme(axis.text.x = element_text(angle = 45, hjust=1),
+         plot.title = element_text(hjust = 0.5),
+         plot.subtitle = element_text(hjust = 0.5)) +
+   ggtitle("Before Filtering") +
+   xlab(expression(log[10]~"(counts per gene)")) +
+   ylab("Frequency") + 
+   geom_vline(xintercept = 3.5, linetype="dotted",color = "black", size=1.5))
+
+```
+
+
+```{r}
+filtdata <- data[rowSums(data) > 10^3.5,]
+nrow(data)
+nrow(filtdata)
+
+
+cat("Number of genes before filtering:", nrow(data), "\n")
+cat("Number of genes after filtering:", nrow(filtdata), "\n")
+
+```
+
+
+```{r}
+
+# Plot
+(plt_afterfilt <- ggplot() + aes(x=log10(rowSums(filtdata))) +
+   geom_density(fill="grey", alpha=0.5) + theme_bw() + 
+   theme(axis.text.x = element_text(angle = 45, hjust=1),
+         plot.title = element_text(hjust = 0.5),
+         plot.subtitle = element_text(hjust = 0.5)) +
+   ggtitle("After Filtering") +
+   xlab(expression(log[10]~"(counts per gene)")) +
+   ylab("Frequency") )
+
+```
+
+
+
+##### Normalisation
+
+```{r fig.width=6, fig.height=4}
+
+filtcounts_ggplot <- stack(log2(filtdata))
+colnames(filtcounts_ggplot) <- c("expression", "sampleID")
+filtcounts_ggplot <- merge(filtcounts_ggplot,metadata, by="sampleID")
+
+
+(plt_beforenorm <- ggplot(filtcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(alpha=0.4)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+    theme_bw()+ 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle("Before Normalisation") )
+
+```
+
+
+```{r}
+dgelist_normcounts <- DGEList(filtdata) # the matrix with gene names as row names and counts in columns
+dgelist_normcounts <- calcNormFactors(dgelist_normcounts, method = "TMM") 
+normalised_counts <- as.data.frame(voom(dgelist_normcounts,plot=F)$E) 
+#normalised_counts <- as.data.frame(edgeR::cpm(dgelist_normcounts, log = FALSE)) 
+normdata <- 2^normalised_counts
+lognormdata <- log2(normdata+1)
+```
+
+
+```{r fig.width=6, fig.height=4}
+
+normcounts_ggplot <- stack(log2(normdata))
+colnames(normcounts_ggplot) <- c("expression", "sampleID")
+normcounts_ggplot <- merge(normcounts_ggplot,metadata, by="sampleID")
+
+
+(plt_afternorm <- ggplot(normcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(alpha=0.4)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+    theme_bw()+ 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle("After Normalisation") )
+
+```
+
+
+##### PCA
+
+```{r fig.width=6, fig.height=4}
+y <- DGEList(lognormdata, samples= metadata)
+PCA  <- prcomp(t(y$counts), scale=FALSE, center=TRUE)
+PCACounts  <- PCA$x
+PCACounts  <- as.data.frame(PCACounts )
+PCAData <-  cbind(PCACounts[1:10],y$samples) 
+
+ev = PCA$sdev^2 
+pc1= round(100*ev[1]/sum(ev),2) 
+pc2 = round(100*ev[2]/sum(ev),2) 
+pc3 = round(100*ev[3]/sum(ev),2) 
+pc4 = round(100*ev[4]/sum(ev),2) 
+pc5 = round(100*ev[5]/sum(ev),2) 
+pc6 = round(100*ev[6]/sum(ev),2)  
+
+timepoint_colors <- c(
+  "D0"  = "#AEC6E8",  # pastel blue
+  "D7"  = "#C3A8D1",  # pastel purple
+  "D28" = "#F4A6A0"   # pastel red/pink
+)
+
+(pltpca_1 <- ggplot(PCAData, aes(PC1,PC2))+
+    geom_point(aes(color=timepoint), size=5, alpha=0.6)+ 
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    guides(color = guide_legend(nrow = 1)) +
+    theme(legend.position="top", legend.box="vertical", legend.title = element_blank(), legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    geom_hline(yintercept=0, linetype="dotted") +
+    scale_color_manual(values=timepoint_colors))
+
+(pltpca_2 <- ggplot(PCAData, aes(PC1,PC2))+
+    geom_point(aes(color=condition), size=5, alpha=0.6)+ 
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    theme(legend.position="top", legend.box="vertical", legend.title = element_blank(), legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    guides(color = guide_legend(nrow = 1)) +
+    geom_hline(yintercept=0, linetype="dotted") +
+    scale_color_manual(values=Condition_colors))
+
+
+```
+
+#### Calculate Scores
+
+```{r}
+(pltscores <- PlotScores(data = normdata, 
+                         metadata = metadata, 
+                         gene_sets = signatures_bidirectional[c("HernandezSegura", "SAUL_SEN_MAYO")],
+                         Variable = "condition",
+                         ColorVariable = "timepoint",
+                         method = "logmedian",
+                         ColorValues = timepoint_colors,
+                         xlab = "Cellular State",
+                         labsize = 8))
+```
+
+```{r fig.width=11, fig.height=5}
+plt_filt <- ggarrange(plt_beforefilt,plt_afterfilt, nrow=1)
+plt_norm <- ggarrange(plt_beforenorm,plt_afternorm, nrow=1)
+plt_pca <- ggarrange(pltpca_1,pltpca_2, nrow=1)
+
+plt1 <- ggarrange(plt_filt, plt_norm, nrow=1)
+plt2 <- ggarrange(plt_pca, pltscores, nrow=1, widths=c(0.5,0.5))
+
+plt_GSE288940 <- ggarrange(plt1, plt2, ncol=1, heights = c(0.4,0.7))
+plt_GSE288940 <- annotate_figure(plt_GSE288940, top = text_grob("GSE288940: IMR90 + Etoposide\n", face = "bold", size = 14))
+plt_GSE288940
+
+
+```
+
+
+
+
+
+
+### GSE287058 (Quiescent Fibroblasts)
+
+counts tables were generated using HTSeq
+Assembly: hg38
+
+#### Data
+
+```{r}
+
+# List all files
+files <- list.files(path = "../data_aux/GSE287058_RAW/", pattern = "\\.txt\\.gz$", full.names = TRUE)
+
+# Read and combine
+data <- lapply(files, function(f) {
+  sample_name <- gsub("(GSM[0-9]+).*", "\\1", basename(f))
+  df <- read.table(f, header = FALSE, col.names = c("gene", sample_name))
+  df
+}) %>%
+  Reduce(function(x, y) full_join(x, y, by = "gene"), .) %>%
+  tibble::column_to_rownames("gene")
+
+data
+```
+
+```{r}
+metadata <- as.data.frame(fread("../data_aux/GSE287058_metadata.csv"))
+metadata <- metadata[,c("Run","Library Name","cell_line","treatment")]
+colnames(metadata)[1] <- "sampleID"
+
+
+
+# Reorder metadata to match column order of data
+metadata <- metadata[match(colnames(data), metadata$`Library Name`), ]
+
+# Verify order is correct before renaming
+all(colnames(data) == metadata$`Library Name`)
+
+# Then rename
+colnames(data) <- metadata$sampleID
+
+metadata$condition <- ifelse(grepl("Proliferating", metadata$treatment, ignore.case = TRUE), "Proliferative", "Quiescent")
+metadata$condition2 <-  ifelse(metadata$condition == "Quiescent",
+                               paste0(metadata$condition, "\n(", metadata$treatment, ")"),
+                               metadata$condition)
+metadata$condition2 <- gsub(" ","\n",metadata$condition2)
+
+```
+
+```{r}
+data
+metadata
+```
+Remove LF1 samples as they don't have controls
+
+```{r}
+metadata <- metadata[!grepl("LF1", metadata$cell_line), ]
+data <- data[,metadata$sampleID]
+```
+
+
+```{r}
+data
+metadata
+```
+
+
+#### Preprocessing
+
+
+##### Filtering
+
+```{r}
+# Plot
+(plt_beforefilt <- ggplot() + aes(x=log10(rowSums(data))) +
+   geom_density(fill="grey", alpha=0.5) + theme_bw() + 
+   theme(axis.text.x = element_text(angle = 45, hjust=1),
+         plot.title = element_text(hjust = 0.5),
+         plot.subtitle = element_text(hjust = 0.5)) +
+   ggtitle("Before Filtering") +
+   xlab(expression(log[10]~"(counts per gene)")) +
+   ylab("Frequency") + 
+   geom_vline(xintercept = 3.2, linetype="dotted",color = "black", size=1.5))
+
+```
+
+
+```{r}
+filtdata <- data[rowSums(data) > 10^3.2,]
+nrow(data)
+nrow(filtdata)
+
+
+cat("Number of genes before filtering:", nrow(data), "\n")
+cat("Number of genes after filtering:", nrow(filtdata), "\n")
+
+```
+
+
+```{r}
+
+# Plot
+(plt_afterfilt <- ggplot() + aes(x=log10(rowSums(filtdata))) +
+   geom_density(fill="grey", alpha=0.5) + theme_bw() + 
+   theme(axis.text.x = element_text(angle = 45, hjust=1),
+         plot.title = element_text(hjust = 0.5),
+         plot.subtitle = element_text(hjust = 0.5)) +
+   ggtitle("After Filtering") +
+   xlab(expression(log[10]~"(counts per gene)")) +
+   ylab("Frequency") )
+
+```
+
+
+
+##### Normalisation
+
+```{r fig.width=6, fig.height=4}
+
+filtcounts_ggplot <- stack(log2(filtdata))
+colnames(filtcounts_ggplot) <- c("expression", "sampleID")
+filtcounts_ggplot <- merge(filtcounts_ggplot,metadata, by="sampleID")
+
+
+(plt_beforenorm <- ggplot(filtcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(alpha=0.4, outlier.size = 0.5)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+    theme_bw()+ 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle("Before Normalisation") )
+
+```
+
+
+```{r}
+dgelist_normcounts <- DGEList(filtdata) # the matrix with gene names as row names and counts in columns
+dgelist_normcounts <- calcNormFactors(dgelist_normcounts, method = "TMM") 
+normalised_counts <- as.data.frame(voom(dgelist_normcounts,plot=F)$E) 
+#normalised_counts <- as.data.frame(edgeR::cpm(dgelist_normcounts, log = FALSE)) 
+normdata <- 2^normalised_counts
+lognormdata <- log2(normdata+1)
+```
+
+
+```{r fig.width=6, fig.height=4}
+
+normcounts_ggplot <- stack(log2(normdata))
+colnames(normcounts_ggplot) <- c("expression", "sampleID")
+normcounts_ggplot <- merge(normcounts_ggplot,metadata, by="sampleID")
+
+
+(plt_afternorm <- ggplot(normcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(alpha=0.4, outlier.size = 0.5)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+    theme_bw()+ 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle("After Normalisation") )
+
+```
+
+
+##### PCA
+
+```{r fig.width=6, fig.height=4}
+y <- DGEList(lognormdata, samples= metadata)
+PCA  <- prcomp(t(y$counts), scale=FALSE, center=TRUE)
+PCACounts  <- PCA$x
+PCACounts  <- as.data.frame(PCACounts )
+PCAData <-  cbind(PCACounts[1:10],y$samples) 
+
+ev = PCA$sdev^2 
+pc1= round(100*ev[1]/sum(ev),2) 
+pc2 = round(100*ev[2]/sum(ev),2) 
+pc3 = round(100*ev[3]/sum(ev),2) 
+pc4 = round(100*ev[4]/sum(ev),2) 
+pc5 = round(100*ev[5]/sum(ev),2) 
+pc6 = round(100*ev[6]/sum(ev),2)  
+
+cell_line_colors <- c(
+  "BJ"                    = "#6DBF8A",  # medium pastel green
+  "IMR90"                 = "#F47C7C",  # medium pastel red
+  "Primary Preadipocytes" = "#F0C060"   # medium pastel yellow
+)
+
+(pltpca_1 <- ggplot(PCAData, aes(PC1,PC2))+
+    geom_point(aes(color=cell_line), size=5, alpha=0.6)+ 
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    guides(color = guide_legend(nrow = 3)) +
+    theme(legend.position="top", legend.box="vertical", legend.title = element_blank(), legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    geom_hline(yintercept=0, linetype="dotted")+
+    scale_color_manual(values=cell_line_colors))
+
+(pltpca_2 <- ggplot(PCAData, aes(PC1,PC2))+
+    geom_point(aes(color=condition), size=5, alpha=0.6)+ 
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    theme(legend.position="top", legend.box="vertical", legend.title = element_blank(), legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    guides(color = guide_legend(nrow = 3)) +
+    geom_hline(yintercept=0, linetype="dotted") +
+    scale_color_manual(values=Condition_colors))
+
+
+```
+
+#### Calculate Scores
+
+```{r}
+(pltscores <- PlotScores(data = normdata, 
+                         metadata = metadata, 
+                         gene_sets = signatures_bidirectional[c("HernandezSegura", "SAUL_SEN_MAYO")],
+                         Variable = "condition2",
+                         ColorVariable = "cell_line",
+                         method = "logmedian",
+                         xlab = "Cellular State",
+                         ColorValues = cell_line_colors,
+                         labsize = 8))
+```
+
+
+```{r fig.width=11, fig.height=5}
+plt_filt <- ggarrange(plt_beforefilt,plt_afterfilt, nrow=1)
+plt_norm <- ggarrange(plt_beforenorm,plt_afternorm, nrow=1)
+plt_pca <- ggarrange(pltpca_1,pltpca_2, nrow=1)
+
+plt1 <- ggarrange(plt_filt, plt_norm, nrow=1)
+plt2 <- ggarrange(plt_pca, pltscores, nrow=1, widths=c(0.5,0.5))
+
+plt_GSE287058 <- ggarrange(plt1, plt2, ncol=1, heights = c(0.4,0.7))
+plt_GSE287058 <- annotate_figure(plt_GSE287058, top = text_grob("GSE287058: Quiescent Fibroblasts\n", face = "bold", size = 14))
+plt_GSE287058
+
+
+```
+
+### Compile All
+
+```{r fig.width=11, fig.height=16} 
+add_margin <- function(plt) plt + theme(plot.margin = margin(t=15, r=5, b=15, l=5))
+
+(plt_3_3 <- ggarrange(add_margin(plt_GSE297560), 
+                      add_margin(plt_GSE288940), 
+                      add_margin(plt_GSE287058), 
+                      ncol=1, labels = c("A","B","C"), 
+                      heights = c(0.35,0.35,0.4)))
+
+```
+
+```{r}
+ggplot2::ggsave("../Figures/Figs/R3_3_InVitroValidation.png",
+                plt_3_3,
+                width = 11, height=16, bg = 'white')
+
+ggplot2::ggsave("../Figures/Figs/R3_3_InVitroValidation.pdf",
+                plt_3_3,
+                width = 11, height=16, bg = 'white')
+```
+
+
+## Comment 1.6 — Applicability of markeR beyond senescence
+
+R.: Apply markeR in discovery mode to a small set of additional biological phenotypes with well-established gene sets and positive control datasets, to demonstrate that the framework generalises beyond senescence. Phenotypes considered include cell proliferation, epithelial-to-mesenchymal transition, and viral/interferon response.
+
+
+
+### Sex Signature | GTEx
+
+```{r}
+library(biomaRt)
+mart <- useMart(biomart="ensembl", dataset="hsapiens_gene_ensembl")
+y_genes <- getBM(attributes = c("chromosome_name", "hgnc_symbol"),
+                 filters = "chromosome_name", values = "Y", mart = mart)
+
+x_genes <- getBM(attributes = c("chromosome_name", "hgnc_symbol"),
+                 filters = "chromosome_name", values = "X", mart = mart)
+
+y_unique <- y_genes[!y_genes$hgnc_symbol %in% x_genes$hgnc_symbol, ]
+y_unique <- y_unique[y_unique$hgnc_symbol != "", ]
+
+geneset_Ychromosome <- list(Y_Chromosome = y_unique$hgnc_symbol)
+```
+
+
+```{r}
+#  
+# base_url <- "https://raw.githubusercontent.com/DiseaseTranscriptomicsLab/voyAGEr/main/Corrected_Counts/"
+# 
+tissues <- c(
+  "Adipose - Subcutaneous",
+  "Adipose - Visceral (Omentum)",
+  "Adrenal Gland",
+  "Artery - Aorta",
+  "Artery - Coronary",
+  "Artery - Tibial",
+  "Brain - Amygdala",
+  "Brain - Anterior cingulate cortex (BA24)",
+  "Brain - Caudate (basal ganglia)",
+  "Brain - Cerebellar Hemisphere",
+  "Brain - Cerebellum",
+  "Brain - Cortex",
+  "Brain - Frontal Cortex (BA9)",
+  "Brain - Hippocampus",
+  "Brain - Hypothalamus",
+  "Brain - Nucleus accumbens (basal ganglia)",
+  "Brain - Putamen (basal ganglia)",
+  "Brain - Spinal cord (cervical c-1)",
+  "Brain - Substantia nigra",
+  "Breast - Mammary Tissue",
+  "Cells - Cultured fibroblasts",
+  "Cells - EBV-transformed lymphocytes",
+  "Colon - Sigmoid",
+  "Colon - Transverse",
+  "Esophagus - Gastroesophageal Junction",
+  "Esophagus - Mucosa",
+  "Esophagus - Muscularis",
+  "Heart - Atrial Appendage",
+  "Heart - Left Ventricle",
+  "Kidney - Cortex",
+  "Liver",
+  "Lung",
+  "Minor Salivary Gland",
+  "Muscle - Skeletal",
+  "Nerve - Tibial",
+  "Ovary",
+  "Pancreas",
+  "Pituitary",
+  "Prostate",
+  "Skin - Not Sun Exposed (Suprapubic)",
+  "Skin - Sun Exposed (Lower leg)",
+  "Small Intestine - Terminal Ileum",
+  "Spleen",
+  "Stomach",
+  "Testis",
+  "Thyroid",
+  "Uterus",
+  "Vagina",
+  "Whole Blood"
+)
+# 
+# gtex <- lapply(tissues, function(tissue) {
+#   url <- paste0(base_url, URLencode(paste0(tissue, "_corrected_logCPM.csv.gz")))
+#   message("Loading: ", tissue)
+#   tryCatch({
+#     df <- as.data.frame(fread(url, data.table = FALSE))
+#     rownames(df) <- df[[1]]
+#     df[[1]] <- NULL
+#     df
+#   }, error = function(e) { warning("Failed: ", tissue, " — ", e$message); NULL })
+# })
+# 
+# names(gtex) <- tissues
+# saveRDS(gtex, "../data_aux/data_gtex.rds")
+```
+
+```{r}
+#GTEx_alltissues <- readRDS("../data_aux/GTExV8_voyagercorrected.rds") # https://github.com/DiseaseTranscriptomicsLab/voyAGEr/tree/main/Corrected_Counts
+data_gtex <- readRDS("../data_aux/data_gtex.rds")
+
+metadata_GTEx_alltissues <- readRDS("../data_aux/GTExV8_metadata.rds") # Restricted access
+metadata_GTEx_alltissues$SEX <- ifelse(metadata_GTEx_alltissues$SEX == 1,"Male","Female")
+metadata_GTEx_alltissues
+```
+
+```{r}
+table(metadata_GTEx_alltissues$SMTSD,
+      metadata_GTEx_alltissues$SEX)
+```
+
+
+
+```{r fig.width=11, fig.height=16}
+# Assuming your metadata df is called `metadata` with columns SMTSD, sample_id, SEX (or similar)
+
+# Step 1: Calculate scores for all tissues
+scores_list <- lapply(tissues, function(tissue) {
+  message("Scoring: ", tissue)
+  tryCatch({
+    expr       <- 2^data_gtex[[tissue]]
+    meta_sub   <- metadata_GTEx_alltissues[metadata_GTEx_alltissues$SMTSD == tissue, ]
+    # Keep only samples present in expression matrix
+    meta_sub   <- meta_sub[meta_sub[[1]] %in% colnames(expr), ]
+    #order, just in case
+    expr <- expr[, meta_sub[[1]]]
+    if (nrow(meta_sub) == 0) { warning("No matching samples: ", tissue); return(NULL) }
+    
+    CalculateScores(
+      data      = expr,
+      metadata  = meta_sub,
+      method    = "logmedian",
+      gene_sets = geneset_Ychromosome
+    )
+  }, error = function(e) { warning("Failed: ", tissue, " — ", e$message); NULL })
+})
+names(scores_list) <- tissues
+
+
+# Step 2: Plot male vs female per tissue
+# Define sex-specific tissues to skip
+sex_specific <- c("Ovary", "Uterus", "Vagina", "Prostate", "Testis")
+
+# Assumes scores df has a column with the score values and SEX in metadata
+# Adjust score_col and sex_col to match your actual column names
+score_col <- "logmedian"   # column name in CalculateScores output
+sex_col   <- "SEX"         # column in metadata (e.g. 1=Male, 2=Female or "Male"/"Female")
+
+plots_list <- lapply(tissues, function(tissue) {
+  if (tissue %in% sex_specific) return(NULL)
+  
+  df <- scores_list[[tissue]][["Y_Chromosome"]]
+  if (is.null(df)) return(NULL)
+  
+  # Merge scores with sex info if not already present
+  if (!sex_col %in% colnames(df)) {
+    meta_sub <- metadata_GTEx_alltissues[metadata_GTEx_alltissues$SMTSD == tissue, c("SAMPID","SMTSD","SEX","AGE")]
+    df <- merge(df, meta_sub, by = 1)
+  } else {
+    df <- df[,c("sample","score","SMTSD","SEX","AGE")]
+    
+  }
+  
+  #df[[sex_col]] <- factor(df[[sex_col]], levels = c(1, 2), labels = c("Male", "Female"))
+  
+  ggplot(df, aes(x = SEX, y = score, fill = SEX)) +
+    geom_jitter(color = "#DDDDDD", width = 0.15) +
+    geom_violin(alpha = 0.4) +
+    stat_summary(fun = median, geom = "crossbar", width = 0.1, color = "black") +
+    scale_fill_manual(values = c("Male" = "#4E8ECC", "Female" = "#CC4E7A")) +
+    labs(title = tissue, x = NULL,
+         y = expression(log[2]*"-median score")) +
+    theme_bw() +
+    theme(legend.position  = "none",
+          plot.title      = element_text(hjust = 0.5, size = 10))
+})
+names(plots_list) <- tissues
+plots_list <- Filter(Negate(is.null), plots_list)
+
+# Combine into one figure (optional)
+ggarrange(plotlist = plots_list, ncol = 6, nrow = ceiling(length(plots_list) / 6))
+```
+```{r fig.width=4, fig.height=3}
+df_all_sex <- bind_rows(
+  lapply(tissues[!tissues %in% sex_specific], function(tissue) {
+    df <- scores_list[[tissue]][["Y_Chromosome"]]
+    if (is.null(df)) return(NULL)
+    df$tissue <- tissue
+    df
+  })
+)
+
+
+(plt_ychromosomescores <- ggplot(df_all_sex, aes(x = .data[[sex_col]], y = score, fill = .data[[sex_col]])) + 
+    geom_jitter(color = "#DDDDDD", width = 0.3, alpha = 0.3, size = 0.5) +
+    geom_violin(alpha = 0.5) +
+    stat_summary(fun = median, geom = "crossbar", width = 0.1, color = "black") +
+    scale_fill_manual(values = c("Male" = "#4E8ECC", "Female" = "#CC4E7A")) +
+    labs(x = NULL, y = expression(log[2]*"-median score")) +
+    theme_bw() +
+    theme(legend.position = "none",
+          plot.title = element_text(hjust = 0.5, size = 14),
+          text = element_text(size = 14))  +
+    ggtitle("Y Chromosome Gene Set (biomaRt)\nAcross GTEx Tissues"))
+```
+
+```{r fig.width=4, fig.height=3}
+# compute sample counts per group
+n_labels <- df_all_sex %>%
+  group_by(.data[[sex_col]]) %>%
+  summarise(n = n()) %>%
+  mutate(label = paste0(.data[[sex_col]], "\n(n=", n, ")"))
+
+label_vec <- setNames(n_labels$label, n_labels[[sex_col]])
+
+(plt_ychromosomescores <- ggplot(df_all_sex, aes(x = .data[[sex_col]], y = score, fill = .data[[sex_col]])) + 
+    geom_jitter(color = "#DDDDDD", width = 0.3, alpha = 0.3, size = 0.5) +
+    geom_violin(alpha = 0.5) +
+    stat_summary(fun = median, geom = "crossbar", width = 0.1, color = "black") +
+    scale_fill_manual(values = c("Male" = "#4E8ECC", "Female" = "#CC4E7A")) +
+    scale_x_discrete(labels = label_vec) +
+    labs(x = NULL, y = expression(log[2]*"-median score")) +
+    theme_bw() +
+    theme(legend.position = "none",
+          plot.title = element_text(hjust = 0.5, size = 14),
+          text = element_text(size = 14)) +
+    ggtitle("Y Chromosome Gene Set (biomaRt)\nAcross GTEx Tissues"))
+```
+
+
+### Respiratory Infection Signature | GSE161731 (many viral and bacterial infections)
+
+
+```{r}
+signature_respiratoryviral <- list(Zaas2009_RespiratoryViralResponse = as.vector(fread("../data_aux/RespiratoryViralResponse_Zaas2009_simple.txt",header=F)$V1))
+```
+
+```{r}
+data <- as.data.frame(fread("../data_aux/GSE161731_counts.csv"))
+row.names(data) <- data$V1
+data$V1 <- NULL
+# Convert row names from ENSEMBL ID to Gene Name using biomaRt
+
+# Connect to Ensembl
+mart <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+
+# Query the conversion
+gene_conversion <- getBM(
+  attributes = c("ensembl_gene_id", "hgnc_symbol"),
+  filters    = "ensembl_gene_id",
+  values     = rownames(data),
+  mart       = mart
+)
+
+# Replace rownames — keeping only genes with a match and a non-empty symbol
+gene_conversion <- gene_conversion[!duplicated(gene_conversion$hgnc_symbol), ]
+data <- data[gene_conversion$ensembl_gene_id, ]
+rownames(data) <- gene_conversion$hgnc_symbol
+
+data
+```
+
+```{r}
+metadata <- as.data.frame(fread("../data_aux/GSE161731_counts_key.csv"))
+colnames(metadata)[1] <- "sampleID"
+metadata <- metadata[metadata$sampleID %in% colnames(data),]
+data <- data[,metadata$sampleID]
+```
+
+```{r}
+data
+metadata
+```
+
+
+##### Filtering
+
+```{r}
+# Plot
+(plt_beforefilt <- ggplot() + aes(x=log10(rowSums(data))) +
+   geom_density(fill="grey", alpha=0.5) + theme_bw() + 
+   theme(axis.text.x = element_text(angle = 45, hjust=1),
+         plot.title = element_text(hjust = 0.5),
+         plot.subtitle = element_text(hjust = 0.5)) +
+   ggtitle("Before Filtering") +
+   xlab(expression(log[10]~"(counts per gene)")) +
+   ylab("Frequency") + 
+   geom_vline(xintercept = 4.2, linetype="dotted",color = "black", size=1.5))
+
+```
+
+
+```{r}
+filtdata <- data[rowSums(data) > 10^4.2,]
+nrow(data)
+nrow(filtdata)
+
+
+cat("Number of genes before filtering:", nrow(data), "\n")
+cat("Number of genes after filtering:", nrow(filtdata), "\n")
+
+```
+
+
+```{r}
+
+# Plot
+(plt_afterfilt <- ggplot() + aes(x=log10(rowSums(filtdata))) +
+   geom_density(fill="grey", alpha=0.5) + theme_bw() + 
+   theme(axis.text.x = element_text(angle = 45, hjust=1),
+         plot.title = element_text(hjust = 0.5),
+         plot.subtitle = element_text(hjust = 0.5)) +
+   ggtitle("After Filtering") +
+   xlab(expression(log[10]~"(counts per gene)")) +
+   ylab("Frequency") )
+
+```
+
+
+
+##### Normalisation
+
+```{r fig.width=6, fig.height=4}
+
+filtcounts_ggplot <- stack(log2(filtdata))
+colnames(filtcounts_ggplot) <- c("expression", "sampleID")
+filtcounts_ggplot <- merge(filtcounts_ggplot,metadata, by="sampleID")
+
+
+(plt_beforenorm <- ggplot(filtcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(alpha=0.4, outlier.size = 0.5)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+    theme_bw()+ 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle("Before Normalisation") )
+
+```
+
+
+```{r}
+dgelist_normcounts <- DGEList(filtdata) # the matrix with gene names as row names and counts in columns
+dgelist_normcounts <- calcNormFactors(dgelist_normcounts, method = "TMM") 
+normalised_counts <- as.data.frame(voom(dgelist_normcounts,plot=F)$E) 
+#normalised_counts <- as.data.frame(edgeR::cpm(dgelist_normcounts, log = FALSE)) 
+normdata <- 2^normalised_counts
+lognormdata <- log2(normdata+1)
+```
+
+
+```{r fig.width=6, fig.height=4}
+
+normcounts_ggplot <- stack(log2(normdata))
+colnames(normcounts_ggplot) <- c("expression", "sampleID")
+normcounts_ggplot <- merge(normcounts_ggplot,metadata, by="sampleID")
+
+
+(plt_afternorm <- ggplot(normcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(alpha=0.4, outlier.size = 0.5)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+    theme_bw()+ 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle("After Normalisation") )
+
+```
+
+
+##### PCA
+
+```{r fig.width=6, fig.height=4}
+y <- DGEList(lognormdata, samples= metadata)
+PCA  <- prcomp(t(y$counts), scale=FALSE, center=TRUE)
+PCACounts  <- PCA$x
+PCACounts  <- as.data.frame(PCACounts )
+PCAData <-  cbind(PCACounts[1:10],y$samples) 
+
+ev = PCA$sdev^2 
+pc1= round(100*ev[1]/sum(ev),2) 
+pc2 = round(100*ev[2]/sum(ev),2) 
+pc3 = round(100*ev[3]/sum(ev),2) 
+pc4 = round(100*ev[4]/sum(ev),2) 
+pc5 = round(100*ev[5]/sum(ev),2) 
+pc6 = round(100*ev[6]/sum(ev),2)  
+
+
+(pltpca_1 <- ggplot(PCAData, aes(PC1,PC2))+
+    geom_point(aes(color=cohort), size=5, alpha=0.6)+ 
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    guides(color = guide_legend(nrow = 2)) +
+    theme(legend.position="top", legend.box="vertical", legend.title = element_blank(), legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    geom_hline(yintercept=0, linetype="dotted") )
+
+(pltpca_2 <- ggplot(PCAData, aes(PC1,PC2))+
+    geom_point(aes(color=gender), size=5, alpha=0.6)+ 
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    theme(legend.position="top", legend.box="vertical", legend.title = element_blank(), legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    guides(color = guide_legend(nrow = 2)) +
+    geom_hline(yintercept=0, linetype="dotted"))
+
+(pltpca_3 <- ggplot(PCAData, aes(PC1,PC2))+
+    geom_point(aes(color=race), size=5, alpha=0.6)+ 
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    theme(legend.position="top", legend.box="vertical", legend.title = element_blank(), legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    guides(color = guide_legend(nrow = 2)) +
+    geom_hline(yintercept=0, linetype="dotted"))
+
+(pltpca_4 <- ggplot(PCAData, aes(PC1,PC2))+
+    geom_point(aes(color=batch), size=5, alpha=0.6)+ 
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    theme(legend.position="top", legend.box="vertical", legend.title = element_blank(), legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    guides(color = guide_legend(nrow = 2)) +
+    geom_hline(yintercept=0, linetype="dotted"))
+
+
+```
+
+#### Calculate Scores
+
+
+```{r}
+#saveRDS(normdata,"../data_aux/data_RespiratoryInfection.rds")
+data_RespiratoryInfection <- readRDS("../data_aux/data_RespiratoryInfection.rds")
+#saveRDS(metadata,"../data_aux/metadata_RespiratoryInfection.rds")
+metadata_ResporatoryInfection <- readRDS("../data_aux/metadata_RespiratoryInfection.rds")
+```
+
+
+```{r fig.width=4, fig.height=3}
+(dfscores <- CalculateScores(data = data_ResporatoryInfection, 
+                             metadata = metadata_ResporatoryInfection, 
+                             gene_sets = signature_respiratoryviral,
+                             method = "logmedian")$Zaas2009_RespiratoryViralResponse)
+
+dfscores$cohort2 <- ifelse(dfscores$cohort %in% c("CoV other","COVID-19"), "CoV", dfscores$cohort)
+dfscores$cohort2 <- gsub("healthy","Healthy",dfscores$cohort2)
+cohort_colors <- c(
+  "CoV"       = "#E07B54",
+  "Influenza" = "#5B8DB8",
+  "Bacterial" = "#6BAF92",
+  "Healthy"   = "#B0B0B0"
+)
+
+(plt_viralrespiratory <- ggplot(dfscores, aes(x = cohort2, y = score, fill=cohort2)) + 
+    geom_jitter(color = "black", width = 0.3, alpha = 0.4, size = 0.5) +
+    geom_violin(alpha = 0.7) +
+    stat_summary(fun = median, geom = "crossbar", width = 0.1, color = "black") + 
+    labs(x = NULL, y = expression(log[2]*"-median score")) +
+    theme_bw() +
+    theme(legend.position="none",
+          plot.title = element_text(hjust = 0.5, size = 14),
+          text = element_text(size = 14)) +
+    ggtitle("Zaas 2009 Respiratory Viral Gene Set \nin Whole Blood Across \nAcute Respiratory Infections") + scale_fill_manual(values = cohort_colors))
+```
+```{r fig.width=4, fig.height=3}
+n_labels <- dfscores %>%
+  group_by(cohort2) %>%
+  summarise(n = n()) %>%
+  mutate(label = paste0(cohort2, "\n(n=", n, ")"))
+
+label_vec <- setNames(n_labels$label, n_labels$cohort2)
+
+(plt_viralrespiratory <- ggplot(dfscores, aes(x = cohort2, y = score, fill = cohort2)) + 
+    geom_jitter(color = "black", width = 0.3, alpha = 0.4, size = 0.5) +
+    geom_violin(alpha = 0.7) +
+    stat_summary(fun = median, geom = "crossbar", width = 0.1, color = "black") + 
+    labs(x = NULL, y = expression(log[2]*"-median score")) +
+    theme_bw() +
+    theme(legend.position = "none",
+          plot.title = element_text(hjust = 0.5, size = 14),
+          text = element_text(size = 14)) +
+    ggtitle("Zaas 2009 Respiratory Viral Gene Set \nin Whole Blood Across \nAcute Respiratory Infections") +
+    scale_fill_manual(values = cohort_colors) +
+    scale_x_discrete(labels = label_vec))
+```
+
+
+### EMT transition | KIRC
+
+```{r}
+Ramaswamy_Metastasis <- list(Ramaswamy_Metastasis = as.data.frame(fread("../data_aux/RAMASWAMY_METASTASIS_simple.txt",header=T)))
+```
+
+https://xenabrowser.net/datapages/?dataset=TCGA-KIRC.star_counts.tsv&host=https%3A%2F%2Fgdc.xenahubs.net&removeHub=https%3A%2F%2Fxena.treehouse.gi.ucsc.edu%3A443
+
+KIRC was chosen given that it has a relatively well documented tumour grade
+
+```{r}
+data <- as.data.frame(fread("../data_aux/TCGA-KIRC.star_counts.tsv"))
+data$Ensembl_ID <- sub("\\..*", "", data$Ensembl_ID)
+
+# combine rows with same gene id by summing them
+data <- rowsum(data[, -1], group = data$Ensembl_ID)
+
+# Connect to Ensembl
+mart <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+
+# Query the conversion
+gene_conversion <- getBM(
+  attributes = c("ensembl_gene_id", "hgnc_symbol"),
+  filters    = "ensembl_gene_id",
+  values     = rownames(data),
+  mart       = mart
+)
+
+# Replace rownames — keeping only genes with a match and a non-empty symbol
+gene_conversion <- gene_conversion[!duplicated(gene_conversion$hgnc_symbol), ]
+data <- data[gene_conversion$ensembl_gene_id, ]
+rownames(data) <- gene_conversion$hgnc_symbol
+
+data <- 2^data - 1 # unlog...
+data
+
+```
+
+```{r}
+metadata <- as.data.frame(fread("../data_aux/TCGA-KIRC.clinical.tsv"))
+metadata <- metadata[metadata$sample %in% colnames(data),]
+data <- data[,metadata$sample]
+```
+
+
+```{r}
+metadata$code <- sub(".*-", "", metadata$sample)
+table(metadata$code) # no metastasis
+table(metadata$tissue_type.samples) # normal vs tumour
+table(metadata$sample_type.samples, metadata$ajcc_pathologic_m.diagnoses)
+
+# subset data to M1 or M0 only
+# subset data to primary tumour only
+metadata <- metadata[metadata$ajcc_pathologic_m.diagnoses %in% c("M0","M1") & metadata$sample_type.samples != "metadata$sample_type.samples" & metadata$tissue_type.samples == "Tumor",]
+
+table(metadata$code) # no metastasis
+table(metadata$tissue_type.samples) # normal vs tumour
+table(metadata$sample_type.samples, metadata$ajcc_pathologic_m.diagnoses)
+
+data <- data[,metadata$sample]
+
+colnames(metadata)[1] <- "sampleID"
+```
+
+
+```{r}
+
+data
+metadata
+```
+
+
+
+
+##### Filtering
+
+```{r}
+# Plot
+(plt_beforefilt <- ggplot() + aes(x=log10(rowSums(data))) +
+   geom_density(fill="grey", alpha=0.5) + theme_bw() + 
+   theme(axis.text.x = element_text(angle = 45, hjust=1),
+         plot.title = element_text(hjust = 0.5),
+         plot.subtitle = element_text(hjust = 0.5)) +
+   ggtitle("Before Filtering") +
+   xlab(expression(log[10]~"(counts per gene)")) +
+   ylab("Frequency") + 
+   geom_vline(xintercept = 5.2, linetype="dotted",color = "black", size=1.5))
+
+```
+
+
+```{r}
+filtdata <- data[rowSums(data) > 10^5.2,]
+nrow(data)
+nrow(filtdata)
+
+
+cat("Number of genes before filtering:", nrow(data), "\n")
+cat("Number of genes after filtering:", nrow(filtdata), "\n")
+
+```
+
+
+```{r}
+
+# Plot
+(plt_afterfilt <- ggplot() + aes(x=log10(rowSums(filtdata))) +
+   geom_density(fill="grey", alpha=0.5) + theme_bw() + 
+   theme(axis.text.x = element_text(angle = 45, hjust=1),
+         plot.title = element_text(hjust = 0.5),
+         plot.subtitle = element_text(hjust = 0.5)) +
+   ggtitle("After Filtering") +
+   xlab(expression(log[10]~"(counts per gene)")) +
+   ylab("Frequency") )
+
+```
+
+
+
+##### Normalisation
+
+```{r fig.width=6, fig.height=4}
+
+# filtcounts_ggplot <- stack(log2(filtdata))
+# colnames(filtcounts_ggplot) <- c("expression", "sampleID")
+# filtcounts_ggplot <- merge(filtcounts_ggplot,metadata, by="sampleID")
+#   
+
+
+total_coverage <- colSums(filtdata)
+top50 <- names(sort(total_coverage, decreasing = TRUE)[1:50])
+bot50 <- names(sort(total_coverage)[1:50])
+selected_samples <- c(bot50, top50)
+
+filtdata_sub <- filtdata[, selected_samples]
+
+filtcounts_ggplot <- stack(log2(filtdata_sub))
+colnames(filtcounts_ggplot) <- c("expression", "sampleID")
+filtcounts_ggplot <- merge(filtcounts_ggplot, metadata, by = "sampleID")
+
+# order by total coverage
+filtcounts_ggplot$sampleID <- factor(filtcounts_ggplot$sampleID,
+                                     levels = names(sort(total_coverage[selected_samples])))
+
+(plt_beforenorm <- ggplot(filtcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(alpha=0.4, outlier.size = 0.5)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+    theme_bw()+ 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle("Before Normalisation") )
+
+```
+
+
+```{r}
+dgelist_normcounts <- DGEList(filtdata) # the matrix with gene names as row names and counts in columns
+dgelist_normcounts <- calcNormFactors(dgelist_normcounts, method = "TMM") 
+normalised_counts <- as.data.frame(voom(dgelist_normcounts,plot=F)$E) 
+#normalised_counts <- as.data.frame(edgeR::cpm(dgelist_normcounts, log = FALSE)) 
+normdata <- 2^normalised_counts
+lognormdata <- log2(normdata+1)
+```
+
+
+
+```{r fig.width=6, fig.height=4}
+
+total_coverage <- colSums(normdata)
+top50 <- names(sort(total_coverage, decreasing = TRUE)[1:50])
+bot50 <- names(sort(total_coverage)[1:50])
+selected_samples <- c(bot50, top50)
+
+normdata_sub <- normdata[, selected_samples]
+
+normcounts_ggplot <- stack(log2(normdata_sub))
+colnames(normcounts_ggplot) <- c("expression", "sampleID")
+normcounts_ggplot <- merge(normcounts_ggplot, metadata, by = "sampleID")
+
+# order by total coverage
+normcounts_ggplot$sampleID <- factor(normcounts_ggplot$sampleID,
+                                     levels = names(sort(total_coverage[selected_samples])))
+
+(plt_afternorm <- ggplot(normcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(alpha=0.4, outlier.size = 0.5)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+    theme_bw()+ 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle("After Normalisation") )
+
+```
+
+
+#### Calculate Scores
+
+
+```{r fig.width=4, fig.height=3}
+(dfscores <- CalculateScores(data = normdata, 
+                             metadata = metadata, 
+                             gene_sets = Ramaswamy_Metastasis,
+                             method = "logmedian")$Ramaswamy_Metastasis)
+
+met_colors <- c(
+  "M0"       = "#E07B54",
+  "M1" = "#5B8DB8" 
+)
+
+
+
+(plt_emt <- ggplot(dfscores, aes(x = ajcc_pathologic_m.diagnoses, y = score)) + 
+    geom_jitter(aes(color=ajcc_pathologic_m.diagnoses), width = 0.3, alpha = 1, size = 2) +
+    geom_violin(alpha = 0.5) +
+    stat_summary(fun = median, geom = "crossbar", width = 0.1, color = "black") + 
+    labs(x = NULL, y = expression(log[2]*"-median score")) +
+    theme_bw() +
+    theme(legend.position="none",
+          plot.title = element_text(hjust = 0.5, size = 14),
+          text = element_text(size = 14)) +
+    ggtitle("Ramaswamy EMT transition Gene Set\n in KIRC Primary Tumour Samples") +
+    scale_color_manual(values = met_colors))
+```
+
+
+### Proliferation | PANCAN
+
+meta-PCNA (Venet et al. 2011)
+```{r}
+metaPCNA <- list(metaPCNA = as.vector(fread("../data_aux/proliferationsignature_metaPCNA.txt",header=F))$V1)
+```
+
+https://xenabrowser.net/datapages/?dataset=EB%2B%2BAdjustPANCAN_IlluminaHiSeq_RNASeqV2.geneExp.xena&host=https%3A%2F%2Fpancanatlas.xenahubs.net&removeHub=https%3A%2F%2Fxena.treehouse.gi.ucsc.edu%3A443
+
+```{r}
+data <- as.data.frame(fread("../data_aux/EB++AdjustPANCAN_IlluminaHiSeq_RNASeqV2.geneExp.xena.csv"))
+# combine rows with same gene id by summing them
+data <- rowsum(data[, -1], group = data$sample)
+
+data <- 2^data - 1 # unlog...
+data
+
+```
+
+```{r}
+metadata <- as.data.frame(fread("../data_aux/Survival_SupplementalTable_S1_20171025_xena_sp.tsv"))
+metadata <- metadata[metadata$sample %in% colnames(data),]
+data <- data[,metadata$sample]
+```
+
+
+```{r}
+metadata$code <- sub(".*-", "", metadata$sample) 
+colnames(metadata)[1] <- "sampleID"
+metadata$sample_type <- ifelse(metadata$code == "11", "Normal", "Tumour")
+```
+
+
+```{r}
+data
+metadata
+```
+
+
+```{r}
+data <- na.omit(data)
+data <- data + 1 # some negative values, must be of batch correction
+```
+
+
+##### Filtering
+
+No need for filtering!! Distributions look good, data was processed & batch corrected before
+
+```{r}
+# Plot
+(plt_beforefilt <- ggplot() + aes(x=log10(rowSums(data))) +
+   geom_density(fill="grey", alpha=0.5) + theme_bw() + 
+   theme(axis.text.x = element_text(angle = 45, hjust=1),
+         plot.title = element_text(hjust = 0.5),
+         plot.subtitle = element_text(hjust = 0.5)) +
+   ggtitle("Before Filtering") +
+   xlab(expression(log[10]~"(counts per gene)")) +
+   ylab("Frequency") + 
+   geom_vline(xintercept = 5.2, linetype="dotted",color = "black", size=1.5))
+
+```
+
+
+<!-- ```{r} -->
+<!-- #filtdata <- data[rowSums(data) > 10^5.2,] -->
+<!-- filtdata <- data -->
+<!-- nrow(data) -->
+<!-- nrow(filtdata) -->
+
+
+<!-- cat("Number of genes before filtering:", nrow(data), "\n") -->
+<!-- cat("Number of genes after filtering:", nrow(filtdata), "\n") -->
+
+<!-- ``` -->
+
+
+<!-- ```{r} -->
+
+<!-- # Plot -->
+<!-- (plt_afterfilt <- ggplot() + aes(x=log10(rowSums(filtdata))) + -->
+<!--   geom_density(fill="grey", alpha=0.5) + theme_bw() +  -->
+<!--     theme(axis.text.x = element_text(angle = 45, hjust=1), -->
+<!--         plot.title = element_text(hjust = 0.5), -->
+<!--         plot.subtitle = element_text(hjust = 0.5)) + -->
+<!--   ggtitle("After Filtering") + -->
+<!--   xlab(expression(log[10]~"(counts per gene)")) + -->
+<!--   ylab("Frequency") ) -->
+
+<!-- ``` -->
+
+
+
+<!-- ##### Normalisation -->
+
+<!-- ```{r fig.width=6, fig.height=4} -->
+
+<!-- # filtcounts_ggplot <- stack(log2(filtdata)) -->
+<!-- # colnames(filtcounts_ggplot) <- c("expression", "sampleID") -->
+<!-- # filtcounts_ggplot <- merge(filtcounts_ggplot,metadata, by="sampleID") -->
+<!-- #    -->
+
+
+<!-- total_coverage <- colSums(filtdata) -->
+<!-- top50 <- names(sort(total_coverage, decreasing = TRUE)[1:50]) -->
+<!-- bot50 <- names(sort(total_coverage)[1:50]) -->
+<!-- selected_samples <- c(bot50, top50) -->
+
+<!-- filtdata_sub <- filtdata[, selected_samples] -->
+
+<!-- filtcounts_ggplot <- stack(log2(filtdata_sub)) -->
+<!-- colnames(filtcounts_ggplot) <- c("expression", "sampleID") -->
+<!-- filtcounts_ggplot <- merge(filtcounts_ggplot, metadata, by = "sampleID") -->
+
+<!-- # order by total coverage -->
+<!-- filtcounts_ggplot$sampleID <- factor(filtcounts_ggplot$sampleID, -->
+<!--                                       levels = names(sort(total_coverage[selected_samples]))) -->
+
+<!-- (plt_beforenorm <- ggplot(filtcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(alpha=0.4, outlier.size = 0.5)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+ -->
+<!--   theme_bw()+  -->
+<!--   theme(plot.title = element_text(hjust = 0.5), -->
+<!--         plot.subtitle = element_text(hjust = 0.5), -->
+<!--         axis.text.x=element_blank(), -->
+<!--         axis.ticks.x=element_blank()) + -->
+<!--   ggtitle("Before Normalisation") ) -->
+
+<!-- ``` -->
+
+
+<!-- ```{r} -->
+<!-- # dgelist_normcounts <- DGEList(filtdata) # the matrix with gene names as row names and counts in columns -->
+<!-- # dgelist_normcounts <- calcNormFactors(dgelist_normcounts, method = "TMM")  -->
+<!-- # normalised_counts <- as.data.frame(voom(dgelist_normcounts,plot=F)$E)  -->
+<!-- # #normalised_counts <- as.data.frame(edgeR::cpm(dgelist_normcounts, log = FALSE))  -->
+<!-- # normdata <- 2^normalised_counts -->
+<!-- # lognormdata <- log2(normdata+1) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- normdata <- filtdata -->
+<!-- ``` -->
+
+
+
+<!-- ```{r fig.width=6, fig.height=4} -->
+
+<!-- total_coverage <- colSums(normdata) -->
+<!-- top50 <- names(sort(total_coverage, decreasing = TRUE)[1:50]) -->
+<!-- bot50 <- names(sort(total_coverage)[1:50]) -->
+<!-- selected_samples <- c(bot50, top50) -->
+
+<!-- normdata_sub <- normdata[, selected_samples] -->
+
+<!-- normcounts_ggplot <- stack(log2(normdata_sub)) -->
+<!-- colnames(normcounts_ggplot) <- c("expression", "sampleID") -->
+<!-- normcounts_ggplot <- merge(normcounts_ggplot, metadata, by = "sampleID") -->
+
+<!-- # order by total coverage -->
+<!-- normcounts_ggplot$sampleID <- factor(normcounts_ggplot$sampleID, -->
+<!--                                       levels = names(sort(total_coverage[selected_samples]))) -->
+
+<!-- (plt_afternorm <- ggplot(normcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(alpha=0.4, outlier.size = 0.5)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+ -->
+<!--   theme_bw()+  -->
+<!--   theme(plot.title = element_text(hjust = 0.5), -->
+<!--         plot.subtitle = element_text(hjust = 0.5), -->
+<!--         axis.text.x=element_blank(), -->
+<!--         axis.ticks.x=element_blank()) + -->
+<!--   ggtitle("After Normalisation") ) -->
+
+<!-- ``` -->
+
+
+#### Calculate Scores
+
+```{r}
+#saveRDS(data,"../data_aux/data_PANCAN.rds")
+data_PANCAN <- readRDS("../data_aux/data_PANCAN.rds")
+#saveRDS(metadata,"../data_aux/metadata_PANCAN.rds")
+metadata_PANCAN <- readRDS("../data_aux/metadata_PANCAN.rds")
+```
+
+```{r fig.width=4, fig.height=3}
+(dfscores <- CalculateScores(data = data_PANCAN, 
+                             metadata = metadata_PANCAN, 
+                             gene_sets = metaPCNA,
+                             method = "logmedian")$metaPCNA)
+
+samptype_col <- c(
+  "Tumour" = "#C0392B",
+  "Normal" = "#2E86AB"
+)
+
+
+(plt_prol <- ggplot(dfscores, aes(x = sample_type, y = score, fill=sample_type)) + 
+    geom_jitter(color = "#DDDDDD", width = 0.3, alpha = 0.3, size = 0.5) +
+    geom_violin(alpha = 0.5) +
+    stat_summary(fun = median, geom = "crossbar", width = 0.1, color = "black") + 
+    labs(x = NULL, y = expression(log[2]*"-median score")) +
+    theme_bw() +
+    theme(legend.position="none",
+          plot.title = element_text(hjust = 0.5, size = 14),
+          text = element_text(size = 14)) +
+    ggtitle("Venet 2011 Proliferation Gene Set\n in TCGA PANCAN (Liu 2018)") +
+    scale_fill_manual(values = samptype_col))
+```
+```{r fig.width=4, fig.height=3}
+n_labels <- dfscores %>%
+  group_by(sample_type) %>%
+  summarise(n = n()) %>%
+  mutate(label = paste0(sample_type, "\n(n=", n, ")"))
+
+label_vec <- setNames(n_labels$label, n_labels$sample_type)
+
+(plt_prol <- ggplot(dfscores, aes(x = sample_type, y = score, fill = sample_type)) + 
+    geom_jitter(color = "#DDDDDD", width = 0.3, alpha = 0.3, size = 0.5) +
+    geom_violin(alpha = 0.5) +
+    stat_summary(fun = median, geom = "crossbar", width = 0.1, color = "black") + 
+    labs(x = NULL, y = expression(log[2]*"-median score")) +
+    theme_bw() +
+    theme(legend.position = "none",
+          plot.title = element_text(hjust = 0.5, size = 14),
+          text = element_text(size = 14)) +
+    ggtitle("Venet 2011 Proliferation Gene Set\n in TCGA PANCAN (Liu 2018)") +
+    scale_fill_manual(values = samptype_col) +
+    scale_x_discrete(labels = label_vec))
+```
+
+### Combine all
+
+```{r fig.width=12, fig.height=3.5}
+ggarrange(plt_ychromosomescores,
+          plt_viralrespiratory,
+          plt_prol, nrow=1, align = "hv")
+```
+
+
+## Comment 3.1 — Cell type composition as a confounder in GTEx age analyses
+
+R.: Estimate cell type proportions in the GTEx tissues highlighted in the main text using a reference-based deconvolution tool, and incorporate these estimates as covariates in the age–score association models. Results with and without compositional correction are compared for a subset of tissues, both those with and without significant age associations in the original analysis.
+
+
+
+## Comment 1.5 — Additional datasets for age correlation analysis
+
+R.: Apply markeR's discovery mode to one or more datasets independent of GTEx, modelling age as a continuous variable, to assess whether age-associated senescence signals are reproducible across transcriptomic resources and pointed limitations are correct. 
+
+## Session Info
+```{r}
+sessionInfo()
+```
