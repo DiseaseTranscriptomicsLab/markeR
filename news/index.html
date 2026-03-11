@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">markeR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,6 +44,15 @@
       <small>Source: <a href="https://github.com/DiseaseTranscriptomicsLab/markeR/blob/default/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.1.1" id="marker-111-11-mar-2026">markeR 1.1.1 (11 Mar, 2026)<a class="anchor" aria-label="anchor" href="#marker-111-11-mar-2026"></a></h2>
+<ul><li>Added <code>p.adjust.method</code> parameter across all functions performing or depending on multiple testing correction, allowing users to specify any correction method supported by <code><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">stats::p.adjust()</a></code>, beyond the default Benjamini-Hochberg FDR.</li>
+<li>Added Python bridge scripts in <code>inst/python/</code> for users who wish to call markeR from a Python environment via <code>rpy2</code>. Includes a tutorial workflow script and a generic command-line wrapper capable of invoking any exported markeR function. See <code>inst/python/README.md</code> for installation and usage.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.0" id="marker-100-31-oct-2025">markeR 1.0.0 (31 Oct, 2025)<a class="anchor" aria-label="anchor" href="#marker-100-31-oct-2025"></a></h2>
+<ul><li>Official Bioconductor Release.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.99.5" id="marker-0995-17-sep-2025">markeR 0.99.5 (17 Sep, 2025)<a class="anchor" aria-label="anchor" href="#marker-0995-17-sep-2025"></a></h2>
 <ul><li>Minor fix in <code>.onAttach()</code> to avoid errors when checking <code>ggplot2</code> version and ensure the startup warning works correctly.</li>
@@ -168,7 +177,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer></div>

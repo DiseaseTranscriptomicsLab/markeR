@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">markeR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,7 +76,7 @@
                         <h4 data-toc-skip class="author">Rita M.
 Silva</h4>
             
-            <h4 data-toc-skip class="date">2025-10-31</h4>
+            <h4 data-toc-skip class="date">2026-03-11</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/DiseaseTranscriptomicsLab/markeR/blob/default/vignettes/markeR.Rmd" class="external-link"><code>vignettes/markeR.Rmd</code></a></small>
       <div class="d-none name"><code>markeR.Rmd</code></div>
@@ -532,11 +532,11 @@ the online tutorial <a href="https://diseasetranscriptomicslab.github.io/markeR/
 <span><span class="co">## 1:              HernandezSegura 7.942215e-10 2.382665e-09 0.8012156 0.6263553</span></span>
 <span><span class="co">## 2: REACTOME_CELLULAR_SENESCENCE 1.575684e-02 2.363525e-02 0.1151671 0.3687292</span></span>
 <span><span class="co">## 3:            LiteratureMarkers 2.571070e-02 2.571070e-02 0.1295475 0.6948634</span></span>
-<span><span class="co">##         NES  size  leadingEdge stat_used</span></span>
-<span><span class="co">##       &lt;num&gt; &lt;int&gt;       &lt;list&gt;    &lt;char&gt;</span></span>
-<span><span class="co">## 1: 2.639526    52 CNTLN, D....         t</span></span>
-<span><span class="co">## 2: 1.450470   128 H1-2, H2....         B</span></span>
-<span><span class="co">## 3: 1.648484     7 LMNB1, M....         t</span></span></code></pre>
+<span><span class="co">##         NES  size                                    leadingEdge stat_used</span></span>
+<span><span class="co">##       &lt;num&gt; &lt;int&gt;                                         &lt;list&gt;    &lt;char&gt;</span></span>
+<span><span class="co">## 1: 2.639526    52 CNTLN,DYNLT3,SLC10A3,CCND1,TOLLIP,DDA1,...[37]         t</span></span>
+<span><span class="co">## 2: 1.450470   128   H1-2,H2BC4,H2BC5,H4C15,IGFBP7,H2BC12,...[31]         B</span></span>
+<span><span class="co">## 3: 1.648484     7            LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t</span></span></code></pre>
 <p>Enrichment curves from <code>fgsea</code> show the running enrichment
 score across the ranked list, indicating the distribution of set members
 therein.</p>
@@ -565,7 +565,7 @@ plot for a simpler visualisation, using
 <span>                widthlabels<span class="op">=</span><span class="fl">13</span>, </span>
 <span>                title<span class="op">=</span><span class="cn">NULL</span>, titlesize<span class="op">=</span><span class="fl">12</span><span class="op">)</span> </span></code></pre></div>
 <pre><code><span><span class="co">## $`Senescent-Proliferative`</span></span></code></pre>
-<p><img src="markeR_files/figure-html/GSEA_lollypop-1.png" width="60%"></p>
+<p><img src="markeR_files/figure-html/GSEA_lollypop-1.png" class="r-plt" alt="" width="60%"></p>
 <p>From this exercise in Benchmarking Mode, we can see that two gene
 sets clearly perform best at discriminating between Senescent and
 Proliferative conditions: HernandezSegura and LiteratureMarkers. The
@@ -660,7 +660,7 @@ and results from the Benchmarking Mode.</p>
 <span>  titlesize <span class="op">=</span> <span class="fl">14</span>,</span>
 <span>  pointSize <span class="op">=</span> <span class="fl">5</span></span>
 <span><span class="op">)</span> <span class="op">$</span><span class="va">plot</span></span></code></pre></div>
-<p><img src="markeR_files/figure-html/GSEA_varassoc-1.png" width="70%"><img src="markeR_files/figure-html/GSEA_varassoc-2.png" width="70%"></p>
+<p><img src="markeR_files/figure-html/GSEA_varassoc-1.png" class="r-plt" alt="" width="70%"><img src="markeR_files/figure-html/GSEA_varassoc-2.png" class="r-plt" alt="" width="70%"></p>
 <p>Alternatively, <strong>score-based methods</strong> provide a
 per-sample metric of gene set activity, which can then be summarised
 across variables. Here, we compute log2-median scores. The
@@ -680,7 +680,7 @@ approaches in a complementary manner.</p>
 <span>                    nonsignif_color <span class="op">=</span> <span class="st">"white"</span>, signif_color <span class="op">=</span> <span class="st">"red"</span>, saturation_value<span class="op">=</span><span class="cn">NULL</span>,sig_threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>                    widthlabels<span class="op">=</span><span class="fl">30</span>, labsize<span class="op">=</span><span class="fl">10</span>, titlesize<span class="op">=</span><span class="fl">14</span>, pointSize<span class="op">=</span><span class="fl">5</span>, discrete_colors<span class="op">=</span><span class="cn">NULL</span>,</span>
 <span>                    continuous_color <span class="op">=</span> <span class="st">"#8C6D03"</span>, color_palette <span class="op">=</span> <span class="st">"Set2"</span><span class="op">)</span><span class="op">$</span><span class="va">Overall</span> </span></code></pre></div>
-<p><img src="markeR_files/figure-html/variableassoc_score_sen-1.png" width="70%"></p>
+<p><img src="markeR_files/figure-html/variableassoc_score_sen-1.png" class="r-plt" alt="" width="70%"></p>
 <pre><code><span><span class="co">##           Variable    Cohen_f      P_Value</span></span>
 <span><span class="co">## 1        Condition 1.19407625 1.267423e-08</span></span>
 <span><span class="co">## 2       Researcher 0.12816159 7.458318e-01</span></span>
@@ -800,7 +800,7 @@ Email: <a href="mailto:rita.silva@medicina.ulisboa.pt">rita.silva@medicina.ulisb
 </h2>
 <div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## R version 4.5.1 (2025-06-13)</span></span>
+<pre><code><span><span class="co">## R version 4.5.2 (2025-10-31)</span></span>
 <span><span class="co">## Platform: x86_64-pc-linux-gnu</span></span>
 <span><span class="co">## Running under: Ubuntu 24.04.3 LTS</span></span>
 <span><span class="co">## </span></span>
@@ -821,46 +821,46 @@ Email: <a href="mailto:rita.silva@medicina.ulisboa.pt">rita.silva@medicina.ulisb
 <span><span class="co">## [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## other attached packages:</span></span>
-<span><span class="co">## [1] markeR_1.1.0     BiocStyle_2.38.0</span></span>
+<span><span class="co">## [1] markeR_1.1.1     BiocStyle_2.38.0</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## loaded via a namespace (and not attached):</span></span>
-<span><span class="co">##   [1] pROC_1.19.0.1         gridExtra_2.3         rlang_1.1.6          </span></span>
-<span><span class="co">##   [4] magrittr_2.0.4        clue_0.3-66           GetoptLong_1.0.5     </span></span>
-<span><span class="co">##   [7] msigdbr_25.1.1        matrixStats_1.5.0     compiler_4.5.1       </span></span>
-<span><span class="co">##  [10] mgcv_1.9-3            png_0.1-8             systemfonts_1.3.1    </span></span>
-<span><span class="co">##  [13] vctrs_0.6.5           reshape2_1.4.4        stringr_1.5.2        </span></span>
-<span><span class="co">##  [16] pkgconfig_2.0.3       shape_1.4.6.1         crayon_1.5.3         </span></span>
-<span><span class="co">##  [19] fastmap_1.2.0         backports_1.5.0       labeling_0.4.3       </span></span>
-<span><span class="co">##  [22] effectsize_1.0.1      rmarkdown_2.30        ragg_1.5.0           </span></span>
-<span><span class="co">##  [25] purrr_1.1.0           xfun_0.54             cachem_1.1.0         </span></span>
-<span><span class="co">##  [28] jsonlite_2.0.0        BiocParallel_1.44.0   broom_1.0.10         </span></span>
-<span><span class="co">##  [31] parallel_4.5.1        cluster_2.1.8.1       R6_2.6.1             </span></span>
-<span><span class="co">##  [34] stringi_1.8.7         bslib_0.9.0           RColorBrewer_1.1-3   </span></span>
-<span><span class="co">##  [37] limma_3.66.0          car_3.1-3             jquerylib_0.1.4      </span></span>
-<span><span class="co">##  [40] Rcpp_1.1.0            bookdown_0.45         assertthat_0.2.1     </span></span>
-<span><span class="co">##  [43] iterators_1.0.14      knitr_1.50            parameters_0.28.2    </span></span>
-<span><span class="co">##  [46] IRanges_2.44.0        splines_4.5.1         Matrix_1.7-3         </span></span>
-<span><span class="co">##  [49] tidyselect_1.2.1      abind_1.4-8           yaml_2.3.10          </span></span>
-<span><span class="co">##  [52] doParallel_1.0.17     codetools_0.2-20      curl_7.0.0           </span></span>
-<span><span class="co">##  [55] lattice_0.22-7        tibble_3.3.0          plyr_1.8.9           </span></span>
-<span><span class="co">##  [58] withr_3.0.2           bayestestR_0.17.0     S7_0.2.0             </span></span>
-<span><span class="co">##  [61] evaluate_1.0.5        desc_1.4.3            circlize_0.4.16      </span></span>
-<span><span class="co">##  [64] pillar_1.11.1         BiocManager_1.30.26   ggpubr_0.6.2         </span></span>
-<span><span class="co">##  [67] carData_3.0-5         foreach_1.5.2         stats4_4.5.1         </span></span>
-<span><span class="co">##  [70] insight_1.4.2         generics_0.1.4        S4Vectors_0.48.0     </span></span>
-<span><span class="co">##  [73] ggplot2_4.0.0         scales_1.4.0          glue_1.8.0           </span></span>
-<span><span class="co">##  [76] tools_4.5.1           data.table_1.17.8     fgsea_1.36.0         </span></span>
-<span><span class="co">##  [79] locfit_1.5-9.12       ggsignif_0.6.4        babelgene_22.9       </span></span>
-<span><span class="co">##  [82] fs_1.6.6              fastmatch_1.1-6       cowplot_1.2.0        </span></span>
-<span><span class="co">##  [85] grid_4.5.1            tidyr_1.3.1           datawizard_1.3.0     </span></span>
-<span><span class="co">##  [88] edgeR_4.8.0           colorspace_2.1-2      nlme_3.1-168         </span></span>
-<span><span class="co">##  [91] Formula_1.2-5         cli_3.6.5             textshaping_1.0.4    </span></span>
-<span><span class="co">##  [94] ComplexHeatmap_2.26.0 dplyr_1.1.4           gtable_0.3.6         </span></span>
-<span><span class="co">##  [97] ggh4x_0.3.1           rstatix_0.7.3         sass_0.4.10          </span></span>
-<span><span class="co">## [100] digest_0.6.37         BiocGenerics_0.56.0   ggrepel_0.9.6        </span></span>
-<span><span class="co">## [103] rjson_0.2.23          htmlwidgets_1.6.4     farver_2.1.2         </span></span>
-<span><span class="co">## [106] htmltools_0.5.8.1     pkgdown_2.1.3         lifecycle_1.0.4      </span></span>
-<span><span class="co">## [109] GlobalOptions_0.1.2   statmod_1.5.1</span></span></code></pre>
+<span><span class="co">##   [1] pROC_1.19.0.1         gridExtra_2.3         rlang_1.1.7          </span></span>
+<span><span class="co">##   [4] magrittr_2.0.4        clue_0.3-67           GetoptLong_1.1.0     </span></span>
+<span><span class="co">##   [7] msigdbr_25.1.1        otel_0.2.0            matrixStats_1.5.0    </span></span>
+<span><span class="co">##  [10] compiler_4.5.2        mgcv_1.9-3            reshape2_1.4.5       </span></span>
+<span><span class="co">##  [13] png_0.1-8             systemfonts_1.3.2     vctrs_0.7.1          </span></span>
+<span><span class="co">##  [16] stringr_1.6.0         pkgconfig_2.0.3       shape_1.4.6.1        </span></span>
+<span><span class="co">##  [19] crayon_1.5.3          fastmap_1.2.0         backports_1.5.0      </span></span>
+<span><span class="co">##  [22] labeling_0.4.3        effectsize_1.0.2      rmarkdown_2.30       </span></span>
+<span><span class="co">##  [25] ragg_1.5.1            purrr_1.2.1           xfun_0.56            </span></span>
+<span><span class="co">##  [28] cachem_1.1.0          jsonlite_2.0.0        BiocParallel_1.44.0  </span></span>
+<span><span class="co">##  [31] broom_1.0.12          parallel_4.5.2        cluster_2.1.8.1      </span></span>
+<span><span class="co">##  [34] R6_2.6.1              stringi_1.8.7         bslib_0.10.0         </span></span>
+<span><span class="co">##  [37] RColorBrewer_1.1-3    limma_3.66.0          car_3.1-5            </span></span>
+<span><span class="co">##  [40] jquerylib_0.1.4       Rcpp_1.1.1            bookdown_0.46        </span></span>
+<span><span class="co">##  [43] assertthat_0.2.1      iterators_1.0.14      knitr_1.51           </span></span>
+<span><span class="co">##  [46] parameters_0.28.3     IRanges_2.44.0        splines_4.5.2        </span></span>
+<span><span class="co">##  [49] Matrix_1.7-4          tidyselect_1.2.1      abind_1.4-8          </span></span>
+<span><span class="co">##  [52] yaml_2.3.12           doParallel_1.0.17     codetools_0.2-20     </span></span>
+<span><span class="co">##  [55] curl_7.0.0            plyr_1.8.9            lattice_0.22-7       </span></span>
+<span><span class="co">##  [58] tibble_3.3.1          withr_3.0.2           bayestestR_0.17.0    </span></span>
+<span><span class="co">##  [61] S7_0.2.1              evaluate_1.0.5        desc_1.4.3           </span></span>
+<span><span class="co">##  [64] circlize_0.4.17       pillar_1.11.1         BiocManager_1.30.27  </span></span>
+<span><span class="co">##  [67] ggpubr_0.6.3          carData_3.0-6         foreach_1.5.2        </span></span>
+<span><span class="co">##  [70] stats4_4.5.2          insight_1.4.6         generics_0.1.4       </span></span>
+<span><span class="co">##  [73] S4Vectors_0.48.0      ggplot2_4.0.2         scales_1.4.0         </span></span>
+<span><span class="co">##  [76] glue_1.8.0            tools_4.5.2           data.table_1.18.2.1  </span></span>
+<span><span class="co">##  [79] fgsea_1.36.2          locfit_1.5-9.12       ggsignif_0.6.4       </span></span>
+<span><span class="co">##  [82] babelgene_22.9        fs_1.6.7              fastmatch_1.1-8      </span></span>
+<span><span class="co">##  [85] cowplot_1.2.0         grid_4.5.2            tidyr_1.3.2          </span></span>
+<span><span class="co">##  [88] datawizard_1.3.0      edgeR_4.8.2           colorspace_2.1-2     </span></span>
+<span><span class="co">##  [91] nlme_3.1-168          Formula_1.2-5         cli_3.6.5            </span></span>
+<span><span class="co">##  [94] textshaping_1.0.5     ComplexHeatmap_2.26.1 dplyr_1.2.0          </span></span>
+<span><span class="co">##  [97] gtable_0.3.6          ggh4x_0.3.1           rstatix_0.7.3        </span></span>
+<span><span class="co">## [100] sass_0.4.10           digest_0.6.39         BiocGenerics_0.56.0  </span></span>
+<span><span class="co">## [103] ggrepel_0.9.7         rjson_0.2.23          htmlwidgets_1.6.4    </span></span>
+<span><span class="co">## [106] farver_2.1.2          htmltools_0.5.9       pkgdown_2.2.0        </span></span>
+<span><span class="co">## [109] lifecycle_1.0.5       GlobalOptions_0.1.3   statmod_1.5.1</span></span></code></pre>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
@@ -873,7 +873,7 @@ Email: <a href="mailto:rita.silva@medicina.ulisboa.pt">rita.silva@medicina.ulisb
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer>

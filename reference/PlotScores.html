@@ -11,7 +11,7 @@ plots depending on inputs."><meta property="og:image" content="https://diseasetr
 
     <a class="navbar-brand me-2" href="../index.html">markeR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -84,7 +84,8 @@ plots depending on inputs.</p>
 <span>  sig_threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>  cohen_threshold <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  colorPalette <span class="op">=</span> <span class="st">"Set3"</span>,</span>
-<span>  cor <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pearson"</span>, <span class="st">"spearman"</span>, <span class="st">"kendall"</span><span class="op">)</span></span>
+<span>  cor <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pearson"</span>, <span class="st">"spearman"</span>, <span class="st">"kendall"</span><span class="op">)</span>,</span>
+<span>  p.adjust.method <span class="op">=</span> <span class="st">"BH"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -265,6 +266,14 @@ is manually specified.</p></dd>
 (default), <code>"spearman"</code>, or <code>"kendall"</code>. Only applies when the variable is
 numeric and <code>method != "all"</code>.</p></dd>
 
+
+<dt id="arg-p-adjust-method">p.adjust.method<a class="anchor" aria-label="anchor" href="#arg-p-adjust-method"></a></dt>
+<dd><p>Character string specifying the method to use for
+multiple testing correction. Must be one of <code>"BH"</code> (Benjamini-Hochberg,
+default), <code>"holm"</code>, <code>"hommel"</code>, <code>"bonferroni"</code>,
+<code>"BY"</code> (Benjamini-Yekutieli), <code>"fdr"</code>, or <code>"none"</code>.
+Passed to <code><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">p.adjust</a></code>. Only if <code>method == "all"</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -440,7 +449,7 @@ from <code>ColorValues</code>).</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer></div>
