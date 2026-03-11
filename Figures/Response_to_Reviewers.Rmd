@@ -2360,6 +2360,129 @@ ggplot2::ggsave("Figures/Figs/R3_1_CellTypeComposition.pdf",
                 plot_all,
                 width = 7, height=11, bg = 'white')
 ```
+
+```{r}
+df_null <- readRDS("Comment3_1/null_NES_permutations_simpler_1000perms.rds")
+```
+
+ 
+```{r fig.width=7, fig.height=11}
+# -----------------------------------------------------------------------------
+# Compute percentiles of observed NES within the null distribution
+# -----------------------------------------------------------------------------
+
+null_plot_df <- df_null %>%
+  mutate(tissue = factor(tissue, levels = tissue_order))
+
+percentile_df <- plot_df %>%
+  left_join(
+    null_plot_df %>%
+      group_by(tissue) %>%
+      summarise(null_vals = list(NES), .groups = "drop"),
+    by = "tissue"
+  ) %>%
+  rowwise() %>%
+  mutate(
+    percentile       = round(mean(unlist(null_vals) < NES) * 100, 1),  # signed
+    percentile_label = paste0(percentile, "%")
+  ) %>%
+  ungroup()
+
+
+# determine label side per tissue based on relative NES positions
+# determine which model is left/right per tissue
+label_sides <- percentile_df %>%
+  dplyr::select(tissue, model, NES) %>%
+  pivot_wider(names_from = model, values_from = NES) %>%
+  mutate(
+    nudge_noncorrected = ifelse(`Non-corrected` <= Corrected, -0.15,  0.15),
+    hjust_noncorrected = ifelse(`Non-corrected` <= Corrected,  1,     0),
+    nudge_corrected    = ifelse(`Non-corrected` <= Corrected,  0.15, -0.15),
+    hjust_corrected    = ifelse(`Non-corrected` <= Corrected,  0,     1)
+  ) %>%
+  dplyr::select(tissue, nudge_noncorrected, hjust_noncorrected,
+                nudge_corrected, hjust_corrected)
+
+percentile_df <- percentile_df %>%
+  left_join(label_sides, by = "tissue") %>%
+  mutate(
+    percentile_label = format(round(percentile, 1), nsmall = 1),
+    nudge_x = ifelse(model == "Non-corrected", nudge_noncorrected, nudge_corrected),
+    hjust   = ifelse(model == "Non-corrected", hjust_noncorrected, hjust_corrected)
+  )
+
+# -----------------------------------------------------------------------------
+# Plot
+# -----------------------------------------------------------------------------
+plot_all <- ggplot() +
+  geom_jitter(data  = null_plot_df,
+              aes(x = NES, y = tissue, group = tissue),
+              fill  = "grey85", colour = "grey70", size = 0.1) +
+  geom_violin(data      = null_plot_df,
+              aes(x     = NES, y = tissue, group = tissue),
+              fill      = "grey85", colour = "grey70",
+              alpha     = 0.7, linewidth = 0.3,
+              scale     = "width", width = 0.7) +
+  geom_vline(xintercept = 0, linetype = "dashed",
+             colour = "grey50", linewidth = 0.4) +
+  # geom_line(data = plot_df,
+  #           aes(x = NES, y = tissue, group = tissue),
+  #           colour = "grey75", linewidth = 0.5) +
+  geom_point(data = plot_df,
+             aes(x = NES, y = tissue, colour = model, shape = sig),
+             size = 3, stroke = 1.2, fill = "white") +
+geom_text(data     = percentile_df %>% filter(model == "Non-corrected"),
+          aes(x    = NES + nudge_x, y = tissue, label = percentile_label,
+              hjust = hjust),
+          size     = 2.5,
+          fontface = "bold",
+          colour   = "#2171b5") +
+geom_text(data     = percentile_df %>% filter(model == "Corrected"),
+          aes(x    = NES + nudge_x, y = tissue, label = percentile_label,
+              hjust = hjust),
+          size     = 2.5,
+          fontface = "bold",
+          colour   = "#cb181d") +
+  scale_shape_manual(
+    values = c("FALSE" = 21, "TRUE"  = 19),
+    labels = c("FALSE" = "FDR > 0.05", "TRUE" = "FDR \u2264 0.05"),
+    name   = NULL
+  ) +
+  scale_colour_manual(values = model_colours, name = "Model") +
+  #scale_x_continuous(limits = c(-3.8, 3.8)) +
+  labs(
+    x        = "Normalised Enrichment Score (NES)",
+    y        = NULL,
+    title    = "HernandezSegura Age-Enrichment \nacross GTEx tissues",
+    subtitle = "Non-corrected vs. cell composition-corrected\nPercentiles shown relative to null distribution"
+  ) +
+  theme_bw(13) +
+  theme(
+    strip.background  = element_rect(fill = "grey92"),
+    strip.text.y      = element_text(angle = 90, vjust = 0.5),
+    legend.position   = "bottom",
+    axis.text.y       = element_text(size = 11),
+    plot.caption      = element_text(size = 8, colour = "grey40",
+                                     hjust = 0, margin = margin(t = 6)),
+    legend.title      = element_blank(),
+    legend.box        = "vertical",
+    legend.spacing.y  = unit(0, "pt")
+  )
+
+plot_all
+```
+
+
+```{r}
+ggplot2::ggsave("Figures/Figs/R3_1_CellTypeComposition.png",
+                plot_all,
+                width = 8, height=11, bg = 'white')
+
+ggplot2::ggsave("Figures/Figs/R3_1_CellTypeComposition.pdf",
+                plot_all,
+                width = 7, height=11, bg = 'white')
+```
+
 ## Comment 1.5 — Additional datasets for age correlation analysis
 
 R.: Apply markeR's discovery mode to one or more datasets independent of GTEx, modelling age as a continuous variable, to assess whether age-associated senescence signals are reproducible across transcriptomic resources and pointed limitations are correct. 
