@@ -1,12 +1,9 @@
-# markeR 1.1.0 (11 Mar, 2026) 
-
-- Added `p.adjust.method` parameter to `runGSEA()`, `VariableAssociation()`,  `Heatmap_Cohen()`,
-
-
-enabling selection of
-  alternative multiple testing correction methods beyond the default
-  Benjamini-Hochberg FDR, including Holm-Bonferroni, Hommel, and
-  Benjamini-Yekutieli procedures.
+# markeR 1.1.1 (11 Mar, 2026) 
+ 
+  - Added `p.adjust.method` parameter across all functions performing or
+  depending on multiple testing correction, allowing users to specify
+  any correction method supported by `stats::p.adjust()`, beyond the default 
+  Benjamini-Hochberg FDR.
 - Added Python bridge scripts in `inst/python/` for users who wish to call
   markeR from a Python environment via `rpy2`. Includes a tutorial workflow
   script and a generic command-line wrapper capable of invoking any exported
