@@ -31,7 +31,8 @@ PlotScores(
   sig_threshold = 0.05,
   cohen_threshold = 0.5,
   colorPalette = "Set3",
-  cor = c("pearson", "spearman", "kendall")
+  cor = c("pearson", "spearman", "kendall"),
+  p.adjust.method = "BH"
 )
 }
 \arguments{
@@ -169,6 +170,12 @@ is manually specified.}
 \item{cor}{Correlation method for numeric variables. One of \code{"pearson"}
 (default), \code{"spearman"}, or \code{"kendall"}. Only applies when the variable is
 numeric and \code{method != "all"}.}
+
+\item{p.adjust.method}{Character string specifying the method to use for
+multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+\code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+Passed to \code{\link[stats]{p.adjust}}. Only if \code{method == "all"}.}
 }
 \value{
 Depending on \code{method}:

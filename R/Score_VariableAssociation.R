@@ -161,7 +161,12 @@ create_contrast_column <- function(metadata, variable_name, contrast) {
 #' @param color_palette A string specifying the color palette for discrete
 #' variables. Default: `"Set2"`.
 #' @param printplt Boolean specifying if plot is to be printed. Default: `TRUE`.
-#'
+#' @param p.adjust.method Character string specifying the method to use for
+#'   multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+#'   default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+#'   \code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+#'   Passed to \code{\link[stats]{p.adjust}}. 
+#'   
 #' @return A list with:
 #'   - `Overall`: Data frame of effect sizes and p-values for each contrasted
 #'   phenotypic variable.
@@ -207,7 +212,8 @@ Score_VariableAssociation <- function(data,
                                       discrete_colors=NULL,
                                       continuous_color = "#8C6D03",
                                       color_palette = "Set2",
-                                      printplt =TRUE){
+                                      printplt =TRUE, 
+                                      p.adjust.method = "BH"){
   method <- match.arg(method)  # Validate method input
   mode <- match.arg(mode)
   data <- as.data.frame(data) # Ensure data is a data frame
@@ -296,8 +302,7 @@ Score_VariableAssociation <- function(data,
   # Would happen if we have only numeric variables
   if (nrow(df_results_contrast)!=0){
 
-    df_results_contrast$padj <- stats::p.adjust(df_results_contrast$PValue,
-                                         method = "BH")
+    df_results_contrast$padj <- stats::p.adjust(df_results_contrast$PValue,  method = p.adjust.method)
 
     if(is.null(saturation_value)){
       if (min(df_results_contrast$padj)>sig_threshold){

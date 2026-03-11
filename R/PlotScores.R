@@ -114,7 +114,12 @@ utils::globalVariables(c("score"))
 #' @param cor Correlation method for numeric variables. One of `"pearson"`
 #'   (default), `"spearman"`, or `"kendall"`. Only applies when the variable is
 #'   numeric and `method != "all"`.
-#'
+#' @param p.adjust.method Character string specifying the method to use for
+#'   multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+#'   default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+#'   \code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+#'   Passed to \code{\link[stats]{p.adjust}}. Only if `method == "all"`.
+#'   
 #' @return Depending on `method`:
 #'
 #'   If `method = "all"`, returns a list with `heatmap` and `volcano` ggplot objects.
@@ -241,7 +246,8 @@ PlotScores <- function(data, metadata, gene_sets,
                        cond_cohend = NULL, pvalcalc = FALSE,
                        mode = c("simple","medium","extensive"),
                        widthlegend=22, sig_threshold=0.05, cohen_threshold=0.5,
-                       colorPalette="Set3", cor=c("pearson","spearman","kendall")) {
+                       colorPalette="Set3", cor=c("pearson","spearman","kendall"),
+                       p.adjust.method="BH") {
   data <- as.data.frame(data) # Ensure data is a data frame
   method <- match.arg(method)
   mode <- match.arg(mode)
@@ -254,13 +260,13 @@ PlotScores <- function(data, metadata, gene_sets,
     if (type =="Numeric"){
 
       cohenlist <- CohenF_allConditions(data = data, metadata = metadata,
-                                        gene_sets = gene_sets, variable = Variable )
+                                        gene_sets = gene_sets, variable = Variable, p.adjust.method = p.adjust.method )
 
     } else {
 
       cohenlist <- CohenD_allConditions(data = data, metadata = metadata,
                                         gene_sets = gene_sets, variable = Variable,
-                                        mode = mode)
+                                        mode = mode, p.adjust.method = p.adjust.method )
 
     }
 

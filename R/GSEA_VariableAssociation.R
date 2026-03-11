@@ -57,7 +57,12 @@
 #'   removed before analysis, leading to a loss of data to be fitted in the
 #'   model.
 #' @param printplt Boolean specifying if plot is to be printed. Default: `TRUE`.
-#'
+#' @param p.adjust.method Character string specifying the method to use for
+#'   multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+#'   default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+#'   \code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+#'   Passed to \code{\link[stats]{p.adjust}}. 
+#'   
 #' @return A list with two elements:
 #'   - `data`: A data frame containing the GSEA results, including normalized
 #'   enrichment scores (NES), adjusted p-values, and contrasts.
@@ -70,7 +75,8 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL,
                                      signif_color = "red", saturation_value=NULL,
                                      sig_threshold = 0.05, widthlabels=18,
                                      labsize=10, titlesize=14, pointSize=5,
-                                     ignore_NAs = FALSE, printplt =TRUE) {
+                                     ignore_NAs = FALSE, printplt =TRUE,
+                                     p.adjust.method = "BH") {
   data <- as.data.frame(data) # Ensure data is a data frame
   mode <- match.arg(mode)
   metadata <- metadata[, cols %in% colnames(metadata), drop = FALSE]
@@ -129,7 +135,7 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL,
   combined_results$Contrast <- cont_vec
 
   # correct adjusted p value to correct for multiple testing for the contrasts?
-  combined_results$padj <- stats::p.adjust(combined_results$padj, method = "BH")
+  combined_results$padj <- stats::p.adjust(combined_results$padj, method = p.adjust.method)
 
 
   combined_results_toreturn <- combined_results

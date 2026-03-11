@@ -4,7 +4,13 @@
 \alias{CohenF_allConditions}
 \title{Compute Cohen's f for All Gene Signatures Across a Categorical Variable}
 \usage{
-CohenF_allConditions(data, metadata, gene_sets, variable)
+CohenF_allConditions(
+  data,
+  metadata,
+  gene_sets,
+  variable,
+  p.adjust.method = "BH"
+)
 }
 \arguments{
 \item{data}{A data frame of gene expression data, with genes as rows and
@@ -21,6 +27,12 @@ downregulated).}
 
 \item{variable}{A string specifying the categorical variable in
 \code{metadata} used to model the gene signature scores.}
+
+\item{p.adjust.method}{Character string specifying the method to use for
+multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+\code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+Passed to \code{\link[stats]{p.adjust}}.}
 }
 \value{
 A named list where each element corresponds to a gene signature. Each

@@ -96,7 +96,12 @@ identify_variable_type <- function(df, cols = NULL) {
 #' @param categorical_multi The statistical test for multi-level categorical
 #' variables.
 #'   Options: `"anova"` (default) or `"kruskal-wallis"`.
-#'
+#' @param p.adjust.method Character string specifying the method to use for
+#'   multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+#'   default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+#'   \code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+#'   Passed to \code{\link[stats]{p.adjust}}. 
+#'   
 #' @return A named list (one entry per variable being analysed) where each
 #' element is a data frame with:
 #'   - **Metric**: The test statistic (correlation coefficient, t-statistic,
@@ -130,7 +135,7 @@ identify_variable_type <- function(df, cols = NULL) {
 compute_stat_tests <- function(df, target_var, cols = NULL,
                                numeric = "pearson",
                                categorical_bin = "t.test",
-                               categorical_multi = "anova") {
+                               categorical_multi = "anova", p.adjust.method="BH") {
 
   # Ensure only one method is selected per variable type
   if (length(numeric) > 1 | length(categorical_bin) > 1 |
@@ -202,7 +207,7 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
     # scientific notation
     test_df$metric <- formatC(test_df$metric, format = "e", digits = 2)
     # correct for multiple testing per variable
-    test_df$p_value <- stats::p.adjust(test_df$p_value, method = "BH")
+    test_df$p_value <- stats::p.adjust(test_df$p_value,  method = p.adjust.method)
     test_df$p_value <- formatC(test_df$p_value, format = "e", digits = 3)
 
 
@@ -267,7 +272,12 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
 #' (`"B"` or `"t"`). Auto-detected if `NULL`.
 #' @param ignore_NAs (GSEA only) Logical. If `TRUE`, rows with NA metadata are
 #' removed. Default: `FALSE`.
-#'
+#' @param p.adjust.method Character string specifying the method to use for
+#'   multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+#'   default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+#'   \code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+#'   Passed to \code{\link[stats]{p.adjust}}. 
+#'   
 #' @return A list with method-specific results and ggplot2-based visualizations:
 #'
 #' **For score-based methods (`logmedian`, `ssGSEA`, `ranking`):**
@@ -355,7 +365,8 @@ VariableAssociation <- function(method = c("ssGSEA", "logmedian",
                                 discrete_colors = NULL,
                                 continuous_color = "#8C6D03",
                                 color_palette = "Set2",
-                                printplt = TRUE) {
+                                printplt = TRUE, 
+                                p.adjust.method = "BH") {
   method <- match.arg(method)
   mode <- match.arg(mode)
   data <- as.data.frame(data) # Ensure data is a data frame
@@ -375,7 +386,8 @@ VariableAssociation <- function(method = c("ssGSEA", "logmedian",
       labsize = labsize,
       titlesize = titlesize,
       pointSize = pointSize,
-      ignore_NAs = ignore_NAs
+      ignore_NAs = ignore_NAs,
+      p.adjust.method = p.adjust.method
     )
 
   } else if (method %in% c("ssGSEA", "logmedian", "ranking")) {
@@ -397,7 +409,8 @@ VariableAssociation <- function(method = c("ssGSEA", "logmedian",
       discrete_colors = discrete_colors,
       continuous_color = continuous_color,
       color_palette = color_palette,
-      printplt = printplt
+      printplt = printplt,
+      p.adjust.method = p.adjust.method
     )
   }
 
