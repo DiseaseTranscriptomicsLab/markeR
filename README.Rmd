@@ -30,7 +30,7 @@ knitr::opts_chunk$set(
 
 > **To cite `markeR` please use:** 
 >
->   Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). _markeR: an R Toolkit for Evaluating Gene Sets as Phenotypic Markers_. Gulbenkian Institute for Molecular Medicine, Faculdade de Medicina, Universidade de Lisboa, Lisbon, Portugal. R package version 1.0.0, https://github.com/DiseaseTranscriptomicsLab/markeR.
+> Martins-Silva R, Kaizeler A, Barbosa-Morais NL (2025). _markeR: An R Toolkit for Evaluating Gene Signatures as Phenotypic Markers_. doi:10.18129/B9.bioc.markeR, R package version 1.1.0, https://bioconductor.org/packages/markeR.
  
 The folder `inst/Paper/` is in the **paper** branch and contains all scripts and materials used in the original `markeR` paper to reproduce analyses and figures.  You can browse it [here](https://github.com/DiseaseTranscriptomicsLab/markeR/tree/paper/inst/Paper).
 
@@ -52,6 +52,7 @@ The folder `inst/Paper/` is in the **paper** branch and contains all scripts and
   - [4. Visualisation and Evaluation](#4-visualisation-and-evaluation)  
   - [5. Individual Gene Exploration (Optional)](#5-individual-gene-exploration-optional)  
   - [6. Compare with Reference Gene Sets (Optional)](#6-compare-with-reference-gene-sets-optional)  
+- [Python Bridge](#python-bridge)
 - [Contact](#contact)
 
 
@@ -236,6 +237,16 @@ the ratio of the number of genes in common over the total number of genes in the
 * **Log Odds Ratio (logOR)** from Fisher’s exact test of association between gene sets, given a specified gene universe.
 
 Filters can be applied based on similarity thresholds (e.g., minimum Jaccard, OR, or Fisher's test p-value).
+
+## Python Bridge
+
+For users who prefer Python, a lightweight bridge is available in
+`inst/python/` that allows calling any `markeR` function from a Python
+environment via [`rpy2`](https://rpy2.github.io/). It includes a tutorial
+workflow script and a generic command-line wrapper. See
+[`inst/python/README.md`](inst/python/README.md) for installation
+instructions and usage examples.
+
 
 ## Contact 
 
