@@ -2257,7 +2257,7 @@ library(beepr)
 
 ```{r}
 # local job
-composition_correction_results <- readRDS("../Figures/Comment3_1/composition_correction_results_noscale.rds")
+composition_correction_results <- readRDS("../data_aux/composition_correction_results_noscale.rds")
 
 ```
 
@@ -2352,17 +2352,17 @@ plot_all
 
 
 ```{r}
-ggplot2::ggsave("Figures/Figs/R3_1_CellTypeComposition.png",
+ggplot2::ggsave("../Figures/Figs/R3_1_CellTypeComposition.png",
                 plot_all,
                 width = 8, height=11, bg = 'white')
 
-ggplot2::ggsave("Figures/Figs/R3_1_CellTypeComposition.pdf",
+ggplot2::ggsave("../Figures/Figs/R3_1_CellTypeComposition.pdf",
                 plot_all,
                 width = 7, height=11, bg = 'white')
 ```
 
 ```{r}
-df_null <- readRDS("Comment3_1/null_NES_permutations_simpler_1000perms.rds")
+df_null <- readRDS("../data_aux/null_NES_permutations_simpler_1000perms.rds")
 ```
 
  
