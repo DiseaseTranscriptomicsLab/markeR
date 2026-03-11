@@ -10,7 +10,8 @@ compute_stat_tests(
   cols = NULL,
   numeric = "pearson",
   categorical_bin = "t.test",
-  categorical_multi = "anova"
+  categorical_multi = "anova",
+  p.adjust.method = "BH"
 )
 }
 \arguments{
@@ -30,6 +31,12 @@ Options: \code{"t.test"} (default) or \code{"wilcoxon"}.}
 \item{categorical_multi}{The statistical test for multi-level categorical
 variables.
 Options: \code{"anova"} (default) or \code{"kruskal-wallis"}.}
+
+\item{p.adjust.method}{Character string specifying the method to use for
+multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+\code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+Passed to \code{\link[stats]{p.adjust}}.}
 }
 \value{
 A named list (one entry per variable being analysed) where each

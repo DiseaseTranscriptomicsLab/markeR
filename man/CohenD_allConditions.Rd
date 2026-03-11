@@ -9,7 +9,8 @@ CohenD_allConditions(
   metadata,
   gene_sets,
   variable,
-  mode = c("simple", "medium", "extensive")
+  mode = c("simple", "medium", "extensive"),
+  p.adjust.method = "BH"
 )
 }
 \arguments{
@@ -37,6 +38,12 @@ groups.
 \item \code{"extensive"}: All possible groupwise contrasts, ensuring balance in the
 number of terms on each side.
 }}
+
+\item{p.adjust.method}{Character string specifying the method to use for
+multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+\code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+Passed to \code{\link[stats]{p.adjust}}.}
 }
 \value{
 A named list where each element corresponds to a gene signature. Each

@@ -20,7 +20,8 @@ GSEA_VariableAssociation(
   titlesize = 14,
   pointSize = 5,
   ignore_NAs = FALSE,
-  printplt = TRUE
+  printplt = TRUE,
+  p.adjust.method = "BH"
 )
 }
 \arguments{
@@ -96,6 +97,12 @@ removed before analysis, leading to a loss of data to be fitted in the
 model.}
 
 \item{printplt}{Boolean specifying if plot is to be printed. Default: \code{TRUE}.}
+
+\item{p.adjust.method}{Character string specifying the method to use for
+multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+\code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+Passed to \code{\link[stats]{p.adjust}}.}
 }
 \value{
 A list with two elements:

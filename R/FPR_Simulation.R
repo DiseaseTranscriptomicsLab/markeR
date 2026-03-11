@@ -44,7 +44,11 @@ utils::globalVariables(c( "cohen", "method", "contrast" ))
 #'   grid layout. If `NULL`, layout is auto-calculated.
 #' @param nrow Integer. Number of rows for arranging signature plots in a grid
 #'   layout. If `NULL`, layout is auto-calculated.
-#'
+#' @param p.adjust.method Character string specifying the method to use for
+#'   multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+#'   default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+#'   \code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+#'   Passed to \code{\link[stats]{p.adjust}}. 
 #'
 #' @return Invisibly returns a list containing:
 #'   \describe{
@@ -111,7 +115,7 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
                            gene_list = NULL, number_of_sims=100, title=NULL,
                            widthTitle = 30, titlesize = 12,  pointSize = 2,
                            labsize = 10,mode = c( "none","simple","medium","extensive"),
-                           ColorValues=NULL, ncol=NULL, nrow=NULL) {
+                           ColorValues=NULL, ncol=NULL, nrow=NULL, p.adjust.method="BH") {
   data <- as.data.frame(data) # Ensure data is a data frame
   if (is.null(gene_list)) gene_list <- row.names(data)
 
@@ -128,7 +132,7 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
       results <- suppressMessages(CohenF_allConditions(data = data,
                                                        metadata = metadata,
                                                        gene_sets = original_signatures,
-                                                       variable = Variable ))
+                                                       variable = Variable, p.adjust.method = p.adjust.method ))
       cohentype <- "f"
 
     } else {
@@ -138,7 +142,7 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
         results <- suppressMessages(CohenF_allConditions(data = data,
                                                          metadata = metadata,
                                                          gene_sets = original_signatures,
-                                                         variable = Variable ))
+                                                         variable = Variable, p.adjust.method = p.adjust.method ))
         cohentype <- "f"
 
       } else {
@@ -146,7 +150,7 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
         results <- suppressMessages(CohenD_allConditions(data = data,
                                                          metadata = metadata,
                                                          gene_sets = original_signatures,
-                                                         variable = Variable, mode = mode))
+                                                         variable = Variable, mode = mode, p.adjust.method = p.adjust.method))
         cohentype <- "d"
 
       }
@@ -219,14 +223,14 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
         metadata = metadata,
         gene_sets = simulatedsigs,
         variable = Variable,
-        mode = mode
+        mode = mode, p.adjust.method = p.adjust.method
       ))
     } else {
       results2 <- suppressMessages(CohenF_allConditions(
         data = data,
         metadata = metadata,
         gene_sets = simulatedsigs,
-        variable = Variable
+        variable = Variable, p.adjust.method = p.adjust.method
       ))
     }
 

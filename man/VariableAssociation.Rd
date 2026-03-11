@@ -24,7 +24,8 @@ VariableAssociation(
   discrete_colors = NULL,
   continuous_color = "#8C6D03",
   color_palette = "Set2",
-  printplt = TRUE
+  printplt = TRUE,
+  p.adjust.method = "BH"
 )
 }
 \arguments{
@@ -88,6 +89,12 @@ points (default: \code{"#8C6D03"}).}
 categorical variables (default: \code{"Set2"}).}
 
 \item{printplt}{Logical. If \code{TRUE}, plots are printed. Default: \code{TRUE}.}
+
+\item{p.adjust.method}{Character string specifying the method to use for
+multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+\code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+Passed to \code{\link[stats]{p.adjust}}.}
 }
 \value{
 A list with method-specific results and ggplot2-based visualizations:
