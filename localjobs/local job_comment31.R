@@ -185,7 +185,8 @@ build_design_corrected <- function(metadata, xcell_mat, covariates) {
   samples         <- rownames(metadata)
   ct_df           <- as.data.frame(t(xcell_mat[covariates, samples, drop = FALSE]))
   colnames(ct_df) <- make.names(colnames(ct_df))
-  ct_df_scaled    <- as.data.frame(scale(ct_df))
+  #ct_df_scaled    <- as.data.frame(scale(ct_df))
+  ct_df_scaled <- as.data.frame(ct_df) #no scaling
   df <- data.frame(AGE = metadata[samples, "AGE"],
                    ct_df_scaled,
                    row.names = samples)
@@ -381,100 +382,12 @@ message("\nResults (", nrow(results_df), " rows):")
 print(as.data.frame(results_df))
 
 # Save full results
-out_rds <- file.path(OUT_DIR, "composition_correction_results.rds")
+out_rds <- file.path(OUT_DIR, "composition_correction_results_noscale.rds")
 saveRDS(results_df, out_rds)
 message("\nResults saved to: ", out_rds)
-
+ 
 # -----------------------------------------------------------------------------
-# 7. Visualisation — all 49 tissues
-# -----------------------------------------------------------------------------
-# With 49 tissues, a standard dot/line plot becomes unreadable on a single
-# panel. We use a heatmap-style layout showing NES for baseline and corrected
-# side by side, with significance overlaid as asterisks. Tissues are grouped
-# by whether they showed signal in the paper. This allows the reviewer to see
-# at a glance: (a) which tissues retain signal after correction, (b) whether
-# any new signal emerges, and (c) how much the NES changes overall.
-# 
-# model_colours <- c("Baseline"  = "#2171b5",
-#                    "Corrected" = "#cb181d")
-# 
-# plot_df <- results_df %>%
-#   mutate(
-#     tissue_group = ifelse(tissue %in% TISSUE_SIGNAL,
-#                           "Signal in paper", "No signal in paper"),
-#     tissue_group = factor(tissue_group,
-#                           levels = c("Signal in paper", "No signal in paper")),
-#     model        = factor(model, levels = c("Baseline", "Corrected")),
-#     sig_label    = ifelse(sig, "*", "")
-#   )
-# 
-# # Ordered by baseline NES within each group for easier reading
-# tissue_order <- plot_df %>%
-#   filter(model == "Baseline") %>%
-#   arrange(tissue_group, NES) %>%
-#   pull(tissue) %>%
-#   unique()
-# 
-# plot_df <- plot_df %>%
-#   mutate(tissue = factor(tissue, levels = tissue_order))
-# 
-# # Paired dot plot with connecting line, faceted by tissue group
-# # Each tissue appears as two dots (baseline blue, corrected red) connected by
-# # a grey line. The direction of the line shows how correction changes the NES.
-# # Filled circle = FDR < 0.05; open circle = not significant.
-# plot_all <- ggplot(plot_df,
-#                    aes(x = NES, y = tissue, colour = model)) +
-#   geom_vline(xintercept = 0, linetype = "dashed",
-#              colour = "grey50", linewidth = 0.4) +
-#   # grey line connects baseline to corrected for each tissue
-#   geom_line(aes(group = tissue), colour = "grey75", linewidth = 0.5) +
-#   # filled = significant, open = not significant
-#   geom_point(aes(shape = sig), size = 3, stroke = 1.2, fill = "white") +
-#   geom_text(aes(label = sig_label, x = NES + sign(NES) * 0.12),
-#             size = 3.5, show.legend = FALSE) +
-#   scale_shape_manual(
-#     values = c("FALSE" = 21, "TRUE"  = 19),
-#     labels = c("FALSE" = "FDR \u2265 0.05", "TRUE" = "FDR < 0.05"),
-#     name   = NULL
-#   ) +
-#   scale_colour_manual(values = model_colours, name = "Model") +
-#   facet_grid(tissue_group ~ ., scales = "free_y", space = "free_y") +
-#   labs(
-#     x        = "Normalised Enrichment Score (NES)",
-#     y        = NULL,
-#     title    = "HernandezSegura age-senescence GSEA across 49 GTEx tissues",
-#     subtitle = "Baseline (~ AGE) vs. cell composition-corrected (~ AGE + xCell2)\nFilled = FDR < 0.05 | * marks significance"
-#   ) +
-#   theme_cowplot(11) +
-#   theme(
-#     strip.background  = element_rect(fill = "grey92"),
-#     strip.text.y      = element_text(angle = 0),
-#     legend.position   = "bottom",
-#     axis.text.y       = element_text(size = 8)
-#   )
-# 
-# out_pdf <- file.path(OUT_DIR, "gsea_composition_correction_all_tissues.pdf")
-# ggsave(out_pdf, plot = plot_all, width = 8, height = 18)
-# message("Plot saved to: ", out_pdf)
-# 
-# # Also save a focused version showing only the 8 selected tissues for the
-# # main figure in the revision (signal + expected-no-signal)
-# TISSUES_FOCUSED <- c(
-#   "Artery - Aorta", "Breast - Mammary Tissue",
-#   "Cells - Cultured fibroblasts", "Thyroid",
-#   "Artery - Tibial", "Skin - Sun Exposed (Lower leg)",
-#   "Lung", "Pancreas"
-# )
-# 
-# plot_focused <- plot_all %+%
-#   filter(plot_df, tissue %in% TISSUES_FOCUSED)
-# 
-# out_pdf_focused <- file.path(OUT_DIR, "gsea_composition_correction_focused.pdf")
-# ggsave(out_pdf_focused, plot = plot_focused, width = 8, height = 6)
-# message("Focused plot saved to: ", out_pdf_focused)
-
-# -----------------------------------------------------------------------------
-# 8. Done
+# 7. Done
 # -----------------------------------------------------------------------------
 
 t_total <- round(difftime(Sys.time(), t_start, units = "mins"), 1)

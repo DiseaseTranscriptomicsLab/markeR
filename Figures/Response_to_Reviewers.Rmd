@@ -1867,7 +1867,7 @@ data(yeast)
 # Inspect
 length(yeast$esr1)  # rESR (repressed)
 length(yeast$esr2)  # iESR (induced)
- 
+
 GeneSet_YeastESR <- list(Gasch2000_ESR = data.frame(gene=c(yeast$esr1,yeast$esr2),
                                                     direction=c(rep(-1,length(yeast$esr1)), rep(1,length(yeast$esr2)))))
 
@@ -1877,8 +1877,8 @@ GeneSet_YeastESR <- list(Gasch2000_ESR = data.frame(gene=c(yeast$esr1,yeast$esr2
 data_yeast <- as.data.frame(fread("../data_aux/GSE135430_Yeast_HeatShock.csv"))
 row.names(data_yeast) <- data_yeast$gene_id
 data_yeast_o <- data_yeast[,-c(1,2,3)]
- 
- data_yeast <- apply(data_yeast_o, 2, function(x) as.numeric(gsub(",", ".", x)))
+
+data_yeast <- apply(data_yeast_o, 2, function(x) as.numeric(gsub(",", ".", x)))
 rownames(data_yeast) <- rownames(data_yeast_o)
 data_yeast <- as.data.frame(data_yeast)
 data_yeast
@@ -2070,7 +2070,7 @@ pc6 = round(100*ev[6]/sum(ev),2)
     geom_vline(xintercept=0, linetype="dotted") + 
     guides(color = guide_legend(nrow = 2)) +
     geom_hline(yintercept=0, linetype="dotted"))
- 
+
 
 ```
 
@@ -2081,7 +2081,7 @@ pc6 = round(100*ev[6]/sum(ev),2)
                              metadata = metadata_yeast, 
                              gene_sets = GeneSet_YeastESR,
                              method = "logmedian")$Gasch2000_ESR)
- 
+
 condition_colors <- c(
   "Unstressed" = "#F5C842",  # warm yellow
   "Heat Shock"  = "#C0392B"   # red
@@ -2095,7 +2095,7 @@ condition_colors <- c(
     theme(legend.position="none",
           plot.title = element_text(hjust = 0.5, size = 14),
           text = element_text(size = 14)) +
-   ggtitle("Environmental Stress Response (ESR) \ngene set (Gasch et al. 2000) \nin S. cerevisiae Heat Shock") + scale_fill_manual(values = condition_colors))
+    ggtitle("Environmental Stress Response (ESR) \ngene set (Gasch et al. 2000) \nin S. cerevisiae Heat Shock") + scale_fill_manual(values = condition_colors))
 ```
 ```{r}
 # Compute label vector with counts
@@ -2124,10 +2124,10 @@ label_vec <- setNames(
 
 ```{r fig.width=8, fig.height=7}
 (plt_comment1_6 <- ggarrange(plt_ychromosomescores,
-          plt_viralrespiratory,
-          plt_prol,
-          plt_yeast_heatshock,
-          nrow=2, align = "hv", ncol=2, labels="AUTO"))
+                             plt_viralrespiratory,
+                             plt_prol,
+                             plt_yeast_heatshock,
+                             nrow=2, align = "hv", ncol=2, labels="AUTO"))
 ```
 
 ```{r}
@@ -2146,18 +2146,15 @@ ggplot2::ggsave("../Figures/Figs/R1_6_OtherData.pdf",
 
 R.: Estimate cell type proportions in the GTEx tissues highlighted in the main text using a reference-based deconvolution tool, and incorporate these estimates as covariates in the age–score association models. Results with and without compositional correction are compared for a subset of tissues, both those with and without significant age associations in the original analysis.
 
- 
-
-
 Cell composition correction for age-senescence associations in GTEx
 
 Strategy: GSEA only (enrichment-based), comparing:
-  - Baseline:  design ~ AGE  (as in the paper)
-  - Corrected: design ~ AGE + xCell_ct1 + xCell_ct2 + ...
+- Baseline:  design ~ AGE  (as in the paper)
+- Corrected: design ~ AGE + xCell_ct1 + xCell_ct2 + ...
 
 Tissues:
-  WITH signal    : Artery - Aorta, Breast - Mammary Tissue
-  WITHOUT signal : Skin - Sun Exposed (Lower leg), Lung
+WITH signal    : Artery - Aorta, Breast - Mammary Tissue
+WITHOUT signal : Skin - Sun Exposed (Lower leg), Lung
 
 Signatures: HernandezSegura 
 
@@ -2257,321 +2254,112 @@ library(beepr)
 
 ```
 
+
 ```{r}
+# local job
+composition_correction_results <- readRDS("../Figures/Comment3_1/composition_correction_results_noscale.rds")
 
-# -----------------------------------------------------------------------------
-# 0. Setup
-# -----------------------------------------------------------------------------
+```
 
-TISSUES <- c(
-  # With signal in paper
-  "Artery - Aorta",
-  "Breast - Mammary Tissue",
-  "Cells - Cultured fibroblasts",
-  "Thyroid",
-  # No signal but expected
-  "Artery - Tibial",
-  "Skin - Sun Exposed (Lower leg)",
-  "Lung",
-  "Pancreas"
-)
-
+```{r}
 TISSUE_SIGNAL <- c(
   "Artery - Aorta",
   "Breast - Mammary Tissue",
   "Cells - Cultured fibroblasts",
   "Thyroid"
 )
-
-TISSUE_PRIORITY_CTS <- list(
-  "Artery - Aorta"                    = c("endothelial cell", "smooth muscle cell",
-                                           "fibroblast", "macrophage", "pericyte"),
-  "Breast - Mammary Tissue"           = c("epithelial cell", "fibroblast",
-                                           "endothelial cell", "fat cell", "macrophage"),
-  "Cells - Cultured fibroblasts"      = c("fibroblast", "smooth muscle cell",
-                                           "endothelial cell", "macrophage"),
-  "Thyroid"                           = c("epithelial cell", "fibroblast",
-                                           "endothelial cell", "macrophage"),
-  "Artery - Tibial"                   = c("endothelial cell", "smooth muscle cell",
-                                           "fibroblast", "macrophage", "pericyte"),
-  "Skin - Sun Exposed (Lower leg)"    = c("fibroblast", "keratinocyte",
-                                           "melanocyte", "macrophage",
-                                           "CD4-positive, alpha-beta T cell"),
-  "Lung"                              = c("epithelial cell", "fibroblast",
-                                           "endothelial cell", "macrophage",
-                                           "CD4-positive, alpha-beta T cell"),
-  "Pancreas"                          = c("epithelial cell", "fibroblast",
-                                           "endothelial cell", "macrophage",
-                                           "pericyte")
-)
-
 ```
 
-```{r}
 
+```{r fig.width=7, fig.height=11}
+
+results_df <- composition_correction_results
 # -----------------------------------------------------------------------------
-# 1. Load data
+# 7. Visualisation — all 49 tissues
 # -----------------------------------------------------------------------------
-#   GTEx_alltissues          : normalised NON-log-transformed counts (genes x samples)
-GTEx_alltissues <- readRDS("../data_aux/GTExV8_voyagercorrected.rds") 
-data_gtex <- readRDS("../data_aux/data_gtex.rds")
-
-#   metadata_GTEx_alltissues : metadata with columns SAMPID and AGE (numeric)
-metadata_GTEx_alltissues <- readRDS("../data_aux/GTExV8_metadata.rds") # Restricted access 
-#   signatures_bidirectional : list of gene sets (data.frames with cols gene, enrichment)
-signatures_bidirectional <- readRDS("../data/SenescenceSigntures_Bidirectional.rds")
-
-gene_sets <- list(
-   HernandezSegura = signatures_bidirectional$HernandezSegura
-  )
-
-# Load xCell2 pre-trained reference
-data("BlueprintEncode.xCell2Ref")
-
-```
-
-```{r}
-
-# -----------------------------------------------------------------------------
-# 1. Helper: select xCell2 covariates
-# -----------------------------------------------------------------------------
-
-select_xcell_covariates <- function(xcell_mat, priority = NULL,
-                                     var_pct = 0.5, max_covars = 5) {
-  vars    <- apply(xcell_mat, 1, var)
-  thr     <- quantile(vars, var_pct)
-  by_var  <- names(sort(vars[vars >= thr], decreasing = TRUE))
-
-  if (!is.null(priority)) {
-    priority_ok <- priority[priority %in% rownames(xcell_mat) & vars[priority] > 0]
-    selected    <- union(priority_ok, by_var)
-  } else {
-    selected <- by_var
-  }
-
-  head(selected, max_covars)
-}
-
-# -----------------------------------------------------------------------------
-# 2. Helper: build design matrices
-# -----------------------------------------------------------------------------
-
-build_design_baseline <- function(metadata) {
-  # ~ 1 + AGE  (with intercept, continuous variable)
-  model.matrix(~ AGE, data = metadata)
-}
-
-build_design_corrected <- function(metadata, xcell_mat, covariates) {
-  samples      <- rownames(metadata)
-  ct_df        <- as.data.frame(t(xcell_mat[covariates, samples, drop = FALSE]))
-  colnames(ct_df) <- make.names(colnames(ct_df))
-  ct_df_scaled <- as.data.frame(scale(ct_df))
-
-  df <- data.frame(AGE = metadata[samples, "AGE"],
-                   ct_df_scaled,
-                   row.names = samples)
-  model.matrix(~ AGE + ., data = df)
-}
-
-# -----------------------------------------------------------------------------
-# 3. Helper: rank genes by AGE t-statistic from calculateDE output
-# -----------------------------------------------------------------------------
-
-rank_genes_for_fgsea <- function(de_results) {
-  # calculateDE returns a named list; with no contrasts and a custom modelmat,
-  # the AGE coefficient result is stored under "AGE"
-  de_age <- de_results[["AGE"]]
-
-  if (is.null(de_age)) {
-    stop("No 'AGE' coefficient found in calculateDE output. ",
-         "Check colnames of your design matrix.")
-  }
-
-  # rank by moderated t-statistic (directional, used by markeR internally)
-  t_stats <- setNames(de_age$t, rownames(de_age))
-  sort(t_stats, decreasing = TRUE)
-}
-
-
-
-```
-
- 
-```{r}
-  
-# -----------------------------------------------------------------------------
-# 5. Main loop
-# -----------------------------------------------------------------------------
-
-results_all  <- list()
-overlap_info <- list()   # store gene overlap per tissue for methods reporting
-
-for (tissue in TISSUES) {
-
-  message("\n========== ", tissue, " ==========")
-
-  meta_t <- metadata_GTEx_alltissues[metadata_GTEx_alltissues$SMTSD == tissue, ]
-  rownames(meta_t) <- meta_t$SAMPID
-  # expr_t <- data_gtex[[tissue]]
-  # expr_t <- expr_t[, meta_t$SAMPID]   # align sample order
-  
-  expr_t <-  GTEx_alltissues[, meta_t$SAMPID]
-
-  # --- xCell2 ---
-  
-    # record overlap for methods section
-  overlap_pct <- length(intersect(rownames(expr_t),
-                                   BlueprintEncode.xCell2Ref@genes_used)) /
-                 length(BlueprintEncode.xCell2Ref@genes_used)
-  overlap_info[[tissue]] <- round(overlap_pct * 100, 1)
-  message("  Gene overlap with xCell2 reference: ", overlap_info[[tissue]], "%")
-  
-  message("  Running xCell2...")
-  xcell_scores <- xCell2Analysis(
-    mix            = expr_t,
-    xcell2object   = BlueprintEncode.xCell2Ref,
-    minSharedGenes = 0.4
-  )
-
-
-
-  covariates <- select_xcell_covariates(
-    xcell_scores,
-    priority   = TISSUE_PRIORITY_CTS[[tissue]],
-    var_pct    = 0.5,
-    max_covars = 5
-  )
-  message("  Selected covariates: ", paste(covariates, collapse = ", "))
-
-  # --- design matrices ---
-  design_base <- build_design_baseline(meta_t)
-  design_corr <- build_design_corrected(meta_t, xcell_scores, covariates)
-
-  # --- calculateDE for both designs ---
-  # no contrasts needed: returns one result per coefficient, including "AGE"
-  message("  Running calculateDE (baseline)...")
-  de_base <- calculateDE(
-    data     = expr_t,
-    metadata = meta_t,
-    modelmat = design_base
-  )
-
-  message("  Running calculateDE (corrected)...")
-  de_corr <- calculateDE(
-    data     = expr_t,
-    metadata = meta_t,
-    modelmat = design_corr
-  )
-# --- run GSEA using markeR's runGSEA, which accepts calculateDE output ---
-  gsea_base <- runGSEA(
-    DEGList   = de_base,
-    gene_sets = gene_sets
-  )
-
-  gsea_corr <- runGSEA(
-    DEGList   = de_corr,
-    gene_sets = gene_sets
-  )
-
-  # extract AGE contrast results for each signature
-  for (sig_name in names(gene_sets)) {
-
-    extract_result <- function(gsea_out, model_label) {
-      df <- gsea_out[["AGE"]]
-      df <- df[df$pathway == sig_name, ]
-      data.frame(
-        tissue    = tissue,
-        signature = sig_name,
-        model     = model_label,
-        NES       = df$NES,
-        padj      = df$padj,
-        sig       = df$padj < 0.05
-      )
-    }
-
-    results_all[[paste(tissue, sig_name, "Baseline",  sep = "|")]] <-
-      extract_result(gsea_base, "Baseline")
-
-    results_all[[paste(tissue, sig_name, "Corrected", sep = "|")]] <-
-      extract_result(gsea_corr, "Corrected")
-  }
-  
-  beepr::beep(sound = 1)
-}
-results_df <- do.call(rbind, results_all)
-rownames(results_df) <- NULL
-
-message("\nGene overlap per tissue (% of xCell2 reference genes):")
-print(as.data.frame(overlap_info))
-
-print(results_df)
-
-message("Done.")
-beepr::beep(sound = 8)
-```
- 
-```{r}
-
-# -----------------------------------------------------------------------------
-# 6. Visualisation: lollipop plot, baseline vs corrected
-# -----------------------------------------------------------------------------
-
-results_df <- results_df %>%
-  mutate(
-    model = factor(model, levels = c("Baseline", "Corrected")),
-    tissue_group = ifelse(tissue %in% TISSUE_SIGNAL,
-                          "Signal in paper", "No signal in paper"),
-    tissue_group = factor(tissue_group,
-                          levels = c("Signal in paper", "No signal in paper"))
-  )
+# With 49 tissues, a standard dot/line plot becomes unreadable on a single
+# panel. We use a heatmap-style layout showing NES for baseline and corrected
+# side by side, with significance overlaid as asterisks. Tissues are grouped
+# by whether they showed signal in the paper. This allows the reviewer to see
+# at a glance: (a) which tissues retain signal after correction, (b) whether
+# any new signal emerges, and (c) how much the NES changes overall.
 
 model_colours <- c("Baseline"  = "#2171b5",
                    "Corrected" = "#cb181d")
+# rename model levels for clarity
+plot_df <- results_df %>%
+  mutate(
+    tissue_group = ifelse(tissue %in% TISSUE_SIGNAL,
+                          "Signal \nin paper", "No signal \nin paper"),
+    tissue_group = factor(tissue_group,
+                          levels = c("Signal \nin paper", "No signal \nin paper")),
+    model        = factor(model,
+                          levels   = c("Baseline", "Corrected"),
+                          labels   = c("Non-corrected", "Corrected"))
+  )
 
-plot_paired <- ggplot(results_df,
-                      aes(x = tissue, y = NES, colour = model)) +
-  geom_hline(yintercept = 0, linetype = "dashed",
-             colour = "grey60", linewidth = 0.4) +
-  # connecting line between baseline and corrected
-  geom_line(aes(group = tissue), colour = "grey60", linewidth = 0.8) +
-  # open circle = non-significant, filled = significant
-  geom_point(aes(shape = sig), size = 5, stroke = 1.5, fill = "white") +
-  scale_shape_manual(
-    values = c("FALSE" = 21,   # open circle
-               "TRUE"  = 19),  # filled circle
-    labels = c("FALSE" = "FDR ≥ 0.05",
-               "TRUE"  = "FDR < 0.05"),
+tissue_order <- plot_df %>%
+  filter(model == "Non-corrected") %>%
+  arrange(desc(tissue)) %>%   # alphabetical, desc so A appears at top
+  pull(tissue) %>%
+  unique()
+
+plot_df <- plot_df %>%
+  mutate(tissue = factor(tissue, levels = tissue_order))
+
+model_colours <- c("Non-corrected" = "#2171b5",
+                   "Corrected"     = "#cb181d")
+
+plot_all <- ggplot(plot_df,
+                   aes(x = NES, y = tissue, colour = model)) +
+  geom_vline(xintercept = 0, linetype = "dashed",
+             colour = "grey50", linewidth = 0.4) +
+  geom_line(aes(group = tissue), colour = "grey75", linewidth = 0.5) +
+  geom_point(aes(shape = sig), size = 3, stroke = 1.2, fill = "white") +
+scale_shape_manual(
+    values = c("FALSE" = 21, "TRUE"  = 19),
+    labels = c("FALSE" = "FDR > 0.05", "TRUE" = "FDR \u2264 0.05"),
     name   = NULL
   ) +
   scale_colour_manual(values = model_colours, name = "Model") +
-  facet_grid(. ~ tissue_group, scales = "free_x", space = "free_x") +
+  #facet_grid(tissue_group ~ ., scales = "free_y", space = "free_y") +
   labs(
-    x     = NULL,
-    y     = "Normalised Enrichment Score (NES)",
-    title = "HernandezSegura age-senescence GSEA",
-    subtitle = "Baseline (~ AGE) vs. cell composition-corrected (~ AGE + xCell2 covariates)"
+    x        = "Normalised Enrichment Score (NES)",
+    y        = NULL,
+    title    = "HernandezSegura Age-Enrichment \nacross GTEx tissues",
+    subtitle = "Non-corrected vs. cell composition-corrected"
   ) +
-  theme_cowplot(12) +
+  theme_bw(13) +
   theme(
     strip.background  = element_rect(fill = "grey92"),
+    strip.text.y      = element_text(angle = 90, vjust = 0.5),
     legend.position   = "bottom",
-    axis.text.x       = element_text(angle = 35, hjust = 1)
+    axis.text.y       = element_text(size = 11),
+    plot.caption      = element_text(size = 8, colour = "grey40",
+                                     hjust = 0, margin = margin(t = 6)), 
+                                     legend.title = element_blank(),
+    legend.box        = "vertical",
+    legend.spacing.y  = unit(0, "pt")
   )
+ 
 
-print(plot_paired)
+plot_all
 
-# -----------------------------------------------------------------------------
-# 7. Save
-# -----------------------------------------------------------------------------
-# 
-# ggsave("gsea_composition_correction_lollipop.pdf",
-#        plot = plot_paired, width = 9, height = 6)
-# 
-# write.csv(results_df, "gsea_composition_correction_results.csv",
-#           row.names = FALSE)
 
 ```
+ 
 
+
+
+```{r}
+ggplot2::ggsave("Figures/Figs/R3_1_CellTypeComposition.png",
+                plot_all,
+                width = 8, height=11, bg = 'white')
+
+ggplot2::ggsave("Figures/Figs/R3_1_CellTypeComposition.pdf",
+                plot_all,
+                width = 7, height=11, bg = 'white')
+```
 ## Comment 1.5 — Additional datasets for age correlation analysis
 
 R.: Apply markeR's discovery mode to one or more datasets independent of GTEx, modelling age as a continuous variable, to assess whether age-associated senescence signals are reproducible across transcriptomic resources and pointed limitations are correct. 
