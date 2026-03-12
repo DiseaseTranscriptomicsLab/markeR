@@ -12,14 +12,20 @@ Bioconductor R package **markeR** via `rpy2`.
 
 ## Prerequisites
 
-* R (>=.4.5) installed and on your `PATH`.
-* A Python virtual environment.  Install dependencies with:
+* R (>=4.5) installed and on your `PATH`.
+* A Python virtual environment.  A `requirements.txt` file is provided in
+  this folder listing the needed packages (`rpy2`, `pandas`, `numpy` plus
+  optional `ipython`/`jupyter` for notebook usage).
+  To set up the environment:
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+  ```bash
+  python -m venv .venv
+  source .venv/bin/activate
+  pip install -r requirements.txt
+  ```
+
+  After activation you can run the helper scripts using `python` from the
+  same environment.
 
 ## Quick start
 

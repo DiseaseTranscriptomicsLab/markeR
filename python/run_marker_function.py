@@ -25,6 +25,7 @@ import sys
 import argparse
 import json
 import os
+import re
 
 # Check dependencies
 _missing = []
@@ -42,7 +43,6 @@ if _missing:
 
 def ensure_bioc_installed() -> None:
     """Install Bioconductor's package manager if it is not already present."""
-    utils = importr("utils")
     biocinstaller = "BiocManager"
     if not isinstalled(biocinstaller):
         ro.r('install.packages("{0}")'.format(biocinstaller))
@@ -52,11 +52,9 @@ def ensure_bioc_installed() -> None:
 def install_markeR() -> None:
     """Install the markeR package from Bioconductor if not already installed."""
     ensure_bioc_installed()
-    try:
-        importr("markeR")
-    except Exception:
+    if not isinstalled("markeR"):
         ro.r('BiocManager::install("markeR", ask=FALSE, update=FALSE)')
-        ro.r('library(markeR)')
+    ro.r('library(markeR)')
 
 
 def load_example_data():
@@ -113,7 +111,8 @@ def parse_parameter(value: str):
     except (json.JSONDecodeError, ValueError):
         pass
     
-    # Default: treat as string
+    # Default: treat as string, escaping any internal quotes
+    value = value.replace('"', '\\"')
     return f'"{value}"'
 
 
@@ -272,6 +271,12 @@ tryCatch({{
         return
     
     func_name = sys.argv[1]
+    
+    # Validate function name to prevent code injection
+    if not re.match(r'^[A-Za-z][A-Za-z0-9_.]*$', func_name):
+        sys.exit(f"Error: invalid function name '{func_name}'. "
+                 "Function names must start with a letter and contain only letters, digits, dots or underscores.")
+    
     output_file = None
     width = 800
     height = 600

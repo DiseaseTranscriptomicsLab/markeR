@@ -60,12 +60,6 @@ from rpy2.robjects.packages import importr, isinstalled
 # converting.  helpers below wrap the recommended API.
 
 
-def _to_r(obj):
-    """Convert a pandas object to an R object using the current converter."""
-    with conversion.localconverter(ro.default_converter + pandas2ri.converter):
-        return conversion.py2rpy(obj)
-
-
 def _to_py(obj):
     """Convert an R object to a pandas/numpy equivalent."""
     with conversion.localconverter(ro.default_converter + pandas2ri.converter):
@@ -175,7 +169,6 @@ def plot_r_function(func_name: str, *args, width=800, height=600, filename=None,
 
 def ensure_bioc_installed() -> None:
     """Install Bioconductor's package manager if it is not already present."""
-    utils = importr("utils")
     biocinstaller = "BiocManager"
     if not isinstalled(biocinstaller):
         ro.r('install.packages("{0}")'.format(biocinstaller))
@@ -189,14 +182,9 @@ def install_markeR() -> None:
     the package should be loadable via `importr("markeR")`.
     """
     ensure_bioc_installed()
-    # use importr to check presence rather than only the isinstalled helper
-    try:
-        importr("markeR")
-    except Exception:
-        # attempt installation if import failed
+    if not isinstalled("markeR"):
         ro.r('BiocManager::install("markeR", ask=FALSE, update=FALSE)')
-        # load into namespace for side effects
-        ro.r('library(markeR)')
+    ro.r('library(markeR)')
 
 
 def get_markeR_functions() -> ro.Environment:
@@ -204,7 +192,7 @@ def get_markeR_functions() -> ro.Environment:
 
     Example:
         mark = get_markeR_functions()
-        imputed = mark.rgImpute(...)
+        scores = mark.CalculateScores(data=counts, metadata=metadata, gene_sets=genesets, method="logmedian")
     """
     install_markeR()
     # importing via importr is more reliable than accessing `ro.r['markeR']`.
