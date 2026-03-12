@@ -10,7 +10,7 @@ across experimental and clinical phenotypes.
 >
 > Martins-Silva R, Kaizeler A, Barbosa-Morais NL (2025). *markeR: An R
 > Toolkit for Evaluating Gene Signatures as Phenotypic Markers*.
-> <doi:10.18129/B9.bioc.markeR>, R package version 1.1.1,
+> <doi:10.18129/B9.bioc.markeR>, R package version 1.1.2,
 > <https://bioconductor.org/packages/markeR>.
 
 The folder `inst/Paper/` is in the **paper** branch and contains all
@@ -274,10 +274,10 @@ Jaccard, OR, or Fisher’s test p-value).
 ## Python Bridge
 
 For users who prefer Python, a lightweight bridge is available in
-`inst/python/` that allows calling any `markeR` function from a Python
+`python/` that allows calling any `markeR` function from a Python
 environment via [`rpy2`](https://rpy2.github.io/). It includes a
 tutorial workflow script and a generic command-line wrapper. See
-[`inst/python/README.md`](https://diseasetranscriptomicslab.github.io/markeR/inst/python/README.md)
+[`python/README.md`](https://diseasetranscriptomicslab.github.io/markeR/inst/python/README.md)
 for installation instructions and usage examples.
 
 ## Contact

@@ -222,110 +222,110 @@ print(plt_or)
 #> 
 #> $data
 #>              Reference_Signature                  Compared_Signature     Score
-#> odds ratio1           SignatureA        HALLMARK_ALLOGRAFT_REJECTION  74.53052
-#> odds ratio4           SignatureA            HALLMARK_APICAL_JUNCTION  27.81796
-#> odds ratio5           SignatureA             HALLMARK_APICAL_SURFACE 129.27542
-#> odds ratio6           SignatureA                  HALLMARK_APOPTOSIS  93.07309
+#> odds ratio1           SignatureA        HALLMARK_ALLOGRAFT_REJECTION  74.74599
+#> odds ratio4           SignatureA            HALLMARK_APICAL_JUNCTION  27.89809
+#> odds ratio5           SignatureA             HALLMARK_APICAL_SURFACE 129.64520
+#> odds ratio6           SignatureA                  HALLMARK_APOPTOSIS  93.35570
 #> odds ratio8           SignatureA    HALLMARK_CHOLESTEROL_HOMEOSTASIS   0.00000
 #> odds ratio10          SignatureA                 HALLMARK_COMPLEMENT   0.00000
-#> odds ratio11          SignatureA                 HALLMARK_DNA_REPAIR  37.24872
-#> odds ratio12          SignatureA                HALLMARK_E2F_TARGETS 168.27177
-#> odds ratio14          SignatureA    HALLMARK_ESTROGEN_RESPONSE_EARLY  27.81796
-#> odds ratio17          SignatureA             HALLMARK_G2M_CHECKPOINT  27.81796
-#> odds ratio18          SignatureA                 HALLMARK_GLYCOLYSIS  27.81796
-#> odds ratio21          SignatureA                    HALLMARK_HYPOXIA  27.81796
-#> odds ratio22          SignatureA        HALLMARK_IL2_STAT5_SIGNALING  27.95932
-#> odds ratio24          SignatureA      HALLMARK_INFLAMMATORY_RESPONSE  27.81796
+#> odds ratio11          SignatureA                 HALLMARK_DNA_REPAIR  37.36258
+#> odds ratio12          SignatureA                HALLMARK_E2F_TARGETS 168.75474
+#> odds ratio14          SignatureA    HALLMARK_ESTROGEN_RESPONSE_EARLY  27.89809
+#> odds ratio17          SignatureA             HALLMARK_G2M_CHECKPOINT  27.89809
+#> odds ratio18          SignatureA                 HALLMARK_GLYCOLYSIS  27.89809
+#> odds ratio21          SignatureA                    HALLMARK_HYPOXIA  27.89809
+#> odds ratio22          SignatureA        HALLMARK_IL2_STAT5_SIGNALING  28.03986
+#> odds ratio24          SignatureA      HALLMARK_INFLAMMATORY_RESPONSE  27.89809
 #> odds ratio26          SignatureA  HALLMARK_INTERFERON_GAMMA_RESPONSE   0.00000
-#> odds ratio31          SignatureA             HALLMARK_MYC_TARGETS_V1  74.53052
-#> odds ratio32          SignatureA             HALLMARK_MYC_TARGETS_V2  97.65540
-#> odds ratio36          SignatureA                HALLMARK_P53_PATHWAY  27.81796
-#> odds ratio39          SignatureA    HALLMARK_PI3K_AKT_MTOR_SIGNALING 144.03523
-#> odds ratio40          SignatureA          HALLMARK_PROTEIN_SECRETION  58.53435
+#> odds ratio31          SignatureA             HALLMARK_MYC_TARGETS_V1  74.74599
+#> odds ratio32          SignatureA             HALLMARK_MYC_TARGETS_V2  97.94291
+#> odds ratio36          SignatureA                HALLMARK_P53_PATHWAY  27.89809
+#> odds ratio39          SignatureA    HALLMARK_PI3K_AKT_MTOR_SIGNALING 144.41670
+#> odds ratio40          SignatureA          HALLMARK_PROTEIN_SECRETION  58.70219
 #> odds ratio42          SignatureA            HALLMARK_SPERMATOGENESIS   0.00000
-#> odds ratio44          SignatureA    HALLMARK_TNFA_SIGNALING_VIA_NFKB  27.81796
+#> odds ratio44          SignatureA    HALLMARK_TNFA_SIGNALING_VIA_NFKB  27.89809
 #> odds ratio45          SignatureA  HALLMARK_UNFOLDED_PROTEIN_RESPONSE   0.00000
-#> odds ratio46          SignatureA             HALLMARK_UV_RESPONSE_DN  38.80346
-#> odds ratio47          SignatureA             HALLMARK_UV_RESPONSE_UP  35.33803
-#> odds ratio48          SignatureA HALLMARK_WNT_BETA_CATENIN_SIGNALING 366.96608
+#> odds ratio46          SignatureA             HALLMARK_UV_RESPONSE_DN  38.91798
+#> odds ratio47          SignatureA             HALLMARK_UV_RESPONSE_UP  35.43974
+#> odds ratio48          SignatureA HALLMARK_WNT_BETA_CATENIN_SIGNALING 368.06888
 #> odds ratio51          SignatureB        HALLMARK_ALLOGRAFT_REJECTION   0.00000
 #> odds ratio54          SignatureB            HALLMARK_APICAL_JUNCTION   0.00000
 #> odds ratio55          SignatureB             HALLMARK_APICAL_SURFACE   0.00000
-#> odds ratio56          SignatureB                  HALLMARK_APOPTOSIS  46.20645
-#> odds ratio58          SignatureB    HALLMARK_CHOLESTEROL_HOMEOSTASIS 101.25816
-#> odds ratio60          SignatureB                 HALLMARK_COMPLEMENT  37.10497
+#> odds ratio56          SignatureB                  HALLMARK_APOPTOSIS  46.33853
+#> odds ratio58          SignatureB    HALLMARK_CHOLESTEROL_HOMEOSTASIS 101.83286
+#> odds ratio60          SignatureB                 HALLMARK_COMPLEMENT  37.21197
 #> odds ratio61          SignatureB                 HALLMARK_DNA_REPAIR   0.00000
 #> odds ratio62          SignatureB                HALLMARK_E2F_TARGETS   0.00000
 #> odds ratio64          SignatureB    HALLMARK_ESTROGEN_RESPONSE_EARLY   0.00000
 #> odds ratio67          SignatureB             HALLMARK_G2M_CHECKPOINT   0.00000
 #> odds ratio68          SignatureB                 HALLMARK_GLYCOLYSIS   0.00000
 #> odds ratio71          SignatureB                    HALLMARK_HYPOXIA   0.00000
-#> odds ratio72          SignatureB        HALLMARK_IL2_STAT5_SIGNALING  37.29368
+#> odds ratio72          SignatureB        HALLMARK_IL2_STAT5_SIGNALING  37.40123
 #> odds ratio74          SignatureB      HALLMARK_INFLAMMATORY_RESPONSE   0.00000
-#> odds ratio76          SignatureB  HALLMARK_INTERFERON_GAMMA_RESPONSE  37.10497
+#> odds ratio76          SignatureB  HALLMARK_INTERFERON_GAMMA_RESPONSE  37.21197
 #> odds ratio81          SignatureB             HALLMARK_MYC_TARGETS_V1   0.00000
 #> odds ratio82          SignatureB             HALLMARK_MYC_TARGETS_V2   0.00000
 #> odds ratio86          SignatureB                HALLMARK_P53_PATHWAY   0.00000
 #> odds ratio89          SignatureB    HALLMARK_PI3K_AKT_MTOR_SIGNALING   0.00000
 #> odds ratio90          SignatureB          HALLMARK_PROTEIN_SECRETION   0.00000
-#> odds ratio92          SignatureB            HALLMARK_SPERMATOGENESIS  55.19975
+#> odds ratio92          SignatureB            HALLMARK_SPERMATOGENESIS  55.36740
 #> odds ratio94          SignatureB    HALLMARK_TNFA_SIGNALING_VIA_NFKB   0.00000
-#> odds ratio95          SignatureB  HALLMARK_UNFOLDED_PROTEIN_RESPONSE  66.13172
+#> odds ratio95          SignatureB  HALLMARK_UNFOLDED_PROTEIN_RESPONSE  66.32153
 #> odds ratio96          SignatureB             HALLMARK_UV_RESPONSE_DN   0.00000
-#> odds ratio97          SignatureB             HALLMARK_UV_RESPONSE_UP  47.08572
+#> odds ratio97          SignatureB             HALLMARK_UV_RESPONSE_UP  47.21961
 #> odds ratio98          SignatureB HALLMARK_WNT_BETA_CATENIN_SIGNALING   0.00000
 #>                      Pval
-#> odds ratio1  7.806230e-04
-#> odds ratio4  4.389316e-02
-#> odds ratio5  9.792064e-03
-#> odds ratio6  5.070186e-04
+#> odds ratio1  7.762168e-04
+#> odds ratio4  4.377023e-02
+#> odds ratio5  9.764250e-03
+#> odds ratio6  5.041517e-04
 #> odds ratio8  1.000000e+00
 #> odds ratio10 1.000000e+00
-#> odds ratio11 3.306730e-02
-#> odds ratio12 6.937697e-06
-#> odds ratio14 4.389316e-02
-#> odds ratio17 4.389316e-02
-#> odds ratio18 4.389316e-02
-#> odds ratio21 4.389316e-02
-#> odds ratio22 4.367760e-02
-#> odds ratio24 4.389316e-02
+#> odds ratio11 3.297426e-02
+#> odds ratio12 6.878778e-06
+#> odds ratio14 4.377023e-02
+#> odds ratio17 4.377023e-02
+#> odds ratio18 4.377023e-02
+#> odds ratio21 4.377023e-02
+#> odds ratio22 4.355526e-02
+#> odds ratio24 4.377023e-02
 #> odds ratio26 1.000000e+00
-#> odds ratio31 7.806230e-04
-#> odds ratio32 1.289158e-02
-#> odds ratio36 4.389316e-02
-#> odds ratio39 2.160134e-04
-#> odds ratio40 2.126545e-02
+#> odds ratio31 7.762168e-04
+#> odds ratio32 1.285501e-02
+#> odds ratio36 4.377023e-02
+#> odds ratio39 2.147889e-04
+#> odds ratio40 2.120533e-02
 #> odds ratio42 1.000000e+00
-#> odds ratio44 4.389316e-02
+#> odds ratio44 4.377023e-02
 #> odds ratio45 1.000000e+00
-#> odds ratio46 3.176163e-02
-#> odds ratio47 3.480600e-02
-#> odds ratio48 3.425629e-05
+#> odds ratio46 3.167222e-02
+#> odds ratio47 3.470814e-02
+#> odds ratio48 3.406155e-05
 #> odds ratio51 1.000000e+00
 #> odds ratio54 1.000000e+00
 #> odds ratio55 1.000000e+00
-#> odds ratio56 2.846729e-02
-#> odds ratio58 1.316093e-02
-#> odds ratio60 3.527066e-02
+#> odds ratio56 2.838699e-02
+#> odds ratio58 1.312359e-02
+#> odds ratio60 3.517142e-02
 #> odds ratio61 1.000000e+00
 #> odds ratio62 1.000000e+00
 #> odds ratio64 1.000000e+00
 #> odds ratio67 1.000000e+00
 #> odds ratio68 1.000000e+00
 #> odds ratio71 1.000000e+00
-#> odds ratio72 3.509666e-02
+#> odds ratio72 3.499791e-02
 #> odds ratio74 1.000000e+00
-#> odds ratio76 3.527066e-02
+#> odds ratio76 3.517142e-02
 #> odds ratio81 1.000000e+00
 #> odds ratio82 1.000000e+00
 #> odds ratio86 1.000000e+00
 #> odds ratio89 1.000000e+00
 #> odds ratio90 1.000000e+00
-#> odds ratio92 2.391177e-02
+#> odds ratio92 2.384420e-02
 #> odds ratio94 1.000000e+00
-#> odds ratio95 2.004460e-02
+#> odds ratio95 1.998787e-02
 #> odds ratio96 1.000000e+00
-#> odds ratio97 2.794247e-02
+#> odds ratio97 2.786363e-02
 #> odds ratio98 1.000000e+00
 #> 
 ```

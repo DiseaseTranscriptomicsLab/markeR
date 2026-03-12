@@ -14,16 +14,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/DiseaseTranscriptomicsLab/markeR/blob/v1.1.1/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/DiseaseTranscriptomicsLab/markeR/blob/default/DESCRIPTION)
 
 Martins-Silva R, Kaizeler A, Barbosa-Morais NL (2026). *markeR: An R
 Toolkit for Evaluating Gene Signatures as Phenotypic Markers*. R package
-version 1.1.1, <https://diseasetranscriptomicslab.github.io/markeR/>.
+version 1.1.2, <https://diseasetranscriptomicslab.github.io/markeR/>.
 
     @Manual{,
       title = {markeR: An R Toolkit for Evaluating Gene Signatures as Phenotypic Markers},
       author = {Rita Martins-Silva and Alexandre Kaizeler and Nuno Luís Barbosa-Morais},
       year = {2026},
-      note = {R package version 1.1.1},
+      note = {R package version 1.1.2},
       url = {https://diseasetranscriptomicslab.github.io/markeR/},
     }

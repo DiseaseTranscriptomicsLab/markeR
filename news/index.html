@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">markeR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,9 +41,18 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/DiseaseTranscriptomicsLab/markeR/blob/v1.1.1/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/DiseaseTranscriptomicsLab/markeR/blob/default/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.1.2" id="marker-112-12-mar-2026">markeR 1.1.2 (12 Mar, 2026)<a class="anchor" aria-label="anchor" href="#marker-112-12-mar-2026"></a></h2>
+<div class="section level3">
+<h3 id="minor-changes-1-1-2">Minor Changes<a class="anchor" aria-label="anchor" href="#minor-changes-1-1-2"></a></h3>
+<ul><li>Moved Python bridge scripts from <code>inst/python/</code> to a top-level <code>python/</code> directory, as these are supplementary scripts not part of the R package itself.</li>
+<li>Added <code>requirements.txt</code> to the <code>python/</code> directory listing all needed Python dependencies (<code>rpy2</code>, <code>pandas</code>, <code>numpy</code>, and optionally <code>ipython</code> and <code>jupyter</code>) for easier environment setup.</li>
+<li>Removed redundant code snippets from the Python bridge scripts.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.1.1" id="marker-111-11-mar-2026">markeR 1.1.1 (11 Mar, 2026)<a class="anchor" aria-label="anchor" href="#marker-111-11-mar-2026"></a></h2>
 <ul><li>Added <code>p.adjust.method</code> parameter across all functions performing or depending on multiple testing correction, allowing users to specify any correction method supported by <code><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">stats::p.adjust()</a></code>, beyond the default Benjamini-Hochberg FDR.</li>
