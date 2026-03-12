@@ -288,10 +288,10 @@ Jaccard, OR, or Fisher’s test p-value).
 ## Python Bridge
 
 For users who prefer Python, a lightweight bridge is available in
-`inst/python/` that allows calling any `markeR` function from a Python
+`python/` that allows calling any `markeR` function from a Python
 environment via [`rpy2`](https://rpy2.github.io/). It includes a
 tutorial workflow script and a generic command-line wrapper. See
-[`inst/python/README.md`](inst/python/README.md) for installation
+[`python/README.md`](inst/python/README.md) for installation
 instructions and usage examples.
 
 ## Contact
