@@ -1,3 +1,13 @@
+# markeR 1.1.2 (12 Mar, 2026) 
+
+## Minor Changes
+- Moved Python bridge scripts from `inst/python/` to a top-level `python/` 
+  directory, as these are supplementary scripts not part of the R package itself.
+- Added `requirements.txt` to the `python/` directory listing all needed 
+  Python dependencies (`rpy2`, `pandas`, `numpy`, and optionally 
+  `ipython` and `jupyter`) for easier environment setup. 
+- Removed redundant code snippets from the Python bridge scripts.
+
 # markeR 1.1.1 (11 Mar, 2026) 
  
   - Added `p.adjust.method` parameter across all functions performing or
