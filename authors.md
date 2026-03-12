@@ -14,7 +14,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/DiseaseTranscriptomicsLab/markeR/blob/default/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/DiseaseTranscriptomicsLab/markeR/blob/v1.1.2/DESCRIPTION)
 
 Martins-Silva R, Kaizeler A, Barbosa-Morais NL (2026). *markeR: An R
 Toolkit for Evaluating Gene Signatures as Phenotypic Markers*. R package
