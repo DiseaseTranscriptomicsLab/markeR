@@ -20,4 +20,5 @@
 ^\\.git$
 ^codecov\.yml$
 ^vignettes/articles$
-^data_aux$
+^data_aux$ 
+^python(/.*)?$
