@@ -22,8 +22,8 @@ invisible(lapply(list.files(fun_dir, pattern = "\\.R$", full.names = TRUE), sour
 # -----------------------------------------------------------------------------
 N_PERM   <- 1000
 N_CORES  <- min(detectCores() - 1, 49)
-OUT_DIR  <- "../Figures/Comment3_1"
-if (!dir.exists(OUT_DIR)) dir.create(OUT_DIR, recursive = TRUE)
+#OUT_DIR  <- "../Figures/Comment3_1"
+#if (!dir.exists(OUT_DIR)) dir.create(OUT_DIR, recursive = TRUE)
 
 message("Using ", N_CORES, " cores")
 
@@ -31,7 +31,8 @@ message("Using ", N_CORES, " cores")
 # Load data
 # -----------------------------------------------------------------------------
 message("Loading data...")
-GTEx_alltissues          <- readRDS("../data_aux/GTExV8_voyagercorrected.rds")
+#GTEx_alltissues          <- readRDS("../data_aux/GTExV8_voyagercorrected.rds")
+GTEx_alltissues <- readRDS("../data_aux/data_gtex.rds")
 metadata_GTEx_alltissues <- readRDS("../data_aux/GTExV8_metadata.rds")
 signatures_bidirectional <- readRDS("../data_aux/SenescenceSigntures_Bidirectional.rds")
 gene_sets <- list(HernandezSegura = signatures_bidirectional$HernandezSegura)
@@ -69,7 +70,9 @@ process_tissue <- function(tissue) {
   meta_t           <- metadata_GTEx_alltissues[
     metadata_GTEx_alltissues$SMTSD == tissue, ]
   rownames(meta_t) <- meta_t$SAMPID
-  expr_t           <- GTEx_alltissues[, meta_t$SAMPID]
+  #expr_t           <- GTEx_alltissues[, meta_t$SAMPID]
+  expr_t           <- 2^GTEx_alltissues[[tissue]]
+  expr_t           <- expr_t[, meta_t$SAMPID]
   
   message(pfx, " — running ", N_PERM, " permutations")
   
@@ -107,9 +110,9 @@ null_results <- mclapply(
 # Compile and save
 # -----------------------------------------------------------------------------
 null_df  <- do.call(rbind, Filter(is.data.frame, null_results))
-out_file <- file.path(OUT_DIR, "null_NES_permutations_simpler_1000perms.rds")
-saveRDS(null_df, out_file)
+#out_file <- file.path(OUT_DIR, "null_NES_permutations_simpler_1000perms_fullGTExdata.rds")
+saveRDS(null_df, "../data_aux/null_NES_permutations_simpler_1000perms_fullGTExdata.rds")
 
-message("Saved to: ", out_file)
+message("Saved.")
 message("Total time: ",
         round(difftime(Sys.time(), t_start, units = "mins"), 1), " min")

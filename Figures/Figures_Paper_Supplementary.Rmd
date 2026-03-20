@@ -4743,8 +4743,11 @@ ggplot2::ggsave("Figs/SupFigure6_FPRsimulations.pdf",
 
 
 ```{r}
-results_df_score <- readRDS("../data_aux/results_df_score_GTEx_FPR.rds")
-results_df_gsea <- readRDS("../data_aux/results_df_gsea_GTEx_FPR.rds")
+# results_df_score <- readRDS("../data_aux/results_df_score_GTEx_FPR.rds")
+# results_df_gsea <- readRDS("../data_aux/results_df_gsea_GTEx_FPR.rds")
+
+  results_df_score <- readRDS("data_aux/results_df_score_GTEx_FPR_agecentered_extendedGTExdata.rds")
+results_df_gsea <- readRDS("data_aux/results_df_gsea_GTEx_FPR_agecentered_extendedGTExdata.rds")
 
 
 results_df_gsea <- results_df_gsea %>%
@@ -4759,7 +4762,7 @@ results_df_score <- results_df_score %>%
 
 
 # Alphabetically order tissue factor
-tissue_levels <- sort(unique(results_df_score$tissue), decreasing = T)
+tissue_levels <- sort(unique(results_df_score$tissue), decreasing = F)
 results_df_score$tissue <- factor(results_df_score$tissue, levels = tissue_levels)
 results_df_gsea$tissue  <- factor(results_df_gsea$tissue, levels = tissue_levels)
 

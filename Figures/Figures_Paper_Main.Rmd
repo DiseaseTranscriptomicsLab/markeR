@@ -1386,9 +1386,10 @@ filtered_counts <- readRDS("../data_aux/filtered_counts.rds")
 normalised_counts <- readRDS("../data_aux/normalised_counts.rds")
 corrcounts <- readRDS("../data_aux/corrcounts.rds")
 signatures <- readRDS("../data_aux/SenescenceSignatures.rds") 
-signatures_bidirectional <- readRDS("../data_aux/SenescenceSigntures_Bidirectional.rds") # Divided by direction
+signatures_bidirectional <- readRDS("data_aux/SenescenceSigntures_Bidirectional.rds") # Divided by direction
 
-GTEx_alltissues <- readRDS("../data_aux/GTExV8_voyagercorrected.rds") # https://github.com/DiseaseTranscriptomicsLab/voyAGEr/tree/main/Corrected_Counts
+GTEx_alltissues_filt <- readRDS("../data_aux/GTExV8_voyagercorrected.rds") # https://github.com/DiseaseTranscriptomicsLab/voyAGEr/tree/main/Corrected_Counts
+GTEx_alltissues <- readRDS("../data_aux/data_gtex.rds")
 metadata_GTEx_alltissues <- readRDS("../data_aux/GTExV8_metadata.rds") # Restricted access 
 ```
 
@@ -4935,18 +4936,37 @@ ggplot2::ggsave("../Figures/Figs/Figure6_tradeoffs.pdf",
 
 
 ```{r}
-df_Scores_alltissues <- CalculateScores(data = GTEx_alltissues,
+# df_Scores_alltissues <- data.frame(NULL)
+# for (tissue in unique(metadata_GTEx_alltissues$SMTSD)){
+#   
+#   subset_metadata <- metadata_GTEx_alltissues[metadata_GTEx_alltissues$SMTSD == tissue,]
+#   subset_data <- 2^GTEx_alltissues[[tissue]]
+#   subset_data <- subset_data[,subset_metadata$SAMPID]
+#   
+# df_Scores_tissue <- CalculateScores(data = subset_data,
+#                                         metadata = subset_metadata, # sample id has to be first column
+#                                         method = "ranking",
+#                                         gene_sets =  list(HernandezSegura = signatures_bidirectional$HernandezSegura))
+# 
+# df_Scores_alltissues <- rbind(df_Scores_alltissues, df_Scores_tissue$HernandezSegura)
+# 
+# }
+# df_Scores_alltissues
+
+
+df_Scores_alltissues <- CalculateScores(data = GTEx_alltissues_filt,
                                         metadata = metadata_GTEx_alltissues, # sample id has to be first column
                                         method = "logmedian",
-                                        gene_sets =  signatures_bidirectional)
+                                        gene_sets =  list(HernandezSegura = signatures_bidirectional$HernandezSegura))$HernandezSegura
+
 ```
 
-
+ 
 ```{r fig.width=12, fig.height=5}
-(plt_gtex_score_alltissues <- ggplot(df_Scores_alltissues$HernandezSegura, aes(x = SMTSD, y = score)) +
+(plt_gtex_score_alltissues <- ggplot(df_Scores_alltissues, aes(x = SMTSD, y = score)) +
    geom_jitter(color="#DDDDDD") +
    # add dashed horizontal line for median across all tissues
-   geom_hline(yintercept = median(df_Scores_alltissues$HernandezSegura$score), linetype = "dashed", color = "#888888") +
+   geom_hline(yintercept = median(df_Scores_alltissues$score), linetype = "dashed", color = "#888888") +
    geom_violin(alpha=0.4, fill="#4E9B62")+ 
    labs(
      x = "",
@@ -5091,8 +5111,9 @@ df_Scores_hs
 
 
 ```{r}
-results_df_score <- readRDS("../data_aux/results_df_score_GTEx_FPR.rds")
-results_df_gsea <- readRDS("../data_aux/results_df_gsea_GTEx_FPR.rds")
+results_df_score <- readRDS("data_aux/results_df_score_GTEx_FPR.rds")
+results_df_gsea <- readRDS("data_aux/results_df_gsea_GTEx_FPR.rds")
+ 
 
 
 results_df_gsea <- results_df_gsea %>%
@@ -5189,8 +5210,11 @@ plt_gtex_scores_HS
 
 
 ```{r}
-tissues_signif_HS <- c("Artery - Aorta","Breast - Mammary Tissue", "Cells - Cultured fibroblasts","Thyroid")
-tissues_signif_SenMayo <- c("Artery - Tibial", "Brain - Anterior cingulate cortex (BA24)", "Brain - Hippocampus", "Colon - Sigmoid", "Minor Salivary Gland", "Muscle - Skeletal", "Nerve - Tibial", "Prostate")
+# tissues_signif_HS <- c("Artery - Aorta","Breast - Mammary Tissue", "Cells - Cultured fibroblasts","Thyroid")
+# tissues_signif_SenMayo <- c("Artery - Tibial", "Brain - Anterior cingulate cortex (BA24)", "Brain - Hippocampus", "Colon - Sigmoid", "Minor Salivary Gland", "Muscle - Skeletal", "Nerve - Tibial", "Prostate")
+
+tissues_signif_HS <- c("Artery - Aorta","Brain - Nucleus accumbens (basal ganglia)", "Thyroid", "Uterus")
+tissues_signif_SenMayo <- c("Artery - Aorta",  "Artery - Tibial", "Colon - Sigmoid", "Uterus", "Whole Blood")
 
 ```
 
@@ -5203,7 +5227,8 @@ pltlist <- list()
 for (tissue in tissues_signif_HS){
   
   subset_metadata <- metadata_GTEx_alltissues[metadata_GTEx_alltissues$SMTSD == tissue,]
-  subset_data <- GTEx_alltissues[,subset_metadata$SAMPID]
+  subset_data <- GTEx_alltissues[[tissue]]
+  subset_data <- subset_data[,subset_metadata$SAMPID]
   
   pltlist_aux <- list()
   

@@ -99,18 +99,10 @@ invisible(lapply(files, source))
 # (~100-500 samples). Too many covariates risk overfitting and collinearity.
 N_COVARIATES <- 6
 
-# Tissues with significant age-senescence signal in the paper (Figure 7),
-# used to annotate the visualisation.
-TISSUE_SIGNAL <- c(
-  "Artery - Aorta",
-  "Breast - Mammary Tissue",
-  "Cells - Cultured fibroblasts",
-  "Thyroid"
-)
 
 # Output directory
-OUT_DIR <- "../Figures/Comment3_1"
-if (!dir.exists(OUT_DIR)) dir.create(OUT_DIR, recursive = TRUE)
+#OUT_DIR <- "../Figures/Comment3_1"
+#if (!dir.exists(OUT_DIR)) dir.create(OUT_DIR, recursive = TRUE)
 
 # -----------------------------------------------------------------------------
 # 2. Load data
@@ -120,7 +112,8 @@ message("Loading data...")
 
 # GTEx v8 expression matrix: normalised NON-log-transformed counts (genes x samples)
 # Pre-processed and batch-corrected as per Schneider et al. 2024 (voyAGEr)
-GTEx_alltissues <- readRDS("../data_aux/GTExV8_voyagercorrected.rds")
+#GTEx_alltissues <- readRDS("../data_aux/GTExV8_voyagercorrected.rds")
+GTEx_alltissues <- readRDS("../data_aux/data_gtex.rds")
 
 # Sample metadata: must contain columns SMTSD (tissue) and AGE (numeric, donor age)
 metadata_GTEx_alltissues <- readRDS("../data_aux/GTExV8_metadata.rds")
@@ -247,8 +240,8 @@ for (tissue in TISSUES) {
   # Subset expression matrix and metadata to this tissue
   meta_t           <- metadata_GTEx_alltissues[metadata_GTEx_alltissues$SMTSD == tissue, ]
   rownames(meta_t) <- meta_t$SAMPID
-  expr_t           <- GTEx_alltissues[, meta_t$SAMPID]
-  
+  expr_t           <- 2^GTEx_alltissues[[tissue]]
+  expr_t           <- expr_t[, meta_t$SAMPID]
   # --- Step 1: Compute gene overlap and set dynamic threshold ----------------
   # Record overlap for reporting in the methods section
   overlap_pct <- length(intersect(rownames(expr_t),
@@ -382,9 +375,9 @@ message("\nResults (", nrow(results_df), " rows):")
 print(as.data.frame(results_df))
 
 # Save full results
-out_rds <- file.path(OUT_DIR, "composition_correction_results_noscale.rds")
-saveRDS(results_df, out_rds)
-message("\nResults saved to: ", out_rds)
+#out_rds <- file.path(OUT_DIR, "composition_correction_results_noscale_fullGTExdata.rds")
+saveRDS(results_df, "../data_aux/composition_correction_results_noscale_fullGTExdata.rds")
+message("\nResults saved.")
  
 # -----------------------------------------------------------------------------
 # 7. Done

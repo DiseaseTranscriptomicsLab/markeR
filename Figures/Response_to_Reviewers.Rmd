@@ -47,6 +47,9 @@ library(ggrepel)
 #devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
 library(biomaRt)
 library("tximport")
+library(tidyverse)
+library(patchwork)
+
 ```
 
 ### Functions
@@ -2257,17 +2260,8 @@ library(beepr)
 
 ```{r}
 # local job
-composition_correction_results <- readRDS("../data_aux/composition_correction_results_noscale.rds")
+composition_correction_results <- readRDS("../data_aux/composition_correction_results_noscale_fullGTExdata.rds")
 
-```
-
-```{r}
-TISSUE_SIGNAL <- c(
-  "Artery - Aorta",
-  "Breast - Mammary Tissue",
-  "Cells - Cultured fibroblasts",
-  "Thyroid"
-)
 ```
 
 
@@ -2351,18 +2345,18 @@ plot_all
 
 
 
-```{r}
-ggplot2::ggsave("../Figures/Figs/R3_1_CellTypeComposition.png",
-                plot_all,
-                width = 8, height=11, bg = 'white')
+<!-- ```{r} -->
+<!-- ggplot2::ggsave("../Figures/Figs/R3_1_CellTypeComposition.png", -->
+<!--                 plot_all, -->
+<!--                 width = 8, height=11, bg = 'white') -->
 
-ggplot2::ggsave("../Figures/Figs/R3_1_CellTypeComposition.pdf",
-                plot_all,
-                width = 7, height=11, bg = 'white')
-```
+<!-- ggplot2::ggsave("../Figures/Figs/R3_1_CellTypeComposition.pdf", -->
+<!--                 plot_all, -->
+<!--                 width = 7, height=11, bg = 'white') -->
+<!-- ``` -->
 
 ```{r}
-df_null <- readRDS("../data_aux/null_NES_permutations_simpler_1000perms.rds")
+df_null <- readRDS("data_aux/null_NES_permutations_simpler_1000perms_fullGTExdata.rds")
 ```
 
  
@@ -2474,13 +2468,453 @@ plot_all
 
 
 ```{r}
-ggplot2::ggsave("Figures/Figs/R3_1_CellTypeComposition.png",
+ggplot2::ggsave("Figures/Figs/R3_1_CellTypeComposition_correctedAllgenes.png",
                 plot_all,
                 width = 8, height=11, bg = 'white')
 
-ggplot2::ggsave("Figures/Figs/R3_1_CellTypeComposition.pdf",
+ggplot2::ggsave("Figures/Figs/R3_1_CellTypeComposition_correctedAllgenes.pdf",
                 plot_all,
                 width = 7, height=11, bg = 'white')
+```
+
+### Comparison All Genes vs Common Genes
+
+```{r}
+# ── 1. Load data ──────────────────────────────────────────────────────────────
+score_common <- readRDS("data_aux/results_df_score_GTEx_FPR.rds")
+gsea_common  <- readRDS("data_aux/results_df_gsea_GTEx_FPR.rds")
+score_all    <- readRDS("data_aux/results_df_score_GTEx_FPR_agecentered_extendedGTExdata.rds")
+gsea_all     <- readRDS("data_aux/results_df_gsea_GTEx_FPR_agecentered_extendedGTExdata.rds")
+```
+
+```{r}
+# ── 2. Preprocess ─────────────────────────────────────────────────────────────
+prep_score <- function(df, gene_set_label) {
+  df %>%
+    group_by(signature, method) %>%
+    mutate(P_adj = p.adjust(fpr, method = "BH")) %>%
+    ungroup() %>%
+    mutate(
+      method  = factor(method, levels = c("logmedian", "ranking", "ssGSEA")),
+      signif  = ifelse(P_adj < 0.05, "*", ""),
+      geneset = gene_set_label
+    )
+}
+
+prep_gsea <- function(df, gene_set_label) {
+  df %>%
+    group_by(signature) %>%
+    mutate(padj = p.adjust(pval, method = "BH")) %>%
+    ungroup() %>%
+    mutate(
+      method  = "GSEA",
+      signif  = ifelse(padj < 0.05, "*", ""),
+      geneset = gene_set_label
+    )
+}
+
+score_common <- prep_score(score_common, "Common genes \nacross tissues")
+score_all    <- prep_score(score_all,    "All genes \nper tissue")
+gsea_common  <- prep_gsea(gsea_common,   "Common genes \nacross tissues")
+gsea_all     <- prep_gsea(gsea_all,      "All genes \nper tissue")
+
+
+```
+
+```{r}
+# ── 3. Unified tissue order ───────────────────────────────────────────────────
+all_tissues <- sort(unique(c(
+  score_common$tissue, score_all$tissue,
+  gsea_common$tissue,  gsea_all$tissue
+)), decreasing = T)
+
+set_levels <- function(df) {
+  df %>% mutate(tissue = factor(tissue, levels = all_tissues))
+}
+
+score_common <- set_levels(score_common)
+score_all    <- set_levels(score_all)
+gsea_common  <- set_levels(gsea_common)
+gsea_all     <- set_levels(gsea_all)
+```
+
+```{r}
+# ── 4. Heatmap builders ───────────────────────────────────────────────────────
+# All legends removed from individual plots — extracted separately at the end
+
+make_score_heatmap <- function(score_data,
+                               show_y = TRUE,
+                               title  = NULL) {
+  p <- ggplot(score_data,
+              aes(x = method, y = tissue, fill = Cohen_f)) +
+    geom_tile(color = "gray90") +
+    geom_text(aes(label = signif), size = 4.5, vjust = 0.8, hjust = 0.5) +
+    scale_fill_gradient(
+      low      = "white",
+      high     = "#49B0AB",
+      name     = "Cohen's f",
+      limits   = c(0, 0.4),
+      na.value = "#49B0AB",
+    ) +
+    scale_x_discrete(labels = c(
+      logmedian = expression(log[2]*"-median"),
+      ranking   = "ranking",
+      ssGSEA    = "ssGSEA"
+    )) +
+    theme_minimal(base_size = 10) +
+    theme(
+      axis.title      = element_blank(),
+      axis.text.x     = element_text(angle = 45, hjust = 1, size = 9),
+      axis.text.y     = if (show_y) element_text(size = 7.5) else element_blank(),
+      axis.ticks.y    = if (show_y) element_line() else element_blank(),
+      legend.position = "none",
+      panel.grid      = element_blank(),
+      plot.title      = element_text(hjust = 0.5, face = "bold", size = 10,
+                                     margin = margin(b = 4))
+    )
+
+  if (!is.null(title)) p <- p + labs(title = title)
+  p
+}
+
+make_gsea_heatmap <- function(gsea_data,
+                              title = NULL) {
+  p <- ggplot(gsea_data,
+              aes(x = method, y = tissue, fill = abs(NES))) +
+    geom_tile(color = "gray90") +
+    geom_text(aes(label = signif), size = 4.5, vjust = 0.8, hjust = 0.5) +
+    scale_fill_gradient(
+      low      = "white",
+      high     = "#B04975",
+      name     = "|NES|",
+      limits   = c(0, 2.5),
+      na.value = "#B04975"
+    ) +
+    theme_minimal(base_size = 10) +
+    theme(
+      axis.title      = element_blank(),
+      axis.text.y     = element_blank(),
+      axis.ticks.y    = element_blank(),
+      axis.text.x     = element_text(angle = 45, hjust = 1, size = 9),
+      legend.position = "none",
+      panel.grid      = element_blank(),
+      plot.title      = element_text(hjust = 0.5, face = "bold", size = 10,
+                                     margin = margin(b = 4))
+    )
+
+  if (!is.null(title)) p <- p + labs(title = title)
+  p
+}
+
+
+```
+
+```{r}
+# ── 5. Build heatmap plots ────────────────────────────────────────────────────
+# Titles: only on top row (Common genes block), one title per score+gsea pair
+# Signature label: added as plot subtitle on the score_common plot only
+
+sig_titles <- list(
+  HernandezSegura = "HernandezSegura",
+  SAUL_SEN_MAYO   = "SAUL_SEN_MAYO"
+)
+
+heatmap_plts <- list()
+for (sig in c("HernandezSegura", "SAUL_SEN_MAYO")) {
+  for (gs in c("Common genes \nacross tissues", "All genes \nper tissue")) {
+
+    sd <- filter(if (gs == "Common genes \nacross tissues") score_common else score_all,
+                 signature == sig)
+    gd <- filter(if (gs == "Common genes \nacross tissues") gsea_common  else gsea_all,
+                 signature == sig)
+
+    show_y <- (gs == "Common genes \nacross tissues")
+
+    # Block title only on top of score plot, labelled by gene set
+    score_title <- gs  # "Common genes" or "All genes"
+    gsea_title  <- ""  # empty — one title covers score+gsea block
+
+    # Signature label as subtitle on the leftmost (score common) plot only
+    p_score <- make_score_heatmap(sd, show_y = show_y, title = score_title)
+    p_gsea  <- make_gsea_heatmap(gd, title = gsea_title)
+
+    # Add signature name as y-axis title on score_common only
+    if (gs == "Common genes \nacross tissues") {
+      p_score <- p_score +
+        #labs(subtitle = sig_titles[[sig]]) +
+        theme(plot.subtitle = element_text(
+          hjust = 0, face = "bold.italic", size = 9,
+          colour = "grey30", margin = margin(b = 2)
+        ))
+    }
+
+    heatmap_plts[[paste(sig, "score", gs, sep = "||")]] <- p_score
+    heatmap_plts[[paste(sig, "gsea",  gs, sep = "||")]] <- p_gsea
+  }
+}
+
+
+```
+
+
+```{r}
+# ── 6. Extract legends from dummy plots ───────────────────────────────────────
+# Build two dummy plots with legends, extract them cleanly
+
+dummy_score <- ggplot(
+  data.frame(x = 1, y = 1, z = 0.2),
+  aes(x = x, y = y, fill = z)
+) +
+  geom_tile() +
+  scale_fill_gradient(
+    low    = "white",
+    high   = "#49B0AB",
+    name   = "Cohen's f",
+    limits = c(0, 0.4),
+    breaks = c(0, 0.1, 0.2, 0.3, 0.4)
+  ) +
+  theme_void() +
+  theme(
+    legend.position     = "right",
+    legend.title        = element_text(size = 9, face = "bold"),
+    legend.text         = element_text(size = 8),
+    legend.key.height   = unit(0.8, "cm"),
+    legend.key.width    = unit(0.35, "cm")
+  )
+
+dummy_gsea <- ggplot(
+  data.frame(x = 1, y = 1, z = 1.5),
+  aes(x = x, y = y, fill = z)
+) +
+  geom_tile() +
+  scale_fill_gradient(
+    low    = "white",
+    high   = "#B04975",
+    name   = "|NES|",
+    limits = c(0, 2.5),
+    breaks = c(0, 0.5, 1.0, 1.5, 2.0, 2.5)
+  ) +
+  theme_void() +
+  theme(
+    legend.position     = "right",
+    legend.title        = element_text(size = 9, face = "bold"),
+    legend.text         = element_text(size = 8),
+    legend.key.height   = unit(0.8, "cm"),
+    legend.key.width    = unit(0.35, "cm")
+  )
+
+leg_score <- get_legend(dummy_score)
+leg_gsea  <- get_legend(dummy_gsea)
+
+# Stack the two legends vertically with a spacer between them
+legend_block <- ggarrange(
+  as_ggplot(leg_score),
+  as_ggplot(leg_gsea),
+  ncol    = 1,
+  nrow    = 2,
+  heights = c(1, 1)
+)
+
+```
+
+
+```{r fig.width=10, fig.height=8}
+# ── 7. Heatmap row ────────────────────────────────────────────────────────────
+# 8 heatmap plots + 1 legend block
+# widths: score (3 cols) gets ~3x the width of gsea (1 col)
+# 
+# heatmap_row <- ggarrange(
+#   heatmap_plts[["HernandezSegura||score||Common genes"]],
+#   heatmap_plts[["HernandezSegura||gsea||Common genes"]] + theme(axis.text.y = element_blank()),
+#   heatmap_plts[["HernandezSegura||score||All genes"]] + theme(axis.text.y = element_blank()),
+#   heatmap_plts[["HernandezSegura||gsea||All genes"]] + theme(axis.text.y = element_blank()),
+#   NULL,
+#   heatmap_plts[["SAUL_SEN_MAYO||score||Common genes"]] + theme(axis.text.y = element_blank()),
+#   heatmap_plts[["SAUL_SEN_MAYO||gsea||Common genes"]] + theme(axis.text.y = element_blank()),
+#   heatmap_plts[["SAUL_SEN_MAYO||score||All genes"]] + theme(axis.text.y = element_blank()),
+#   heatmap_plts[["SAUL_SEN_MAYO||gsea||All genes"]] + theme(axis.text.y = element_blank()),
+#   legend_block,
+#   nrow   = 1,
+#   ncol   = 10,
+#   widths = c(0.45, 0.05, 0.16, 0.05, 0.05,   # HS block
+#              0.16, 0.055, 0.14, 0.055,   # SM block
+#              0.10))
+
+
+heatmap_row1 <- ggarrange(
+  heatmap_plts[["HernandezSegura||score||Common genes \nacross tissues"]],
+  heatmap_plts[["HernandezSegura||gsea||Common genes \nacross tissues"]] + theme(axis.text.y = element_blank()),
+  heatmap_plts[["HernandezSegura||score||All genes \nper tissue"]] + theme(axis.text.y = element_blank()),
+  heatmap_plts[["HernandezSegura||gsea||All genes \nper tissue"]] + theme(axis.text.y = element_blank()),
+  nrow   = 1, 
+  widths = c(0.55, 0.07, 0.16, 0.07),
+  align="h")
+
+heatmap_row1 <- annotate_figure(heatmap_row1, top = text_grob("                                                   HernandezSegura", face = "bold", size = 12))
+
+
+heatmap_row2 <- ggarrange( 
+  heatmap_plts[["SAUL_SEN_MAYO||score||Common genes \nacross tissues"]] + theme(axis.text.y = element_blank()),
+  heatmap_plts[["SAUL_SEN_MAYO||gsea||Common genes \nacross tissues"]] + theme(axis.text.y = element_blank()),
+  heatmap_plts[["SAUL_SEN_MAYO||score||All genes \nper tissue"]] + theme(axis.text.y = element_blank()),
+  heatmap_plts[["SAUL_SEN_MAYO||gsea||All genes \nper tissue"]] + theme(axis.text.y = element_blank()),
+  nrow   = 1, 
+  widths = c(0.16, 0.055, 0.14, 0.055 ),
+  align="h")
+
+heatmap_row2 <- annotate_figure(heatmap_row2, top = text_grob("SAUL_SEN_MAYO", face = "bold", size = 12))
+
+
+heatmap_row3 <- ggarrange( 
+  legend_block,
+  nrow   = 1, 
+  widths = c( 0.10))
+
+
+heatmap_row <- ggarrange(heatmap_row1,
+                         NULL,
+                         heatmap_row2,
+                         heatmap_row3, 
+                         widths=c(0.7,0.05,0.4,0.2), nrow=1)
+
+
+heatmap_row
+
+```
+
+```{r}
+# ── 8. Scatter plot ───────────────────────────────────────────────────────────
+score_joined <- inner_join(
+  score_common %>% select(signature, tissue, method, Cohen_f, P_adj, signif),
+  score_all    %>% select(signature, tissue, method, Cohen_f, P_adj, signif),
+  by     = c("signature", "tissue", "method"),
+  suffix = c("_common", "_all")
+) %>%
+  mutate(
+    sig_category = case_when(
+      signif_common == "*" & signif_all == "*" ~ "Both",
+      signif_common == "*" & signif_all != "*" ~ "Common Genes Only",
+      signif_common != "*" & signif_all == "*" ~ "All Genes Only",
+      TRUE                                     ~ "Neither"
+    ),
+    sig_category = factor(sig_category,
+                          levels = c("Both", "Common Genes Only", "All Genes Only", "Neither")),
+    plot_x    = Cohen_f_common,
+    plot_y    = Cohen_f_all,
+    facet_lab = case_when(
+      method == "logmedian" ~ "log[2]-median",
+      method == "ranking"   ~ "Ranking",
+      method == "ssGSEA"    ~ "ssGSEA"
+    ),
+    facet_lab = factor(facet_lab, levels = c("log[2]-median", "Ranking", "ssGSEA"))
+  )
+
+gsea_joined <- inner_join(
+  gsea_common %>% select(signature, tissue, NES, padj, signif),
+  gsea_all    %>% select(signature, tissue, NES, padj, signif),
+  by     = c("signature", "tissue"),
+  suffix = c("_common", "_all")
+) %>%
+  mutate(
+    sig_category = case_when(
+      signif_common == "*" & signif_all == "*" ~ "Both",
+      signif_common == "*" & signif_all != "*" ~ "Common Genes Only",
+      signif_common != "*" & signif_all == "*" ~ "All Genes Only",
+      TRUE                                     ~ "Neither"
+    ),
+    sig_category = factor(sig_category,
+                          levels = c("Both", "Common Genes Only", "All Genes Only", "Neither")),
+    plot_x    = NES_common,
+    plot_y    = NES_all,
+    method    = "GSEA",
+    facet_lab = factor("GSEA", levels = "GSEA")
+  )
+
+combined_scatter_data <- bind_rows(
+  score_joined %>% select(signature, tissue, plot_x, plot_y, sig_category, facet_lab),
+  gsea_joined  %>% select(signature, tissue, plot_x, plot_y, sig_category, facet_lab)
+) %>%
+  mutate(
+    facet_lab = factor(facet_lab,
+                       levels = c("log[2]-median", "Ranking", "ssGSEA", "GSEA"))
+  )
+
+sig_colours <- c(
+  "Both"        = "#333333",
+  "Common Genes Only" = "#49B0AB",
+  "All Genes Only"    = "#B04975",
+  "Neither"     = "grey80"
+)
+
+scatter_plt <- ggplot(combined_scatter_data,
+                      aes(x      = plot_x,
+                          y      = plot_y,
+                          colour = sig_category,
+                          shape  = signature)) +
+  facet_wrap(
+    ~ facet_lab,
+    ncol     = 4,
+    scales   = "free",
+    labeller = labeller(facet_lab = label_parsed)
+  ) +
+  geom_vline(xintercept = 0, linetype = "dotted",
+             colour = "grey70", linewidth = 0.4) +
+  geom_hline(yintercept = 0, linetype = "dotted",
+             colour = "grey70", linewidth = 0.4) +
+  geom_abline(slope = 1, intercept = 0,
+              linetype = "dashed", colour = "grey50", linewidth = 0.5) +
+  geom_point(size = 2, alpha = 0.85) +
+  scale_colour_manual(
+    values = sig_colours,
+    name   = "FDR \u2264 0.05",
+    guide  = guide_legend(order = 1, override.aes = list(size = 3))
+  ) +
+  scale_shape_manual(
+    values = c(HernandezSegura = 16, SAUL_SEN_MAYO = 17),
+    name   = "Gene Set",
+    guide  = guide_legend(order = 2, override.aes = list(size = 3))
+  ) +
+  labs(
+    x = "Cohen's f \n Common genes",
+    y = "Cohen's f \n All genes"
+  ) +
+  theme_bw(base_size = 10) +
+  theme(
+    strip.background = element_rect(fill = "grey95", colour = NA),
+    strip.text       = element_text(size = 10, face = "bold"),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(colour = "grey93"),
+    legend.position  = "right",
+    legend.box       = "vertical",
+    axis.title       = element_text(size = 9)
+  )
+
+```
+
+
+```{r fig.width=10, fig.height=10}
+ # ── 9. Final assembly ─────────────────────────────────────────────────────────
+fig_combined <- ggarrange(
+  heatmap_row,
+  scatter_plt,
+  ncol       = 1,
+  nrow       = 2,
+  heights    = c(2, 0.7),
+  labels     = c("A", "B"),
+  font.label = list(size = 13, face = "bold")
+)
+
+fig_combined
+```
+
+```{r}
+ggplot2::ggsave("Figures/Figs/R3_1_ImpactSubsetGenes.png",
+                fig_combined,
+                width = 10, height=10, bg = 'white')
+
+ggplot2::ggsave("Figures/Figs/R3_1_ImpactSubsetGenes.pdf",
+                fig_combined,
+                width = 10, height=10, bg = 'white')
 ```
 
 ## Comment 1.5 — Additional datasets for age correlation analysis
