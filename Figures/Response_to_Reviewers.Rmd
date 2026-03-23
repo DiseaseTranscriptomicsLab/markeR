@@ -49,7 +49,7 @@ library(biomaRt)
 library("tximport")
 library(tidyverse)
 library(patchwork)
-
+library(GEOquery)
 ```
 
 ### Functions
@@ -2920,6 +2920,1064 @@ ggplot2::ggsave("Figures/Figs/R3_1_ImpactSubsetGenes.pdf",
 ## Comment 1.5 — Additional datasets for age correlation analysis
 
 R.: Apply markeR's discovery mode to one or more datasets independent of GTEx, modelling age as a continuous variable, to assess whether age-associated senescence signals are reproducible across transcriptomic resources and pointed limitations are correct. 
+
+### Skin (microarray) - GSE85358
+
+```{r}
+## ============================================================
+## Parse Agilent microarray txt.gz files -> expression matrix
+## Platform: Agilent-039494, hg19
+## Signal:   gProcessedSignal
+## Genes:    GeneName (mean across probes)
+## Controls: removed (ControlType != 0)
+## ============================================================
+
+library(data.table)
+library(dplyr)
+
+# ── User settings ─────────────────────────────────────────────
+INPUT_DIR  <- "../data_aux/GSE85358_RAW/"   # <-- change this
+OUTPUT_CSV <- "../data_aux/GSE85358_expression_matrix.csv"        # output file name
+# ──────────────────────────────────────────────────────────────
+
+
+#' Parse a single Agilent Feature Extraction txt.gz file.
+#' Returns a two-column data.frame: GeneName, gProcessedSignal.
+parse_agilent_file <- function(filepath) {
+  
+  # Read all lines (gz is handled transparently by readLines)
+  lines <- readLines(filepath, warn = FALSE)
+  
+  # The file has three blocks separated by "*":
+  # FEPARAMS, STATS, FEATURES
+  # We need the FEATURES block, which starts with "FEATURES\t..."
+  # The actual column header is the line starting with "FEATURES"
+  # and data lines start with "DATA"
+  
+  feat_header_idx <- which(startsWith(lines, "FEATURES\t"))
+  
+  if (length(feat_header_idx) == 0) {
+    warning(paste("No FEATURES block found in:", filepath))
+    return(NULL)
+  }
+  
+  # Extract column names from the FEATURES header line
+  col_names <- strsplit(lines[feat_header_idx], "\t")[[1]]
+  # Replace the first element "FEATURES" with a placeholder
+  col_names[1] <- "block_type"
+  
+  # Find all DATA lines that belong to the FEATURES block
+  # (i.e., DATA lines after the FEATURES header)
+  data_lines <- lines[(feat_header_idx + 1):length(lines)]
+  data_lines <- data_lines[startsWith(data_lines, "DATA\t")]
+  
+  if (length(data_lines) == 0) {
+    warning(paste("No DATA lines found in:", filepath))
+    return(NULL)
+  }
+  
+  # Parse into a data.table
+  dt <- fread(
+    text      = c(paste(col_names, collapse = "\t"), data_lines),
+    sep       = "\t",
+    header    = TRUE,
+    fill      = TRUE,
+    showProgress = FALSE
+  )
+  
+  # ── Filter controls ───────────────────────────────────────
+  # ControlType == 0 means non-control probes
+  dt <- dt[ControlType == 0]
+  
+  # ── Keep only relevant columns ────────────────────────────
+  needed <- c("GeneName", "gProcessedSignal")
+  missing_cols <- setdiff(needed, names(dt))
+  if (length(missing_cols) > 0) {
+    warning(paste("Missing columns", paste(missing_cols, collapse = ", "),
+                  "in:", filepath))
+    return(NULL)
+  }
+  
+  dt <- dt[, ..needed]
+  
+  # ── Remove probes with empty/missing/ambiguous gene names ─
+  dt <- dt[!is.na(GeneName) & GeneName != "" & GeneName != "---"]
+  
+  # ── Coerce signal to numeric ──────────────────────────────
+  dt[, gProcessedSignal := as.numeric(gProcessedSignal)]
+  
+  # ── Summarise: mean across probes per gene ────────────────
+  dt_mean <- dt[, .(signal = mean(gProcessedSignal, na.rm = TRUE)),
+                by = GeneName]
+  
+  return(dt_mean)
+}
+
+
+# ── Discover files ─────────────────────────────────────────────
+files <- list.files(INPUT_DIR, pattern = "\\.txt\\.gz$",
+                    full.names = TRUE, recursive = FALSE)
+
+
+# ── Parse all files ────────────────────────────────────────────
+sample_list <- lapply(files, function(f) {
+  message("  Processing: ", basename(f))
+  result <- tryCatch(
+    parse_agilent_file(f),
+    error = function(e) {
+      warning(paste("Error parsing", basename(f), ":", e$message))
+      return(NULL)
+    }
+  )
+  if (!is.null(result)) {
+    # Use file basename (strip .txt.gz) as sample name
+    sample_name <- sub("\\.txt\\.gz$", "", basename(f))
+    setnames(result, "signal", sample_name)
+  }
+  return(result)
+})
+
+# ── Merge all samples by GeneName (full outer join) ────────────
+message("Merging samples...")
+
+expr_matrix <- Reduce(function(a, b) {
+  merge(a, b, by = "GeneName", all = TRUE)
+}, sample_list)
+
+# Genes present in all samples (inner join alternative — optional)
+# Uncomment if you prefer to keep only genes present in every sample:
+# expr_matrix <- Reduce(function(a, b) merge(a, b, by = "GeneName"), sample_list)
+
+
+# ── Final formatting ───────────────────────────────────────────
+# Set GeneName as row names
+expr_df <- as.data.frame(expr_matrix)
+rownames(expr_df) <- expr_df$GeneName
+expr_df$GeneName  <- NULL
+
+message(sprintf("Final matrix: %d genes x %d samples",
+                nrow(expr_df), ncol(expr_df)))
+
+
+# ── Save ───────────────────────────────────────────────────────
+write.csv(expr_df, file = OUTPUT_CSV, quote = FALSE)
+message("Saved: ", OUTPUT_CSV)
+
+saveRDS(expr_df, "../data_aux/GSE85358_expression_matrix.rds")
+ expr_df <- readRDS("../data_aux/GSE85358_expression_matrix.rds")
+```
+
+
+```{r}
+## ============================================================
+## Extract sample metadata from GEO SOFT file
+## and align with expression matrix sample names
+## ============================================================
+ 
+
+# ── User settings ─────────────────────────────────────────────
+SOFT_FILE  <- "../data_aux/GSE85358_family.soft.gz"  # <-- change this
+OUTPUT_CSV <- "../data_aux/GSE85358_metadata.csv"
+
+# Optional: if you already have your expression matrix loaded,
+# set this to align metadata rows to your sample columns.
+# Otherwise leave as NULL.
+EXPR_SAMPLE_NAMES <- colnames(expr_df)
+# ──────────────────────────────────────────────────────────────
+
+
+# ── Parse SOFT file ────────────────────────────────────────────
+message("Parsing SOFT file: ", SOFT_FILE)
+
+gse <- getGEO(filename = SOFT_FILE, GSEMatrix = FALSE)
+
+# Extract all GSM (sample) objects
+gsm_list <- GSMList(gse)
+message(sprintf("Found %d samples.", length(gsm_list)))
+
+
+# ── Extract metadata from each sample ─────────────────────────
+# Each GSM has a Meta slot with all characteristics
+extract_gsm_metadata <- function(gsm) {
+  meta <- Meta(gsm)
+  
+  # Core fields always present in GEO
+  core <- data.frame(
+    sample_id    = meta$geo_accession %||% NA,
+    sample_title = meta$title         %||% NA,
+    stringsAsFactors = FALSE
+  )
+  
+  # Characteristics lines: format is usually "key: value"
+  # e.g. "age: 45", "Sex: Male", "tissue: skin"
+  chars <- meta$characteristics_ch1
+  
+  if (!is.null(chars) && length(chars) > 0) {
+    char_pairs <- lapply(chars, function(x) {
+      parts <- strsplit(x, ":\\s*", perl = TRUE)[[1]]
+      if (length(parts) == 2) {
+        key <- trimws(gsub("[^a-zA-Z0-9_]", "_", tolower(parts[1])))
+        val <- trimws(parts[2])
+        return(setNames(data.frame(val, stringsAsFactors = FALSE), key))
+      }
+      return(NULL)
+    })
+    char_df <- bind_cols(Filter(Negate(is.null), char_pairs))
+    core <- bind_cols(core, char_df)
+  }
+  
+  return(core)
+}
+
+# Fallback for NULL values (like %||% in rlang)
+`%||%` <- function(a, b) if (!is.null(a) && length(a) > 0) a else b
+
+metadata <- bind_rows(lapply(gsm_list, extract_gsm_metadata))
+
+message(sprintf("Metadata columns found: %s",
+                paste(names(metadata), collapse = ", ")))
+
+
+# ── Derive sample name matching your expression matrix ────────
+# GEO supplementary files are often named after the GSM accession
+# OR after the sample title — we keep both so you can match either.
+# The expression matrix script named samples after the filename
+# (minus .txt.gz), so you may need to adjust the join key below.
+
+message("\nPreview of sample_id and sample_title:")
+print(metadata[, c("sample_id", "sample_title")])
+
+
+# ── Optional: align with expression matrix columns ────────────
+if (!is.null(EXPR_SAMPLE_NAMES)) {
+  
+  # Try matching on sample_id (GSM accession) first
+  metadata$matched_expr_col <- NA_character_
+  
+  for (i in seq_len(nrow(metadata))) {
+    gsm_id    <- metadata$sample_id[i]
+    gsm_title <- metadata$sample_title[i]
+    
+    # Match if expr column contains the GSM accession
+    hit_id    <- EXPR_SAMPLE_NAMES[grepl(gsm_id, EXPR_SAMPLE_NAMES, fixed = TRUE)]
+    # Fallback: match on title
+    hit_title <- EXPR_SAMPLE_NAMES[grepl(gsm_title, EXPR_SAMPLE_NAMES, fixed = TRUE)]
+    
+    if (length(hit_id) == 1) {
+      metadata$matched_expr_col[i] <- hit_id
+    } else if (length(hit_title) == 1) {
+      metadata$matched_expr_col[i] <- hit_title
+    } else {
+      warning(sprintf("Could not match sample: %s (%s)", gsm_id, gsm_title))
+    }
+  }
+  
+  unmatched <- sum(is.na(metadata$matched_expr_col))
+  if (unmatched > 0) {
+    warning(sprintf("%d sample(s) could not be matched to expression matrix columns.",
+                    unmatched))
+  } else {
+    message("All samples matched successfully.")
+  }
+  
+  # Reorder metadata to match expression matrix column order
+  metadata <- metadata[match(EXPR_SAMPLE_NAMES,
+                             metadata$matched_expr_col), ]
+  rownames(metadata) <- EXPR_SAMPLE_NAMES
+}
+
+metadata$sampleID <- row.names(metadata)
+metadata <- metadata[,c(8,c(1:7))]
+
+metadata$group <- ifelse(metadata$group == "young", "Young \n (\u2264 25 years)", "Old \n (\u2265 60 years)")
+metadata$group <- factor(metadata$group, levels=c("Young \n (\u2264 25 years)","Old \n (\u2265 60 years)"))
+
+# ── Save ───────────────────────────────────────────────────────
+write.csv(metadata, file = OUTPUT_CSV, quote = TRUE, row.names = TRUE)
+message("Saved: ", OUTPUT_CSV)
+
+saveRDS(metadata,"../data_aux/metadata_GSE85358.rds")
+# metadata is your final sample x variable metadata table
+
+metadata <- readRDS("../data_aux/metadata_GSE85358.rds")
+```
+
+
+##### Filtering
+
+```{r}
+data <- expr_df
+```
+
+```{r}
+# Plot
+(plt_beforefilt <- ggplot() + aes(x=log10(rowSums(data))) +
+   geom_density(fill="grey", alpha=0.5) + theme_bw() + 
+   theme(axis.text.x = element_text(angle = 45, hjust=1),
+         plot.title = element_text(hjust = 0.5),
+         plot.subtitle = element_text(hjust = 0.5)) +
+   ggtitle("Before Filtering") +
+   xlab(expression(log[10]~"(counts per gene)")) +
+   ylab("Frequency") + 
+   geom_vline(xintercept = 3.2, linetype="dotted",color = "black", size=1.5))
+
+```
+
+
+```{r}
+filtdata <- data[rowSums(data) > 10^3.2,]
+nrow(data)
+nrow(filtdata)
+
+
+cat("Number of genes before filtering:", nrow(data), "\n")
+cat("Number of genes after filtering:", nrow(filtdata), "\n")
+
+```
+
+
+```{r}
+
+# Plot
+(plt_afterfilt <- ggplot() + aes(x=log10(rowSums(filtdata))) +
+   geom_density(fill="grey", alpha=0.5) + theme_bw() + 
+   theme(axis.text.x = element_text(angle = 45, hjust=1),
+         plot.title = element_text(hjust = 0.5),
+         plot.subtitle = element_text(hjust = 0.5)) +
+   ggtitle("After Filtering") +
+   xlab(expression(log[10]~"(counts per gene)")) +
+   ylab("Frequency") )
+
+```
+
+
+
+##### Normalisation
+
+```{r fig.width=6, fig.height=4}
+
+filtcounts_ggplot <- stack(log2(filtdata))
+colnames(filtcounts_ggplot) <- c("expression", "sampleID")
+filtcounts_ggplot <- merge(filtcounts_ggplot,metadata, by="sampleID")
+
+
+(plt_beforenorm <- ggplot(filtcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(alpha=0.4, outlier.size = 0.5)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+    theme_bw()+ 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle("Before Normalisation") )
+
+```
+
+
+```{r}
+dgelist_normcounts <- DGEList(filtdata) # the matrix with gene names as row names and counts in columns
+dgelist_normcounts <- calcNormFactors(dgelist_normcounts, method = "TMM") 
+normalised_counts <- as.data.frame(voom(dgelist_normcounts,plot=F)$E) 
+#normalised_counts <- as.data.frame(edgeR::cpm(dgelist_normcounts, log = FALSE)) 
+normdata <- 2^normalised_counts
+lognormdata <- log2(normdata+1)
+```
+
+
+```{r fig.width=6, fig.height=4}
+
+normcounts_ggplot <- stack(log2(normdata))
+colnames(normcounts_ggplot) <- c("expression", "sampleID")
+normcounts_ggplot <- merge(normcounts_ggplot,metadata, by="sampleID")
+
+
+(plt_afternorm <- ggplot(normcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(alpha=0.4, outlier.size = 0.5)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+    theme_bw()+ 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle("After Normalisation") )
+
+```
+
+
+##### PCA
+
+```{r fig.width=6, fig.height=4}
+y <- DGEList(lognormdata, samples= metadata)
+PCA  <- prcomp(t(y$counts), scale=FALSE, center=TRUE)
+PCACounts  <- PCA$x
+PCACounts  <- as.data.frame(PCACounts )
+PCAData <-  cbind(PCACounts[1:10],y$samples) 
+
+ev = PCA$sdev^2 
+pc1= round(100*ev[1]/sum(ev),2) 
+pc2 = round(100*ev[2]/sum(ev),2) 
+pc3 = round(100*ev[3]/sum(ev),2) 
+pc4 = round(100*ev[4]/sum(ev),2) 
+pc5 = round(100*ev[5]/sum(ev),2) 
+pc6 = round(100*ev[6]/sum(ev),2)  
+
+(pltpca_1 <- ggplot(PCAData, aes(PC1,PC2))+
+    geom_point(aes(color=group), size=5, alpha=0.6)+ 
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    guides(color = guide_legend(nrow = 3)) +
+    theme(legend.position="top", legend.box="vertical", legend.title = element_blank(), legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    geom_hline(yintercept=0, linetype="dotted") )
+
+(pltpca_2 <- ggplot(PCAData, aes(PC1,PC2))+
+    geom_point(aes(color=as.numeric(age)), size=5, alpha=0.6)+ 
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    theme(legend.position="top", legend.box="vertical", legend.title = element_blank(), legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") +  
+    geom_hline(yintercept=0, linetype="dotted"))
+
+
+```
+
+####Calculate Scores
+
+```{r fig.width=10, fig.height=4}
+
+cols_agegroup <- c(
+  "Young \n (\u2264 25 years)"    = "#3A798F",   
+  "Old \n (\u2265 60 years)" = "#3C3A8F"    
+)
+
+metadata$age <- as.numeric(metadata$age)
+(plt_scores_age <- PlotScores(data=normdata, metadata=metadata, gene_sets = signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")], Variable = "age", method="logmedian", xlab = "Age (years)", pvalcalc = T,ColorValues = "#3A508F85") )
+
+(plt_scores_group <- PlotScores(data=normdata, metadata=metadata, gene_sets = signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")], Variable = "group", ColorVariable = "group", method="logmedian", xlab = "Age Group", pvalcalc = T, ColorValues = cols_agegroup) )
+
+```
+
+```{r}
+degenes <- calculateDE(normdata,metadata,variables=c("age"))
+gseadf <- runGSEA(degenes,signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")])
+gseadf
+plotNESlollipop(gseadf)
+
+(plt_enrich_skin <- plotGSEAenrichment(GSEA_results=gseadf, 
+                   DEGList=degenes, 
+                   gene_sets=signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")], 
+                   widthTitle=40, grid = TRUE, titlesize = 10, nrow=1  ))
+
+``` 
+```{r fig.width=6, fig.height=12}
+
+plt_scores_skin <- ggarrange(plt_scores_age, plt_scores_group, NULL,plt_enrich_skin, ncol=1, nrow=4,heights=c(1,1.3,0.1,1))
+(plt_scores_skin <- annotate_figure(plt_scores_skin, top = text_grob("GSE85358: \nInner Forearm Epidermis\n", face = "bold", size = 14 )))
+
+```
+
+
+
+<!-- ```{r} -->
+<!-- data_gtex <- readRDS("../data_aux/data_gtex.rds") -->
+<!-- GTEx_alltissues <- readRDS("../data_aux/GTExV8_voyagercorrected.rds") -->
+<!-- metadata_GTEx_alltissues <- readRDS("../data_aux/GTExV8_metadata.rds") # Restricted access -->
+<!-- metadata_GTEx_alltissues$SEX <- ifelse(metadata_GTEx_alltissues$SEX == 1,"Male","Female") -->
+<!-- metadata_GTEx_alltissues -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- unique(metadata_GTEx_alltissues$SMTSD) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- meta_skin <- metadata_GTEx_alltissues[metadata_GTEx_alltissues$SMTSD == "Skin - Sun Exposed (Lower leg)",] -->
+<!-- gtexxskin <- GTEx_alltissues[,meta_skin$SAMPID] -->
+
+<!-- youngoldsamps <- meta_skin$SAMPID[meta_skin$AGE <= 25 | meta_skin$AGE >=60] -->
+<!-- meta_skin_youngold <- meta_skin[meta_skin$SAMPID %in% youngoldsamps,] -->
+<!-- gtexxskin_youngold <- gtexxskin[,meta_skin_youngold$SAMPID] -->
+<!-- meta_skin_youngold$Group <- ifelse(meta_skin_youngold$AGE <= 25, "Young \n (\u2264 25 years)", "Old \n (\u2265 60 years)") -->
+<!-- table(meta_skin_youngold$Group) -->
+<!-- table(metadata$group) -->
+<!-- set.seed("12345678") -->
+<!-- youngoldsampssubset <- meta_skin_youngold$SAMPID[meta_skin_youngold$Group == "Young \n (\u2264 25 years)"][sample(1:24)] -->
+<!-- youngoldsampssubset <- c(youngoldsampssubset, meta_skin_youngold$SAMPID[meta_skin_youngold$Group == "Old \n (\u2265 60 years)"][sample(1:24)]) -->
+
+<!-- youngoldsampssubset -->
+<!-- meta_skin_youngold <- meta_skin_youngold[meta_skin_youngold$SAMPID %in% youngoldsampssubset,] -->
+<!-- gtexxskin_youngold <- gtexxskin_youngold[,meta_skin_youngold$SAMPID] -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- cols_agegroup <- c( -->
+<!--   "Young \n (\u2264 25 years)"    = "#3A798F",    -->
+<!--   "Old \n (\u2265 60 years)" = "#3C3A8F"     -->
+<!-- ) -->
+
+<!-- PlotScores(data=gtexxskin_youngold, metadata=meta_skin_youngold, gene_sets = signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")], Variable = "AGE", method="logmedian", xlab = "Age (years)", ColorValues = "#3A508F85")  -->
+
+<!-- PlotScores(data=gtexxskin_youngold, metadata=meta_skin_youngold, gene_sets = signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")], Variable = "Group", ColorVariable = "Group", method="logmedian", xlab = "Age Group", pvalcalc = T, ColorValues = cols_agegroup)  -->
+<!-- ``` -->
+
+
+
+
+### Lung (microarray) - GSE47460
+
+only control samples
+
+```{r}
+## ============================================================
+## Parse Agilent microarray txt.gz files -> expression matrix
+## GSE47460 format: no GeneName column, uses SystematicName
+## Maps SystematicName -> HGNC symbol via org.Hs.eg.db
+## Signal:   gProcessedSignal
+## Controls: removed (ControlType != 0)
+## Samples:  CTRL only (filename contains "_CTRL")
+## ============================================================
+
+library(data.table)
+library(dplyr)
+library(org.Hs.eg.db)
+library(AnnotationDbi)
+
+# ── User settings ─────────────────────────────────────────────
+INPUT_DIR  <- "../data_aux/GSE47460_RAW/"
+OUTPUT_CSV <- "../data_aux/GSE47460_expression_matrix.csv"
+OUTPUT_RDS <- "../data_aux/GSE47460_expression_matrix.rds"
+# ──────────────────────────────────────────────────────────────
+
+
+# ── Discover CTRL files only ───────────────────────────────────
+files <- list.files(INPUT_DIR, pattern = "_CTRL\\.txt\\.gz$",
+                    full.names = TRUE, recursive = FALSE)
+
+message(sprintf("Found %d CTRL files.", length(files)))
+
+
+#' Parse a single Agilent file (GSE47460 format, no GeneName column).
+#' Returns a two-column data.table: SystematicName, gProcessedSignal.
+parse_agilent_file <- function(filepath) {
+  
+  lines <- readLines(filepath, warn = FALSE)
+  
+  # Strip Windows carriage returns if present
+  lines <- gsub("\r", "", lines)
+  
+  # Find FEATURES header line
+  feat_header_idx <- which(startsWith(lines, "FEATURES\t"))
+  
+  if (length(feat_header_idx) == 0) {
+    warning(paste("No FEATURES block found in:", filepath))
+    return(NULL)
+  }
+  
+  col_names <- strsplit(lines[feat_header_idx], "\t")[[1]]
+  col_names[1] <- "block_type"
+  
+  # DATA lines after the FEATURES header
+  data_lines <- lines[(feat_header_idx + 1):length(lines)]
+  data_lines <- data_lines[startsWith(data_lines, "DATA\t")]
+  
+  if (length(data_lines) == 0) {
+    warning(paste("No DATA lines found in:", filepath))
+    return(NULL)
+  }
+  
+  dt <- fread(
+    text         = c(paste(col_names, collapse = "\t"), data_lines),
+    sep          = "\t",
+    header       = TRUE,
+    fill         = TRUE,
+    showProgress = FALSE
+  )
+  
+  # ── Filter controls ───────────────────────────────────────
+  dt <- dt[ControlType == 0]
+  
+  # ── Keep relevant columns ─────────────────────────────────
+  needed <- c("SystematicName", "gProcessedSignal")
+  missing_cols <- setdiff(needed, names(dt))
+  if (length(missing_cols) > 0) {
+    warning(paste("Missing columns:", paste(missing_cols, collapse = ", "),
+                  "in:", filepath))
+    return(NULL)
+  }
+  
+  dt <- dt[, ..needed]
+  
+  # ── Remove empty/ambiguous probe annotations ──────────────
+  dt <- dt[!is.na(SystematicName) & SystematicName != "" & SystematicName != "---"]
+  
+  # ── Coerce signal to numeric ──────────────────────────────
+  dt[, gProcessedSignal := as.numeric(gProcessedSignal)]
+  
+  return(dt)
+}
+
+
+# ── Parse all CTRL files ───────────────────────────────────────
+message("Parsing files...")
+
+sample_list <- lapply(files, function(f) {
+  message("  Processing: ", basename(f))
+  tryCatch(
+    parse_agilent_file(f),
+    error = function(e) {
+      warning(paste("Error parsing", basename(f), ":", e$message))
+      return(NULL)
+    }
+  )
+})
+
+names(sample_list) <- sub("\\.txt\\.gz$", "", basename(files))
+
+# Remove failed samples
+failed <- which(sapply(sample_list, is.null))
+if (length(failed) > 0) {
+  warning(sprintf("%d file(s) failed to parse.", length(failed)))
+  sample_list <- sample_list[-failed]
+}
+
+
+# ── Build probe-level matrix ───────────────────────────────────
+# Collapse duplicate SystematicName entries within each sample (mean),
+# then merge across samples.
+message("Merging at probe level...")
+
+probe_matrix <- Reduce(function(a, b) {
+  merge(a, b, by = "SystematicName", all = TRUE)
+}, lapply(names(sample_list), function(nm) {
+  dt <- sample_list[[nm]]
+  dt <- dt[, .(gProcessedSignal = mean(gProcessedSignal, na.rm = TRUE)),
+           by = SystematicName]
+  setnames(dt, "gProcessedSignal", nm)
+  dt
+}))
+
+
+# ── Annotate: SystematicName -> HGNC symbol via org.Hs.eg.db ──
+message("Building annotation lookup from org.Hs.eg.db...")
+
+# RefSeq (NM_, NR_, XM_, XR_) -> gene symbol
+refseq_lookup <- AnnotationDbi::select(
+  org.Hs.eg.db,
+  keys    = AnnotationDbi::keys(org.Hs.eg.db, keytype = "REFSEQ"),
+  columns = c("REFSEQ", "SYMBOL"),
+  keytype = "REFSEQ"
+) %>%
+  dplyr::filter(!is.na(SYMBOL), !is.na(REFSEQ), SYMBOL != "", REFSEQ != "") %>%
+  dplyr::distinct(REFSEQ, .keep_all = TRUE) %>%
+  dplyr::rename(id = REFSEQ, hgnc_symbol = SYMBOL)
+
+# Ensembl transcript (ENST) -> gene symbol
+enst_lookup <- AnnotationDbi::select(
+  org.Hs.eg.db,
+  keys    = AnnotationDbi::keys(org.Hs.eg.db, keytype = "ENSEMBLTRANS"),
+  columns = c("ENSEMBLTRANS", "SYMBOL"),
+  keytype = "ENSEMBLTRANS"
+) %>%
+  dplyr::filter(!is.na(SYMBOL), !is.na(ENSEMBLTRANS), SYMBOL != "", ENSEMBLTRANS != "") %>%
+  dplyr::distinct(ENSEMBLTRANS, .keep_all = TRUE) %>%
+  dplyr::rename(id = ENSEMBLTRANS, hgnc_symbol = SYMBOL)
+
+# Combine both lookups
+full_lookup <- dplyr::bind_rows(refseq_lookup, enst_lookup) %>%
+  dplyr::distinct(id, .keep_all = TRUE)
+
+message(sprintf("  Lookup table: %d unique IDs mapped to HGNC symbols.",
+                nrow(full_lookup)))
+
+
+# ── Join annotation to probe matrix ───────────────────────────
+# Strip version numbers from SystematicName before joining
+# e.g. NM_001234.3 -> NM_001234
+probe_matrix[, id_clean := sub("\\.\\d+$", "", SystematicName)]
+
+probe_annotated <- merge(
+  probe_matrix,
+  as.data.table(full_lookup),
+  by.x  = "id_clean",
+  by.y  = "id",
+  all.x = FALSE   # drop probes with no HGNC symbol
+)
+
+n_unmapped <- nrow(probe_matrix) - nrow(probe_annotated)
+message(sprintf("  %d probes dropped (no HGNC symbol found).", n_unmapped))
+
+# Remove helper columns
+probe_annotated[, c("SystematicName", "id_clean") := NULL]
+
+
+# ── Collapse to gene level: mean across probes ─────────────────
+message("Collapsing to gene level (mean across probes)...")
+
+sample_cols <- names(sample_list)
+
+expr_gene <- probe_annotated[,
+  lapply(.SD, function(x) mean(as.numeric(x), na.rm = TRUE)),
+  by      = hgnc_symbol,
+  .SDcols = sample_cols
+]
+
+
+# ── Final formatting ───────────────────────────────────────────
+expr_df             <- as.data.frame(expr_gene)
+rownames(expr_df)   <- expr_df$hgnc_symbol
+expr_df$hgnc_symbol <- NULL
+
+message(sprintf("Final matrix: %d genes x %d samples",
+                nrow(expr_df), ncol(expr_df)))
+
+na_count <- sum(is.na(expr_df))
+if (na_count > 0) message(sprintf("Note: %d NA values present.", na_count))
+
+expr_df_complete <- expr_df[complete.cases(expr_df), ]
+cat(sprintf("Genes retained after removing NAs: %d\n", nrow(expr_df_complete)))
+                                                                                                                                                                                                                                                                                
+
+# ── Save ───────────────────────────────────────────────────────
+write.csv(expr_df_complete, file = OUTPUT_CSV, quote = FALSE)
+saveRDS(expr_df_complete,   file = OUTPUT_RDS)
+message("Saved: ", OUTPUT_CSV)
+message("Saved: ", OUTPUT_RDS)
+```
+
+
+
+```{r}
+## ============================================================
+## Extract sample metadata from GEO SOFT file
+## and align with expression matrix sample names
+## ============================================================
+ 
+
+# ── User settings ─────────────────────────────────────────────
+SOFT_FILE  <- "../data_aux/GSE47460_family.soft"  # <-- change this
+OUTPUT_CSV <- "../data_aux/GSE47460_metadata.csv"
+
+# Optional: if you already have your expression matrix loaded,
+# set this to align metadata rows to your sample columns.
+# Otherwise leave as NULL.
+EXPR_SAMPLE_NAMES <- colnames(expr_df_complete)
+# ──────────────────────────────────────────────────────────────
+
+
+# ── Parse SOFT file ────────────────────────────────────────────
+message("Parsing SOFT file: ", SOFT_FILE)
+
+gse <- getGEO(filename = SOFT_FILE, GSEMatrix = FALSE)
+
+# Extract all GSM (sample) objects
+gsm_list <- GSMList(gse)
+message(sprintf("Found %d samples.", length(gsm_list)))
+
+
+# ── Extract metadata from each sample ─────────────────────────
+# Each GSM has a Meta slot with all characteristics
+extract_gsm_metadata <- function(gsm) {
+  meta <- Meta(gsm)
+  
+  # Core fields always present in GEO
+  core <- data.frame(
+    sample_id    = meta$geo_accession %||% NA,
+    sample_title = meta$title         %||% NA,
+    stringsAsFactors = FALSE
+  )
+  
+  # Characteristics lines: format is usually "key: value"
+  # e.g. "age: 45", "Sex: Male", "tissue: skin"
+  chars <- meta$characteristics_ch1
+  
+  if (!is.null(chars) && length(chars) > 0) {
+    char_pairs <- lapply(chars, function(x) {
+      parts <- strsplit(x, ":\\s*", perl = TRUE)[[1]]
+      if (length(parts) == 2) {
+        key <- trimws(gsub("[^a-zA-Z0-9_]", "_", tolower(parts[1])))
+        val <- trimws(parts[2])
+        return(setNames(data.frame(val, stringsAsFactors = FALSE), key))
+      }
+      return(NULL)
+    })
+    char_df <- bind_cols(Filter(Negate(is.null), char_pairs))
+    core <- bind_cols(core, char_df)
+  }
+  
+  return(core)
+}
+
+# Fallback for NULL values (like %||% in rlang)
+`%||%` <- function(a, b) if (!is.null(a) && length(a) > 0) a else b
+
+metadata <- bind_rows(lapply(gsm_list, extract_gsm_metadata))
+
+message(sprintf("Metadata columns found: %s",
+                paste(names(metadata), collapse = ", ")))
+
+
+# ── Derive sample name matching your expression matrix ────────
+# GEO supplementary files are often named after the GSM accession
+# OR after the sample title — we keep both so you can match either.
+# The expression matrix script named samples after the filename
+# (minus .txt.gz), so you may need to adjust the join key below.
+
+message("\nPreview of sample_id and sample_title:")
+print(metadata[, c("sample_id", "sample_title")])
+
+
+# ── Optional: align with expression matrix columns ────────────
+if (!is.null(EXPR_SAMPLE_NAMES)) {
+  
+  # Try matching on sample_id (GSM accession) first
+  metadata$matched_expr_col <- NA_character_
+  
+  for (i in seq_len(nrow(metadata))) {
+    gsm_id    <- metadata$sample_id[i]
+    gsm_title <- metadata$sample_title[i]
+    
+    # Match if expr column contains the GSM accession
+    hit_id    <- EXPR_SAMPLE_NAMES[grepl(gsm_id, EXPR_SAMPLE_NAMES, fixed = TRUE)]
+    # Fallback: match on title
+    hit_title <- EXPR_SAMPLE_NAMES[grepl(gsm_title, EXPR_SAMPLE_NAMES, fixed = TRUE)]
+    
+    if (length(hit_id) == 1) {
+      metadata$matched_expr_col[i] <- hit_id
+    } else if (length(hit_title) == 1) {
+      metadata$matched_expr_col[i] <- hit_title
+    } else {
+      warning(sprintf("Could not match sample: %s (%s)", gsm_id, gsm_title))
+    }
+  }
+  
+  unmatched <- sum(is.na(metadata$matched_expr_col))
+  if (unmatched > 0) {
+    warning(sprintf("%d sample(s) could not be matched to expression matrix columns.",
+                    unmatched))
+  } else {
+    message("All samples matched successfully.")
+  }
+  
+  # Reorder metadata to match expression matrix column order
+  metadata <- metadata[match(EXPR_SAMPLE_NAMES,
+                             metadata$matched_expr_col), ]
+  rownames(metadata) <- EXPR_SAMPLE_NAMES
+}
+
+metadata$sampleID <- row.names(metadata)
+metadata <- metadata[,c(17,c(1:16))]
+ 
+# ── Save ───────────────────────────────────────────────────────
+write.csv(metadata, file = OUTPUT_CSV, quote = TRUE, row.names = TRUE)
+message("Saved: ", OUTPUT_CSV)
+
+saveRDS(metadata,"../data_aux/metadata_GSE47460.rds")
+# metadata is your final sample x variable metadata table
+```
+
+
+##### Filtering
+
+```{r}
+data <- expr_df_complete
+```
+
+```{r}
+# Plot
+(plt_beforefilt <- ggplot() + aes(x=log10(rowSums(data))) +
+   geom_density(fill="grey", alpha=0.5) + theme_bw() + 
+   theme(axis.text.x = element_text(angle = 45, hjust=1),
+         plot.title = element_text(hjust = 0.5),
+         plot.subtitle = element_text(hjust = 0.5)) +
+   ggtitle("Before Filtering") +
+   xlab(expression(log[10]~"(counts per gene)")) +
+   ylab("Frequency") + 
+   geom_vline(xintercept = 3.7, linetype="dotted",color = "black", size=1.5))
+
+```
+
+
+```{r}
+filtdata <- data[rowSums(data) > 10^3.7,]
+nrow(data)
+nrow(filtdata)
+
+
+cat("Number of genes before filtering:", nrow(data), "\n")
+cat("Number of genes after filtering:", nrow(filtdata), "\n")
+
+```
+
+
+```{r}
+
+# Plot
+(plt_afterfilt <- ggplot() + aes(x=log10(rowSums(filtdata))) +
+   geom_density(fill="grey", alpha=0.5) + theme_bw() + 
+   theme(axis.text.x = element_text(angle = 45, hjust=1),
+         plot.title = element_text(hjust = 0.5),
+         plot.subtitle = element_text(hjust = 0.5)) +
+   ggtitle("After Filtering") +
+   xlab(expression(log[10]~"(counts per gene)")) +
+   ylab("Frequency") )
+
+```
+
+
+
+##### Normalisation
+
+```{r fig.width=6, fig.height=4}
+
+filtcounts_ggplot <- stack(log2(filtdata))
+colnames(filtcounts_ggplot) <- c("expression", "sampleID")
+filtcounts_ggplot <- merge(filtcounts_ggplot,metadata, by="sampleID")
+
+
+(plt_beforenorm <- ggplot(filtcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(alpha=0.4, outlier.size = 0.5)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+    theme_bw()+ 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle("Before Normalisation") )
+
+```
+
+
+```{r}
+dgelist_normcounts <- DGEList(filtdata) # the matrix with gene names as row names and counts in columns
+dgelist_normcounts <- calcNormFactors(dgelist_normcounts, method = "TMM") 
+normalised_counts <- as.data.frame(voom(dgelist_normcounts,plot=F)$E) 
+#normalised_counts <- as.data.frame(edgeR::cpm(dgelist_normcounts, log = FALSE)) 
+normdata <- 2^normalised_counts
+lognormdata <- log2(normdata+1)
+```
+
+
+```{r fig.width=6, fig.height=4}
+
+normcounts_ggplot <- stack(log2(normdata))
+colnames(normcounts_ggplot) <- c("expression", "sampleID")
+normcounts_ggplot <- merge(normcounts_ggplot,metadata, by="sampleID")
+
+
+(plt_afternorm <- ggplot(normcounts_ggplot, aes(sampleID,expression)) + geom_boxplot(alpha=0.4, outlier.size = 0.5)+ xlab("Samples") + ylab("log2(counts)")   +  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+    theme_bw()+ 
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    ggtitle("After Normalisation") )
+
+```
+
+
+##### PCA
+
+```{r fig.width=6, fig.height=4}
+y <- DGEList(lognormdata, samples= metadata)
+PCA  <- prcomp(t(y$counts), scale=FALSE, center=TRUE)
+PCACounts  <- PCA$x
+PCACounts  <- as.data.frame(PCACounts )
+PCAData <-  cbind(PCACounts[1:10],y$samples) 
+
+ev = PCA$sdev^2 
+pc1= round(100*ev[1]/sum(ev),2) 
+pc2 = round(100*ev[2]/sum(ev),2) 
+pc3 = round(100*ev[3]/sum(ev),2) 
+pc4 = round(100*ev[4]/sum(ev),2) 
+pc5 = round(100*ev[5]/sum(ev),2) 
+pc6 = round(100*ev[6]/sum(ev),2)  
+
+(pltpca_1 <- ggplot(PCAData, aes(PC1,PC2))+
+    geom_point(aes(color=sex), size=5, alpha=0.6)+ 
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    guides(color = guide_legend(nrow = 3)) +
+    theme(legend.position="top", legend.box="vertical", legend.title = element_blank(), legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") + 
+    geom_hline(yintercept=0, linetype="dotted") )
+
+(pltpca_2 <- ggplot(PCAData, aes(PC1,PC2))+
+    geom_point(aes(color=as.numeric(age)), size=5, alpha=0.6)+ 
+    xlab(paste0("PC1: ",pc1,"% variance")) +
+    ylab(paste0("PC2: ",pc2,"% variance")) + 
+    theme_bw()+
+    theme(legend.position="top", legend.box="vertical", legend.title = element_blank(), legend.margin=margin())  + 
+    geom_vline(xintercept=0, linetype="dotted") +  
+    geom_hline(yintercept=0, linetype="dotted"))
+ 
+
+
+```
+
+####Calculate Scores
+
+```{r fig.width=10, fig.height=4}
+  
+(plt_scores_age <- PlotScores(data=normdata, metadata=metadata, gene_sets = signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")], Variable = "age", method="logmedian", xlab = "Age (years)", pvalcalc = T,ColorValues = "#3A508F85") )
+
+metadata$age_group <- cut(
+  metadata$age,
+  breaks = c(-Inf, 49, 59, 69, 79, Inf),
+  labels = c("<50", "50-59", "60-69", "70-79", "80+"),
+  right  = TRUE
+)
+
+metadata$age_group <- factor(
+  metadata$age_group,
+  levels  = c("<50", "50-59", "60-69", "70-79", "80+"),
+  ordered = TRUE
+)
+ 
+age_colors <- c(
+  "<50"   = "#D0E8F5",
+  "50-59" = "#89C4E1",
+  "60-69" = "#4A90C4",
+  "70-79" = "#1F5C8B",
+  "80+"   = "#0A2F4E"
+)
+
+(plt_scores_group <- PlotScores(data=normdata, metadata=metadata, gene_sets = signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")], Variable = "age_group", ColorVariable = "age_group", method="logmedian", xlab = "Age Group", pvalcalc = T, ColorValues = age_colors) )
+
+```
+
+```{r}
+degenes <- calculateDE(normdata,metadata,variables=c("age"))
+gseadf <- runGSEA(degenes,signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")])
+gseadf
+plotNESlollipop(gseadf)
+
+(plt_enrich_lung <- plotGSEAenrichment(GSEA_results=gseadf, 
+                   DEGList=degenes, 
+                   gene_sets=signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")], 
+                   widthTitle=40, grid = TRUE, titlesize = 10, nrow=1  ))
+
+``` 
+```{r fig.width=6, fig.height=12}
+
+plt_scores_lung <- ggarrange(plt_scores_age, plt_scores_group, NULL, plt_enrich_skin, ncol=1, nrow=4,heights=c(1,1.15,0.1,1))
+(plt_scores_lung <- annotate_figure(plt_scores_lung, top = text_grob("GSE47460: \nWhole Lung Homogenate\n", face = "bold", size = 14 )))
+
+```
+
+
+### Combine
+
+```{r fig.width=12, fig.height=12}
+(fig_combined <- ggarrange(plt_scores_skin,NULL, plt_scores_lung,nrow=1, labels=c("A","","B"), widths=c(1,0.1,1)))
+```
+
+```{r}
+ggplot2::ggsave("../Figures/Figs/R1_5_OtherAgeingDatasets.png",
+                fig_combined,
+                width = 12, height=12, bg = 'white')
+
+ggplot2::ggsave("../Figures/Figs/R1_5_OtherAgeingDatasets.pdf",
+                fig_combined,
+                width = 12, height=12, bg = 'white')
+```
+
 
 ## Session Info
 ```{r}
