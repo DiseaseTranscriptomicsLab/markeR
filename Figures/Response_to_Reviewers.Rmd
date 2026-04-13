@@ -1126,7 +1126,7 @@ df_all_sex <- bind_rows(
     theme(legend.position = "none",
           plot.title = element_text(hjust = 0.5, size = 14),
           text = element_text(size = 14))  +
-    ggtitle("Y Chromosome Gene Set (biomaRt)\nAcross GTEx Tissues"))
+    ggtitle("Y Chromosome Gene Set (biomaRt)\nacross GTEx Tissues"))
 ```
 
 ```{r fig.width=4, fig.height=3}
@@ -1149,7 +1149,7 @@ label_vec <- setNames(n_labels$label, n_labels[[sex_col]])
     theme(legend.position = "none",
           plot.title = element_text(hjust = 0.5, size = 14),
           text = element_text(size = 14)) +
-    ggtitle("Y Chromosome gene set (biomaRt)\nAcross GTEx Tissues"))
+    ggtitle("Y Chromosome gene set\nacross GTEx Tissues"))
 ```
 
 
@@ -1364,7 +1364,7 @@ metadata_ResporatoryInfection <- readRDS("../data_aux/metadata_RespiratoryInfect
 
 
 ```{r fig.width=4, fig.height=3}
-(dfscores <- CalculateScores(data = data_ResporatoryInfection, 
+(dfscores <- CalculateScores(data = data_RespiratoryInfection, 
                              metadata = metadata_ResporatoryInfection, 
                              gene_sets = signature_respiratoryviral,
                              method = "logmedian")$Zaas2009_RespiratoryViralResponse)
@@ -1387,7 +1387,7 @@ cohort_colors <- c(
     theme(legend.position="none",
           plot.title = element_text(hjust = 0.5, size = 14),
           text = element_text(size = 14)) +
-    ggtitle("Zaas 2009 Respiratory Viral Gene Set \nin Whole Blood Across \nAcute Respiratory Infections") + scale_fill_manual(values = cohort_colors))
+    ggtitle("Zaas 2009 Respiratory Viral Gene Set \nin Whole Blood \nacross Acute Respiratory Infections") + scale_fill_manual(values = cohort_colors))
 ```
 ```{r fig.width=4, fig.height=3}
 n_labels <- dfscores %>%
@@ -1406,7 +1406,7 @@ label_vec <- setNames(n_labels$label, n_labels$cohort2)
     theme(legend.position = "none",
           plot.title = element_text(hjust = 0.5, size = 14),
           text = element_text(size = 14)) +
-    ggtitle("Respiratory Viral Response gene set \n(Zaas et al. 2009) in Whole Blood \nAcross Acute Respiratory Infections") +
+    ggtitle("Respiratory Viral Response gene set\nacross Acute Respiratory Infections") +
     scale_fill_manual(values = cohort_colors) +
     scale_x_discrete(labels = label_vec))
 ```
@@ -1857,7 +1857,7 @@ label_vec <- setNames(n_labels$label, n_labels$sample_type)
     theme(legend.position = "none",
           plot.title = element_text(hjust = 0.5, size = 14),
           text = element_text(size = 14)) +
-    ggtitle("meta-PCNA proliferation \ngene set (Venet et al. 2011)\n in TCGA PANCAN (Liu 2018)") +
+    ggtitle("meta-PCNA proliferation gene set\n in TCGA PANCAN") +
     scale_fill_manual(values = samptype_col) +
     scale_x_discrete(labels = label_vec))
 ```
@@ -2117,7 +2117,7 @@ label_vec <- setNames(
     theme(legend.position = "none",
           plot.title = element_text(hjust = 0.5, size = 14),
           text = element_text(size = 14)) +
-    ggtitle("Environmental Stress Response (ESR) \ngene set (Gasch et al. 2000) \nin S. cerevisiae Heat Shock")  +
+    ggtitle("Environmental Stress Response (ESR) \ngene set in S. cerevisiae Heat Shock")  +
     scale_fill_manual(values = condition_colors))
 ```
 
@@ -2134,11 +2134,11 @@ label_vec <- setNames(
 ```
 
 ```{r}
-ggplot2::ggsave("../Figures/Figs/R1_6_OtherData.png",
+ggplot2::ggsave("../Figures/Figs/R1_6_OtherData_v2.png",
                 plt_comment1_6,
                 width = 8, height=7, bg = 'white')
 
-ggplot2::ggsave("../Figures/Figs/R1_6_OtherData.pdf",
+ggplot2::ggsave("../Figures/Figs/R1_6_OtherData_v2.pdf",
                 plt_comment1_6,
                 width = 8, height=7, bg = 'white')
 ```
@@ -3063,7 +3063,7 @@ message(sprintf("Final matrix: %d genes x %d samples",
 write.csv(expr_df, file = OUTPUT_CSV, quote = FALSE)
 message("Saved: ", OUTPUT_CSV)
 
-saveRDS(expr_df, "../data_aux/GSE85358_expression_matrix.rds")
+#saveRDS(expr_df, "../data_aux/GSE85358_expression_matrix.rds")
  expr_df <- readRDS("../data_aux/GSE85358_expression_matrix.rds")
 ```
 
@@ -3196,7 +3196,7 @@ metadata$group <- factor(metadata$group, levels=c("Young \n (\u2264 25 years)","
 write.csv(metadata, file = OUTPUT_CSV, quote = TRUE, row.names = TRUE)
 message("Saved: ", OUTPUT_CSV)
 
-saveRDS(metadata,"../data_aux/metadata_GSE85358.rds")
+#saveRDS(metadata,"../data_aux/metadata_GSE85358.rds")
 # metadata is your final sample x variable metadata table
 
 metadata <- readRDS("../data_aux/metadata_GSE85358.rds")
@@ -3349,14 +3349,105 @@ cols_agegroup <- c(
 )
 
 metadata$age <- as.numeric(metadata$age)
+
 (plt_scores_age <- PlotScores(data=normdata, metadata=metadata, gene_sets = signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")], Variable = "age", method="logmedian", xlab = "Age (years)", pvalcalc = T,ColorValues = "#3A508F85") )
 
 (plt_scores_group <- PlotScores(data=normdata, metadata=metadata, gene_sets = signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")], Variable = "group", ColorVariable = "group", method="logmedian", xlab = "Age Group", pvalcalc = T, ColorValues = cols_agegroup) )
 
 ```
 
+
+```{r fig.width=10, fig.height=4}
+
+# Reordering so Young appears first
+
+cols_agegroup <- c(
+  "Young \n (\u2264 25 years)"    = "#3A798F",   
+  "Old \n (\u2265 60 years)" = "#3C3A8F"    
+)
+ 
+ metadata$group <- factor(metadata$group, levels=c("Young \n (\u2264 25 years)","Old \n (\u2265 60 years)"))
+ 
+(calcscores_group <- CalculateScores(data=normdata, metadata=metadata, gene_sets = signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")], method = "logmedian") )
+
+ pltlist <- list()
+ 
+ for (sig in names(calcscores_group)) {
+   
+   x <- calcscores_group[[sig]][calcscores_group[[sig]][["group"]] %in% levels(metadata$group)[2], "score", drop = TRUE]
+   y <- calcscores_group[[sig]][calcscores_group[[sig]][["group"]] %in% levels(metadata$group)[1], "score", drop = TRUE]
+   cohen_d_results <- cohen_d(x, y)
+   calcscores_group[[sig]]$cohen <- ifelse(calcscores_group[[sig]][, "group"] %in% levels(metadata$group)[1],
+                                           levels(metadata$group)[1], levels(metadata$group)[2])
+   ttest_results <- rstatix::t_test(calcscores_group[[sig]], formula = score ~ cohen)
+   p_val <- ttest_results$p[1]
+   
+   line1 <- wrap_title(paste0("Cohen's d = ",
+                              format(signif(cohen_d_results, digits=3),
+                                     scientific = FALSE)),
+                       width = 20)
+   line2 <- wrap_title(paste0("p = ", format(signif(p_val, digits=3),
+                                             scientific = TRUE)),
+                       width = 20)
+   subtitle <- paste(line1, line2, sep = "\n")
+   
+   
+   pltlist[[sig]] <-  ggplot2::ggplot(calcscores_group[[sig]], ggplot2::aes_string(x = "group", y = "score"))+ 
+     ggplot2::geom_jitter(ggplot2::aes_string(color = "group"),
+                          size = 3, alpha = 0.5)+
+     ggplot2::geom_violin(alpha = 0.5, scale = "width")  + 
+     ggplot2::stat_summary(fun = stats::median, fun.min = stats::median, fun.max = stats::median,
+                           geom = "crossbar", width = 0.25,
+                           position = ggplot2::position_dodge(width = 0.13))+
+     ggplot2::theme_bw() +
+     ggplot2::theme(legend.position="top",
+                    axis.text.x = ggplot2::element_text(angle = 45, hjust = 1,
+                                                        size = 10),
+                    axis.text.y = ggplot2::element_text(  size = 10),
+                    plot.title = ggplot2::element_text(hjust = 0.5,
+                                                       size = 14-1),
+                    plot.subtitle = ggplot2::element_text(hjust = 0.5,
+                                                          size = 14 - 1.5,
+                                                          face = "italic")) +
+     ggplot2::labs(title = sig, subtitle = subtitle, color = "", x = "", y = "")+ 
+     ggplot2::scale_color_manual(values = cols_agegroup)+ 
+     ggplot2::guides(color = ggplot2::guide_legend(nrow = 1,
+                                                   override.aes = list(size = 3 + 2)))
+   
+ }
+ 
+ plt_scores_group <- ggarrange(plotlist = pltlist, ncol=length(pltlist), nrow=1, widths = c(1,1), common.legend = T)
+   plt_scores_group <- ggpubr::annotate_figure(plt_scores_group,
+                                           left = grid::textGrob(expression(log[2]*"-median score"),
+                                                                 rot = 90, vjust = 1,
+                                                                 gp = grid::gpar(cex = 1.3,
+                                                                                 fontsize = 10)),
+                                           bottom = grid::textGrob("Age Group",
+                                                                   gp = grid::gpar(cex = 1.3,
+                                                                                   fontsize = 10)))
+   
+   
+   plt_scores_group
+```
+
 ```{r}
 degenes <- calculateDE(normdata,metadata,variables=c("age"))
+gseadf <- runGSEA(degenes,signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")])
+gseadf
+plotNESlollipop(gseadf)
+
+(plt_enrich_skin <- plotGSEAenrichment(GSEA_results=gseadf, 
+                   DEGList=degenes, 
+                   gene_sets=signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")], 
+                   widthTitle=40, grid = TRUE, titlesize = 10, nrow=1  ))
+
+``` 
+
+
+```{r}
+
+metadata$simpler <- ifelse(metadata$group == "Young \n (\u2264 25 years)", "Young", "Old")
+degenes <- calculateDE(normdata,metadata,variables=c("simpler"), contrasts = "Old-Young")
 gseadf <- runGSEA(degenes,signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")])
 gseadf
 plotNESlollipop(gseadf)
@@ -3374,7 +3465,12 @@ plt_scores_skin <- ggarrange(plt_scores_age, plt_scores_group, NULL,plt_enrich_s
 
 ```
 
+```{r fig.width=6, fig.height=10}
 
+plt_scores_skin <- ggarrange(plt_scores_group, NULL,plt_enrich_skin, ncol=1, nrow=3,heights=c(1.2,0.1,1))
+(plt_scores_skin <- annotate_figure(plt_scores_skin, top = text_grob("GSE85358: \nInner Forearm Epidermis\n", face = "bold", size = 14 )))
+
+```
 
 <!-- ```{r} -->
 <!-- data_gtex <- readRDS("../data_aux/data_gtex.rds") -->
@@ -3774,6 +3870,11 @@ saveRDS(metadata,"../data_aux/metadata_GSE47460.rds")
 ```
 
 
+```{r}
+expr_df_complete <- readRDS("../data_aux/GSE47460_expression_matrix.rds")
+metadata <- readRDS("../data_aux/metadata_GSE47460.rds")
+```
+
 ##### Filtering
 
 ```{r}
@@ -3942,6 +4043,68 @@ age_colors <- c(
 
 ```
 
+
+
+
+
+
+
+```{r fig.width=10, fig.height=4}
+
+# (plt_scores_age <- PlotScores(data=normdata, metadata=metadata, gene_sets = signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")], Variable = "age", method="logmedian", xlab = "Age (years)", pvalcalc = T,ColorValues = "#3A508F85") )
+
+  
+(calcscores_group <- CalculateScores(data=normdata, metadata=metadata, gene_sets = signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")], method = "logmedian") )
+
+pltlist <- list()
+
+for (sig in names(calcscores_group)) {
+  model <- lm(score ~ get("age"), data = calcscores_group[[sig]])
+  results_var <- compute_cohens_f_pval(model, "Numeric")
+  
+  line1 <- wrap_title(paste0("Cohen's f = ",
+                             format(signif(results_var["Cohen_f"], digits=3),
+                                    scientific = FALSE)), width = 20)
+  line2 <- wrap_title(paste0("p = ",
+                             format(signif(results_var["P_Value"], digits=3),
+                                    scientific = TRUE)), width = 20)
+  subtitle <- paste(line1, line2, sep = "\n")
+  
+  
+  pltlist[[sig]] <- ggplot2::ggplot(calcscores_group[[sig]], ggplot2::aes_string(x = "age", y = "score")) + 
+    ggplot2::geom_point(size = 3, alpha = 0.5, color="#3A508F85")+ 
+      geom_smooth(method = "lm", col = "black", se = FALSE, size=1.3) + 
+      ggpubr::stat_cor(aes(label = ..r.label..), method = "spearman",
+                       cor.coef.name="rho", label.x = 30, size=4) +  
+ ggplot2::theme_bw() +
+      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1,
+                                                         size = 10),
+                     axis.text.y = ggplot2::element_text(  size = 10),
+                     plot.title = ggplot2::element_text(hjust = 0.5,
+                                                        size = 14-1),
+                     plot.subtitle = ggplot2::element_text(hjust = 0.5,
+                                                           size = 14 - 1.5,
+                                                           face = "italic")) +
+      ggplot2::labs(title = sig, subtitle = subtitle,
+                    color = "", x = "", y = "")
+    
+ }
+ 
+ plt_scores_age <- ggarrange(plotlist = pltlist, ncol=length(pltlist), nrow=1, widths = c(1,1), common.legend = T)
+   plt_scores_age <- ggpubr::annotate_figure(plt_scores_age,
+                                           left = grid::textGrob(expression(log[2]*"-median score"),
+                                                                 rot = 90, vjust = 1,
+                                                                 gp = grid::gpar(cex = 1.3,
+                                                                                 fontsize = 10)),
+                                           bottom = grid::textGrob("Age (years)",
+                                                                   gp = grid::gpar(cex = 1.3,
+                                                                                   fontsize = 10)))
+   
+   
+   plt_scores_age
+```
+
+
 ```{r}
 degenes <- calculateDE(normdata,metadata,variables=c("age"))
 gseadf <- runGSEA(degenes,signatures_bidirectional[c("HernandezSegura","SAUL_SEN_MAYO")])
@@ -3962,20 +4125,29 @@ plt_scores_lung <- ggarrange(plt_scores_age, plt_scores_group, NULL, plt_enrich_
 ```
 
 
+
+```{r fig.width=6, fig.height=8}
+
+plt_scores_lung <- ggarrange(plt_scores_age, NULL, plt_enrich_lung, ncol=1, nrow=3,heights=c(1.2,0.1,1))
+(plt_scores_lung <- annotate_figure(plt_scores_lung, top = text_grob("GSE47460: \nWhole Lung Homogenate\n", face = "bold", size = 14 )))
+
+```
+
+
 ### Combine
 
-```{r fig.width=12, fig.height=12}
+```{r fig.width=12, fig.height=8}
 (fig_combined <- ggarrange(plt_scores_skin,NULL, plt_scores_lung,nrow=1, labels=c("A","","B"), widths=c(1,0.1,1)))
 ```
 
 ```{r}
-ggplot2::ggsave("../Figures/Figs/R1_5_OtherAgeingDatasets.png",
+ggplot2::ggsave("../Figures/Figs/R1_5_OtherAgeingDatasets_v2.png",
                 fig_combined,
-                width = 12, height=12, bg = 'white')
+                width = 12, height=8, bg = 'white')
 
-ggplot2::ggsave("../Figures/Figs/R1_5_OtherAgeingDatasets.pdf",
+ggplot2::ggsave("../Figures/Figs/R1_5_OtherAgeingDatasets_v2.pdf",
                 fig_combined,
-                width = 12, height=12, bg = 'white')
+                width = 12, height=8, bg = 'white')
 ```
 
 
