@@ -2283,10 +2283,10 @@ model_colours <- c("Baseline"  = "#2171b5",
 # rename model levels for clarity
 plot_df <- results_df %>%
   mutate(
-    tissue_group = ifelse(tissue %in% TISSUE_SIGNAL,
-                          "Signal \nin paper", "No signal \nin paper"),
-    tissue_group = factor(tissue_group,
-                          levels = c("Signal \nin paper", "No signal \nin paper")),
+    # tissue_group = ifelse(tissue %in% TISSUE_SIGNAL,
+    #                       "Signal \nin paper", "No signal \nin paper"),
+    # tissue_group = factor(tissue_group,
+    #                       levels = c("Signal \nin paper", "No signal \nin paper")),
     model        = factor(model,
                           levels   = c("Baseline", "Corrected"),
                           labels   = c("Non-corrected", "Corrected"))
@@ -2356,7 +2356,7 @@ plot_all
 <!-- ``` -->
 
 ```{r}
-df_null <- readRDS("data_aux/null_NES_permutations_simpler_1000perms_fullGTExdata.rds")
+df_null <- readRDS("../data_aux/null_NES_permutations_simpler_1000perms_fullGTExdata.rds")
 ```
 
  
@@ -2448,7 +2448,7 @@ geom_text(data     = percentile_df %>% filter(model == "Corrected"),
     x        = "Normalised Enrichment Score (NES)",
     y        = NULL,
     title    = "HernandezSegura Age-Enrichment \nacross GTEx tissues",
-    subtitle = "Non-corrected vs. cell composition-corrected\nPercentiles shown relative to null distribution"
+    subtitle = "Non-corrected vs. cell composition-corrected\nPercentiles relative to null distribution shown"
   ) +
   theme_bw(13) +
   theme(
@@ -2468,11 +2468,11 @@ plot_all
 
 
 ```{r}
-ggplot2::ggsave("Figures/Figs/R3_1_CellTypeComposition_correctedAllgenes.png",
+ggplot2::ggsave("../Figures/Figs/R3_1_CellTypeComposition_correctedAllgenes.png",
                 plot_all,
                 width = 8, height=11, bg = 'white')
 
-ggplot2::ggsave("Figures/Figs/R3_1_CellTypeComposition_correctedAllgenes.pdf",
+ggplot2::ggsave("../Figures/Figs/R3_1_CellTypeComposition_correctedAllgenes.pdf",
                 plot_all,
                 width = 7, height=11, bg = 'white')
 ```
