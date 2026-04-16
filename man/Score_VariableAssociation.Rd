@@ -23,7 +23,8 @@ Score_VariableAssociation(
   discrete_colors = NULL,
   continuous_color = "#8C6D03",
   color_palette = "Set2",
-  printplt = TRUE
+  printplt = TRUE,
+  p.adjust.method = "BH"
 )
 }
 \arguments{
@@ -85,6 +86,12 @@ variables. Default: \code{"#8C6D03"}.}
 variables. Default: \code{"Set2"}.}
 
 \item{printplt}{Boolean specifying if plot is to be printed. Default: \code{TRUE}.}
+
+\item{p.adjust.method}{Character string specifying the method to use for
+multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+\code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+Passed to \code{\link[stats]{p.adjust}}.}
 }
 \value{
 A list with:

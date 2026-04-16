@@ -1,3 +1,28 @@
+# markeR 1.1.2 (12 Mar, 2026) 
+
+## Minor Changes
+- Moved Python bridge scripts from `inst/python/` to a top-level `python/` 
+  directory, as these are supplementary scripts not part of the R package itself.
+- Added `requirements.txt` to the `python/` directory listing all needed 
+  Python dependencies (`rpy2`, `pandas`, `numpy`, and optionally 
+  `ipython` and `jupyter`) for easier environment setup. 
+- Removed redundant code snippets from the Python bridge scripts.
+
+# markeR 1.1.1 (11 Mar, 2026) 
+ 
+  - Added `p.adjust.method` parameter across all functions performing or
+  depending on multiple testing correction, allowing users to specify
+  any correction method supported by `stats::p.adjust()`, beyond the default 
+  Benjamini-Hochberg FDR.
+- Added Python bridge scripts in `inst/python/` for users who wish to call
+  markeR from a Python environment via `rpy2`. Includes a tutorial workflow
+  script and a generic command-line wrapper capable of invoking any exported
+  markeR function. See `inst/python/README.md` for installation and usage.
+
+# markeR 1.0.0 (31 Oct, 2025)
+
+- Official Bioconductor Release.
+
 # markeR 0.99.5 (17 Sep, 2025)
 
 - Minor fix in `.onAttach()` to avoid errors when checking `ggplot2` version and ensure the startup warning works correctly.

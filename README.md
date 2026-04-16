@@ -24,11 +24,10 @@ across experimental and clinical phenotypes.
 
 > **To cite `markeR` please use:**
 >
-> Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). *markeR: an R
-> Toolkit for Evaluating Gene Sets as Phenotypic Markers*. Gulbenkian
-> Institute for Molecular Medicine, Faculdade de Medicina, Universidade
-> de Lisboa, Lisbon, Portugal. R package version 1.0.0,
-> <https://github.com/DiseaseTranscriptomicsLab/markeR>.
+> Martins-Silva R, Kaizeler A, Barbosa-Morais NL (2025). *markeR: An R
+> Toolkit for Evaluating Gene Signatures as Phenotypic Markers*.
+> <doi:10.18129/B9.bioc.markeR>, R package version 1.1.2,
+> <https://bioconductor.org/packages/markeR>.
 
 The folder `inst/Paper/` is in the **paper** branch and contains all
 scripts and materials used in the original `markeR` paper to reproduce
@@ -54,6 +53,7 @@ analyses and figures. You can browse it
     (Optional)](#5-individual-gene-exploration-optional)  
   - [6. Compare with Reference Gene Sets
     (Optional)](#6-compare-with-reference-gene-sets-optional)  
+- [Python Bridge](#python-bridge)
 - [Contact](#contact)
 
 ## Installation
@@ -284,6 +284,15 @@ metrics are implemented:
 
 Filters can be applied based on similarity thresholds (e.g., minimum
 Jaccard, OR, or Fisher’s test p-value).
+
+## Python Bridge
+
+For users who prefer Python, a lightweight bridge is available in
+`python/` that allows calling any `markeR` function from a Python
+environment via [`rpy2`](https://rpy2.github.io/). It includes a
+tutorial workflow script and a generic command-line wrapper. See
+[`python/README.md`](inst/python/README.md) for installation
+instructions and usage examples.
 
 ## Contact
 

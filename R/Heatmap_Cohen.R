@@ -33,6 +33,7 @@
 #' @param ColorValues A character vector specifying the colors for the gradient
 #'   fill in the heatmaps. Default is \code{c("#F9F4AE", "#B44141")}.
 #' @param title Title for the grid of plots.
+#' 
 #' @return A list with two elements:
 #' \describe{
 #'   \item{plt}{A combined heatmap arranged in a grid using \code{ggpubr::ggarrange}.}
@@ -61,7 +62,7 @@
 #' @keywords internal
 Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL,
                           widthTitle = 22, titlesize = 12, ColorValues = NULL,
-                          title=NULL ) {
+                          title=NULL) {
 
   cohentype <- ifelse("CohenD" %in% names(cohenlist[[1]]), "d",
                       ifelse("CohenF" %in% names(cohenlist[[1]]), "f", NULL))
@@ -201,7 +202,12 @@ Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL,
 #' groups.
 #' - `"extensive"`: All possible groupwise contrasts, ensuring balance in the
 #' number of terms on each side.
-#'
+#' @param p.adjust.method Character string specifying the method to use for
+#'   multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+#'   default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+#'   \code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+#'   Passed to \code{\link[stats]{p.adjust}}. 
+#'   
 #' @return A named list where each element corresponds to a gene signature. Each
 #'   signature element is a list with three components:
 #' \describe{
@@ -227,7 +233,7 @@ Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL,
 #'
 #' @keywords internal
 CohenD_allConditions <- function(data, metadata, gene_sets, variable,
-                                 mode = c("simple","medium","extensive")) {
+                                 mode = c("simple","medium","extensive"), p.adjust.method = "BH") {
   data <- as.data.frame(data) # Ensure data is a data frame
   # Step 1: Check if variable exists in metadata
   if (!variable %in% colnames(metadata)) {
@@ -292,8 +298,8 @@ CohenD_allConditions <- function(data, metadata, gene_sets, variable,
     }
   }
 
-  # Step 2: Apply BH correction within each method
-  all_padj <- lapply(all_pvalues, function(pvals) stats::p.adjust(pvals, method = "BH"))
+  # Step 2: Apply  correction within each method
+  all_padj <- lapply(all_pvalues, function(pvals) stats::p.adjust(pvals, method = p.adjust.method))
 
   # Step 3: Store corrected p-values back into result_list
   index_tracker <- list()  # Track index position for each method
@@ -495,6 +501,12 @@ flatten_results <- function(nested_list) {
 #'   downregulated).
 #' @param variable A string specifying the categorical variable in
 #'   \code{metadata} used to model the gene signature scores.
+#' @param p.adjust.method Character string specifying the method to use for
+#'   multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+#'   default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+#'   \code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+#'   Passed to \code{\link[stats]{p.adjust}}. 
+#'   
 #' @return A named list where each element corresponds to a gene signature. Each
 #'   signature element is a list with three components:
 #' \describe{
@@ -508,7 +520,7 @@ flatten_results <- function(nested_list) {
 #' }
 #'
 #' @keywords internal
-CohenF_allConditions <- function(data, metadata, gene_sets, variable ) {
+CohenF_allConditions <- function(data, metadata, gene_sets, variable, p.adjust.method = "BH" ) {
   data <- as.data.frame(data) # Ensure data is a data frame
   # Step 1: Check if variable exists in metadata
   if (!variable %in% colnames(metadata)) {
@@ -579,8 +591,8 @@ CohenF_allConditions <- function(data, metadata, gene_sets, variable ) {
     }
   }
 
-  # Step 2: Apply BH correction within each method
-  all_padj <- lapply(all_pvalues, function(pvals) stats::p.adjust(pvals, method = "BH"))
+  # Step 2: Apply   correction within each method
+  all_padj <- lapply(all_pvalues, function(pvals) stats::p.adjust(pvals, method = p.adjust.method))
 
   # Step 3: Store corrected p-values back into result_list
   index_tracker <- list()  # Track index position for each method

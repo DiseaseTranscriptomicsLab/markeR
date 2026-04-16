@@ -1,6 +1,6 @@
 Package: markeR
 Title: An R Toolkit for Evaluating Gene Signatures as Phenotypic Markers
-Version: 1.1.0
+Version: 1.1.2
 Authors@R: 
     c(
       person("Rita", "Martins-Silva", 
@@ -25,7 +25,7 @@ Encoding: UTF-8
 Language: en-GB
 LazyData: false
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Additional_repositories: https://bioconductor.org/packages/release/bioc
 Imports:
     circlize,
