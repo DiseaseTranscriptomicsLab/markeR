@@ -109,7 +109,7 @@ print(results)
 #> $Contrast1
 #>              pathway      pval      padj    log2err         ES        NES  size
 #>               <char>     <num>     <num>      <num>      <num>      <num> <int>
-#> 1: UnidirectionalSet 0.6613528 0.6613528 0.02255486 -0.4824193 -0.8464887     3
+#> 1: UnidirectionalSet 0.6613528 0.6613528 0.02255486 -0.4824193 -0.8464888     3
 #> 2:  BidirectionalSet 0.4163603 0.6613528 0.02666464 -0.6122216 -1.0612943     3
 #>     leadingEdge stat_used
 #>          <list>    <char>

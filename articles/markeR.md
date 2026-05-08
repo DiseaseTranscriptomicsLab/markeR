@@ -60,6 +60,7 @@ methods in future versions of the package.
 Install the latest release from Bioconductor:
 
 ``` r
+
 # Install from Bioconductor
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
@@ -70,6 +71,7 @@ Or install the latest development release of `markeR` from
 [GitHub](https://github.com/) with:
 
 ``` r
+
 devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
 ```
 
@@ -88,6 +90,7 @@ A named list where each element is a gene set.
   (bidirectional).
 
 ``` r
+
 # Example
 gene_sets
 ```
@@ -114,6 +117,7 @@ for more information):
   al. (2017)](https://pubmed.ncbi.nlm.nih.gov/28844647/))
 
 ``` r
+
 # Load example gene sets
 data(genesets_example)
 ```
@@ -138,6 +142,7 @@ control**. See
 for structure.
 
 ``` r
+
 # Load example expression data
 data(counts_example)
 counts_example[1:5, 1:5]
@@ -161,6 +166,7 @@ study. See
 [`?metadata_example`](https://diseasetranscriptomicslab.github.io/markeR/reference/metadata_example.md).
 
 ``` r
+
 # Load example metadata
 data(metadata_example)
 head(metadata_example)
@@ -269,6 +275,7 @@ whereas REACTOME_CELLULAR_SENESCENCE shows more modest separation
 between senescent and proliferative fibroblasts.
 
 ``` r
+
 # Quantification approach: scores
 # Method: log2-median 
 PlotScores(data = counts_example, 
@@ -294,6 +301,7 @@ Senescent from Proliferative samples, while REACTOME_CELLULAR_SENESCENCE
 shows weaker and less consistent separation.
 
 ``` r
+
 Overall_Scores <- PlotScores(data = counts_example, 
                              metadata = metadata_example,  
                              gene_sets=genesets_example, 
@@ -321,12 +329,14 @@ Overall_Scores <- PlotScores(data = counts_example,
 ```
 
 ``` r
+
 Overall_Scores$heatmap
 ```
 
 ![](markeR_files/figure-html/Overall_Scores_heatmap-1.png)
 
 ``` r
+
 Overall_Scores$volcano
 ```
 
@@ -338,6 +348,7 @@ LiteratureMarkers exhibit consistently high AUCs across scoring methods,
 while REACTOME_CELLULAR_SENESCENCE shows more heterogeneous performance.
 
 ``` r
+
 ROC_Scores(data = counts_example, 
            metadata = metadata_example, 
            gene_sets=genesets_example, 
@@ -364,6 +375,7 @@ performance. Increasing the number of simulations would yield finer
 resolution at the cost of additional computational time.
 
 ``` r
+
 set.seed("123456")
 FPR_Simulation(data = counts_example,
                metadata = metadata_example,
@@ -394,6 +406,7 @@ model without an intercept, enabling quick comparison between levels of
 a categorical variable.
 
 ``` r
+
 # Build design matrix from variables (Condition) and apply a contrast.
 # The design matrix is constructed automatically using the variable "Condition".
 DEGs <- calculateDE(data = counts_example,
@@ -429,6 +442,7 @@ and downregulated in red). In this example:
   discriminatory power.
 
 ``` r
+
 # Change order: gene sets in columns, contrast in rows
 plotVolcano(DEGs, genes = genesets_example, 
             N = NULL,
@@ -452,6 +466,7 @@ online tutorial
 [here](https://diseasetranscriptomicslab.github.io/markeR/articles/Article_BenchmarkingMode.html).
 
 ``` r
+
 GSEAresults <- runGSEA(DEGList = DEGs, 
                        gene_sets = genesets_example,
                        stat = NULL,
@@ -463,19 +478,20 @@ GSEAresults
     ## $`Senescent-Proliferative`
     ##                         pathway         pval         padj   log2err        ES
     ##                          <char>        <num>        <num>     <num>     <num>
-    ## 1:              HernandezSegura 7.942215e-10 2.382665e-09 0.8012156 0.6263553
-    ## 2: REACTOME_CELLULAR_SENESCENCE 1.575684e-02 2.363525e-02 0.1151671 0.3687292
-    ## 3:            LiteratureMarkers 2.571070e-02 2.571070e-02 0.1295475 0.6948634
+    ## 1:              HernandezSegura 9.855198e-10 2.956560e-09 0.7881868 0.6263554
+    ## 2: REACTOME_CELLULAR_SENESCENCE 1.575684e-02 2.363525e-02 0.1151671 0.3687291
+    ## 3:            LiteratureMarkers 2.571070e-02 2.571070e-02 0.1295475 0.6948631
     ##         NES  size                                    leadingEdge stat_used
     ##       <num> <int>                                         <list>    <char>
-    ## 1: 2.639526    52 CNTLN,DYNLT3,SLC10A3,CCND1,TOLLIP,DDA1,...[37]         t
-    ## 2: 1.450470   128   H1-2,H2BC4,H2BC5,H4C15,IGFBP7,H2BC12,...[31]         B
-    ## 3: 1.648484     7            LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
+    ## 1: 2.639527    52 CNTLN,DYNLT3,SLC10A3,CCND1,TOLLIP,DDA1,...[37]         t
+    ## 2: 1.450469   128   H1-2,H2BC4,H2BC5,H4C15,IGFBP7,H2BC12,...[31]         B
+    ## 3: 1.648483     7            LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
 
 Enrichment curves from `fgsea` show the running enrichment score across
 the ranked list, indicating the distribution of set members therein.
 
 ``` r
+
 plotGSEAenrichment(GSEA_results=GSEAresults, 
                    DEGList=DEGs, 
                    gene_sets=genesets_example, 
@@ -493,6 +509,7 @@ and adjusted p-values can be summarized in a scatter (volcano-style)
 plot for a simpler visualisation, using `plotCombinedGSEA`.
 
 ``` r
+
 plotNESlollipop(GSEA_results=GSEAresults, 
                 saturation_value=NULL, 
                 nonsignif_color = "#F4F4F4", 
@@ -539,6 +556,7 @@ We illustrate this using the HernandezSegura gene set from our example
 collection:
 
 ``` r
+
 HernandezSegura_GeneSet <- list(HernandezSegura=genesets_example$HernandezSegura) 
 ```
 
@@ -553,6 +571,7 @@ This enables exploration of associations between gene set activity and
 both categorical and continuous variables.
 
 ``` r
+
 data(metadata_example)
 set.seed("123456")
 metadata_example$Researcher <- sample(c("John","Ana","Francisca"),39, replace = TRUE)
@@ -593,6 +612,7 @@ samples, which is expected given its annotation as senescence-associated
 and results from the Benchmarking Mode.
 
 ``` r
+
 VariableAssociation(
   data = counts_example,
   metadata = metadata_example,
@@ -623,6 +643,7 @@ This divergence illustrates the value of applying both enrichment- and
 score-based approaches in a complementary manner.
 
 ``` r
+
 VariableAssociation(data = counts_example, 
                     metadata = metadata_example, 
                     method = "logmedian",
@@ -698,6 +719,7 @@ compared). The underlying data for the heatmap can be accessed via
 `$data` for further analysis.
 
 ``` r
+
 # Example data
 signature1 <- c("TP53", "BRCA1", "MYC", "EGFR", "CDK2")
 signature2 <- c("ATXN2", "FUS", "MTOR", "CASP3")
@@ -750,12 +772,13 @@ Email: <rita.silva@medicina.ulisboa.pt>
 ## Session Information
 
 ``` r
+
 sessionInfo()
 ```
 
-    ## R version 4.5.3 (2026-03-11)
+    ## R version 4.6.0 (2026-04-24)
     ## Platform: x86_64-pc-linux-gnu
-    ## Running under: Ubuntu 24.04.3 LTS
+    ## Running under: Ubuntu 24.04.4 LTS
     ## 
     ## Matrix products: default
     ## BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -774,43 +797,43 @@ sessionInfo()
     ## [1] stats     graphics  grDevices utils     datasets  methods   base     
     ## 
     ## other attached packages:
-    ## [1] markeR_1.1.2     BiocStyle_2.38.0
+    ## [1] markeR_1.1.2     BiocStyle_2.40.0
     ## 
     ## loaded via a namespace (and not attached):
-    ##   [1] pROC_1.19.0.1         gridExtra_2.3         rlang_1.1.7          
-    ##   [4] magrittr_2.0.4        clue_0.3-67           GetoptLong_1.1.0     
+    ##   [1] pROC_1.19.0.1         gridExtra_2.3         rlang_1.2.0          
+    ##   [4] magrittr_2.0.5        clue_0.3-68           GetoptLong_1.1.1     
     ##   [7] msigdbr_26.1.0        otel_0.2.0            matrixStats_1.5.0    
-    ##  [10] compiler_4.5.3        mgcv_1.9-4            reshape2_1.4.5       
-    ##  [13] png_0.1-8             systemfonts_1.3.2     vctrs_0.7.1          
+    ##  [10] compiler_4.6.0        mgcv_1.9-4            reshape2_1.4.5       
+    ##  [13] png_0.1-9             systemfonts_1.3.2     vctrs_0.7.3          
     ##  [16] stringr_1.6.0         pkgconfig_2.0.3       shape_1.4.6.1        
-    ##  [19] crayon_1.5.3          fastmap_1.2.0         backports_1.5.0      
-    ##  [22] labeling_0.4.3        effectsize_1.0.2      rmarkdown_2.30       
-    ##  [25] ragg_1.5.1            purrr_1.2.1           xfun_0.56            
-    ##  [28] cachem_1.1.0          jsonlite_2.0.0        BiocParallel_1.44.0  
-    ##  [31] broom_1.0.12          parallel_4.5.3        cluster_2.1.8.2      
+    ##  [19] crayon_1.5.3          fastmap_1.2.0         backports_1.5.1      
+    ##  [22] labeling_0.4.3        effectsize_1.0.2      rmarkdown_2.31       
+    ##  [25] ragg_1.5.2            purrr_1.2.2           xfun_0.57            
+    ##  [28] cachem_1.1.0          jsonlite_2.0.0        BiocParallel_1.46.0  
+    ##  [31] broom_1.0.12          parallel_4.6.0        cluster_2.1.8.2      
     ##  [34] R6_2.6.1              stringi_1.8.7         bslib_0.10.0         
-    ##  [37] RColorBrewer_1.1-3    limma_3.66.0          car_3.1-5            
-    ##  [40] jquerylib_0.1.4       Rcpp_1.1.1            bookdown_0.46        
+    ##  [37] RColorBrewer_1.1-3    limma_3.68.2          car_3.1-5            
+    ##  [40] jquerylib_0.1.4       Rcpp_1.1.1-1.1        bookdown_0.46        
     ##  [43] assertthat_0.2.1      iterators_1.0.14      knitr_1.51           
-    ##  [46] parameters_0.28.3     IRanges_2.44.0        splines_4.5.3        
-    ##  [49] Matrix_1.7-4          tidyselect_1.2.1      abind_1.4-8          
+    ##  [46] parameters_0.28.3     IRanges_2.46.0        splines_4.6.0        
+    ##  [49] Matrix_1.7-5          tidyselect_1.2.1      abind_1.4-8          
     ##  [52] yaml_2.3.12           doParallel_1.0.17     codetools_0.2-20     
-    ##  [55] curl_7.0.0            plyr_1.8.9            lattice_0.22-9       
+    ##  [55] curl_7.1.0            plyr_1.8.9            lattice_0.22-9       
     ##  [58] tibble_3.3.1          withr_3.0.2           bayestestR_0.17.0    
-    ##  [61] S7_0.2.1              evaluate_1.0.5        desc_1.4.3           
-    ##  [64] circlize_0.4.17       pillar_1.11.1         BiocManager_1.30.27  
+    ##  [61] S7_0.2.2              evaluate_1.0.5        desc_1.4.3           
+    ##  [64] circlize_0.4.18       pillar_1.11.1         BiocManager_1.30.27  
     ##  [67] ggpubr_0.6.3          carData_3.0-6         foreach_1.5.2        
-    ##  [70] stats4_4.5.3          insight_1.4.6         generics_0.1.4       
-    ##  [73] S4Vectors_0.48.0      ggplot2_4.0.2         scales_1.4.0         
-    ##  [76] glue_1.8.0            tools_4.5.3           data.table_1.18.2.1  
-    ##  [79] fgsea_1.36.2          locfit_1.5-9.12       ggsignif_0.6.4       
-    ##  [82] babelgene_22.9        fs_1.6.7              fastmatch_1.1-8      
-    ##  [85] cowplot_1.2.0         grid_4.5.3            tidyr_1.3.2          
-    ##  [88] datawizard_1.3.0      edgeR_4.8.2           colorspace_2.1-2     
-    ##  [91] nlme_3.1-168          Formula_1.2-5         cli_3.6.5            
-    ##  [94] textshaping_1.0.5     ComplexHeatmap_2.26.1 dplyr_1.2.0          
+    ##  [70] stats4_4.6.0          insight_1.5.0         generics_0.1.4       
+    ##  [73] S4Vectors_0.50.0      ggplot2_4.0.3         scales_1.4.0         
+    ##  [76] glue_1.8.1            tools_4.6.0           data.table_1.18.4    
+    ##  [79] fgsea_1.38.0          locfit_1.5-9.12       ggsignif_0.6.4       
+    ##  [82] babelgene_22.9        fs_2.1.0              fastmatch_1.1-8      
+    ##  [85] cowplot_1.2.0         grid_4.6.0            tidyr_1.3.2          
+    ##  [88] datawizard_1.3.1      edgeR_4.10.0          colorspace_2.1-2     
+    ##  [91] nlme_3.1-169          Formula_1.2-5         cli_3.6.6            
+    ##  [94] textshaping_1.0.5     ComplexHeatmap_2.28.0 dplyr_1.2.1          
     ##  [97] gtable_0.3.6          ggh4x_0.3.1           rstatix_0.7.3        
-    ## [100] sass_0.4.10           digest_0.6.39         BiocGenerics_0.56.0  
-    ## [103] ggrepel_0.9.7         rjson_0.2.23          htmlwidgets_1.6.4    
+    ## [100] sass_0.4.10           digest_0.6.39         BiocGenerics_0.58.0  
+    ## [103] ggrepel_0.9.8         rjson_0.2.23          htmlwidgets_1.6.4    
     ## [106] farver_2.1.2          htmltools_0.5.9       pkgdown_2.2.0        
-    ## [109] lifecycle_1.0.5       GlobalOptions_0.1.3   statmod_1.5.1
+    ## [109] lifecycle_1.0.5       GlobalOptions_0.1.4   statmod_1.5.1

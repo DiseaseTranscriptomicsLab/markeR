@@ -47,6 +47,7 @@ analyses and figures. You can browse it
 Install the latest release from Bioconductor:
 
 ``` r
+
 # Install from Bioconductor
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
@@ -58,6 +59,7 @@ Or install the latest development release of `markeR` from
 [GitHub](https://github.com/) with:
 
 ``` r
+
 # install.packages("devtools")
 devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
 ```
@@ -101,6 +103,7 @@ This structure supports both **Discovery Mode** (single gene set) and
 **Benchmarking Mode** (multiple gene sets).
 
 ``` r
+
 # Example 
 gene_sets
 #> $Set1
@@ -125,6 +128,7 @@ gene_sets
   revert them by applying `2^data`.
 
 ``` r
+
 head(expr_df)
 #>        Sample1  Sample2  Sample3  Sample4  Sample5
 #> GeneA 3.879049 7.448164 2.864353 5.852928 3.610586
@@ -141,6 +145,7 @@ head(expr_df)
   column names.
 
 ``` r
+
 metadata
 #>   SampleID Condition Age
 #> 1  Sample1   Control  49

@@ -54,11 +54,13 @@ associated with cellular senescence:
   direction of change in expression of genes upon phenotype.
 
 ``` r
+
 library(markeR)
 #> Warning: markeR has been tested with ggplot2 <= 3.5.2. Using newer versions may cause incompatibilities.
 ```
 
 ``` r
+
 # Load example gene sets
 data("genesets_example")
 lapply(genesets_example, head, n = 10)
@@ -91,6 +93,7 @@ lapply(genesets_example, head, n = 10)
 ```
 
 ``` r
+
 data(counts_example)
 # Load example data
 counts_example[1:5,1:5]
@@ -113,6 +116,7 @@ This enables exploration of associations between gene set activity and
 both categorical and continuous variables.
 
 ``` r
+
 data(metadata_example)
 
 set.seed("123456")
@@ -214,6 +218,7 @@ The following example demonstrates calculation of a gene signature score
 using the logmedian method:
 
 ``` r
+
 df_Scores <- CalculateScores(data = counts_example,
                              metadata = metadata_example,
                              method = "logmedian",
@@ -286,6 +291,7 @@ from ANOVA for multi-group comparisons.
 
 ``` r
 
+
 senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
   "Telomere shortening" = "#4FC3F7"  # Vivid sky blue  
@@ -328,6 +334,7 @@ whenever this information is available, ensuring more accurate and
 meaningful interpretation of the results.
 
 ``` r
+
  
 GeneSets_Example_Bidirectionality <- list(LiteratureMarkers=genesets_example$LiteratureMarkers,
                                           LiteratureMarkers_Unidirectional =  genesets_example$LiteratureMarkers$gene)
@@ -379,6 +386,7 @@ The following example illustrates how to configure the function for a
 numeric variable:
 
 ``` r
+
 PlotScores(data = counts_example,
            metadata = metadata_example,
            gene_sets = genesets_example,
@@ -408,6 +416,7 @@ with each plot representing the score distribution for a specific gene
 set.
 
 ``` r
+
  
 PlotScores(data = counts_example, 
            metadata = metadata_example, 
@@ -440,6 +449,7 @@ score is calculated as the ssGSEA score computed for the upregulated
 subset of genes minus the score computed for the downregulated subset.
 
 ``` r
+
 
 senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
@@ -486,6 +496,7 @@ The following example demonstrates the use of the “ranking” method for
 both unidirectional and bidirectional gene sets:
 
 ``` r
+
  
 senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
@@ -553,6 +564,7 @@ separation.
 
 ``` r
 
+
 Overall_Scores <- PlotScores(data = counts_example, 
                              metadata = metadata_example,  
                              gene_sets=genesets_example, 
@@ -580,12 +592,14 @@ Overall_Scores <- PlotScores(data = counts_example,
 ```
 
 ``` r
+
 Overall_Scores$heatmap
 ```
 
 ![](Article_BenchmarkingMode_files/figure-html/Overall_Scores_heatmap-1.png)
 
 ``` r
+
 Overall_Scores$volcano
 ```
 
@@ -605,6 +619,7 @@ methods across contrasts, allowing users to visualize performance
 differences.
 
 ``` r
+
  ROC_Scores(data = counts_example, 
            metadata = metadata_example, 
            gene_sets=genesets_example, 
@@ -629,6 +644,7 @@ is returned in the `$plt` element, and the underlying data used to
 generate it is available in the `$data` element.
 
 ``` r
+
 AUC_Scores(data = counts_example, 
            metadata = metadata_example, 
            gene_sets=genesets_example, 
@@ -666,6 +682,7 @@ original gene sets, and a 95th percentile threshold. Significance is
 indicated by distinct point shapes based on the associated p‑value.
 
 ``` r
+
 
 FPR_Simulation(data = counts_example,
                metadata = metadata_example,
@@ -723,6 +740,7 @@ by answering the same question: **What are the genes differentially
 expressed between senescence and proliferative cells?**
 
 ``` r
+
 # Example 1: Build design matrix from variables (Condition) and apply a contrast.
 # In this case, the design matrix is constructed automatically using the variable "Condition".
 DEGs <- calculateDE(data = counts_example,
@@ -793,6 +811,7 @@ sets.
 
 ``` r
 
+
 # Color Interesting Genes:
 plotVolcano(DEGs, genes = NULL, N = NULL,
             x = "logFC", y = "-log10(adj.P.Val)", pointSize = 2,
@@ -805,6 +824,7 @@ plotVolcano(DEGs, genes = NULL, N = NULL,
 ![](Article_BenchmarkingMode_files/figure-html/volcanos_DEGs-1.png)
 
 ``` r
+
 
 # Annotate Top and Bottom N Genes:
 plotVolcano(DEGs, genes = NULL, N = 5,
@@ -832,6 +852,7 @@ In this example:
   discriminatory power.
 
 ``` r
+
 
 # Change order: signatures in columns, contrast in rows
 plotVolcano(DEGs, genes = genesets_example, 
@@ -871,6 +892,7 @@ expression associated with a 1-unit increase in the variable (e.g., one
 day, one unit of dosage, “Senescent” to “Proliferative”, etc).
 
 ``` r
+
  
 design <- model.matrix(~1 + DaysToSequencing, data = metadata_example)
 
@@ -903,6 +925,7 @@ comparisons, and it provides complete flexibility in specifying the
 design.
 
 ``` r
+
 
 # Manually construct the design matrix
 model_matrix <- model.matrix(~ DaysToSequencing + Condition, data = metadata_example)
@@ -967,6 +990,7 @@ enrichment scores.
   only corrects for the number of gene sets.
 
 ``` r
+
 GSEAresults <- runGSEA(DEGList = DEGs, 
                        gene_sets = genesets_example,
                        stat = NULL,
@@ -976,14 +1000,14 @@ GSEAresults
 #> $`Senescent-Proliferative`
 #>                         pathway         pval         padj   log2err        ES
 #>                          <char>        <num>        <num>     <num>     <num>
-#> 1:              HernandezSegura 2.846574e-10 8.539722e-10 0.8140358 0.6263553
-#> 2: REACTOME_CELLULAR_SENESCENCE 1.396249e-02 2.094374e-02 0.1226374 0.3687292
-#> 3:            LiteratureMarkers 2.115744e-02 2.115744e-02 0.1424704 0.6948634
+#> 1:              HernandezSegura 5.005591e-10 1.501677e-09 0.8012156 0.6263554
+#> 2: REACTOME_CELLULAR_SENESCENCE 1.396249e-02 2.094374e-02 0.1226374 0.3687291
+#> 3:            LiteratureMarkers 2.115744e-02 2.115744e-02 0.1424704 0.6948631
 #>         NES  size                                    leadingEdge stat_used
 #>       <num> <int>                                         <list>    <char>
 #> 1: 2.645040    52 CNTLN,DYNLT3,SLC10A3,CCND1,TOLLIP,DDA1,...[37]         t
 #> 2: 1.444964   128   H1-2,H2BC4,H2BC5,H4C15,IGFBP7,H2BC12,...[31]         B
-#> 3: 1.647262     7            LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
+#> 3: 1.647261     7            LMNB1,MKI67,GLB1,CDKN1A,CDKN2A,CCL2         t
 ```
 
 Depending on the statistic used, the interpretation of the plots
@@ -1015,6 +1039,7 @@ Scores (NES)** and **adjusted p-value** for each enrichment result. As
 - `nrow`/`ncol`: Specifies the grid layout for arranging plots.
 
 ``` r
+
 plotGSEAenrichment(GSEA_results=GSEAresults, 
                    DEGList=DEGs, 
                    gene_sets=genesets_example, 
@@ -1034,6 +1059,7 @@ significance threshold, and plot layout. It can also arrange individual
 plots into a grid layout for comparative visualization.
 
 ``` r
+
 plotNESlollipop(GSEA_results=GSEAresults, 
                 saturation_value=NULL, 
                 nonsignif_color = "#F4F4F4", 
@@ -1065,6 +1091,7 @@ contrasts and the number of pathways is high, scenario of which the
 example herein is not too representative.
 
 ``` r
+
 plotCombinedGSEA(GSEAresults, sig_threshold = 0.05, PointSize=6, widthlegend = 26 )
 ```
 
@@ -1139,6 +1166,7 @@ visualization.
 
 ``` r
 
+
 annotation_colors <- list( 
   Condition = c(
     "Senescent"     = "#65AC7C",  # Example color: greenish
@@ -1163,6 +1191,7 @@ ExpressionHeatmap(data=counts_example,
 ![](Article_BenchmarkingMode_files/figure-html/example_exprheatmap-1.png)
 
 ``` r
+
 VisualiseIndividualGenes(type="expression",
                   data=counts_example, 
                   metadata = metadata_example, 
@@ -1189,6 +1218,7 @@ insight. Customization options include layout, point size, colors, and
 axis labeling.
 
 ``` r
+
 
 senescence_triggers_colors <- c(
   "none" = "#E57373",  # Soft red   
@@ -1226,6 +1256,7 @@ for clustering, color scaling, and correlation method (e.g., Spearman or
 Pearson).
 
 ``` r
+
 
 CorrelationHeatmap(data=counts_example, 
                    metadata = metadata_example, 
@@ -1266,6 +1297,7 @@ will be displayed in a barplot.
   power rather than directionality.
 
 ``` r
+
  
 ROCandAUCplot(counts_example, 
               metadata_example, 
@@ -1297,6 +1329,7 @@ interpretation of effect sizes across genes. If `group_var` is not
 specified, the function will return a barplot instead.
 
 ``` r
+
  
 CohenD_IndividualGenes(counts_example, 
                        metadata_example, 
@@ -1324,6 +1357,7 @@ layout, point size, and colour annotations for comparison across
 conditions.
 
 ``` r
+
 
 annotation_colors <- c(  
   "Senescent"     = "#65AC7C",  # Example color: greenish
@@ -1370,6 +1404,7 @@ these three genes yielded results similar to the full
 `LiteratureMarkers` set.
 
 ``` r
+
  
 GeneSets_Example_DrivingGenes <- list(LiteratureMarkers=genesets_example$LiteratureMarkers,
                                           LiteratureMarkers_subset=genesets_example$LiteratureMarkers[genesets_example$LiteratureMarkers$gene %in% c("LMNB1", "MKI67","GLB1"),])
@@ -1416,10 +1451,11 @@ PlotScores(data = counts_example,
 ## Session Information
 
 ``` r
+
 sessionInfo()
-#> R version 4.5.3 (2026-03-11)
+#> R version 4.6.0 (2026-04-24)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.3 LTS
+#> Running under: Ubuntu 24.04.4 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -1441,41 +1477,41 @@ sessionInfo()
 #> [1] markeR_1.1.2
 #> 
 #> loaded via a namespace (and not attached):
-#>   [1] pROC_1.19.0.1         gridExtra_2.3         rlang_1.1.7          
-#>   [4] magrittr_2.0.4        clue_0.3-67           GetoptLong_1.1.0     
+#>   [1] pROC_1.19.0.1         gridExtra_2.3         rlang_1.2.0          
+#>   [4] magrittr_2.0.5        clue_0.3-68           GetoptLong_1.1.1     
 #>   [7] msigdbr_26.1.0        otel_0.2.0            matrixStats_1.5.0    
-#>  [10] compiler_4.5.3        mgcv_1.9-4            png_0.1-8            
-#>  [13] systemfonts_1.3.2     vctrs_0.7.1           reshape2_1.4.5       
+#>  [10] compiler_4.6.0        mgcv_1.9-4            png_0.1-9            
+#>  [13] systemfonts_1.3.2     vctrs_0.7.3           reshape2_1.4.5       
 #>  [16] stringr_1.6.0         pkgconfig_2.0.3       shape_1.4.6.1        
 #>  [19] crayon_1.5.3          fastmap_1.2.0         magick_2.9.1         
-#>  [22] backports_1.5.0       labeling_0.4.3        effectsize_1.0.2     
-#>  [25] rmarkdown_2.30        ragg_1.5.1            purrr_1.2.1          
-#>  [28] xfun_0.56             cachem_1.1.0          jsonlite_2.0.0       
-#>  [31] BiocParallel_1.44.0   broom_1.0.12          parallel_4.5.3       
+#>  [22] backports_1.5.1       labeling_0.4.3        effectsize_1.0.2     
+#>  [25] rmarkdown_2.31        ragg_1.5.2            purrr_1.2.2          
+#>  [28] xfun_0.57             cachem_1.1.0          jsonlite_2.0.0       
+#>  [31] BiocParallel_1.46.0   broom_1.0.12          parallel_4.6.0       
 #>  [34] cluster_2.1.8.2       R6_2.6.1              stringi_1.8.7        
-#>  [37] bslib_0.10.0          RColorBrewer_1.1-3    limma_3.66.0         
-#>  [40] car_3.1-5             jquerylib_0.1.4       Rcpp_1.1.1           
+#>  [37] bslib_0.10.0          RColorBrewer_1.1-3    limma_3.68.2         
+#>  [40] car_3.1-5             jquerylib_0.1.4       Rcpp_1.1.1-1.1       
 #>  [43] assertthat_0.2.1      iterators_1.0.14      knitr_1.51           
-#>  [46] parameters_0.28.3     IRanges_2.44.0        splines_4.5.3        
-#>  [49] Matrix_1.7-4          tidyselect_1.2.1      abind_1.4-8          
+#>  [46] parameters_0.28.3     IRanges_2.46.0        splines_4.6.0        
+#>  [49] Matrix_1.7-5          tidyselect_1.2.1      abind_1.4-8          
 #>  [52] yaml_2.3.12           doParallel_1.0.17     codetools_0.2-20     
-#>  [55] curl_7.0.0            plyr_1.8.9            lattice_0.22-9       
+#>  [55] curl_7.1.0            plyr_1.8.9            lattice_0.22-9       
 #>  [58] tibble_3.3.1          withr_3.0.2           bayestestR_0.17.0    
-#>  [61] S7_0.2.1              evaluate_1.0.5        desc_1.4.3           
-#>  [64] circlize_0.4.17       pillar_1.11.1         ggpubr_0.6.3         
-#>  [67] carData_3.0-6         foreach_1.5.2         stats4_4.5.3         
-#>  [70] insight_1.4.6         generics_0.1.4        S4Vectors_0.48.0     
-#>  [73] ggplot2_4.0.2         scales_1.4.0          glue_1.8.0           
-#>  [76] tools_4.5.3           data.table_1.18.2.1   fgsea_1.36.2         
+#>  [61] S7_0.2.2              evaluate_1.0.5        desc_1.4.3           
+#>  [64] circlize_0.4.18       pillar_1.11.1         ggpubr_0.6.3         
+#>  [67] carData_3.0-6         foreach_1.5.2         stats4_4.6.0         
+#>  [70] insight_1.5.0         generics_0.1.4        S4Vectors_0.50.0     
+#>  [73] ggplot2_4.0.3         scales_1.4.0          glue_1.8.1           
+#>  [76] tools_4.6.0           data.table_1.18.4     fgsea_1.38.0         
 #>  [79] locfit_1.5-9.12       ggsignif_0.6.4        babelgene_22.9       
-#>  [82] fs_1.6.7              fastmatch_1.1-8       cowplot_1.2.0        
-#>  [85] grid_4.5.3            tidyr_1.3.2           datawizard_1.3.0     
-#>  [88] edgeR_4.8.2           colorspace_2.1-2      nlme_3.1-168         
-#>  [91] Formula_1.2-5         cli_3.6.5             textshaping_1.0.5    
-#>  [94] ComplexHeatmap_2.26.1 dplyr_1.2.0           gtable_0.3.6         
+#>  [82] fs_2.1.0              fastmatch_1.1-8       cowplot_1.2.0        
+#>  [85] grid_4.6.0            tidyr_1.3.2           datawizard_1.3.1     
+#>  [88] edgeR_4.10.0          colorspace_2.1-2      nlme_3.1-169         
+#>  [91] Formula_1.2-5         cli_3.6.6             textshaping_1.0.5    
+#>  [94] ComplexHeatmap_2.28.0 dplyr_1.2.1           gtable_0.3.6         
 #>  [97] ggh4x_0.3.1           rstatix_0.7.3         sass_0.4.10          
-#> [100] digest_0.6.39         BiocGenerics_0.56.0   ggrepel_0.9.7        
+#> [100] digest_0.6.39         BiocGenerics_0.58.0   ggrepel_0.9.8        
 #> [103] rjson_0.2.23          htmlwidgets_1.6.4     farver_2.1.2         
 #> [106] htmltools_0.5.9       pkgdown_2.2.0         lifecycle_1.0.5      
-#> [109] GlobalOptions_0.1.3   statmod_1.5.1
+#> [109] GlobalOptions_0.1.4   statmod_1.5.1
 ```
