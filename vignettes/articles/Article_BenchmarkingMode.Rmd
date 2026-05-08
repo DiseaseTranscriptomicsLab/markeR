@@ -12,22 +12,24 @@ knitr::opts_chunk$set(
 ```
 
 
-This vignette provides a comprehensive introduction to the **markeR** package, focusing on its **Benchmarking Mode**. This mode is designed to evaluate the performance of gene signatures in quantifying specific biological states or phenotypes, such as disease states or cellular conditions. It allows users to assess the robustness and reliability of gene signatures across various conditions, providing a standardized framework for benchmarking.
-  
+This vignette provides a comprehensive introduction to the **markeR** package, focusing on its **Benchmarking Mode**. This mode is designed to evaluate gene sets' performance in marking a metadata variable, *i.e.*, a phenotype such as disease or cellular condition, returning comparative visualisations across scoring and enrichment methods. It allows users to assess the robustness and reliability of gene sets across various conditions, providing a standardized framework for benchmarking.
+ 
 # Case-study: Senescence
 
-We will be using an already pre-processed gene expression dataset, derived from the Marthandan et al. (2016) study (GSE63577), that includes human fibroblast samples cultured under two different conditions: replicative senescence and proliferative control. The dataset has already been filtered and normalized using the `edgeR` package. For more information about the dataset structure, see the help pages for `?counts_example` and `?metadata_example`.
+In this vignette, we use a pre‑processed RNA-seq dataset from Marthandan et al. (2016, GSE63577), with normalised read counts for human fibroblasts under **replicative senescence** and **proliferative control**. See `?counts_example` for preprocessing details and structure. `markeR` requires as input a filtered and normalised, non log-transformed, gene expression matrix (genes × samples). Row names must be gene identifiers; column names must match sample IDs in the metadata. 
 
-This dataset serves as a working example to demonstrate the main functionalities of the markeR package. In particular, it will be used to showcase the two primary modules designed for benchmarking gene signatures:
+We use the accompanying metadata from the Marthandan et al. (2016) study (see `?metadata_example`).
 
--   **Score**: calculates expression-based signature scores for each sample, and
--   **Enrichment**: evaluates the over-representation of gene signatures within ranked gene lists.
+This dataset serves as a working example to demonstrate the main functionalities of the `markeR` package. In particular, it will be used to showcase the two primary modules of `markeR` for quantifying phenotypes using gene sets:
+
+- **Score-based methods**:  log2-median expression, ranking approaches, and single-sample gene set enrichment analysis (ssGSEA) to quantify coordinated expression within a gene set.
+- **Enrichment-based methods**: GSEA using moderated t- or B-statistics.
 
 To illustrate the usage of `markeR`, we use three gene sets commonly associated with cellular senescence:
 
--   **LiteratureMarkers**: A small, curated set of well-established senescence-associated genes repeatedly reported in the literature. This concise gene set includes key markers often used for validating senescence phenotypes. This set includes information on the directionality of gene regulation (i.e., whether genes are typically up- or down-regulated in senescence).
+-   **LiteratureMarkers**: A small, curated set of well-established senescence-associated genes repeatedly reported in the literature. This concise gene set includes key markers often used for validating senescence phenotypes. This set includes information on the expected direction of change in expression of genes upon phenotype (i.e., whether genes are expected to be up- or down-regulated in senescence).
 -   **REACTOME_CELLULAR_SENESCENCE**: A comprehensive gene set from the MSigDB REACTOME collection, representing known molecular pathways involved in cellular senescence and commonly used in enrichment-based analyses. This is also treated as an undirected gene set without information on the up- or down-regulation of individual genes.
--   **HernandezSegura**: A transcriptomic gene set identified by Hernandez-Segura et al. (2017) as consistently altered across multiple senescence models. This set includes information on the directionality of gene regulation. It has shown strong performance in classification and enrichment analyses, including in the original paper of markeR.
+-   **HernandezSegura**: A transcriptomic gene set identified by Hernandez-Segura et al. (2017) as consistently altered across multiple senescence models. This set includes information on the expected direction of change in expression of genes upon phenotype. 
 
 ```{r example}
 library(markeR)
@@ -45,7 +47,12 @@ data(counts_example)
 counts_example[1:5,1:5]
 ```
 
-For illustration purposes of different variable types, let's imagine we also had two additional variables: one indicating the number of days between sample preparation and sequencing (`DaysToSequencing`), and another identifying the person who processed each sample (`researcher`). These variables are hypothetical and not part of the original study design.
+For illustration purposes, two synthetic variables were added to the data:
+
+* `DaysToSequencing`, the number of days between sample preparation and sequencing;
+* `Researcher`, identifying the person who processed each sample.
+
+This enables exploration of associations between gene set activity and both categorical and continuous variables.
  
 
 ```{r load_metadata}
@@ -61,28 +68,40 @@ head(metadata_example)
 
 # Calculate Senescence Scores 
 
-The `CalculateScores` function computes the signature scores for each sample based on predefined gene sets, such as a senescence gene set. It returns a named list where each entry corresponds to a specific gene set and includes the calculated scores, along with metadata (if available). When setting `method = "all"`, the function returns a list, where each element corresponds to a scoring method and contains the respective data frame of scores, allowing comparison between methods. The function allows users to select from three different scoring methods:
+The `CalculateScores` function computes the gene set scores for each sample based on predefined gene sets, such as a senescence gene set. It returns a named list where each entry corresponds to a specific gene set and includes the calculated scores, along with metadata (if available). When setting `method = "all"`, the function returns a list, where each element corresponds to a scoring method and contains the respective data frame of scores, allowing comparison between methods. The function allows users to select from three different scoring methods:
 
--   **ssGSEA**: Computes an enrichment score for each gene set in each sample.
--   **logmedian**: Calculates the score as the sum of the normalized (log2-median-centered) expression values of the genes in the gene set, divided by the number of genes.
--   **ranking**: Determines the score by ranking the expression of the genes in the gene set and normalizing the result.
+* **logmedian**: mean of the across-sample normalised log2 median-centred expression levels of the genes in the set; for bidirectional gene sets, the sample score is the partial score for the subset of putatively upregulated genes minus that of the downregulated subset.
 
-These methods are very similar and, when applied to a robust gene set, will yield similar results across all three methods. Empirically, a good gene set will be one that shows consistent results, both in the calculated scores and in Cohen's d or F statistics, across different methods. If the gene set is not robust, or if there is considerable noise, the results across methods may differ significantly. Consistent scores across methods typically indicate a more reliable and meaningful gene set. These methods are explained in more detail below, allowing the user to select the most appropriate one for their analysis.
+* **Ranking**: mean expression rank of gene set members in each sample; for bidirectional gene sets, the sample score is the partial score for the subset of putatively upregulated genes minus that of the downregulated subset, and normalised by the number of genes in the set. 
 
-The `PlotScores` function can be used to compute and visualize the scores in various ways, depending on the method and variable chosen.
+* **ssGSEA**: single-sample gene set enrichment score using ssGSEA; for bidirectional gene sets, the sample score is the partial score for the subset of putatively upregulated genes minus that of the downregulated subset.
 
--   If `method = "all"` and the variable is categorical, it will return a heatmap of Cohen's d or F statistics and a volcano plot showing contrasts between all groups of that variable.
--   If `method = "all"` and the variable is numeric, a heatmap of Cohen's F and a volcano plot will be produced.
--   If `method != "all"` and the variable is categorical, it will generate a violin plot for each gene set.
--   If `method != "all"` and the variable is `NULL`, a density plot of the score distribution will be displayed.
--   If `method != "all"` and the variable is numeric, a scatter plot will be created to show the relationship between the scores and the numeric variable.
+These methods are very similar and, when applied to a robust gene set, are expected to yield similar results across all three methods. Empirically, a good gene set will be one that shows consistent results, both in the calculated scores and in Cohen's d or f statistics, across different methods. If the gene set is not robust, or if there is considerable noise, the results across methods may differ significantly.
+
+The `PlotScores` function computes and visualizes gene set scores according to the chosen method and variable type:
+
+- `method = "all"`  
+
+    - Categorical `Variable`: produces a heatmap of Cohen's *d* and a volcano plot of all pairwise group contrasts.  
+    - Numeric `Variable`: produces a heatmap of Cohen's *F* statistics and a volcano plot of associations.  
+
+- `method != "all"`  
+
+    - Categorical `Variable`: generates violin plots of scores per gene set.  
+    - Numeric `Variable`: generates scatter plots of scores versus the numeric variable.  
+    - `Variable` is `NULL`: displays a density plot of the score distribution.  
+
+This structure clearly links each combination of method and variable type to the resulting visualization, avoiding ambiguity.
 
 
 ## logmedian method
- 
-The following example uses the **`logmedian`** method to calculate a gene signature score. This method first applies a log2 transformation to the expression values, and then centers them by subtracting the median expression (across all samples) for each genes. The score for each sample is then computed by summing the normalised expression values of the genes in the gene set, and dividing by the number of genes in the gene set. This normalization makes each gene’s expression relative to its typical behavior across the dataset, allowing for meaningful comparisons between genes with different expression scales. By using log2 median-centering, the method ensures that both highly and lowly expressed genes contribute comparably to the score, as long as their variances are similar. This normalization emphasizes relative changes in expression rather than absolute values, allowing the score to reflect the coordinated behavior of the genes in a gene set. Users can calculate the gene signature score for each sample based on one or more predefined gene sets (signatures).  
 
-Here’s an example where we calculate the signature score using the "logmedian" method:
+The **logmedian** method computes a gene signature score per sample as follows. First, gene expression values are log2-transformed and each gene is median-centered across all samples. For a given sample, the score is the mean of the median-centered expression values of the genes in the set (De Almeida et al., 2019). Each gene’s contribution is thus evaluated relative to its baseline expression, and the resulting score quantifies the coordinated activity of the gene set.
+
+For bidirectional gene sets, where genes are annotated by expected direction of regulation, the score is calculated as the difference between the mean of the upregulated genes and the mean of the downregulated genes. Users can compute scores for individual samples using one or more predefined gene sets.
+
+The following example demonstrates calculation of a gene signature score using the logmedian method:
+
  
 ```{r}
 df_Scores <- CalculateScores(data = counts_example,
@@ -96,9 +115,11 @@ head(df_Scores$HernandezSegura)
 head(df_Scores$LiteratureMarkers)
 ```
 
-The user can also chose to directly plot the scores. 
+Users can directly visualize gene set scores with the plotting functions.
 
-Effect sizes can be computed using the `compute_cohen` parameter (default = `T`): when the grouping variable has only two levels, Cohen’s d is calculated by default. If there are more than two levels, Cohen’s f is used unless a specific pairwise comparison is defined via `cond_cohend`, in which case Cohen’s d is reported for that comparison. If `pvalcalc = TRUE` (default = `FALSE`), an associated p-value (not corrected for multiple testing) is also reported. The p-value is derived from a two-sample t-test for two-group comparisons or numeric variables, or from an ANOVA for multi-group comparisons.  
+Effect sizes are computed via the `compute_cohen` parameter (default = `TRUE`). For a categorical metadata variable with two levels, Cohen’s d is calculated; for more than two levels, Cohen’s f is used unless a specific pairwise comparison is specified via `cond_cohend`, in which case Cohen’s d is reported for that comparison.
+
+If `pvalcalc = TRUE` (default = `FALSE`), an associated p-value is reported (uncorrected for multiple testing). p-values are derived from a two-sample t-test for two-group or numeric-variable comparisons, and from ANOVA for multi-group comparisons.
 
 ```{r exampleScore, fig.width=8, fig.height=4, out.width="80%", warning=FALSE, message=FALSE}
 
@@ -133,8 +154,7 @@ PlotScores(data = counts_example,
 ```
 
 
-Interestingly, when we provide directionality for a signature—such as the *Literature_Senescence* set—the interpretation of the results can change substantially. For example, without specifying direction, senescent samples may appear to have lower scores than proliferative ones. But once directionality is accounted for, the scores shift in a way that aligns better with biological expectations. Therefore, it is **strongly advised** that, whenever possible (i.e., if known), the user states the putative regulation “sign” of the genes in the gene set This helps ensure more accurate and meaningful interpretations of the data.
-
+Providing gene directionality can substantially affect score interpretation. For example, in the *Literature_Senescence* signature, omitting direction of change in expression of genes upon phenotype may lead to senescent samples appearing to have lower scores than proliferative ones. Incorporating directionality aligns the scores with biological expectations. Therefore, it is **strongly recommended** to specify the expected  direction of gene expression changes in a set whenever this information is available, ensuring more accurate and meaningful interpretation of the results.
 
 ```{r exampleScore_bidirectional, fig.width=6, fig.height=4, out.width="60%", warning=FALSE, message=FALSE}
  
@@ -165,9 +185,11 @@ PlotScores(data = counts_example,
 ```
 
 
-To use the function for numeric variables, the user should specify the relevant parameters, including the numeric variable to be analysed. The function will generate a scatter plot for the numeric variable, optionally calculating Cohen's f as the effect size. The user can choose a correlation method (e.g., Pearson, Spearman, or Kendall) to assess the relationship between the variable and the signature scores. The plot will also include optional p-value calculations for comparisons.
+When analyzing a numeric variable, the function generates a scatter plot of the variable against gene set scores and can optionally compute an effect size using Cohen’s f. The user may select a correlation method (Pearson, Spearman, or Kendall) to quantify the association between the numeric variable and the scores. Optional p-value calculations for the association can also be included.
 
-Here is an example of how to configure the function for numeric variables:
+The following example illustrates how to configure the function for a numeric variable:
+
+
 
 ```{r examplenumeric, fig.width=8, fig.height=3.5, out.width="80%", warning=FALSE, message=FALSE}
 PlotScores(data = counts_example,
@@ -188,8 +210,9 @@ PlotScores(data = counts_example,
            widthTitle = 26,
            cor = "pearson")
 ```
+ 
+To visualize the overall distribution of scores across gene sets, the `PlotScores` function can be used without specifying the `GroupingVariable` parameter, i.e, without grouping scores by any metadata variable.. In this case, it generates a grid of density plots, with each plot representing the score distribution for a specific gene set.
 
-For users interested in viewing the overall distribution of scores across gene signatures, the `PlotScores` function can be used without specifying the `GroupingVariable` parameter, i.e, without grouping scores by any metadata variable. In this case, the function will automatically generate a grid of density plots, with each plot representing the distribution of scores for a specific gene set  
 
 ```{r plotscores_density, fig.width=8, fig.height=3, out.width="80%", warning=FALSE, message=FALSE}
  
@@ -210,7 +233,8 @@ PlotScores(data = counts_example,
 
 ## ssGSEA method
 
-The same approach can be applied for **ssGSEA** (single-sample Gene Set Enrichment Analysis; Barbie et al. (2009)) for score calculation and visualization, both for unidirectional and bidirectional signatures. ssGSEA computes an enrichment score for each gene signature in each sample using an adaptation of the `gsva()` function from the `GSVA` package. This method is useful for evaluating gene set enrichment in individual samples rather than groups, as described in the sections below.
+Single sample Gene Set Enrichment Analysis (**ssGSEA**) was implemented using a modified version of the `GSVA` package’s `gsva()` function (Barbie et al., 2009), based on the original Gene Set Enrichment Analysis (GSEA) method (Subramanian et al., 2005). ssGSEA ranks all genes by their expression within each sample and computes a running-sum statistic over the ranked list. For unidirectional gene sets (i.e., with no information on the expected direction of each gene’s regulation upon phenotype), the ssGSEA sample score reflects overall coordinated expression of the genes in the set. For bidirectional gene sets, the score is calculated as the ssGSEA score computed for the upregulated subset of genes minus the score computed for the downregulated subset.
+
  
 
 ```{r examplessGSEA, fig.width=8, fig.height=4, out.width="80%", warning=FALSE, message=FALSE}
@@ -247,9 +271,9 @@ PlotScores(data = counts_example,
 
 ## Ranking method
 
-The **ranking** method computes gene signature scores for each sample by ranking the expression of signature genes in the dataset and normalizing the score based on the total number of genes. 
+The **ranking** method calculates gene signature scores using a non-parametric approach based on the relative expression of genes within a set. For each sample, all genes are ranked by expression. The score is then calculated as the sum of the ranks of the genes in the gene set, multiplied by +1 (for upregulated genes those with unspecified direction of regulation change upon phenotype) or -1 (downregulated genes), and normalised by the number of genes in the set. 
 
-The following example demonstrates the use of the "ranking" method for both unidirectional and bidirectional signatures:
+The following example demonstrates the use of the "ranking" method for both unidirectional and bidirectional gene sets:
 
 ```{r ranking, fig.width=8, fig.height=4, out.width="80%", warning=FALSE, message=FALSE}
  
@@ -293,6 +317,7 @@ The `mode` parameter controls how contrasts are generated for categorical variab
 -   **"medium"**: Includes comparisons between one group and the union of other groups (e.g., A - (B + C + D); B - (A + C + D)), allowing for broader contrasts beyond simple pairwise comparisons. 
 -   **"extensive"**: Allows for all possible algebraic combinations of group levels (e.g., (A + B) - (C + D)). 
 
+In this example, HernandezSegura and LiteratureMarkers consistently discriminate Senescent from Proliferative samples, while REACTOME_CELLULAR_SENESCENCE shows weaker and less consistent separation.
 
 ```{r Overall_Scores, fig.width=6, fig.height=3, out.width="80%", warning=FALSE, message=FALSE}
 
@@ -374,6 +399,10 @@ AUC_Scores(data = counts_example,
            title="Marthandan et al. 2016") 
 ```
 
+
+ HernandezSegura and LiteratureMarkers exhibit consistently high AUCs across scoring methods, while REACTOME_CELLULAR_SENESCENCE shows more heterogeneous performance.
+
+
 ## False Positive Rate (FPR) Calculations
 
 The user can assess the significance of gene set scores by comparing observed effect sizes against a distribution of those originated by random gene sets with the same number of genes and matched directionality. For each original gene set, the function calculates the observed Cohen's d (and p‑value) using (`GroupingVariable`). It then generates a number of simulated gene sets (`number_of_sims`) by randomly sampling the same number of genes from a user provided gene list (`gene_list`) and computes their Cohen's d values. The simulation results are visualised as violin plots of the distribution of Cohen's d values for each method, overlaid with the observed values of the original gene sets, and a 95th percentile threshold. Significance is indicated by distinct point shapes based on the associated p‑value.
@@ -430,7 +459,7 @@ DEGs2 <- calculateDE(data = counts_example,
 DEGs2$`Senescent-Proliferative`[1:5,]
 ```
 
-After running differential expression analysis (for example, using the `calculateDE` function), the user can visualize their results with the `plotVolcano` function. This function provides a flexible interface for exploring their data by allowing the user to:
+After running differential expression analysis (using the `calculateDE` function), the user can visualize their results with the `plotVolcano` function. This function provides a flexible interface for exploring their data by allowing the user to:
 
 -   **Plot Differential Gene Expression Statistics:**  
     Display a volcano plot with chosen statistics (e.g., log fold-change on the x-axis and –log₁₀ adjusted p-value on the y-axis).
@@ -438,7 +467,7 @@ After running differential expression analysis (for example, using the `calculat
     Highlight genes that pass user-specified thresholds by adjusting `threshold_y` and `threshold_x`.
 -   **Annotate Top and Bottom N Genes:**  
     Optionally, label the top (and bottom) N genes based on the chosen statistic to quickly identify the most significant genes.
--   **Highlight Gene Signatures:** If the user provides a list of gene signatures using the `genes` argument, the function can highlight these genes in the plot. The user can also specify distinct colors for putativelyupregulated and downregulated if their direction is known, or a color for genes that do not have a putative direction.
+-   **Highlight Gene Signatures:** If the user provides a list of gene signatures using the `genes` argument, the function can highlight these genes in the plot. The user can also specify distinct colors for putatively upregulated and downregulated if their direction is known, or a color for genes that do not have a putative direction.
 
 Below is an example usage of `plotVolcano` that visualizes differential expression results from a `DEResultsList`. The first plot shows the default behavior, generating a basic volcano plot without thresholds or gene highlights. Subsequent examples demonstrate how to customize the plot:
 
@@ -446,8 +475,7 @@ Below is an example usage of `plotVolcano` that visualizes differential expressi
 -   Annotating the top and bottom N genes by effect size,
 -   And using gene signatures to color genes across multiple plots arranged by contrast and signature.
 
-These examples illustrate how users can customise the output plot to highlight biologically meaningful patterns or focus on specific gene sets.
-
+These examples illustrate how users can customise the output plot to highlight biologically meaningful patterns or focus on specific gene sets. 
 
 ```{r volcanos_DEGs, fig.width=4, fig.height=3, out.width="40%", warning=FALSE, message=FALSE} 
 
@@ -468,6 +496,12 @@ plotVolcano(DEGs, genes = NULL, N = 5,
             labsize = 8, widthlabs = 25, invert = FALSE)
 
 ```
+
+In this example:
+
+* Genes in the HernandezSegura set annotated as upregulated (green) display positive log2 fold changes, whereas those annotated as downregulated (red) show negative log2 fold changes. This pattern is consistent with the annotation of the set, although these genes are not necessarily those exhibiting the largest absolute fold changes.
+* In the LiteratureMarkers set, *LMNB1* and *MKI67* exhibit strongly negative log2 fold change, consistent with their roles as proliferation markers absent in senescent cells.
+* Genes from the REACTOME_CELLULAR_SENESCENCE set are undirected and appear across the full range of log2 fold change values, diluting discriminatory power.
 
 ```{r volcanos_DEGs3, fig.width=10, fig.height=3, out.width="90%", warning=FALSE, message=FALSE}
 
@@ -624,9 +658,12 @@ Based on these very simple analyses, the REACTOME_CELLULAR_SENESCENCE showed con
 
 These findings highlight important trade-offs: while scoring methods offer per-sample resolution and are less sensitive (in terms of statistical significance) to gene set size, making them useful for classification tasks, they may be overly influenced by a small subset of genes, which could limit biological interpretability. While more robust to sample heterogeneity and better at capturing coordinated expression changes, enrichment-based methods are sensitive to gene set composition and size. Caution is warranted when interpreting results, especially from score-based approaches, as strong signals may not always reflect the intended biological process, but rather a handful of dominant genes. 
 
+
 ## Visualise Individual Gene Behaviour.  
 
 As highlighted in the previous section, score-based approaches can be disproportionately influenced by a small subset of genes. To address this, `markeR` includes dedicated functions for exploring individual gene behaviour, enabling users to assess if and which genes may be driving the overall signal. We demonstrate this functionality using the `LiteratureMarkers` gene set. 
+ 
+`markeR` provides the wrapper function `VisualiseIndividualGenes` for plotting individual genes. In this tutorial, we illustrate each visualization function separately for clarity. However, the same outputs can be generated through the wrapper by setting the `type` argument to the desired visualization strategy (i.e., `"expression"`, `"correlation"`,`"violin"`, `"roc"`, `"auc"`, `"rocauc"`, `"cohend"`, `"pca"`), and the wrapper automatically dispatches to the correct function with the appropriate parameters. 
  
 The `ExpressionHeatmap` function generates a heatmap to display the expression levels of selected senescence genes across samples. Samples are annotated by a chosen condition, and expression values are color-scaled for easy visual comparison. Clustering options and customizable color palettes allow for flexible and informative visualization.
 
@@ -653,10 +690,6 @@ ExpressionHeatmap(data=counts_example,
                   scale_position="right")
 ```
 
-To standardize the visualisation of individual genes across multiple analyses, we created a wrapper function called `VisualiseIndividualGenes`. This function consolidates several internal plotting functions, including `ExpressionHeatmap` and other listed below, into a single, user-friendly interface.
-
-The output remains consistent with the individual functions, but users can specify the desired type (i.e., "expression", "correlation","violin", "roc", "auc", "rocauc", "cohend", "pca"), and the wrapper automatically dispatches to the correct function with the appropriate parameters. This design simplifies and unifies the workflow for exploring gene-level patterns across various analysis types. 
-
 ```{r example_exprheatmap2, fig.width=8, fig.height=3, out.width="70%", warning=FALSE, message=FALSE}
 VisualiseIndividualGenes(type="expression",
                   data=counts_example, 
@@ -672,7 +705,6 @@ VisualiseIndividualGenes(type="expression",
                   legend_position = "right",
                   scale_position="right")
 ```
-
 
 
 The `IndividualGenes_Violins` function creates violin plots to visualize the expression distributions of selected senescence genes across conditions. Jittered points represent individual samples, and grouping (x axis, `GroupingVariable`) and color variables (`ColorVariable` and `ColorValues`) from the metadata allow for additional stratification and insight. Customization options include layout, point size, colors, and axis labeling.
@@ -790,7 +822,7 @@ plotPCA(data = counts_example,
 
 ## Comment 
 
-As demonstrated by the behaviour of individual genes in the `LiteratureMarkers` gene set, LMNB1, MKI67, and GLB1 appear to drive the overall signal. These genes consistently show higher performance metrics (e.g., Cohen’s d, AUC), strong expression changes between conditions, and LMNB1 and MKI67 specifically have correlated expression patterns. This underscores the importance of examining gene-level behaviour, as a strong overall signature score may reflect the influence of only a few informative genes, rather than coordinated activity across the entire set. In this case, the strong performance of the `LiteratureMarkers` set in scoring approaches is likely driven by these genes. However, relying heavily on a few markers can be a caveat: for example, MKI67 and LMNB1 (proliferation-related genes) may also change in other biological contexts like quiescence or differentiation, potentially limiting their specificity for senescence. Thus, the choice of gene set and analysis strategy should be guided by the research question, and complemented with both score distributions, enrichment analyses, and individual gene behaviour. Notably, scoring with just these three genes yielded results similar (or, even, slightly better) to the full `LiteratureMarkers` set.
+As demonstrated by the behaviour of individual genes in the `LiteratureMarkers` gene set, *LMNB1*, *MKI67*, and *GLB1* appear to drive the overall signal. These genes consistently show higher performance metrics (e.g., Cohen’s d, AUC), strong expression changes between conditions, and *LMNB1* and *MKI67* specifically have correlated expression patterns. This underscores the importance of examining gene-level behaviour, as a strong overall signature score may reflect the influence of only a few informative genes, rather than coordinated activity across the entire set. In this case, the strong performance of the `LiteratureMarkers` set in scoring approaches is likely driven by these genes. However, relying heavily on a few markers can be a caveat: for example, *MKI67* and *LMNB1* (proliferation-related genes) may also change in other biological contexts like quiescence or differentiation, potentially limiting their specificity for senescence. Thus, the choice of gene set and analysis strategy should be guided by the research question, and complemented with both score distributions, enrichment analyses, and individual gene behaviour. Notably, scoring with just these three genes yielded results similar to the full `LiteratureMarkers` set.
 
 ```{r example_genesdrivingresults, fig.width=6, fig.height=4, out.width="60%", warning=FALSE, message=FALSE}
  

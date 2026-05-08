@@ -12,18 +12,20 @@ knitr::opts_chunk$set(
 )
 ```
 
-This vignette provides a comprehensive introduction to the **markeR** package, focusing on its **Discovery Mode**. The discovery mode was designed for users who are interested in quantifying a gene set in a given dataset to explore associations with phenotypic or clinical variables. This approach is particularly suited to hypothesis generation where the phenotype marked by the gene set is of known biological or clinical relevance.
-  
+This vignette provides a comprehensive introduction to the **`markeR`** package, focusing on its **Discovery Mode**. The discovery mode was designed for users who are interested in examining the relationship between a gene set and one or more metadata variables of interest, being suitable for exploratory or hypothesis-generating analyses.   
+
 # Case-study: Senescence
 
-We will be using an already pre-processed gene expression dataset, derived from the Marthandan et al. (2016) study (GSE63577), that includes human fibroblast samples cultured under two different conditions: replicative senescence and proliferative control. The dataset has already been filtered and normalized using the `edgeR` package. For more information about the dataset structure, see the help pages for `?counts_example` and `?metadata_example`.
+In this vignette, we use a pre‑processed RNA-seq dataset from Marthandan et al. (2016, GSE63577), with normalised read counts for human fibroblasts under **replicative senescence** and **proliferative control**. See `?counts_example` for preprocessing details and structure. `markeR` requires as input a filtered and normalised, non log-transformed, gene expression matrix (genes × samples). Row names must be gene identifiers; column names must match sample IDs in the metadata. 
 
-This dataset serves as a working example to demonstrate the main functionalities of the markeR package. In particular, it will be used to showcase the two primary modules designed for benchmarking gene signatures:
+We use the accompanying metadata from the Marthandan et al. (2016) study (see `?metadata_example`).
 
--   **Score**: calculates expression-based signature scores for each sample, and
--   **Enrichment**: evaluates the over-representation of gene signatures within ranked gene lists.
+This dataset serves as a working example to demonstrate the main functionalities of the `markeR` package. In particular, it will be used to showcase the two primary modules of `markeR` for quantifying phenotypes using gene sets:
 
-To illustrate the usage of `markeR`, we use the **HernandezSegura** gene set: A transcriptomic gene set identified by Hernandez-Segura et al. (2017) as consistently altered across multiple senescence models. This set includes information on the directionality of gene regulation. It has shown strong performance in classification and enrichment analyses, including in the original paper of markeR, and also in the Tutorial on the *Benchmarking Mode* of `markeR`.
+- **Score-based methods**:  log2-median expression, ranking approaches, and single-sample gene set enrichment analysis (ssGSEA) to quantify coordinated expression within a gene set.
+- **Enrichment-based methods**: GSEA using moderated t- or B-statistics.
+
+To illustrate the usage of `markeR`, we use the **HernandezSegura** gene set: A transcriptomic gene set identified by Hernandez-Segura et al. (2017) as consistently altered across multiple senescence models. This set includes information on the direction of change in expression of genes upon phenotype.
 
 ```{r example}
 library(markeR)
@@ -42,8 +44,12 @@ data(counts_example)
 counts_example[1:5,1:5]
 ```
 
-For illustration purposes of different variable types, let's imagine we also had two additional variables: one indicating the number of days between sample preparation and sequencing (`DaysToSequencing`), and another identifying the person who processed each sample (`researcher`). These variables are hypothetical and not part of the original study design.
- 
+For illustration purposes, two synthetic variables were added to the data:
+
+* `DaysToSequencing`, the number of days between sample preparation and sequencing;
+* `Researcher`, identifying the person who processed each sample. 
+
+This enables exploration of associations between gene set activity and both categorical and continuous variables.
 
 ```{r load_metadata}
 data(metadata_example)
@@ -58,24 +64,16 @@ head(metadata_example)
 
 # Score-Based approaches 
   
-The **Score** module in `markeR` quantifies the association between a gene signature and phenotypic variables by calculating a score for each sample based on the expression of genes in the signature. This score can then be correlated with other variables, such as clinical or experimental conditions:
-
-- **Quantifies associations** between phenotype variables and a gene signature score using *Cohen's effect sizes* and *p-values*.
-- **Visualizes** results through lollipop plots, contrast plots, and distribution plots.
-
-This is useful for identifying:
-
-- **Biological relationships** (e.g., phenotype-score associations)
-- **Technical confounders** (e.g., batch effects)
-
+A score summarising the collective expression of a gene set is assigned **to each sample**. Scores can be visualised using built-in functions, or used directly in downstream analyses (*e.g.*, comparisons between phenotypic groups of samples, correlations with numerical phenotypes). 
+ 
 ## Outputs
 
-The main function returns a structured list with:
+If `method = "logmedian"` (or `ssGSEA`, `ranking`), the main function `VariableAssociation()` returns a structured list with:
 
 - **`overall`**: Effect sizes (*Cohen’s f*) and p-values for each variable.
 - **`contrasts`**: For categorical variables, pairwise or grouped comparisons using *Cohen’s d* with BH-adjusted p-values.
 - **`plot`**: A combined visualization showing:
-    1. Lollipop plot of effect sizes (*Cohen’s f*)
+    1. Lollipop plot of effect sizes (i.e., *Cohen’s f* per variable)
     2. Distribution plots of the score by variable (density or scatter)
     3. Lollipop plots of contrasts (*Cohen’s d*) for categorical variables, if applicable
 - **`plot_overall`**, **`plot_contrasts`**, **`plot_distributions`**: Individual components of the combined plot.
@@ -96,13 +94,10 @@ For this example, we use:
 - The **`logmedian`** scoring method
 - **`mode = "extensive"`** for thorough contrast analysis
 
-We also include two synthetic phenotypic variables:
+Though artificial, `DaysToSequencing` and `Researcher` mimic potential **technical covariates**. Strong associations between these and the score could indicate **batch effects**, where technical variation may confound biological interpretation.
 
-- **`Researcher`** — a categorical variable representing who processed each sample
-- **`DaysToSequencing`** — a numeric variable indicating time between preparation and sequencing
 
-Though artificial, these mimic potential **technical covariates**. Strong associations between these and the score could indicate **batch effects**, where technical variation may confound biological interpretation.
-
+In this example, the `Condition` variable shows a large effect size (Cohen’s f and Cohen's d), confirming strong discrimination between Senescent and Proliferative samples. The remaining variables don't show significant associations, suggesting no major batch effects that might be reflected in the computed scores.
 
 ```{r variableassoc_score_sen, fig.width=7, fig.height=7, out.width="100%", warning=FALSE, message=FALSE} 
 results_scoreassoc_bidirect <- VariableAssociation(data = counts_example, 
@@ -118,20 +113,24 @@ results_scoreassoc_bidirect <- VariableAssociation(data = counts_example,
 results_scoreassoc_bidirect$Overall
 results_scoreassoc_bidirect$Contrasts
 ```
+
+
+
  
 # Enrichment-based approaches
 
-The `GSEA_VariableAssociation()` function evaluates how phenotypic variables are associated with **gene set activity**, using enrichment scores derived from gene expression statistics (B- or t-statistics). This allows users to understand whether a gene set is enriched or depleted in relation to different sample attributes.
+Enrichment-based methods implement **Gene Set Enrichment Analysis (GSEA)**. Genes are ranked according to differential expression statistics, and a Normalised Enrichment Score (NES) per variable of interest is computed, accompanied by a p-value adjusted for multiple hypothesis testing.
+
 
 ## Outputs
 
-The `GSEA_VariableAssociation()` function returns a list with two elements:
+If `method = "GSEA"`, the main function `VariableAssociation()` returns a structured list with:
 
 - **`data`**: A tidy data frame of GSEA results. For each variable contrast, this includes:
     - **Contrast**: The comparison performed (e.g., A - B, A - (B+C))
     - **Statistic**: The metric used for gene ranking (either *t* or *B*)
     - **NES**: Normalized Enrichment Score
-    - **Adjusted p-value**: Multiple-testing corrected p-value (e.g., Benjamini–Hochberg)
+    - **Adjusted p-value**: Multiple-testing corrected p-value (Benjamini–Hochberg)
     - **Gene Set Name**: The gene set being tested
 
 - **`plot`**: A `ggplot2` object showing the NES and significance of each contrast as a **lollipop plot**:
@@ -156,8 +155,13 @@ Depending on the statistic used (`t` or `B`), the interpretation of results vari
 
 ## Example: Exploring Gene Set Enrichment by Variable
 
-The following code evaluates how three phenotypic variables — `Condition`, `Researcher`, and `DaysToSequencing` — are associated with the **HernandezSegura** gene set:
+The following code evaluates how three phenotypic variables (`Condition`, `Researcher`, and `DaysToSequencing`) are associated with the **HernandezSegura** gene set. 
 
+ 
+ In this example, the HernandezSegura gene set shows significant enrichment in samples sequenced by Francisca relative to those processed by Ana or John, which would suggest a differentiated researcher-associated technical impact on the samples' biological phenotype. This gene set shows also a strong depletion in proliferative samples, which is expected given its annotation as senescence-associated and results from the score-based approach.  
+ 
+ 
+ 
 ```{r GSEA_varassoc, fig.width=6, fig.height=6, out.width="60%", warning=FALSE, message=FALSE}
 varassoc_gsea <- VariableAssociation(
   data = counts_example,
@@ -178,6 +182,8 @@ varassoc_gsea <- VariableAssociation(
 
 varassoc_gsea$data
 ```
+ 
+
  
 # Session Information
 

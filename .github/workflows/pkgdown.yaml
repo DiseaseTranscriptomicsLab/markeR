@@ -5,6 +5,9 @@ on:
     branches: [default]
   pull_request:
     branches: [default]
+  release:
+    types: [published]
+    branches: [default]
   workflow_dispatch:
     branches: [default]
 
