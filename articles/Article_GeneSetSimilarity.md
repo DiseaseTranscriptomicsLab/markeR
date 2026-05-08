@@ -157,7 +157,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] markeR_1.1.2
+#> [1] markeR_1.2
 #> 
 #> loaded via a namespace (and not attached):
 #>   [1] pROC_1.19.0.1         gridExtra_2.3         rlang_1.2.0          
