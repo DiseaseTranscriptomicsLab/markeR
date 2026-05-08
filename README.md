@@ -26,7 +26,7 @@ across experimental and clinical phenotypes.
 >
 > Martins-Silva R, Kaizeler A, Barbosa-Morais NL (2025). *markeR: An R
 > Toolkit for Evaluating Gene Signatures as Phenotypic Markers*.
-> <doi:10.18129/B9.bioc.markeR>, R package version 1.2,
+> <doi:10.18129/B9.bioc.markeR>, R package version 1.1.2,
 > <https://bioconductor.org/packages/markeR>.
 
 The folder `inst/Paper/` is in the **paper** branch and contains all
