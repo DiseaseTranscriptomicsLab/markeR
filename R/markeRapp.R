@@ -4,6 +4,7 @@
 #' @import DT
 #' @importFrom readxl read_xls read_xlsx
 #' @importFrom R.utils gunzip
+#' @importFrom data.table fread
 
 ui <- bslib::page_navbar(
   
@@ -271,25 +272,16 @@ ui <- bslib::page_navbar(
                     shiny::tags$li("Gene names as row names"),
                     shiny::tags$li("Sample names as column names")
                   ),
-                )
+                ),
+
+                # Sample management controls (shown after upload)
+                shiny::uiOutput("upload_expr_manage_ui")
               ),
-              
+
               shiny::conditionalPanel(
                 "input.expr_source == 'geo'",
-                shiny::textInput(
-                  "geo_accession",
-                  "Enter GEO Accession (e.g., GSE130727)",
-                  placeholder = "GSE130727"
-                ),
-                shiny::actionButton(
-                  "geo_fetch",
-                  "Download GEO"
-                ),
-                shiny::hr(),
-                shiny::uiOutput("geo_object_selector"),  # GEO object selection
-                
-                shiny::uiOutput("geo_supp_selector"),    # Supplementary file dropdown if needed
-                shiny::uiOutput("geo_candidate_selector")  # Dropdown for multiple candidate files, only shows if needed
+                # ── New adaptive GEO import module ──────────────────────
+                geoImportUI("geo_import")
               )
             ),
             
@@ -316,7 +308,9 @@ ui <- bslib::page_navbar(
                   "meta_file",
                   "Upload (.csv, .rds)",
                   accept = c(".csv", ".rds")
-                )
+                ),
+                # Sample management controls (shown after upload)
+                shiny::uiOutput("upload_meta_manage_ui")
               ),
               # Show GEO metadata column selection only if 'geo' is selected
               # Only show if using GEO as metadata source
@@ -414,7 +408,10 @@ ui <- bslib::page_navbar(
         
         bslib::card(
           bslib::card_header("Data Preview"),
-          
+
+          # Persistent mismatch banner — stays until sample counts/names align
+          shiny::uiOutput("sample_mismatch_banner"),
+
           shiny::div(style = "overflow-y: auto; max-height: 900px;",  # <-- scrollable container
                      shiny::uiOutput("summary_ui"),
                      shiny::hr(),
@@ -427,7 +424,11 @@ ui <- bslib::page_navbar(
                        style = "margin-bottom: 10px; font-style: italic; color: #555;",
                        "💡 Tip: Click on a gene set row to see its genes and expected direction of regulation change."
                      ),
-                     DT::DTOutput("geneset_summary")
+                     DT::DTOutput("geneset_summary"),
+
+                     # ── Processing log ────────────────────────────────────
+                     shiny::hr(),
+                     shiny::uiOutput("data_log_ui")
           )
         )
         
@@ -493,12 +494,72 @@ server <- function(input, output, session) {
   gene_sets   <- shiny::reactiveVal(NULL)  # Named list of gene sets
   geo_objects <- shiny::reactiveVal(NULL)  # Raw GEO objects (can be multiple)
   geo_meta_cols <- reactiveVal(NULL) # Will store the original metadata column names (excluding SampleID)
-  full_geo_meta <- reactiveVal(NULL)
+  full_geo_meta      <- reactiveVal(NULL)
+  upload_meta_raw    <- reactiveVal(NULL)   # Raw uploaded metadata (for SampleID re-mapping)
+  module_meta_active <- reactiveVal(FALSE)  # TRUE while geo_import_module owns meta_data()
+  data_log           <- reactiveVal(character(0))  # Timestamped processing log
   geo_supp_files  <- reactiveVal(NULL)
   expr_candidates_available <- reactiveVal(FALSE) # Flag to indicate multiple candidate files are available after auto detection
   
   ###### HELPER FUNCTIONS ######
-  
+
+  # Show a centred spinner modal (same style as the GEO import module).
+  # Call on.exit(shiny::removeModal()) in the caller so it always closes.
+  show_loading_modal <- function(title, subtitle = NULL) {
+    shiny::showModal(shiny::modalDialog(
+      title     = NULL,
+      footer    = NULL,
+      easyClose = FALSE,
+      shiny::tags$div(
+        style = "text-align:center;padding:40px 20px;",
+        shiny::tags$div(
+          class = "spinner-border text-primary",
+          style = "width:3rem;height:3rem;",
+          role  = "status",
+          shiny::tags$span(class = "visually-hidden", "Loading…")
+        ),
+        shiny::tags$h5(title, style = "margin-top:18px;color:#333;"),
+        if (!is.null(subtitle))
+          shiny::tags$p(subtitle,
+                        style = "color:#777;font-size:0.9em;margin-top:6px;")
+      )
+    ))
+  }
+
+  # Append a timestamped entry to the processing log.
+  # isolate() prevents the calling observer from taking a reactive dependency
+  # on data_log — without it, writing data_log() re-invalidates the observer
+  # that called log_step(), causing an infinite reactive loop.
+  log_step <- function(msg) {
+    ts <- format(Sys.time(), "[%Y-%m-%d %H:%M:%S]")
+    data_log(c(isolate(data_log()), paste(ts, msg)))
+  }
+
+  # Show a Zenodo download-failure modal with a "Try Again" button.
+  # retry_btn_id: inputId of the actionButton placed in the footer.
+  show_dl_error_modal <- function(msg, retry_btn_id) {
+    shiny::showModal(shiny::modalDialog(
+      title = shiny::tags$span(
+        shiny::icon("circle-exclamation", style = "color:#dc3545;margin-right:6px;"),
+        "Download Failed"
+      ),
+      shiny::tags$div(
+        shiny::tags$p("Could not download the file from Zenodo."),
+        shiny::tags$p(style = "font-size:0.84em;color:#888;font-family:monospace;word-break:break-all;", msg),
+        shiny::tags$p("Check your internet connection and click “Try Again”, or try a different data source.")
+      ),
+      footer = shiny::tagList(
+        shiny::actionButton(
+          retry_btn_id,
+          shiny::tagList(shiny::icon("rotate-right"), " Try Again"),
+          class = "btn-primary"
+        ),
+        shiny::modalButton("Cancel")
+      ),
+      easyClose = TRUE
+    ))
+  }
+
   clean_name <- function(x) tools::file_path_sans_ext(base::basename(x))
   
   safe_read_table <- function(path) {
@@ -603,110 +664,210 @@ server <- function(input, output, session) {
   }
   
   ###### DATA ######
-  
+
+  # ---- Zenodo example download helpers (closures — capture server-scope reactives) ----
+  # Each function manages its own modals: shows spinner, wraps download in tryCatch,
+  # removes spinner on success, replaces it with an error modal (with retry button) on failure.
+  # Called from both the main radio-button observer AND the retry observeEvent so the
+  # same logic runs on first attempt and on any number of retries without code duplication.
+
+  .dl_expr_raw <- function() {
+    show_loading_modal("Loading example data…",
+                       "Downloading unprocessed counts from Zenodo.")
+    dl_ok <- tryCatch({
+      shiny::withProgress(message = "Downloading unprocessed example data...", value = 0, {
+        incProgress(0.1, detail = "Preparing download...")
+        Sys.sleep(0.2)
+        tmp <- tempfile(fileext = ".rds")
+        incProgress(0.4, detail = "Downloading from Zenodo...")
+        utils::download.file(
+          url      = "https://zenodo.org/records/18714122/files/counts.rds?download=1",
+          destfile = tmp,
+          mode     = "wb"
+        )
+        incProgress(0.3, detail = "Loading expression matrix...")
+        e <- readRDS(tmp)
+        expr_data(e)
+        log_step(paste0("Expression data loaded: example (unprocessed) — ",
+                        nrow(e), " genes × ", ncol(e), " samples."))
+        incProgress(0.2, detail = "Finalizing...")
+      })
+      TRUE
+    }, error = function(err) {
+      shiny::removeModal()
+      show_dl_error_modal(conditionMessage(err), "retry_expr_raw")
+      FALSE
+    })
+    if (isTRUE(dl_ok)) {
+      shiny::removeModal()
+      shiny::showNotification("Unprocessed expression data loaded successfully.",
+                              type = "default", duration = 3)
+    }
+  }
+
+  .dl_expr_proc <- function() {
+    show_loading_modal("Loading example data…",
+                       "Downloading processed counts from Zenodo.")
+    dl_ok <- tryCatch({
+      shiny::withProgress(message = "Downloading processed example data...", value = 0, {
+        incProgress(0.1, detail = "Preparing download...")
+        Sys.sleep(0.2)
+        tmp <- tempfile(fileext = ".rds")
+        incProgress(0.4, detail = "Downloading from Zenodo...")
+        utils::download.file(
+          url      = "https://zenodo.org/records/18714122/files/corrcounts.rds?download=1",
+          destfile = tmp,
+          mode     = "wb"
+        )
+        incProgress(0.3, detail = "Loading processed matrix...")
+        e <- readRDS(tmp)
+        expr_data(e)
+        log_step(paste0("Expression data loaded: example (processed) — ",
+                        nrow(e), " genes × ", ncol(e), " samples."))
+        incProgress(0.2, detail = "Finalizing...")
+      })
+      TRUE
+    }, error = function(err) {
+      shiny::removeModal()
+      show_dl_error_modal(conditionMessage(err), "retry_expr_proc")
+      FALSE
+    })
+    if (isTRUE(dl_ok)) {
+      shiny::removeModal()
+      shiny::showNotification("Processed expression data loaded successfully.",
+                              type = "default", duration = 3)
+    }
+  }
+
+  .dl_meta_example <- function() {
+    show_loading_modal("Loading example metadata…",
+                       "Downloading from Zenodo.")
+    dl_ok <- tryCatch({
+      shiny::withProgress(message = "Downloading example metadata...", value = 0, {
+        incProgress(0.2, detail = "Preparing download...")
+        Sys.sleep(0.2)
+        tmp <- tempfile(fileext = ".rds")
+        incProgress(0.5, detail = "Downloading from Zenodo...")
+        utils::download.file(
+          url      = "https://zenodo.org/records/18714122/files/metadata.rds?download=1",
+          destfile = tmp,
+          mode     = "wb"
+        )
+        incProgress(0.2, detail = "Loading metadata...")
+        m <- readRDS(tmp)
+        meta_data(m)
+        log_step(paste0("Metadata loaded: example — ",
+                        nrow(m), " samples × ", ncol(m), " variables."))
+        incProgress(0.1, detail = "Finalizing...")
+      })
+      TRUE
+    }, error = function(err) {
+      shiny::removeModal()
+      show_dl_error_modal(conditionMessage(err), "retry_meta_example")
+      FALSE
+    })
+    if (isTRUE(dl_ok)) {
+      shiny::removeModal()
+      shiny::showNotification("Metadata loaded successfully.", type = "default", duration = 3)
+    }
+  }
+
+  .dl_gs_example <- function() {
+    show_loading_modal("Loading example gene sets…",
+                       "Downloading from Zenodo.")
+    dl_ok <- tryCatch({
+      shiny::withProgress(message = "Downloading example gene sets...", value = 0, {
+        incProgress(0.2, detail = "Preparing download...")
+        Sys.sleep(0.2)
+        tmp <- tempfile(fileext = ".rds")
+        incProgress(0.5, detail = "Downloading from Zenodo...")
+        utils::download.file(
+          url      = "https://zenodo.org/records/18714122/files/SenescenceGeneSets.rds?download=1",
+          destfile = tmp,
+          mode     = "wb"
+        )
+        incProgress(0.2, detail = "Loading gene sets...")
+        gs <- readRDS(tmp)
+        gene_sets(gs)
+        log_step(paste0("Gene sets loaded: example — ", length(gs), " set(s), ",
+                        sum(sapply(gs, function(x) if (is.data.frame(x)) nrow(x) else length(x))),
+                        " genes total."))
+        incProgress(0.1, detail = "Finalizing...")
+      })
+      TRUE
+    }, error = function(err) {
+      shiny::removeModal()
+      show_dl_error_modal(conditionMessage(err), "retry_gs_example")
+      FALSE
+    })
+    if (isTRUE(dl_ok)) {
+      shiny::removeModal()
+      shiny::showNotification("Gene sets loaded successfully.", type = "default", duration = 3)
+    }
+  }
+
   ####### > Example Data #######
-  
+
   observeEvent(input$expr_source, {
-    
     updateRadioButtons(session, "meta_source", selected = "example")
-    
-    # Unprocessed Data
-    if (input$expr_source == "example_raw") {
-      
-      shiny::withProgress(
-        message = "Downloading unprocessed example data...",
-        value = 0,
-        {
-          
-          incProgress(0.1, detail = "Preparing download...")
-          Sys.sleep(0.2)
-          
-          tmp <- tempfile(fileext = ".rds")
-          
-          incProgress(0.4, detail = "Downloading from Zenodo...")
-          utils::download.file(
-            url  = "https://zenodo.org/records/18714122/files/counts.rds?download=1",
-            destfile = tmp,
-            mode = "wb"
-          )
-          
-          incProgress(0.3, detail = "Loading expression matrix...")
-          expr_data(readRDS(tmp))
-          
-          incProgress(0.2, detail = "Finalizing...")
-        }
-      )
-      
-      showNotification(
-        "Unprocessed expression data loaded successfully.",
-        type = "default",
-        duration = 3
-      )
-    }
-    
-    
-    # Processed Data
-    if (input$expr_source == "example_proc") {
-      
-      shiny::withProgress(
-        message = "Downloading processed example data...",
-        value = 0,
-        {
-          
-          incProgress(0.1, detail = "Preparing download...")
-          Sys.sleep(0.2)
-          
-          tmp <- tempfile(fileext = ".rds")
-          
-          incProgress(0.4, detail = "Downloading from Zenodo...")
-          utils::download.file(
-            url  = "https://zenodo.org/records/18714122/files/corrcounts.rds?download=1",
-            destfile = tmp,
-            mode = "wb"
-          )
-          
-          incProgress(0.3, detail = "Loading processed matrix...")
-          expr_data(readRDS(tmp))
-          
-          incProgress(0.2, detail = "Finalizing...")
-        }
-      )
-      
-      showNotification(
-        "Processed expression data loaded successfully.",
-        type = "default",
-        duration = 3
-      )
-    }
+    if (input$expr_source == "example_raw")  .dl_expr_raw()
+    if (input$expr_source == "example_proc") .dl_expr_proc()
   })
+
+  # "Try Again" retry handlers — call the same helper function directly,
+  # no need to toggle the radio button (avoids unreliable updateRadioButtons tricks).
+  observeEvent(input$retry_expr_raw,  { shiny::removeModal(); .dl_expr_raw()  }, ignoreInit = TRUE)
+  observeEvent(input$retry_expr_proc, { shiny::removeModal(); .dl_expr_proc() }, ignoreInit = TRUE)
   
   ###### > User Input Data ######
   
   observeEvent(input$expr_file, {
     req(input$expr_file)
-    expr_data(safe_read_table(input$expr_file$datapath))
+    show_loading_modal(paste0("Reading ", input$expr_file$name, "…"),
+                       "Parsing expression matrix.")
+    on.exit(shiny::removeModal(), add = TRUE)
+    e <- safe_read_table(input$expr_file$datapath)
+    expr_data(e)
+    module_meta_active(FALSE)
+    log_step(paste0("Expression data loaded: uploaded file '", input$expr_file$name, "' — ",
+                    nrow(e), " genes × ", ncol(e), " samples."))
   })
   
-  ###### > GEO data ######
+  ###### > GEO data — delegated to geoImportModule ######
+
+  # ── Instantiate the module ─────────────────────────────────────────────────
+  geo_module <- geoImportServer("geo_import", log_fn = log_step)
+
+  # ── Wire module outputs into the app's reactive storage ───────────────────
+  observe({
+    req(input$expr_source == "geo")
+
+    mod_expr <- geo_module$expr_data()
+    mod_meta <- geo_module$meta_data()
+
+    if (!is.null(mod_expr)) {
+      e <- as.data.frame(mod_expr)
+      expr_data(e)
+      log_step(paste0("Expression data loaded: GEO import — ",
+                      nrow(e), " genes × ", ncol(e), " samples."))
+    }
+
+    if (!is.null(mod_meta)) {
+      # Set flag FIRST so the app-level column-selector observers skip overwriting
+      module_meta_active(TRUE)
+      full_geo_meta(mod_meta)
+      meta_data(mod_meta)
+      log_step(paste0("Metadata loaded: GEO — ",
+                      nrow(mod_meta), " samples × ", ncol(mod_meta), " variables."))
+      # Automatically switch metadata source to geo so column selectors appear
+      updateRadioButtons(session, "meta_source", selected = "geo")
+    }
+  })
+
+  # ── Legacy helpers kept for the non-GEO upload path ─────────────────────
   
-  # --- Helper Functions -----
-  
-  # load_from_geo <- function(geo_accession) {
-  #   showNotification("Fetching GEO objects...", type = "message", duration = 2)
-  #   objs <- GEOquery::getGEO(geo_accession, GSEMatrix = TRUE)
-  #   geo_objects(objs)  # store internally for UI selection if needed
-  #   
-  #   for (obj in objs) {
-  #     expr <- tryCatch(Biobase::exprs(obj), error = function(e) NULL)
-  #     if (!is.null(expr) && nrow(expr) > 0 && ncol(expr) > 0) {
-  #       full_geo_meta(Biobase::pData(obj))
-  #       return(expr)
-  #     }
-  #   }
-  #   return(NULL)
-  # }
-  
-  read_geo_supp_matrix <- function(path, original_name = NULL, geo_accession = NULL) { 
+  # [read_geo_supp_matrix replaced by geo_import_module.R::parse_expression_file]
+  read_geo_supp_matrix_LEGACY <- function(path, original_name = NULL, geo_accession = NULL) {
     fname <- if (!is.null(original_name)) original_name else basename(path)
     ext <- tolower(tools::file_ext(fname))
     
@@ -843,7 +1004,7 @@ server <- function(input, output, session) {
   #   })
   # }
   
-  # --- Extraction helpers for archives ---
+  # --- Extraction helpers for archives (legacy — superseded by geo_import_module) ---
   extract_files <- function(file_path, depth = 0, max_depth = 5) {
     
     if (depth > max_depth) return(character(0))
@@ -1147,7 +1308,9 @@ server <- function(input, output, session) {
   load_auto_deterministic <- function(files_path) { try_deterministic_rescue(files_path) }
   
  
-  # --- 1. Fetch GEO accession -----
+  # NOTE: GEO fetch/parse/rescue logic has been replaced by geoImportServer("geo_import").
+  # The block below is DEAD CODE — kept only for reference. It is never called.
+  .LEGACY_observeEvent_geo_fetch <- function() {
   observeEvent(input$geo_fetch, {
     req(input$geo_accession)
     
@@ -1234,7 +1397,8 @@ server <- function(input, output, session) {
         Sys.sleep(0.1)
         meta <- Biobase::pData(obj)
         full_geo_meta(meta)
-        meta_data(cbind(SampleID = rownames(meta), meta))
+        meta_data(cbind(SampleID = rownames(meta),
+                        meta[, setdiff(colnames(meta), "SampleID"), drop = FALSE]))
         
         # Expression
         incProgress(0.3, detail = "Extracting expression matrix...")
@@ -1483,52 +1647,30 @@ server <- function(input, output, session) {
     } else {
       showNotification("Selected file does not appear to be a valid expression matrix.", type = "error")
     }
-  })
-  
+  }) } # end .LEGACY_observeEvent_geo_fetch
+
   ##### METADATA  ######################################### 
   
   
   observeEvent(input$meta_source, {
-    
-    if (input$meta_source == "example") {
-      
-      shiny::withProgress(
-        message = "Downloading example metadata...",
-        value = 0,
-        {
-          
-          incProgress(0.2, detail = "Preparing download...")
-          Sys.sleep(0.2)
-          
-          tmp <- tempfile(fileext = ".rds")
-          
-          incProgress(0.5, detail = "Downloading from Zenodo...")
-          utils::download.file(
-            url  = "https://zenodo.org/records/18714122/files/metadata.rds?download=1",
-            destfile = tmp,
-            mode = "wb"
-          )
-          
-          incProgress(0.2, detail = "Loading metadata...")
-          meta_data(readRDS(tmp))
-          
-          incProgress(0.1, detail = "Finalizing...")
-        }
-      )
-      
-      showNotification(
-        "Metadata loaded successfully.",
-        type = "default",
-        duration = 3
-      )
-    }
+    if (input$meta_source == "example") .dl_meta_example()
   })
+
+  observeEvent(input$retry_meta_example, { shiny::removeModal(); .dl_meta_example() }, ignoreInit = TRUE)
   
   
   
   observeEvent(input$meta_file, {
     req(input$meta_file)
-    meta_data(safe_read_table(input$meta_file$datapath))
+    show_loading_modal(paste0("Reading ", input$meta_file$name, "…"),
+                       "Parsing metadata file.")
+    on.exit(shiny::removeModal(), add = TRUE)
+    raw <- safe_read_table(input$meta_file$datapath)
+    upload_meta_raw(raw)   # keep unmodified copy so SampleID re-mapping is non-destructive
+    module_meta_active(FALSE)
+    meta_data(raw)
+    log_step(paste0("Metadata loaded: uploaded file '", input$meta_file$name, "' — ",
+                    nrow(raw), " samples × ", ncol(raw), " variables."))
   })
   
   
@@ -1536,17 +1678,22 @@ server <- function(input, output, session) {
   # --- GEO metadata handling with SampleID mapping and subsetting ---
   observe({
     req(full_geo_meta(), input$meta_source)
-    
+
     if (input$meta_source == "geo") {
       df <- full_geo_meta()
       
-      # Determine default SampleID column
-      default_sampleid <- if ("geo_accession" %in% colnames(df)) {
+      # Determine default SampleID column.
+      # When the geo_import_module provided the data it already built a "SampleID"
+      # column — prefer that unconditionally. For the legacy pData path, fall back
+      # to geo_accession (the canonical GEO sample identifier).
+      default_sampleid <- if (isTRUE(module_meta_active()) && "SampleID" %in% colnames(df)) {
+        "SampleID"
+      } else if ("geo_accession" %in% colnames(df)) {
         "geo_accession"
-      } else if ("SampleID" %in% colnames(df) && all(df$SampleID == rownames(df))) {
+      } else if ("SampleID" %in% colnames(df)) {
         "SampleID"
       } else {
-        rownames(df)
+        colnames(df)[1]
       }
       
       # Render UI for SampleID column selection
@@ -1573,7 +1720,9 @@ server <- function(input, output, session) {
   # --- Update meta_data() based on SampleID and selected columns ---
   observe({
     req(full_geo_meta(), input$geo_sampleid_col, input$selected_meta_cols, input$meta_source)
-    
+    # Skip when geo_import_module owns meta_data() — module already built the final metadata
+    if (isTRUE(module_meta_active())) return(NULL)
+
     if (input$meta_source == "geo") {
       df <- full_geo_meta()
       
@@ -1584,56 +1733,249 @@ server <- function(input, output, session) {
         rownames(df)
       }
       
-      # Subset remaining metadata columns, ensuring SampleID is first
-      subset_cols <- setdiff(input$selected_meta_cols, input$geo_sampleid_col)
-      subset_meta <- df[, subset_cols, drop = FALSE]
-      
+      # Subset remaining metadata columns, ensuring SampleID is first.
+      # Exclude both the chosen id_col AND any pre-existing "SampleID" column so
+      # we never end up with two columns of the same name (can happen when the
+      # geo_import_module already added a SampleID column to full_geo_meta).
+      subset_cols <- setdiff(input$selected_meta_cols,
+                             c(input$geo_sampleid_col, "SampleID"))
+      subset_meta <- df[, intersect(subset_cols, colnames(df)), drop = FALSE]
+
       meta_data(cbind(SampleID = sample_ids, subset_meta))
     }
   })
   
-  ##### GENE SETS  ######################################### 
-  
-  observeEvent(input$geneset_source, {
-    
-    if (input$geneset_source == "example") {
-      
-      shiny::withProgress(
-        message = "Downloading example gene sets...",
-        value = 0,
-        {
-          
-          incProgress(0.2, detail = "Preparing download...")
-          Sys.sleep(0.2)
-          
-          tmp <- tempfile(fileext = ".rds")
-          
-          incProgress(0.5, detail = "Downloading from Zenodo...")
-          utils::download.file(
-            url  = "https://zenodo.org/records/18714122/files/SenescenceGeneSets.rds?download=1",
-            destfile = tmp,
-            mode = "wb"
-          )
-          
-          incProgress(0.2, detail = "Loading gene sets...")
-          gene_sets(readRDS(tmp))
-          
-          incProgress(0.1, detail = "Finalizing...")
-        }
+  # ── Persistent sample mismatch banner ─────────────────────────────────────
+  output$sample_mismatch_banner <- shiny::renderUI({
+    expr <- expr_data()
+    meta <- meta_data()
+    if (is.null(expr) || is.null(meta)) return(NULL)
+
+    n_expr <- ncol(expr)
+    n_meta <- nrow(meta)
+    e_nms  <- colnames(expr)
+
+    count_ok <- (n_expr == n_meta)
+
+    # Primary check: first column of metadata vs expression column names.
+    # Also try rownames and any "SampleID" column as fallbacks so we never
+    # produce a false positive when data is internally consistent.
+    names_ok <- FALSE
+    if (count_ok) {
+      candidates <- unique(list(
+        as.character(meta[[ colnames(meta)[1] ]]),          # first column  ← primary
+        if (!is.null(meta[["SampleID"]])) as.character(meta[["SampleID"]]) else NULL,
+        rownames(meta)
+      ))
+      candidates <- Filter(Negate(is.null), candidates)
+      names_ok <- any(vapply(candidates, function(ids) setequal(e_nms, ids), logical(1)))
+    }
+
+    if (count_ok && names_ok) return(NULL)
+
+    # Build the best-guess ID vector for the message (prefer first column)
+    m_ids <- as.character(meta[[ colnames(meta)[1] ]])
+
+    msg <- if (!count_ok) {
+      paste0(n_expr, " expression sample", if (n_expr != 1) "s" else "",
+             " vs ", n_meta, " metadata row", if (n_meta != 1) "s" else "", ".")
+    } else {
+      n_missing <- length(setdiff(e_nms, m_ids))
+      paste0(n_expr, " samples in both, but names differ — ",
+             n_missing, " expression column", if (n_missing != 1) "s" else "",
+             " not found in metadata.")
+    }
+
+    shiny::tags$div(
+      style = paste0(
+        "background:#fff3cd;border:1px solid #ffc107;border-left:4px solid #ffc107;",
+        "border-radius:4px;padding:9px 14px;margin:8px 8px 0 8px;"
+      ),
+      shiny::tags$div(
+        style = "display:flex;align-items:center;gap:7px;",
+        shiny::tags$span(style = "font-size:1em;", "⚠️"),
+        shiny::tags$strong(style = "font-size:0.9em;", "Sample mismatch — "),
+        shiny::tags$span(style = "font-size:0.87em;", msg)
+      ),
+      shiny::tags$div(
+        style = "font-size:0.8em;color:#856404;margin-top:3px;",
+        "Use the sample management controls in the sidebar to fix this before running analysis."
       )
-      
-      showNotification(
-        "Gene sets loaded successfully.",
-        type = "default",
-        duration = 3
+    )
+  })
+
+  # ── Upload: expression sample management ───────────────────────────────────
+  output$upload_expr_manage_ui <- shiny::renderUI({
+    req(input$expr_source == "upload", expr_data())
+    nms <- colnames(expr_data())
+    if (is.null(nms) || length(nms) == 0L) return(NULL)
+
+    shiny::tagList(
+      shiny::hr(style = "margin:8px 0;"),
+      shiny::tags$strong(style = "font-size:0.87em;", "Remove samples"),
+      shinyWidgets::pickerInput(
+        "upload_expr_keep",
+        label = NULL,
+        choices  = nms,
+        selected = nms,
+        multiple = TRUE,
+        options  = list(
+          `actions-box`            = TRUE,
+          `live-search`            = TRUE,
+          `selected-text-format`   = "count > 3",
+          `count-selected-text`    = "{0} of {1} kept"
+        )
+      ),
+      shiny::actionButton(
+        "apply_upload_expr_remove", "Apply",
+        class = "btn-sm btn-outline-primary",
+        style = "margin-top:2px;"
       )
+    )
+  })
+
+  observeEvent(input$apply_upload_expr_remove, {
+    req(expr_data(), input$upload_expr_keep)
+    old_n <- ncol(expr_data())
+    keep  <- intersect(input$upload_expr_keep, colnames(expr_data()))
+    if (length(keep) > 0L) {
+      expr_data(expr_data()[, keep, drop = FALSE])
+      removed <- old_n - length(keep)
+      if (removed > 0L)
+        log_step(paste0("Expression samples removed: ", removed,
+                        " removed, ", length(keep), " kept."))
     }
   })
-  
-  
-  
+
+  # ── Upload: metadata sample management ─────────────────────────────────────
+  output$upload_meta_manage_ui <- shiny::renderUI({
+    req(input$meta_source == "upload", upload_meta_raw())
+    raw  <- upload_meta_raw()
+    cols <- colnames(raw)
+    if (is.null(cols) || length(cols) == 0L) return(NULL)
+
+    # Re-render reactively when user changes the SampleID column
+    id_col  <- input$upload_meta_sampleid_col
+    if (is.null(id_col) || !id_col %in% cols) id_col <- cols[1]
+    row_ids <- as.character(raw[[id_col]])
+
+    shiny::tagList(
+      shiny::hr(style = "margin:8px 0;"),
+      shiny::tags$strong(style = "font-size:0.87em;", "Sample ID column"),
+      shiny::selectInput(
+        "upload_meta_sampleid_col",
+        label    = NULL,
+        choices  = cols,
+        selected = id_col
+      ),
+      shiny::tags$strong(style = "font-size:0.87em;", "Remove samples"),
+      shinyWidgets::pickerInput(
+        "upload_meta_keep",
+        label    = NULL,
+        choices  = row_ids,
+        selected = row_ids,
+        multiple = TRUE,
+        options  = list(
+          `actions-box`            = TRUE,
+          `live-search`            = TRUE,
+          `selected-text-format`   = "count > 3",
+          `count-selected-text`    = "{0} of {1} kept"
+        )
+      ),
+      shiny::actionButton(
+        "apply_upload_meta_manage", "Apply",
+        class = "btn-sm btn-outline-primary",
+        style = "margin-top:2px;"
+      )
+    )
+  })
+
+  observeEvent(input$apply_upload_meta_manage, {
+    req(upload_meta_raw(), input$upload_meta_sampleid_col)
+    raw    <- upload_meta_raw()
+    id_col <- input$upload_meta_sampleid_col
+    if (!id_col %in% colnames(raw)) return()
+
+    keep <- if (!is.null(input$upload_meta_keep)) {
+      input$upload_meta_keep
+    } else {
+      as.character(raw[[id_col]])
+    }
+
+    # Filter rows, then rebuild with SampleID as first column
+    mask     <- as.character(raw[[id_col]]) %in% keep
+    filtered <- raw[mask, , drop = FALSE]
+    ids      <- as.character(filtered[[id_col]])
+    other    <- setdiff(colnames(filtered), c(id_col, "SampleID"))
+    result   <- data.frame(
+      SampleID = ids,
+      filtered[, other, drop = FALSE],
+      check.names = FALSE, stringsAsFactors = FALSE
+    )
+    rownames(result) <- ids
+    meta_data(result)
+    removed <- nrow(raw) - nrow(result)
+    log_step(paste0("Metadata updated: SampleID column = '", id_col, "'",
+                    if (removed > 0L) paste0(", ", removed, " sample(s) removed") else "",
+                    " — ", nrow(result), " samples kept."))
+  })
+
+  # ── Processing log UI + download ───────────────────────────────────────────
+  output$data_log_ui <- shiny::renderUI({
+    log <- data_log()
+    if (length(log) == 0L) return(NULL)
+
+    shiny::tagList(
+      shiny::tags$div(
+        style = "display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;",
+        shiny::tags$p(
+          style = "font-size:0.75em;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin:0;",
+          "Processing log"
+        ),
+        shiny::downloadButton(
+          "download_log", "Download log",
+          class = "btn-sm btn-outline-secondary",
+          style = "font-size:0.78em;padding:2px 10px;"
+        )
+      ),
+      shiny::tags$div(
+        style = paste0(
+          "background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;",
+          "padding:8px 12px;max-height:200px;overflow-y:auto;",
+          "font-family:monospace;font-size:0.78em;line-height:1.7;color:#374151;"
+        ),
+        lapply(rev(log), function(entry) {  # newest first
+          shiny::tags$div(entry)
+        })
+      )
+    )
+  })
+
+  output$download_log <- shiny::downloadHandler(
+    filename = function() paste0("markeR_processing_log_",
+                                 format(Sys.time(), "%Y%m%d_%H%M%S"), ".txt"),
+    content  = function(file) {
+      writeLines(data_log(), file)
+    }
+  )
+
+  ##### GENE SETS  #########################################
+
+  observeEvent(input$geneset_source, {
+    if (input$geneset_source == "example") .dl_gs_example()
+  })
+
+  observeEvent(input$retry_gs_example, { shiny::removeModal(); .dl_gs_example() }, ignoreInit = TRUE)
+
+
+
   observeEvent(input$geneset_files, {
     req(input$geneset_files)
+    show_loading_modal(
+      paste0("Reading ", nrow(input$geneset_files), " gene set file(s)…"),
+      "Parsing and validating gene sets."
+    )
+    on.exit(shiny::removeModal(), add = TRUE)
     compiled <- list()
     for (i in seq_len(nrow(input$geneset_files))) {
       path <- input$geneset_files$datapath[i]
@@ -1643,6 +1985,9 @@ server <- function(input, output, session) {
       compiled <- c(compiled, parsed)
     }
     gene_sets(compiled)
+    log_step(paste0("Gene sets loaded: ",
+                    nrow(input$geneset_files), " file(s) uploaded — ",
+                    length(compiled), " set(s) parsed."))
   })
   
   observe({
@@ -1678,10 +2023,69 @@ server <- function(input, output, session) {
     expr <- expr_data()
     meta <- meta_data()
     gs   <- gene_sets()
-    tagList(
-      if (!is.null(expr)) p(strong("Expression data: "), nrow(expr), " genes × ", ncol(expr), " samples"),
-      if (!is.null(meta)) p(strong("Metadata: "), nrow(meta), " samples × ", ncol(meta), " variables"),
-      if (!is.null(gs))   p(strong("Gene sets loaded: "), length(gs))
+
+    if (is.null(expr) && is.null(meta) && is.null(gs)) {
+      return(shiny::tags$p(
+        style = "color:#9ca3af;font-size:0.88em;padding:6px 0;",
+        "No data loaded yet — use the sidebar to load expression data, metadata, and gene sets."
+      ))
+    }
+
+    # Helper: one stat tile
+    stat_tile <- function(icon_name, value, label, bg, fg, border) {
+      shiny::tags$div(
+        style = paste0(
+          "flex:1 1 130px;min-width:110px;",
+          "background:", bg, ";border:1px solid ", border, ";",
+          "border-radius:8px;padding:10px 14px;display:flex;",
+          "flex-direction:column;gap:2px;"
+        ),
+        shiny::tags$div(
+          style = paste0("font-size:1.5em;font-weight:700;color:", fg, ";line-height:1.1;"),
+          value
+        ),
+        shiny::tags$div(
+          style = "font-size:0.77em;color:#6b7280;font-weight:500;",
+          shiny::icon(icon_name, style = paste0("color:", fg, ";margin-right:4px;")),
+          label
+        )
+      )
+    }
+
+    tiles <- list()
+    if (!is.null(expr)) {
+      tiles <- c(tiles, list(
+        stat_tile("dna", format(nrow(expr), big.mark=","), "genes",
+                  "#eff6ff", "#1d4ed8", "#bfdbfe"),
+        stat_tile("vials", format(ncol(expr), big.mark=","), "expression samples",
+                  "#f0fdf4", "#15803d", "#bbf7d0")
+      ))
+    }
+    if (!is.null(meta)) {
+      n_meta_vars <- ncol(meta) - ("SampleID" %in% colnames(meta))
+      tiles <- c(tiles, list(
+        stat_tile("table", format(nrow(meta), big.mark=","),
+                  paste0("metadata rows × ", n_meta_vars, " vars"),
+                  "#faf5ff", "#7e22ce", "#e9d5ff")
+      ))
+    }
+    if (!is.null(gs)) {
+      tiles <- c(tiles, list(
+        stat_tile("layer-group", length(gs), "gene set(s)",
+                  "#fff7ed", "#c2410c", "#fed7aa")
+      ))
+    }
+
+    shiny::tags$div(
+      style = "margin-bottom:4px;",
+      shiny::tags$p(
+        style = "font-size:0.75em;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;",
+        "Loaded data summary"
+      ),
+      shiny::tags$div(
+        style = "display:flex;flex-wrap:wrap;gap:8px;",
+        tiles
+      )
     )
   })
   
