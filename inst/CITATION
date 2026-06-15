@@ -1,0 +1,25 @@
+citHeader("To cite markeR in publications use:")
+
+bibentry(
+  bibtype = "Article",
+  title = "Exploring molecular signatures of senescence with markeR, an R Toolkit for evaluating gene sets as phenotypic markers",
+  author = c(
+    person("Rita", "Martins-Silva"),
+    person("Alexandre", "Kaizeler"),
+    person("Nuno L", "Barbosa-Morais")
+  ),
+  journal = "NAR Genomics and Bioinformatics",
+  volume = "8",
+  number = "2",
+  pages = "lqag057",
+  year = "2026",
+  doi = "10.1093/nargab/lqag057",
+  textVersion =
+    paste(
+      "Martins-Silva R, Kaizeler A, Barbosa-Morais NL (2026).",
+      "\"Exploring molecular signatures of senescence with markeR,",
+      "an R Toolkit for evaluating gene sets as phenotypic markers.\"",
+      "NAR Genomics and Bioinformatics, 8(2), lqag057.",
+      "doi:10.1093/nargab/lqag057"
+    )
+)

@@ -24,10 +24,10 @@ across experimental and clinical phenotypes.
 
 > **To cite `markeR` please use:**
 >
-> Martins-Silva R, Kaizeler A, Barbosa-Morais NL (2025). *markeR: An R
-> Toolkit for Evaluating Gene Signatures as Phenotypic Markers*.
-> <doi:10.18129/B9.bioc.markeR>, R package version 1.3,
-> <https://bioconductor.org/packages/markeR>.
+> Martins-Silva R, Kaizeler A, Barbosa-Morais NL (2026). “Exploring
+> molecular signatures of senescence with markeR, an R Toolkit for
+> evaluating gene sets as phenotypic markers.” NAR Genomics and
+> Bioinformatics, 8(2), lqag057. <doi:10.1093/nargab/lqag057>
 
 The folder `inst/Paper/` is in the **paper** branch and contains all
 scripts and materials used in the original `markeR` paper to reproduce

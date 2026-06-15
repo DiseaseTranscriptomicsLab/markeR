@@ -1,3 +1,13 @@
+# markeR 1.3.1 (15 Jun 2026)
+
+## Minor Changes
+- Updated the citation to the markeR paper published in NAR Genomics and Bioinformatics.
+- Updated the contact email address.
+
+# markeR 1.2 (29 Apr, 2026) 
+
+- Bioconductor Release 3.23
+
 # markeR 1.1.2 (12 Mar, 2026) 
 
 ## Minor Changes
