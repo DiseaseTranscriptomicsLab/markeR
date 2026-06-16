@@ -142,7 +142,7 @@ try commands without supplying your own datasets.
 * [markeR on Bioconductor](https://bioconductor.org/packages/markeR)
 * [Official R tutorial](https://diseasetranscriptomicslab.github.io/markeR/articles/Article_BenchmarkingMode.html)
 * [Reference manual](https://diseasetranscriptomicslab.github.io/markeR/reference/)
-* Paper: https://www.biorxiv.org/content/10.64898/2025.12.05.692517
+* Paper: https://doi.org/10.1093/nargab/lqag057
 
 ---
 

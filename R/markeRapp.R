@@ -35,7 +35,8 @@ ui <- bslib::page_navbar(
              style = "font-size: 0.7em; color: #949494; text-decoration: none;")
   ),
   
-  theme = bslib::bs_theme(bootswatch = "sketchy"),
+  theme = bslib::bs_theme(bootswatch = "yeti",
+                          primary = "rgb(186, 89, 0)"),
   
   
   # ---- Tabs ----
@@ -134,7 +135,7 @@ ui <- bslib::page_navbar(
      Enrichment and Score. Enrichment uses the Gene Set Enrichment Analyses (GSEA) method based on differential gene expression, 
      while Score offers three methods for sample-wise quantification: ranking, logmedian, and ssGSEA. 
      More details are available in ",
-          shiny::a("markeR's paper", href = "https://www.biorxiv.org/content/10.64898/2025.12.05.692517", target = "_blank"),
+          shiny::a("markeR's paper", href = "https://doi.org/10.1093/nargab/lqag057", target = "_blank"),
           " or ",
           shiny::a("vignette", href = "https://diseasetranscriptomicslab.github.io/markeR/", target = "_blank"),
           "."
@@ -218,7 +219,7 @@ ui <- bslib::page_navbar(
                   shiny::tags$strong("Example Unprocessed Data:"),
                   "This dataset is a manual compilation of RNA-seq experiments on senescence in human cell lines, treated with different senescence inducers and their respective proliferative and quiescent controls. ",
                   "It has been used in Martins-Silva et al., 2026 (",
-                  shiny::tags$a(href="https://www.biorxiv.org/content/10.64898/2025.12.05.692517", "bioRxiv", target="_blank"),
+                  shiny::tags$a(href="https://doi.org/10.1093/nargab/lqag057", "NAR Genomics and Bioinformatics", target="_blank"),
                   "). The raw read counts for all samples are available for download through ",
                   shiny::tags$a(href="https://zenodo.org/records/18714122", "Zenodo", target="_blank"),
                   ". Genes are in rows, samples in columns."
@@ -232,7 +233,7 @@ ui <- bslib::page_navbar(
                   shiny::tags$strong("Example Processed Data:"),
                   "This dataset contains the same RNA-seq experiments on senescence in human cell lines, as described for the unprocessed data above, but filtered for lowly expressed genes, normalised, and batch-corrected. ",
                   "Processing followed the methods described in Martins-Silva et al., 2026 (",
-                  shiny::tags$a(href="https://www.biorxiv.org/content/10.64898/2025.12.05.692517", "bioRxiv", target="_blank"),
+                  shiny::tags$a(href="https://doi.org/10.1093/nargab/lqag057", "NAR Genomics and Bioinformatics", target="_blank"),
                   "). The processed data is available via ",
                   shiny::tags$a(href="https://zenodo.org/records/18714122", "Zenodo", target="_blank"),
                   ". Genes are in rows, samples in columns."
@@ -306,29 +307,38 @@ ui <- bslib::page_navbar(
                 "input.meta_source == 'upload'",
                 shiny::fileInput(
                   "meta_file",
-                  "Upload (.csv, .rds)",
-                  accept = c(".csv", ".rds")
+                  "Upload metadata (.csv, .txt, .tsv, .xlsx, .rds)",
+                  accept = c(".csv", ".txt", ".tsv", ".xls", ".xlsx", ".rds")
                 ),
-                # Sample management controls (shown after upload)
+                shiny::helpText(
+                  shiny::tags$p(shiny::tags$b("💡 Expected structure:")),
+                  shiny::tags$ul(
+                    shiny::tags$li("One row per sample"),
+                    shiny::tags$li(
+                      shiny::tags$b("First column must contain the Sample IDs"),
+                      " — these will be matched to expression matrix column names"
+                    ),
+                    shiny::tags$li("Remaining columns: any sample-level variables (group, condition, batch, …)")
+                  ),
+                  shiny::tags$p(shiny::tags$b("Text / CSV / TSV files:")),
+                  shiny::tags$ul(
+                    shiny::tags$li("Separator detected automatically (comma, semicolon, or tab)"),
+                    shiny::tags$li("First row must be a header with column names"),
+                    shiny::tags$li("Quoted values are handled automatically")
+                  ),
+                  shiny::tags$p(shiny::tags$b(".rds / .xlsx:")),
+                  shiny::tags$ul(
+                    shiny::tags$li("Must contain a data frame with samples as rows"),
+                    shiny::tags$li("Column names used as variable labels")
+                  )
+                ),
+                # Match info + alignment controls (shown after upload)
                 shiny::uiOutput("upload_meta_manage_ui")
               ),
-              # Show GEO metadata column selection only if 'geo' is selected
-              # Only show if using GEO as metadata source
+              # Show GEO SampleID column selector when using GEO as metadata source
               shiny::conditionalPanel(
                 "input.meta_source == 'geo'",
-                
-                # SampleID column selection
-                shiny::uiOutput("geo_sampleid_selector"),
-                
-                # Metadata columns selection
-                shinyWidgets::pickerInput(
-                  inputId = "selected_meta_cols",
-                  label   = "Select metadata columns to keep:",
-                  choices = NULL,   # updated server-side
-                  selected = NULL,
-                  multiple = TRUE,
-                  options = list(`actions-box` = TRUE)
-                )
+                shiny::uiOutput("geo_sampleid_selector")
               )
             ),
             
@@ -416,6 +426,7 @@ ui <- bslib::page_navbar(
                      shiny::uiOutput("summary_ui"),
                      shiny::hr(),
                      shiny::h5("Expression Preview"),
+                     shiny::uiOutput("expr_quality_banner"),
                      DT::DTOutput("expr_preview"),
                      shiny::h5("Metadata Preview"),
                      DT::DTOutput("meta_preview"),
@@ -478,6 +489,15 @@ ui <- tagList(
         bottom: 50px !important;
         right: 30px !important;
         left: auto !important;
+        width: 320px !important;
+      }
+      /* withProgress bar color */
+      .shiny-progress .progress-bar {
+        background-color: rgb(186, 89, 0) !important;
+      }
+      /* Warning notifications */
+      #shiny-notification-panel .shiny-notification-warning {
+        border-left: 4px solid #ffc107 !important;
       }
     "))
   ),
@@ -487,6 +507,8 @@ ui <- tagList(
 # ---- Server ----
 
 server <- function(input, output, session) {
+  
+  #bs_themer()
   
   ###### REACTIVE STORAGE CONTAINERS ######
   expr_data   <- shiny::reactiveVal(NULL)  # Expression matrix/data.frame
@@ -498,6 +520,7 @@ server <- function(input, output, session) {
   upload_meta_raw    <- reactiveVal(NULL)   # Raw uploaded metadata (for SampleID re-mapping)
   module_meta_active <- reactiveVal(FALSE)  # TRUE while geo_import_module owns meta_data()
   data_log           <- reactiveVal(character(0))  # Timestamped processing log
+  expr_quality_warn  <- reactiveVal(NULL)           # Warning message for suspicious expression data
   geo_supp_files  <- reactiveVal(NULL)
   expr_candidates_available <- reactiveVal(FALSE) # Flag to indicate multiple candidate files are available after auto detection
   
@@ -563,13 +586,34 @@ server <- function(input, output, session) {
   clean_name <- function(x) tools::file_path_sans_ext(base::basename(x))
   
   safe_read_table <- function(path) {
-    
-    ext <- tools::file_ext(path)
-    
-    if (ext %in% c("txt", "csv")) {
-      
-      # --- guess separator from first line ---
-      first_line <- readLines(path, n = 1)
+
+    ext <- tolower(tools::file_ext(path))
+
+    # ── Excel ──────────────────────────────────────────────────────────────────
+    if (ext %in% c("xls", "xlsx")) {
+      df <- if (ext == "xls") readxl::read_xls(path) else readxl::read_xlsx(path)
+      df <- as.data.frame(df, stringsAsFactors = FALSE, check.names = FALSE)
+      # Auto-detect gene column: if first column is non-numeric, use as rownames
+      first_col_num <- suppressWarnings(
+        all(!is.na(as.numeric(as.character(df[[1]]))))
+      )
+      if (!first_col_num) {
+        rownames(df) <- as.character(df[[1]])
+        df <- df[, -1, drop = FALSE]
+      }
+      # Coerce remaining columns to numeric
+      df[] <- lapply(df, function(x) suppressWarnings(as.numeric(as.character(x))))
+      return(df)
+    }
+
+    # ── Text / delimited ───────────────────────────────────────────────────────
+    if (ext %in% c("txt", "csv", "tsv")) {
+
+      # --- peek at raw bytes to detect separator ---
+      first_line <- readLines(path, n = 1, warn = FALSE, encoding = "UTF-8")
+      # Strip BOM if present
+      first_line <- sub("^\xef\xbb\xbf", "", first_line)
+
       sep <- if (grepl("\t", first_line)) {
         "\t"
       } else if (grepl(";", first_line)) {
@@ -577,78 +621,113 @@ server <- function(input, output, session) {
       } else if (grepl(",", first_line)) {
         ","
       } else {
-        ""  # fallback: any whitespace
+        " "
       }
-      
-      # --- read everything as character ---
+
+      # --- read everything as character (maximally flexible) ---
       df <- utils::read.table(
         path,
-        header = TRUE,
-        row.names = 1,      # first column = gene names
-        check.names = FALSE,
+        header           = TRUE,
+        sep              = sep,
+        check.names      = FALSE,
         stringsAsFactors = FALSE,
-        sep = sep,
-        comment.char = "",
-        quote = "\"",
-        fill = TRUE,
-        colClasses = "character"
+        comment.char     = "",
+        quote            = "\"’",   # handle both quote styles
+        fill             = TRUE,
+        colClasses       = "character"
       )
-      
-      # --- remove empty trailing columns (from trailing separators) ---
+
+      # --- strip any remaining surrounding quotes from all cells ---
+      df[] <- lapply(df, function(x) gsub("^[\"’]|[\"’]$", "", trimws(x)))
+
+      # --- remove fully-empty trailing columns ---
       df <- df[, colSums(!is.na(df) & df != "") > 0, drop = FALSE]
-      
-      # --- normalize decimals and coerce to numeric ---
-      df[] <- lapply(df, function(x) {
-        x <- gsub(",", ".", x)
-        as.numeric(x)
-      })
-      
-      # --- validation ---
-      if (!all(sapply(df, is.numeric))) {
-        stop(
-          "Uploaded file could not be parsed as numeric expression matrix. ",
-          "Check the first row, separator, and decimal symbols."
-        )
+
+      if (ncol(df) == 0) stop("File appears to be empty after parsing.")
+
+      # --- auto-detect gene name column ---
+      # If the first column can’t be coerced to numeric it’s the gene column.
+      # If ALL columns are numeric the row numbers serve as gene identifiers
+      # (unusual, but we leave rownames as-is).
+      first_col_num <- suppressWarnings(
+        all(!is.na(as.numeric(gsub(",", ".", df[[1]]))))
+      )
+      if (!first_col_num) {
+        rownames(df) <- df[[1]]
+        df <- df[, -1, drop = FALSE]
       }
-      
-      if (is.null(rownames(df))) {
-        stop("First column must contain gene names.")
-      }
-      
+
+      if (ncol(df) == 0) stop("No data columns remain after removing the gene name column.")
+
+      # --- normalize decimals (comma → dot) and coerce to numeric ---
+      df[] <- lapply(df, function(x) suppressWarnings(as.numeric(gsub(",", ".", x))))
+
+      if (nrow(df) == 0) stop("File has no data rows.")
+
       return(base::as.data.frame(df))
-      
-    } else if (ext == "rds") {
-      
-      df <- readRDS(path)
-      
-      # if it’s a matrix, coerce to data.frame
-      if (inherits(df, "matrix")) {
-        df <- as.data.frame(df, stringsAsFactors = FALSE)
-      }
-      
-      # now check type: must be data.frame
-      if (!inherits(df, "data.frame")) {
-        stop("Uploaded RDS must contain a data.frame or matrix.")
-      }
-      
-      # validate row and column names
-      if (is.null(rownames(df)) || nrow(df) == 0) {
-        stop("Uploaded RDS must have row names (gene names).")
-      }
-      
-      if (is.null(colnames(df)) || ncol(df) == 0) {
-        stop("Uploaded RDS must have column names (sample names).")
-      }
-      
-      return(df)
-      
-    } else {
-      
-      stop("Unsupported file format.")
-      
     }
+
+    # ── RDS ────────────────────────────────────────────────────────────────────
+    if (ext == "rds") {
+      df <- readRDS(path)
+      if (inherits(df, "matrix")) df <- as.data.frame(df, stringsAsFactors = FALSE)
+      if (!inherits(df, "data.frame")) stop("Uploaded RDS must contain a data.frame or matrix.")
+      if (is.null(rownames(df)) || nrow(df) == 0) stop("Uploaded RDS must have row names (gene names).")
+      if (is.null(colnames(df)) || ncol(df) == 0) stop("Uploaded RDS must have column names (sample names).")
+      # If any column is character, try to coerce (handles quoted numerics in RDS)
+      df[] <- lapply(df, function(x) if (is.character(x)) suppressWarnings(as.numeric(x)) else x)
+      return(df)
+    }
+
+    stop("Unsupported file format: .", ext,
+         ". Supported formats: .txt, .csv, .tsv, .xls, .xlsx, .rds")
   }
   
+  # ── Metadata-specific reader: preserves character columns ───────────────────
+  safe_read_meta <- function(path) {
+    ext <- tolower(tools::file_ext(path))
+
+    if (ext %in% c("xls", "xlsx")) {
+      df <- if (ext == "xls") readxl::read_xls(path) else readxl::read_xlsx(path)
+      return(as.data.frame(df, stringsAsFactors = FALSE, check.names = FALSE))
+    }
+
+    if (ext %in% c("txt", "csv", "tsv")) {
+      first_line <- readLines(path, n = 1, warn = FALSE)
+      first_line <- sub("^\xef\xbb\xbf", "", first_line)  # strip BOM
+      sep <- if (grepl("\t", first_line)) "\t"
+             else if (grepl(";", first_line)) ";"
+             else if (grepl(",", first_line)) ","
+             else " "
+      df <- utils::read.table(
+        path,
+        header           = TRUE,
+        sep              = sep,
+        check.names      = FALSE,
+        stringsAsFactors = FALSE,
+        comment.char     = "",
+        quote            = "\"'",
+        fill             = TRUE
+      )
+      # Strip surrounding quotes
+      df[] <- lapply(df, function(x) gsub("^[\"']|[\"']$", "", trimws(x)))
+      # Remove fully-empty columns
+      df   <- df[, colSums(!is.na(df) & df != "") > 0, drop = FALSE]
+      if (nrow(df) == 0 || ncol(df) == 0) stop("Metadata file appears empty.")
+      return(df)
+    }
+
+    if (ext == "rds") {
+      df <- readRDS(path)
+      if (inherits(df, "matrix")) df <- as.data.frame(df, stringsAsFactors = FALSE)
+      if (!inherits(df, "data.frame")) stop("Uploaded RDS must contain a data.frame.")
+      return(df)
+    }
+
+    stop("Unsupported metadata format: .", ext,
+         ". Supported: .txt, .csv, .tsv, .xls, .xlsx, .rds")
+  }
+
   parse_geneset_object <- function(obj, name_hint) {
     if (is.character(obj)) return(stats::setNames(list(obj), name_hint))
     if (is.data.frame(obj)) {
@@ -663,6 +742,23 @@ server <- function(input, output, session) {
     stop("Invalid gene set format.")
   }
   
+  # ── Helper: reorder metadata rows to match expression column order ──────────
+  # Called whenever meta_data() is set. If the SampleID column is a perfect
+  # set-match to colnames(expr), rows are silently reordered to match.
+  align_meta_to_expr <- function(meta, expr) {
+    if (is.null(expr) || is.null(meta) || ncol(expr) == 0 || nrow(meta) == 0) return(meta)
+    expr_cols <- colnames(expr)
+    id_col    <- if ("SampleID" %in% colnames(meta)) "SampleID" else colnames(meta)[1]
+    meta_ids  <- as.character(meta[[id_col]])
+    if (setequal(expr_cols, meta_ids) && !identical(expr_cols, meta_ids)) {
+      idx  <- match(expr_cols, meta_ids)
+      meta <- meta[idx, , drop = FALSE]
+      rownames(meta) <- expr_cols
+      log_step("Metadata rows reordered to match expression column order.")
+    }
+    meta
+  }
+
   ###### DATA ######
 
   # ---- Zenodo example download helpers (closures — capture server-scope reactives) ----
@@ -675,22 +771,20 @@ server <- function(input, output, session) {
     show_loading_modal("Loading example data…",
                        "Downloading unprocessed counts from Zenodo.")
     dl_ok <- tryCatch({
-      shiny::withProgress(message = "Downloading unprocessed example data...", value = 0, {
-        incProgress(0.1, detail = "Preparing download...")
-        Sys.sleep(0.2)
+      shiny::withProgress(message = "Zenodo", value = 0, {
+        shiny::incProgress(0.05, detail = "Connecting…")
         tmp <- tempfile(fileext = ".rds")
-        incProgress(0.4, detail = "Downloading from Zenodo...")
+        shiny::incProgress(0.10, detail = "Downloading…")
         utils::download.file(
           url      = "https://zenodo.org/records/18714122/files/counts.rds?download=1",
-          destfile = tmp,
-          mode     = "wb"
+          destfile = tmp, mode = "wb", quiet = TRUE
         )
-        incProgress(0.3, detail = "Loading expression matrix...")
+        shiny::incProgress(0.70, detail = "Parsing…")
         e <- readRDS(tmp)
         expr_data(e)
         log_step(paste0("Expression data loaded: example (unprocessed) — ",
                         nrow(e), " genes × ", ncol(e), " samples."))
-        incProgress(0.2, detail = "Finalizing...")
+        shiny::incProgress(0.15, detail = "Done.")
       })
       TRUE
     }, error = function(err) {
@@ -698,33 +792,27 @@ server <- function(input, output, session) {
       show_dl_error_modal(conditionMessage(err), "retry_expr_raw")
       FALSE
     })
-    if (isTRUE(dl_ok)) {
-      shiny::removeModal()
-      shiny::showNotification("Unprocessed expression data loaded successfully.",
-                              type = "default", duration = 3)
-    }
+    if (isTRUE(dl_ok)) shiny::removeModal()
   }
 
   .dl_expr_proc <- function() {
     show_loading_modal("Loading example data…",
                        "Downloading processed counts from Zenodo.")
     dl_ok <- tryCatch({
-      shiny::withProgress(message = "Downloading processed example data...", value = 0, {
-        incProgress(0.1, detail = "Preparing download...")
-        Sys.sleep(0.2)
+      shiny::withProgress(message = "Zenodo", value = 0, {
+        shiny::incProgress(0.05, detail = "Connecting…")
         tmp <- tempfile(fileext = ".rds")
-        incProgress(0.4, detail = "Downloading from Zenodo...")
+        shiny::incProgress(0.10, detail = "Downloading…")
         utils::download.file(
           url      = "https://zenodo.org/records/18714122/files/corrcounts.rds?download=1",
-          destfile = tmp,
-          mode     = "wb"
+          destfile = tmp, mode = "wb", quiet = TRUE
         )
-        incProgress(0.3, detail = "Loading processed matrix...")
+        shiny::incProgress(0.70, detail = "Parsing…")
         e <- readRDS(tmp)
         expr_data(e)
         log_step(paste0("Expression data loaded: example (processed) — ",
                         nrow(e), " genes × ", ncol(e), " samples."))
-        incProgress(0.2, detail = "Finalizing...")
+        shiny::incProgress(0.15, detail = "Done.")
       })
       TRUE
     }, error = function(err) {
@@ -732,33 +820,28 @@ server <- function(input, output, session) {
       show_dl_error_modal(conditionMessage(err), "retry_expr_proc")
       FALSE
     })
-    if (isTRUE(dl_ok)) {
-      shiny::removeModal()
-      shiny::showNotification("Processed expression data loaded successfully.",
-                              type = "default", duration = 3)
-    }
+    if (isTRUE(dl_ok)) shiny::removeModal()
   }
 
   .dl_meta_example <- function() {
     show_loading_modal("Loading example metadata…",
                        "Downloading from Zenodo.")
     dl_ok <- tryCatch({
-      shiny::withProgress(message = "Downloading example metadata...", value = 0, {
-        incProgress(0.2, detail = "Preparing download...")
-        Sys.sleep(0.2)
+      shiny::withProgress(message = "Zenodo", value = 0, {
+        shiny::incProgress(0.05, detail = "Connecting…")
         tmp <- tempfile(fileext = ".rds")
-        incProgress(0.5, detail = "Downloading from Zenodo...")
+        shiny::incProgress(0.10, detail = "Downloading…")
         utils::download.file(
           url      = "https://zenodo.org/records/18714122/files/metadata.rds?download=1",
-          destfile = tmp,
-          mode     = "wb"
+          destfile = tmp, mode = "wb", quiet = TRUE
         )
-        incProgress(0.2, detail = "Loading metadata...")
+        shiny::incProgress(0.70, detail = "Parsing…")
         m <- readRDS(tmp)
+        m <- align_meta_to_expr(m, expr_data())
         meta_data(m)
         log_step(paste0("Metadata loaded: example — ",
                         nrow(m), " samples × ", ncol(m), " variables."))
-        incProgress(0.1, detail = "Finalizing...")
+        shiny::incProgress(0.15, detail = "Done.")
       })
       TRUE
     }, error = function(err) {
@@ -766,33 +849,28 @@ server <- function(input, output, session) {
       show_dl_error_modal(conditionMessage(err), "retry_meta_example")
       FALSE
     })
-    if (isTRUE(dl_ok)) {
-      shiny::removeModal()
-      shiny::showNotification("Metadata loaded successfully.", type = "default", duration = 3)
-    }
+    if (isTRUE(dl_ok)) shiny::removeModal()
   }
 
   .dl_gs_example <- function() {
     show_loading_modal("Loading example gene sets…",
                        "Downloading from Zenodo.")
     dl_ok <- tryCatch({
-      shiny::withProgress(message = "Downloading example gene sets...", value = 0, {
-        incProgress(0.2, detail = "Preparing download...")
-        Sys.sleep(0.2)
+      shiny::withProgress(message = "Zenodo", value = 0, {
+        shiny::incProgress(0.05, detail = "Connecting…")
         tmp <- tempfile(fileext = ".rds")
-        incProgress(0.5, detail = "Downloading from Zenodo...")
+        shiny::incProgress(0.10, detail = "Downloading…")
         utils::download.file(
           url      = "https://zenodo.org/records/18714122/files/SenescenceGeneSets.rds?download=1",
-          destfile = tmp,
-          mode     = "wb"
+          destfile = tmp, mode = "wb", quiet = TRUE
         )
-        incProgress(0.2, detail = "Loading gene sets...")
+        shiny::incProgress(0.70, detail = "Parsing…")
         gs <- readRDS(tmp)
         gene_sets(gs)
         log_step(paste0("Gene sets loaded: example — ", length(gs), " set(s), ",
                         sum(sapply(gs, function(x) if (is.data.frame(x)) nrow(x) else length(x))),
                         " genes total."))
-        incProgress(0.1, detail = "Finalizing...")
+        shiny::incProgress(0.15, detail = "Done.")
       })
       TRUE
     }, error = function(err) {
@@ -800,16 +878,20 @@ server <- function(input, output, session) {
       show_dl_error_modal(conditionMessage(err), "retry_gs_example")
       FALSE
     })
-    if (isTRUE(dl_ok)) {
-      shiny::removeModal()
-      shiny::showNotification("Gene sets loaded successfully.", type = "default", duration = 3)
-    }
+    if (isTRUE(dl_ok)) shiny::removeModal()
   }
 
   ####### > Example Data #######
 
   observeEvent(input$expr_source, {
-    updateRadioButtons(session, "meta_source", selected = "example")
+    src_label <- switch(input$expr_source,
+      example_raw  = "example (unprocessed)",
+      example_proc = "example (processed)",
+      upload       = "user upload",
+      geo          = "GEO import",
+      input$expr_source
+    )
+    log_step(paste0("Expression source changed to: ", src_label, "."))
     if (input$expr_source == "example_raw")  .dl_expr_raw()
     if (input$expr_source == "example_proc") .dl_expr_proc()
   })
@@ -826,11 +908,38 @@ server <- function(input, output, session) {
     show_loading_modal(paste0("Reading ", input$expr_file$name, "…"),
                        "Parsing expression matrix.")
     on.exit(shiny::removeModal(), add = TRUE)
-    e <- safe_read_table(input$expr_file$datapath)
-    expr_data(e)
+    result <- tryCatch(
+      safe_read_table(input$expr_file$datapath),
+      error = function(err) {
+        shiny::showNotification(
+          paste0("Could not parse file: ", conditionMessage(err)),
+          type = "error", duration = 10
+        )
+        NULL
+      }
+    )
+    if (is.null(result)) return()
+
+    # Check data quality: flag if >20 % of values are NA (coercion failures)
+    # or if any column is non-numeric (should not happen after safe_read_table,
+    # but catches RDS files with character columns).
+    na_frac      <- mean(is.na(unlist(result)))
+    has_non_num  <- !all(sapply(result, is.numeric))
+    warn_msg <- NULL
+    if (has_non_num) {
+      warn_msg <- "Some columns are non-numeric — this file may not be an expression matrix. Check that genes are rows and samples are columns."
+    } else if (na_frac > 0.20) {
+      warn_msg <- sprintf(
+        "%.0f%% of values are missing after parsing — the file may not be a numeric expression matrix, or the separator / decimal character was misdetected.",
+        na_frac * 100
+      )
+    }
+    expr_quality_warn(warn_msg)
+
+    expr_data(result)
     module_meta_active(FALSE)
     log_step(paste0("Expression data loaded: uploaded file '", input$expr_file$name, "' — ",
-                    nrow(e), " genes × ", ncol(e), " samples."))
+                    nrow(result), " genes × ", ncol(result), " samples."))
   })
   
   ###### > GEO data — delegated to geoImportModule ######
@@ -1653,6 +1762,13 @@ server <- function(input, output, session) {
   
   
   observeEvent(input$meta_source, {
+    src_label <- switch(input$meta_source,
+      example = "example",
+      upload  = "user upload",
+      geo     = "GEO import",
+      input$meta_source
+    )
+    log_step(paste0("Metadata source changed to: ", src_label, "."))
     if (input$meta_source == "example") .dl_meta_example()
   })
 
@@ -1665,12 +1781,19 @@ server <- function(input, output, session) {
     show_loading_modal(paste0("Reading ", input$meta_file$name, "…"),
                        "Parsing metadata file.")
     on.exit(shiny::removeModal(), add = TRUE)
-    raw <- safe_read_table(input$meta_file$datapath)
-    upload_meta_raw(raw)   # keep unmodified copy so SampleID re-mapping is non-destructive
+    raw <- safe_read_meta(input$meta_file$datapath)
+    upload_meta_raw(raw)
     module_meta_active(FALSE)
-    meta_data(raw)
-    log_step(paste0("Metadata loaded: uploaded file '", input$meta_file$name, "' — ",
-                    nrow(raw), " samples × ", ncol(raw), " variables."))
+    meta_data(align_meta_to_expr(raw, expr_data()))
+    # Log basic info + match summary against expression data
+    expr <- expr_data()
+    match_info <- if (!is.null(expr)) {
+      ids     <- as.character(raw[[colnames(raw)[1]]])
+      n_match <- length(intersect(ids, colnames(expr)))
+      paste0(", ", n_match, "/", ncol(expr), " samples matched to expression columns")
+    } else ""
+    log_step(paste0("Metadata loaded: '", input$meta_file$name, "' — ",
+                    nrow(raw), " samples × ", ncol(raw), " variables", match_info, "."))
   })
   
   
@@ -1706,42 +1829,29 @@ server <- function(input, output, session) {
         )
       })
       
-      # Update pickerInput for metadata column selection (exclude SampleID)
-      cols <- setdiff(colnames(df), default_sampleid)
-      shinyWidgets::updatePickerInput(
-        session,
-        "selected_meta_cols",
-        choices = cols,
-        selected = cols
-      )
     }
   })
-  
-  # --- Update meta_data() based on SampleID and selected columns ---
+
+  # --- Update meta_data() based on SampleID column (legacy non-module GEO path) ---
   observe({
-    req(full_geo_meta(), input$geo_sampleid_col, input$selected_meta_cols, input$meta_source)
-    # Skip when geo_import_module owns meta_data() — module already built the final metadata
+    req(full_geo_meta(), input$geo_sampleid_col, input$meta_source)
     if (isTRUE(module_meta_active())) return(NULL)
 
     if (input$meta_source == "geo") {
       df <- full_geo_meta()
-      
-      # Map SampleID column
+
       sample_ids <- if (input$geo_sampleid_col %in% colnames(df)) {
         df[[input$geo_sampleid_col]]
       } else {
         rownames(df)
       }
-      
-      # Subset remaining metadata columns, ensuring SampleID is first.
-      # Exclude both the chosen id_col AND any pre-existing "SampleID" column so
-      # we never end up with two columns of the same name (can happen when the
-      # geo_import_module already added a SampleID column to full_geo_meta).
-      subset_cols <- setdiff(input$selected_meta_cols,
-                             c(input$geo_sampleid_col, "SampleID"))
-      subset_meta <- df[, intersect(subset_cols, colnames(df)), drop = FALSE]
 
-      meta_data(cbind(SampleID = sample_ids, subset_meta))
+      # Keep all columns except the chosen ID col and any duplicate "SampleID"
+      subset_cols <- setdiff(colnames(df), c(input$geo_sampleid_col, "SampleID"))
+      subset_meta <- df[, subset_cols, drop = FALSE]
+
+      combined <- cbind(SampleID = sample_ids, subset_meta)
+      meta_data(align_meta_to_expr(combined, expr_data()))
     }
   })
   
@@ -1841,9 +1951,14 @@ server <- function(input, output, session) {
     if (length(keep) > 0L) {
       expr_data(expr_data()[, keep, drop = FALSE])
       removed <- old_n - length(keep)
-      if (removed > 0L)
+      if (removed > 0L) {
         log_step(paste0("Expression samples removed: ", removed,
                         " removed, ", length(keep), " kept."))
+        shiny::showNotification(
+          paste0(removed, " expression sample(s) removed — ", length(keep), " kept."),
+          type = "warning", duration = 5
+        )
+      }
     }
   })
 
@@ -1854,40 +1969,142 @@ server <- function(input, output, session) {
     cols <- colnames(raw)
     if (is.null(cols) || length(cols) == 0L) return(NULL)
 
-    # Re-render reactively when user changes the SampleID column
     id_col  <- input$upload_meta_sampleid_col
     if (is.null(id_col) || !id_col %in% cols) id_col <- cols[1]
     row_ids <- as.character(raw[[id_col]])
 
-    shiny::tagList(
-      shiny::hr(style = "margin:8px 0;"),
-      shiny::tags$strong(style = "font-size:0.87em;", "Sample ID column"),
-      shiny::selectInput(
-        "upload_meta_sampleid_col",
-        label    = NULL,
-        choices  = cols,
-        selected = id_col
-      ),
-      shiny::tags$strong(style = "font-size:0.87em;", "Remove samples"),
-      shinyWidgets::pickerInput(
-        "upload_meta_keep",
-        label    = NULL,
-        choices  = row_ids,
-        selected = row_ids,
-        multiple = TRUE,
-        options  = list(
-          `actions-box`            = TRUE,
-          `live-search`            = TRUE,
-          `selected-text-format`   = "count > 3",
-          `count-selected-text`    = "{0} of {1} kept"
-        )
-      ),
-      shiny::actionButton(
-        "apply_upload_meta_manage", "Apply",
-        class = "btn-sm btn-outline-primary",
-        style = "margin-top:2px;"
+    # Compute match against expression data (if available)
+    expr    <- expr_data()
+    matched <- if (!is.null(expr)) intersect(row_ids, colnames(expr)) else character(0)
+    n_meta  <- length(row_ids)
+    n_expr  <- if (!is.null(expr)) ncol(expr) else 0L
+    n_match <- length(matched)
+    fully_matched <- !is.null(expr) && n_match == n_expr && n_match == n_meta
+
+    # ── Helper: bordered option card ──────────────────────────────────────────
+    opt_card <- function(num, title, subtitle, body, border_color = "#dee2e6") {
+      shiny::tags$div(
+        style = paste0("border:1px solid ", border_color,
+                       ";border-radius:6px;margin-bottom:10px;"),
+        shiny::tags$div(
+          style = paste0("display:flex;align-items:center;gap:8px;",
+                         "padding:8px 10px;background:#f8f9fa;",
+                         "border-bottom:1px solid ", border_color, ";"),
+          shiny::tags$span(
+            style = paste0("display:inline-flex;align-items:center;",
+                           "justify-content:center;width:22px;height:22px;",
+                           "border-radius:50%;background:#495057;color:#fff;",
+                           "font-size:0.75em;font-weight:700;flex-shrink:0;"),
+            num
+          ),
+          shiny::tags$div(
+            shiny::tags$div(style = "font-weight:600;font-size:0.9em;line-height:1.2;", title),
+            shiny::tags$div(style = "font-size:0.8em;color:#666;margin-top:2px;", subtitle)
+          )
+        ),
+        shiny::tags$div(style = "padding:10px;", body)
       )
+    }
+
+    # ── SampleID selector always shown ───────────────────────────────────────
+    id_selector <- shiny::tagList(
+      shiny::hr(style = "margin:10px 0 6px;"),
+      shiny::tags$strong(style = "font-size:0.87em;", "Sample ID column"),
+      shiny::selectInput("upload_meta_sampleid_col", label = NULL,
+                         choices = cols, selected = id_col)
     )
+
+    # ── Match status banner ───────────────────────────────────────────────────
+    match_banner <- if (is.null(expr)) {
+      NULL
+    } else if (fully_matched) {
+      shiny::tags$div(
+        style = paste0("background:#d4edda;color:#155724;border-radius:6px;",
+                       "padding:8px 12px;margin-bottom:8px;font-size:0.87em;"),
+        paste0("✅ All ", n_match, "/", n_expr, " samples matched.")
+      )
+    } else {
+      dropped <- n_expr - n_match
+      shiny::tags$div(
+        style = paste0("background:#fff3cd;color:#856404;border-radius:6px;",
+                       "padding:10px 12px;margin-bottom:8px;"),
+        shiny::tags$strong(paste0("⚠️ ", n_match, "/", n_expr, " samples matched")),
+        if (dropped > 0)
+          shiny::tags$p(style = "margin:4px 0 0;font-size:0.85em;",
+                        paste0(dropped, " expression column(s) not found in metadata. ",
+                               "Use the options below to resolve this."))
+      )
+    }
+
+    # ── Alignment options (only shown when there is a mismatch) ──────────────
+    alignment_opts <- if (!is.null(expr) && !fully_matched) {
+      shiny::tagList(
+
+        opt_card("1", "Remove samples",
+          "Deselect samples to remove from the metadata. Apply when done.",
+          shiny::tagList(
+            shinyWidgets::pickerInput(
+              "upload_meta_keep", label = NULL,
+              choices = row_ids, selected = row_ids, multiple = TRUE,
+              options = list(`actions-box` = TRUE, `live-search` = TRUE,
+                             `selected-text-format` = "count > 3",
+                             `count-selected-text` = "{0} of {1} kept")
+            ),
+            shiny::actionButton("apply_upload_meta_manage", "Apply",
+                                class = "btn-sm btn-outline-primary",
+                                style = "margin-top:4px;")
+          ),
+          border_color = "#f5c6cb"
+        ),
+
+        opt_card("2", "Match by keyword in a metadata column",
+          paste0("Use when a metadata column contains text that partially overlaps ",
+                 "with expression column names (e.g. 'Library: sampleA' vs 'sampleA')."),
+          shiny::tagList(
+            shiny::selectInput(
+              "upload_meta_match_col", "Select column to search:",
+              choices = cols, selected = cols[1]
+            ),
+            shiny::actionButton("apply_upload_meta_match_col",
+                                shiny::tagList(shiny::icon("magnifying-glass"), "Try keyword match"),
+                                class = "btn-warning btn-sm")
+          ),
+          border_color = "#ffc107"
+        ),
+
+        opt_card("3", "Rename Sample IDs manually",
+          paste0("Paste ", n_meta, " new IDs (one per line) to replace the current Sample IDs."),
+          shiny::tagList(
+            shiny::textAreaInput(
+              "upload_meta_rename_ids", label = NULL,
+              value = paste(row_ids, collapse = "\n"),
+              rows  = min(6, n_meta), resize = "vertical", width = "100%"
+            ),
+            shiny::actionButton("apply_upload_meta_rename", "Rename & apply",
+                                class = "btn-sm btn-outline-secondary",
+                                style = "margin-top:4px;")
+          ),
+          border_color = "#dee2e6"
+        )
+      )
+    } else {
+      # Fully matched — still show simple remove picker
+      shiny::tagList(
+        shiny::tags$strong(style = "font-size:0.87em;", "Remove samples"),
+        shinyWidgets::pickerInput(
+          "upload_meta_keep", label = NULL,
+          choices = row_ids, selected = row_ids, multiple = TRUE,
+          options = list(`actions-box` = TRUE, `live-search` = TRUE,
+                         `selected-text-format` = "count > 3",
+                         `count-selected-text` = "{0} of {1} kept")
+        ),
+        shiny::actionButton("apply_upload_meta_manage", "Apply",
+                            class = "btn-sm btn-outline-primary",
+                            style = "margin-top:4px;")
+      )
+    }
+
+    shiny::tagList(id_selector, match_banner, alignment_opts)
   })
 
   observeEvent(input$apply_upload_meta_manage, {
@@ -1913,12 +2130,111 @@ server <- function(input, output, session) {
       check.names = FALSE, stringsAsFactors = FALSE
     )
     rownames(result) <- ids
-    meta_data(result)
+    meta_data(align_meta_to_expr(result, expr_data()))
     removed <- nrow(raw) - nrow(result)
     log_step(paste0("Metadata updated: SampleID column = '", id_col, "'",
                     if (removed > 0L) paste0(", ", removed, " sample(s) removed") else "",
                     " — ", nrow(result), " samples kept."))
+    if (removed > 0L)
+      shiny::showNotification(
+        paste0(removed, " metadata sample(s) removed — ", nrow(result), " kept."),
+        type = "warning", duration = 5
+      )
   })
+
+  # ── Upload metadata: rename Sample IDs ────────────────────────────────────
+  observeEvent(input$apply_upload_meta_rename, {
+    req(upload_meta_raw(), input$upload_meta_sampleid_col, input$upload_meta_rename_ids)
+    raw    <- upload_meta_raw()
+    id_col <- input$upload_meta_sampleid_col
+    if (!id_col %in% colnames(raw)) return()
+
+    new_ids <- trimws(strsplit(input$upload_meta_rename_ids, "\n")[[1]])
+    new_ids <- new_ids[nchar(new_ids) > 0]
+    old_ids <- as.character(raw[[id_col]])
+
+    if (length(new_ids) != length(old_ids)) {
+      shiny::showNotification(
+        paste0("Number of new IDs (", length(new_ids), ") must match number of metadata rows (",
+               length(old_ids), ")."),
+        type = "error", duration = 8
+      )
+      return()
+    }
+
+    raw[[id_col]] <- new_ids
+    other  <- setdiff(colnames(raw), c(id_col, "SampleID"))
+    result <- data.frame(SampleID = new_ids, raw[, other, drop = FALSE],
+                         check.names = FALSE, stringsAsFactors = FALSE)
+    rownames(result) <- new_ids
+    upload_meta_raw(result)  # update raw so future Apply uses new IDs
+    meta_data(align_meta_to_expr(result, expr_data()))
+
+    matched <- intersect(new_ids, colnames(expr_data()))
+    log_step(paste0("Metadata Sample IDs renamed — ", length(matched), "/",
+                    ncol(expr_data()), " now matched to expression columns."))
+    shiny::showNotification(
+      paste0(length(matched), "/", ncol(expr_data()),
+             " samples matched after renaming."),
+      type = if (length(matched) == ncol(expr_data())) "default" else "warning",
+      duration = 6
+    )
+  }, ignoreInit = TRUE)
+
+  # ── Upload metadata: match by keyword in a column ─────────────────────────
+  observeEvent(input$apply_upload_meta_match_col, {
+    req(upload_meta_raw(), input$upload_meta_sampleid_col,
+        input$upload_meta_match_col, expr_data())
+    raw      <- upload_meta_raw()
+    id_col   <- input$upload_meta_sampleid_col
+    match_col <- input$upload_meta_match_col
+    if (!match_col %in% colnames(raw)) return()
+
+    expr_cols  <- colnames(expr_data())
+    meta_vals  <- as.character(raw[[match_col]])
+
+    # For each expression column, find a metadata row whose match_col value
+    # contains the expression column name as a substring (or vice versa).
+    new_ids <- vapply(meta_vals, function(mv) {
+      hit <- expr_cols[sapply(expr_cols, function(ec) {
+        grepl(ec, mv, fixed = TRUE) || grepl(mv, ec, fixed = TRUE)
+      })]
+      if (length(hit) == 1L) hit else NA_character_
+    }, character(1))
+
+    n_matched <- sum(!is.na(new_ids))
+
+    if (n_matched == 0L) {
+      shiny::showNotification(
+        paste0("No matches found between expression columns and '", match_col, "'. ",
+               "Try a different column or use the rename option."),
+        type = "warning", duration = 8
+      )
+      return()
+    }
+
+    # Replace SampleID with the matched expression column name (NA for unmatched)
+    other  <- setdiff(colnames(raw), c(id_col, "SampleID"))
+    result <- data.frame(SampleID = new_ids, raw[, other, drop = FALSE],
+                         check.names = FALSE, stringsAsFactors = FALSE)
+    # Keep only matched rows
+    result <- result[!is.na(result$SampleID), , drop = FALSE]
+    rownames(result) <- result$SampleID
+
+    upload_meta_raw(result)
+    meta_data(align_meta_to_expr(result, expr_data()))
+
+    dropped <- nrow(raw) - nrow(result)
+    log_step(paste0("Metadata matched by keyword in column '", match_col, "' — ",
+                    n_matched, "/", ncol(expr_data()), " samples matched",
+                    if (dropped > 0) paste0(", ", dropped, " unmatched rows dropped") else "", "."))
+    shiny::showNotification(
+      paste0(n_matched, "/", ncol(expr_data()), " samples matched via '", match_col, "'",
+             if (dropped > 0) paste0(" — ", dropped, " unmatched rows removed") else "", "."),
+      type = if (n_matched == ncol(expr_data())) "default" else "warning",
+      duration = 7
+    )
+  }, ignoreInit = TRUE)
 
   # ── Processing log UI + download ───────────────────────────────────────────
   output$data_log_ui <- shiny::renderUI({
@@ -1962,6 +2278,12 @@ server <- function(input, output, session) {
   ##### GENE SETS  #########################################
 
   observeEvent(input$geneset_source, {
+    src_label <- switch(input$geneset_source,
+      example = "example",
+      upload  = "user upload",
+      input$geneset_source
+    )
+    log_step(paste0("Gene set source changed to: ", src_label, "."))
     if (input$geneset_source == "example") .dl_gs_example()
   })
 
@@ -2092,6 +2414,23 @@ server <- function(input, output, session) {
   ##### PREVIEW TABLES ################################################
   
   
+  output$expr_quality_banner <- shiny::renderUI({
+    msg <- expr_quality_warn()
+    if (is.null(msg)) return(NULL)
+    shiny::tags$div(
+      style = paste0(
+        "background:#fff3cd;border:1px solid #ffc107;border-left:4px solid #ffc107;",
+        "border-radius:4px;padding:9px 14px;margin:8px 8px 4px 8px;"
+      ),
+      shiny::tags$div(
+        style = "display:flex;align-items:center;gap:7px;",
+        shiny::tags$span(style = "font-size:1em;", "⚠️"),
+        shiny::tags$strong(style = "font-size:0.9em;", "Suspicious data — "),
+        shiny::tags$span(style = "font-size:0.87em;", msg)
+      )
+    )
+  })
+
   output$expr_preview <- DT::renderDT({
     shiny::req(expr_data())
     

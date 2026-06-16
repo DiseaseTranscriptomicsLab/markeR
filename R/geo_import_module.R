@@ -1285,11 +1285,30 @@ geoImportServer <- function(id, log_fn = NULL) {
 
       shiny::removeModal()
 
+      # Build a clean match-summary string from the aligned data.
+      # Internal pipeline messages (like "Returning expression matrix with
+      # metadata unaligned") are intentionally not shown to the user.
+      .fmt_match <- function() {
+        e <- rv$expr; m <- rv$meta
+        if (is.null(e) || is.null(m)) return(NULL)
+        n_expr  <- ncol(e)
+        matched <- sum(colnames(e) %in% rownames(m))
+        dropped <- n_expr - matched
+        msg <- paste0(matched, "/", n_expr, " sample",
+                      if (n_expr != 1) "s" else "", " matched")
+        if (dropped > 0)
+          msg <- paste0(msg, " — ", dropped, " dropped (no metadata)")
+        msg
+      }
+      match_summary <- .fmt_match()
+      if (!is.null(match_summary))
+        glog(paste0("Sample alignment summary: ", match_summary, "."))
+
       # Show result notification
       if (rv$status == "ok") {
         shiny::showNotification(
-          paste0("✅ ", accession, " imported successfully."),
-          type = "default", duration = 5
+          paste0(accession, " imported — ", match_summary),
+          type = "default", duration = 6
         )
       } else if (rv$status == "excluded") {
         shiny::showNotification(
@@ -1300,10 +1319,17 @@ geoImportServer <- function(id, log_fn = NULL) {
           type = "error", duration = NULL
         )
       } else if (rv$status == "warning") {
+        # Show match summary + only user-relevant warning lines
+        user_warns <- grep(
+          "format|file|parse|GSM|column|TAR|gz|supplementary",
+          rv$messages, value = TRUE, ignore.case = TRUE
+        )
+        body <- if (!is.null(match_summary)) match_summary else ""
+        if (length(user_warns) > 0)
+          body <- paste(c(body, user_warns), collapse = "<br>")
         shiny::showNotification(
           shiny::HTML(paste0(
-            "⚠️ <b>", accession, " loaded with warnings:</b><br>",
-            paste(rv$messages, collapse = "<br>")
+            "⚠️ <b>", accession, " loaded with warnings:</b><br>", body
           )),
           type = "warning", duration = 12
         )
