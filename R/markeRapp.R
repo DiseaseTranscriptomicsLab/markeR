@@ -166,10 +166,12 @@ ui <- bslib::page_navbar(
           style = "max-width: 85%; height: auto; margin-top: 10px;"
         )
       )
-    )
-    
+    ),
+    shiny::hr(),
+    shiny::uiOutput("data_log_ui_about")
+
   ),
-  
+
   ##### DATA #####
   bslib::nav_panel(
     "Data",
@@ -451,24 +453,23 @@ ui <- bslib::page_navbar(
   ##### PREPROCESSING #####
   bslib::nav_panel(
     "Preprocessing",
-    shiny::h4("Coming soon..."),
-    shiny::h1("👁️👄👁")
+    preprocessingUI("preprocessing")
   ),
-  
+
   ##### GENE SETS #####
   bslib::nav_panel(
     "Gene Sets",
     shiny::h4("Coming soon..."),
     shiny::h1("👁️👄👁")
   ),
-  
+
   ##### BENCHMARKING MODE #####
   bslib::nav_panel(
     "Benchmarking Mode",
     shiny::h4("Coming soon..."),
     shiny::h1("👁️👄👁")
   ),
-  
+
   ##### DISCOVERY MODE #####
   bslib::nav_panel(
     "Discovery Mode",
@@ -480,13 +481,14 @@ ui <- bslib::page_navbar(
   
 )
 
-# Then wrap whole page with head()
+# Then wrap whole page with head() + global fixed-bottom log bar
 ui <- tagList(
   tags$head(
     tags$style(HTML("
+      body { padding-bottom: 40px; }
       #shiny-notification-panel {
         top: auto !important;
-        bottom: 50px !important;
+        bottom: 56px !important;
         right: 30px !important;
         left: auto !important;
         width: 320px !important;
@@ -499,9 +501,70 @@ ui <- tagList(
       #shiny-notification-panel .shiny-notification-warning {
         border-left: 4px solid #ffc107 !important;
       }
+      /* ── Global log bar (orange palette) ───────────── */
+      #global-log-bar {
+        position: fixed; bottom: 0; left: 0; right: 0;
+        z-index: 1050;
+        background: #7a3800;       /* deep burnt-orange background */
+        color: #fde8c8;
+        font-family: monospace; font-size: 0.79em;
+        box-shadow: 0 -3px 10px rgba(0,0,0,0.28);
+      }
+      #global-log-header {
+        display: flex; align-items: center;
+        justify-content: space-between;
+        padding: 5px 16px; cursor: pointer;
+        border-top: 2px solid #EBB43E;
+        user-select: none;
+      }
+      #global-log-header:hover { background: #8f4200; }
+      #global-log-body {
+        max-height: 0px; overflow: hidden;
+        transition: max-height 0.22s ease;
+        background: #5c2a00;
+      }
+      #global-log-entries {
+        padding: 6px 16px 10px 16px;
+        max-height: 200px; overflow-y: auto;
+        line-height: 1.9; color: #fde8c8;
+      }
+      /* Most recent entry highlighted in bright orange */
+      #global-log-entries .glog-entry:first-child { color: #EBB43E; font-weight: 600; }
+      /* Download button in log bar */
+      #global-log-entries .btn { color: #fde8c8; border-color: #EBB43E; }
     "))
   ),
-  ui
+  ui,
+  # Global log bar (fixed to bottom of viewport, visible on all tabs)
+  tags$div(
+    id = "global-log-bar",
+    tags$div(
+      id = "global-log-header",
+      onclick = "toggleMarkeRLog()",
+      shiny::uiOutput("global_log_header", inline = TRUE),
+      tags$span(id = "glog-arrow", style = "font-size:0.85em;", "▲")
+    ),
+    tags$div(
+      id = "global-log-body",
+      tags$div(
+        id = "global-log-entries",
+        shiny::uiOutput("global_log_entries")
+      )
+    )
+  ),
+  tags$script(HTML("
+    function toggleMarkeRLog() {
+      var body  = document.getElementById('global-log-body');
+      var arrow = document.getElementById('glog-arrow');
+      if (!body.style.maxHeight || body.style.maxHeight === '0px') {
+        body.style.maxHeight = '220px';
+        arrow.textContent = '▼';
+      } else {
+        body.style.maxHeight = '0px';
+        arrow.textContent = '▲';
+      }
+    }
+  "))
 )
 
 # ---- Server ----
@@ -524,6 +587,25 @@ server <- function(input, output, session) {
   geo_supp_files  <- reactiveVal(NULL)
   expr_candidates_available <- reactiveVal(FALSE) # Flag to indicate multiple candidate files are available after auto detection
   
+  ###### PREPROCESSING MODULE ######
+
+  pp_module <- preprocessingServer(
+    id       = "preprocessing",
+    get_expr = expr_data,
+    get_meta = meta_data,
+    log_fn   = log_step,
+    get_log  = data_log
+  )
+
+  # When the user finalises preprocessing, push the processed data back into
+  # the app's main expr_data reactive so downstream tabs pick it up.
+  shiny::observeEvent(pp_module$finalized(), {
+    shiny::req(pp_module$finalized() > 0L, pp_module$final_data())
+    expr_data(pp_module$final_data())
+    expr_quality_warn(NULL)   # clear any earlier quality warning
+  }, ignoreInit = TRUE)
+
+
   ###### HELPER FUNCTIONS ######
 
   # Show a centred spinner modal (same style as the GEO import module).
@@ -2263,6 +2345,36 @@ server <- function(input, output, session) {
         lapply(rev(log), function(entry) {  # newest first
           shiny::tags$div(entry)
         })
+      )
+    )
+  })
+
+  # ── Global log bar (fixed bottom — visible across all tabs) ───────────────
+  output$global_log_header <- shiny::renderUI({
+    n <- length(data_log())
+    shiny::tags$span(
+      style = "color:#e2e8f0; font-size:0.88em;",
+      if (n == 0L) "📋 Processing log (no entries yet)"
+      else paste0("📋 Processing log — ", n,
+                   if (n == 1L) " entry" else " entries",
+                   " (click to expand)")
+    )
+  })
+
+  output$global_log_entries <- shiny::renderUI({
+    log <- data_log()
+    if (length(log) == 0L) {
+      return(shiny::tags$div(
+        style = "color:#64748b; padding:4px 0;", "No log entries yet."))
+    }
+    shiny::tagList(
+      lapply(rev(log), function(e)
+        shiny::tags$div(class = "glog-entry", e)
+      ),
+      shiny::downloadButton(
+        "download_log", "Download log",
+        class = "btn-sm btn-outline-light",
+        style = "margin-top:8px; font-size:0.78em; padding:2px 10px;"
       )
     )
   })
