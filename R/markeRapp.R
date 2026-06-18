@@ -1,10 +1,14 @@
-#' @importFrom bslib bs_theme
+#' @importFrom bslib bs_theme nav_panel page_navbar sidebar layout_sidebar accordion accordion_panel
 #' @import shiny
 #' @import GEOquery
 #' @import DT
 #' @importFrom readxl read_xls read_xlsx
 #' @importFrom R.utils gunzip
 #' @importFrom data.table fread
+#' @importFrom Biobase exprs pData annotation experimentData
+#' @importFrom shinyWidgets pickerInput pickerOptions
+#' @importFrom utils download.file read.csv read.delim read.table untar unzip packageVersion
+#' @importFrom tools file_ext file_path_sans_ext
 
 ui <- bslib::page_navbar(
   
@@ -318,7 +322,7 @@ ui <- bslib::page_navbar(
                     shiny::tags$li("One row per sample"),
                     shiny::tags$li(
                       shiny::tags$b("First column must contain the Sample IDs"),
-                      " — these will be matched to expression matrix column names"
+                      " - these will be matched to expression matrix column names"
                     ),
                     shiny::tags$li("Remaining columns: any sample-level variables (group, condition, batch, …)")
                   ),
@@ -340,7 +344,8 @@ ui <- bslib::page_navbar(
               # Show GEO SampleID column selector when using GEO as metadata source
               shiny::conditionalPanel(
                 "input.meta_source == 'geo'",
-                shiny::uiOutput("geo_sampleid_selector")
+                shiny::uiOutput("geo_sampleid_selector"),
+                shiny::uiOutput("geo_meta_manage_ui")
               )
             ),
             
@@ -421,8 +426,8 @@ ui <- bslib::page_navbar(
         bslib::card(
           bslib::card_header("Data Preview"),
 
-          # Persistent mismatch banner — stays until sample counts/names align
-          shiny::uiOutput("sample_mismatch_banner"),
+          # Proceed / mismatch banner — always visible at the top of the card
+          shiny::uiOutput("data_proceed_btn"),
 
           shiny::div(style = "overflow-y: auto; max-height: 900px;",  # <-- scrollable container
                      shiny::uiOutput("summary_ui"),
@@ -437,11 +442,7 @@ ui <- bslib::page_navbar(
                        style = "margin-bottom: 10px; font-style: italic; color: #555;",
                        "💡 Tip: Click on a gene set row to see its genes and expected direction of regulation change."
                      ),
-                     DT::DTOutput("geneset_summary"),
-
-                     # ── Processing log ────────────────────────────────────
-                     shiny::hr(),
-                     shiny::uiOutput("data_log_ui")
+                     DT::DTOutput("geneset_summary")
           )
         )
         
@@ -532,6 +533,40 @@ ui <- tagList(
       #global-log-entries .glog-entry:first-child { color: #EBB43E; font-weight: 600; }
       /* Download button in log bar */
       #global-log-entries .btn { color: #fde8c8; border-color: #EBB43E; }
+
+      /* ── Locked nav tabs ─────────────────────────────── */
+      .nav-tab-locked {
+        color: #adb5bd !important;
+        pointer-events: none !important;
+        cursor: not-allowed !important;
+        opacity: 0.5 !important;
+        position: relative;
+      }
+      /* Wrapper to re-enable pointer-events so tooltip fires */
+      .nav-tab-locked-wrap {
+        pointer-events: auto !important;
+        cursor: not-allowed !important;
+        display: inline-block;
+        position: relative;
+      }
+      .nav-tab-locked-wrap::after {
+        content: attr(data-lock-tip);
+        position: absolute;
+        bottom: calc(100% + 6px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(30,30,30,0.88);
+        color: #fff;
+        font-size: 0.78em;
+        white-space: nowrap;
+        padding: 4px 8px;
+        border-radius: 4px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.15s;
+        z-index: 9999;
+      }
+      .nav-tab-locked-wrap:hover::after { opacity: 1; }
     "))
   ),
   ui,
@@ -564,6 +599,50 @@ ui <- tagList(
         arrow.textContent = '▲';
       }
     }
+
+    /* ── Nav tab locking ─────────────────────────────── */
+    // Find a navbar <a> by its visible text label (trim & case-insensitive)
+    function _findNavLink(label) {
+      var links = document.querySelectorAll('.navbar-nav .nav-link, .nav-tabs .nav-link');
+      for (var i = 0; i < links.length; i++) {
+        if (links[i].textContent.trim().toLowerCase() === label.trim().toLowerCase())
+          return links[i];
+      }
+      return null;
+    }
+
+    Shiny.addCustomMessageHandler('lockNavTabs', function(msg) {
+      // msg: { tabs: ['Preprocessing','Gene Sets',...], locked: true/false, tip: '...' }
+      var tabs = msg.tabs || [];
+      var locked = msg.locked !== false;
+      var tip = msg.tip || 'Load and validate data first';
+      tabs.forEach(function(label) {
+        var a = _findNavLink(label);
+        if (!a) return;
+        if (locked) {
+          a.classList.add('nav-tab-locked');
+          // Wrap in tooltip div if not already
+          var parent = a.parentNode;
+          if (!parent.classList.contains('nav-tab-locked-wrap')) {
+            var wrap = document.createElement('span');
+            wrap.className = 'nav-tab-locked-wrap';
+            wrap.setAttribute('data-lock-tip', tip);
+            parent.insertBefore(wrap, a);
+            wrap.appendChild(a);
+          } else {
+            parent.setAttribute('data-lock-tip', tip);
+          }
+        } else {
+          a.classList.remove('nav-tab-locked');
+          // Unwrap tooltip span if present
+          var wrap = a.closest('.nav-tab-locked-wrap');
+          if (wrap) {
+            wrap.parentNode.insertBefore(a, wrap);
+            wrap.parentNode.removeChild(wrap);
+          }
+        }
+      });
+    });
   "))
 )
 
@@ -605,6 +684,69 @@ server <- function(input, output, session) {
     expr_quality_warn(NULL)   # clear any earlier quality warning
   }, ignoreInit = TRUE)
 
+  ###### NAV TAB LOCKING ######
+
+  # Tabs that require valid, matched data to be usable.
+  .analysis_tabs <- c("Preprocessing", "Gene Sets", "Benchmarking Mode", "Discovery Mode")
+
+  # Mirror exactly the sample_mismatch_banner logic.
+  # Tabs are locked ONLY when both expr and meta are loaded AND sample names/counts mismatch.
+  # If either is missing, tabs are unlocked (user is still configuring — don't block navigation).
+  .tab_lock_state <- function(expr, meta) {
+    # No expression data → always lock (includes failed / pending downloads)
+    if (is.null(expr))
+      return(list(locked = TRUE,
+                  tip = "No expression data loaded. Import data in the Data tab first."))
+    if (!is.data.frame(expr) || ncol(expr) == 0L)
+      return(list(locked = TRUE,
+                  tip = "Expression data is empty. Import data in the Data tab first."))
+    # No metadata → lock
+    if (is.null(meta) || !is.data.frame(meta) || nrow(meta) == 0L)
+      return(list(locked = TRUE,
+                  tip = "No metadata loaded. Import metadata in the Data tab first."))
+
+    n_expr <- ncol(expr)
+    n_meta <- nrow(meta)
+    e_nms  <- colnames(expr)
+
+    count_ok <- (n_expr == n_meta)
+
+    # Same multi-candidate check as sample_mismatch_banner:
+    # try first column, SampleID column, and rownames as possible ID vectors.
+    names_ok <- FALSE
+    if (count_ok) {
+      candidates <- unique(list(
+        as.character(meta[[ colnames(meta)[1] ]]),
+        if (!is.null(meta[["SampleID"]])) as.character(meta[["SampleID"]]) else NULL,
+        rownames(meta)
+      ))
+      candidates <- Filter(Negate(is.null), candidates)
+      names_ok <- any(vapply(candidates, function(ids) setequal(e_nms, ids), logical(1)))
+    }
+
+    if (count_ok && names_ok)
+      return(list(locked = FALSE, tip = NULL))
+
+    tip <- if (!count_ok)
+      paste0("Sample mismatch: ", n_expr, " expression samples vs ", n_meta,
+             " metadata rows. Fix in the Data tab first.")
+    else
+      paste0("Sample names do not match between expression data and metadata. Fix in the Data tab first.")
+
+    list(locked = TRUE, tip = tip)
+  }
+
+  shiny::observe({
+    expr <- expr_data()
+    meta <- meta_data()
+    state <- .tab_lock_state(expr, meta)
+    session$sendCustomMessage("lockNavTabs", list(
+      tabs   = .analysis_tabs,
+      locked = state$locked,
+      tip    = if (!is.null(state$tip)) state$tip else ""
+    ))
+  })
+
 
   ###### HELPER FUNCTIONS ######
 
@@ -633,7 +775,7 @@ server <- function(input, output, session) {
 
   # Append a timestamped entry to the processing log.
   # isolate() prevents the calling observer from taking a reactive dependency
-  # on data_log — without it, writing data_log() re-invalidates the observer
+  # on data_log - without it, writing data_log() re-invalidates the observer
   # that called log_step(), causing an infinite reactive loop.
   log_step <- function(msg) {
     ts <- format(Sys.time(), "[%Y-%m-%d %H:%M:%S]")
@@ -646,12 +788,19 @@ server <- function(input, output, session) {
     shiny::showModal(shiny::modalDialog(
       title = shiny::tags$span(
         shiny::icon("circle-exclamation", style = "color:#dc3545;margin-right:6px;"),
-        "Download Failed"
+        "Example Data Download Failed"
       ),
       shiny::tags$div(
-        shiny::tags$p("Could not download the file from Zenodo."),
+        shiny::tags$p("Could not download the example data from Zenodo."),
         shiny::tags$p(style = "font-size:0.84em;color:#888;font-family:monospace;word-break:break-all;", msg),
-        shiny::tags$p("Check your internet connection and click “Try Again”, or try a different data source.")
+        shiny::tags$p("Check your internet connection and click ", shiny::tags$strong("Try Again"), "."),
+        shiny::tags$p(
+          style = "background:#f0fdf4;border:1px solid #bbf7d0;border-radius:5px;padding:8px 12px;font-size:0.88em;color:#166534;margin-top:8px;",
+          shiny::icon("circle-check", style="margin-right:4px;"),
+          shiny::tags$strong("Note:"), " Uploading your own files and importing from GEO ",
+          "still work normally — only the example data requires an internet connection. ",
+          "Click ", shiny::tags$strong("Close"), " to proceed with another data source."
+        )
       ),
       footer = shiny::tagList(
         shiny::actionButton(
@@ -659,7 +808,7 @@ server <- function(input, output, session) {
           shiny::tagList(shiny::icon("rotate-right"), " Try Again"),
           class = "btn-primary"
         ),
-        shiny::modalButton("Cancel")
+        shiny::modalButton("Close")
       ),
       easyClose = TRUE
     ))
@@ -843,7 +992,7 @@ server <- function(input, output, session) {
 
   ###### DATA ######
 
-  # ---- Zenodo example download helpers (closures — capture server-scope reactives) ----
+  # ---- Zenodo example download helpers (closures - capture server-scope reactives) ----
   # Each function manages its own modals: shows spinner, wraps download in tryCatch,
   # removes spinner on success, replaces it with an error modal (with retry button) on failure.
   # Called from both the main radio-button observer AND the retry observeEvent so the
@@ -853,21 +1002,16 @@ server <- function(input, output, session) {
     show_loading_modal("Loading example data…",
                        "Downloading unprocessed counts from Zenodo.")
     dl_ok <- tryCatch({
-      shiny::withProgress(message = "Zenodo", value = 0, {
-        shiny::incProgress(0.05, detail = "Connecting…")
-        tmp <- tempfile(fileext = ".rds")
-        shiny::incProgress(0.10, detail = "Downloading…")
-        utils::download.file(
-          url      = "https://zenodo.org/records/18714122/files/counts.rds?download=1",
-          destfile = tmp, mode = "wb", quiet = TRUE
-        )
-        shiny::incProgress(0.70, detail = "Parsing…")
-        e <- readRDS(tmp)
-        expr_data(e)
-        log_step(paste0("Expression data loaded: example (unprocessed) — ",
-                        nrow(e), " genes × ", ncol(e), " samples."))
-        shiny::incProgress(0.15, detail = "Done.")
-      })
+      tmp <- tempfile(fileext = ".rds")
+      status <- utils::download.file(
+        url      = "https://zenodo.org/records/18714122/files/counts.rds?download=1",
+        destfile = tmp, mode = "wb", quiet = TRUE
+      )
+      if (status != 0L) stop("Download failed (status ", status, "). Check your internet connection.")
+      e <- readRDS(tmp)
+      expr_data(e)
+      log_step(paste0("Expression data loaded: example (unprocessed) - ",
+                      nrow(e), " genes × ", ncol(e), " samples."))
       TRUE
     }, error = function(err) {
       shiny::removeModal()
@@ -881,21 +1025,16 @@ server <- function(input, output, session) {
     show_loading_modal("Loading example data…",
                        "Downloading processed counts from Zenodo.")
     dl_ok <- tryCatch({
-      shiny::withProgress(message = "Zenodo", value = 0, {
-        shiny::incProgress(0.05, detail = "Connecting…")
-        tmp <- tempfile(fileext = ".rds")
-        shiny::incProgress(0.10, detail = "Downloading…")
-        utils::download.file(
-          url      = "https://zenodo.org/records/18714122/files/corrcounts.rds?download=1",
-          destfile = tmp, mode = "wb", quiet = TRUE
-        )
-        shiny::incProgress(0.70, detail = "Parsing…")
-        e <- readRDS(tmp)
-        expr_data(e)
-        log_step(paste0("Expression data loaded: example (processed) — ",
-                        nrow(e), " genes × ", ncol(e), " samples."))
-        shiny::incProgress(0.15, detail = "Done.")
-      })
+      tmp <- tempfile(fileext = ".rds")
+      status <- utils::download.file(
+        url      = "https://zenodo.org/records/18714122/files/corrcounts.rds?download=1",
+        destfile = tmp, mode = "wb", quiet = TRUE
+      )
+      if (status != 0L) stop("Download failed (status ", status, "). Check your internet connection.")
+      e <- readRDS(tmp)
+      expr_data(e)
+      log_step(paste0("Expression data loaded: example (processed) - ",
+                      nrow(e), " genes × ", ncol(e), " samples."))
       TRUE
     }, error = function(err) {
       shiny::removeModal()
@@ -909,22 +1048,17 @@ server <- function(input, output, session) {
     show_loading_modal("Loading example metadata…",
                        "Downloading from Zenodo.")
     dl_ok <- tryCatch({
-      shiny::withProgress(message = "Zenodo", value = 0, {
-        shiny::incProgress(0.05, detail = "Connecting…")
-        tmp <- tempfile(fileext = ".rds")
-        shiny::incProgress(0.10, detail = "Downloading…")
-        utils::download.file(
-          url      = "https://zenodo.org/records/18714122/files/metadata.rds?download=1",
-          destfile = tmp, mode = "wb", quiet = TRUE
-        )
-        shiny::incProgress(0.70, detail = "Parsing…")
-        m <- readRDS(tmp)
-        m <- align_meta_to_expr(m, expr_data())
-        meta_data(m)
-        log_step(paste0("Metadata loaded: example — ",
-                        nrow(m), " samples × ", ncol(m), " variables."))
-        shiny::incProgress(0.15, detail = "Done.")
-      })
+      tmp <- tempfile(fileext = ".rds")
+      status <- utils::download.file(
+        url      = "https://zenodo.org/records/18714122/files/metadata.rds?download=1",
+        destfile = tmp, mode = "wb", quiet = TRUE
+      )
+      if (status != 0L) stop("Download failed (status ", status, "). Check your internet connection.")
+      m <- readRDS(tmp)
+      m <- align_meta_to_expr(m, expr_data())
+      meta_data(m)
+      log_step(paste0("Metadata loaded: example - ",
+                      nrow(m), " samples × ", ncol(m), " variables."))
       TRUE
     }, error = function(err) {
       shiny::removeModal()
@@ -938,22 +1072,17 @@ server <- function(input, output, session) {
     show_loading_modal("Loading example gene sets…",
                        "Downloading from Zenodo.")
     dl_ok <- tryCatch({
-      shiny::withProgress(message = "Zenodo", value = 0, {
-        shiny::incProgress(0.05, detail = "Connecting…")
-        tmp <- tempfile(fileext = ".rds")
-        shiny::incProgress(0.10, detail = "Downloading…")
-        utils::download.file(
-          url      = "https://zenodo.org/records/18714122/files/SenescenceGeneSets.rds?download=1",
-          destfile = tmp, mode = "wb", quiet = TRUE
-        )
-        shiny::incProgress(0.70, detail = "Parsing…")
-        gs <- readRDS(tmp)
-        gene_sets(gs)
-        log_step(paste0("Gene sets loaded: example — ", length(gs), " set(s), ",
-                        sum(sapply(gs, function(x) if (is.data.frame(x)) nrow(x) else length(x))),
-                        " genes total."))
-        shiny::incProgress(0.15, detail = "Done.")
-      })
+      tmp <- tempfile(fileext = ".rds")
+      status <- utils::download.file(
+        url      = "https://zenodo.org/records/18714122/files/SenescenceGeneSets.rds?download=1",
+        destfile = tmp, mode = "wb", quiet = TRUE
+      )
+      if (status != 0L) stop("Download failed (status ", status, "). Check your internet connection.")
+      gs <- readRDS(tmp)
+      gene_sets(gs)
+      log_step(paste0("Gene sets loaded: example - ", length(gs), " set(s), ",
+                      sum(sapply(gs, function(x) if (is.data.frame(x)) nrow(x) else length(x))),
+                      " genes total."))
       TRUE
     }, error = function(err) {
       shiny::removeModal()
@@ -976,12 +1105,16 @@ server <- function(input, output, session) {
     log_step(paste0("Expression source changed to: ", src_label, "."))
     if (input$expr_source == "example_raw")  .dl_expr_raw()
     if (input$expr_source == "example_proc") .dl_expr_proc()
+    # Auto-switch metadata to the example set when example expression data is selected
+    if (input$expr_source %in% c("example_raw", "example_proc")) {
+      shiny::updateRadioButtons(session, "meta_source", selected = "example")
+    }
   })
 
-  # "Try Again" retry handlers — call the same helper function directly,
+  # "Try Again" retry handlers - call the same helper function directly,
   # no need to toggle the radio button (avoids unreliable updateRadioButtons tricks).
-  observeEvent(input$retry_expr_raw,  { shiny::removeModal(); .dl_expr_raw()  }, ignoreInit = TRUE)
-  observeEvent(input$retry_expr_proc, { shiny::removeModal(); .dl_expr_proc() }, ignoreInit = TRUE)
+  observeEvent(input$retry_expr_raw,  { .dl_expr_raw()  }, ignoreInit = TRUE)
+  observeEvent(input$retry_expr_proc, { .dl_expr_proc() }, ignoreInit = TRUE)
   
   ###### > User Input Data ######
   
@@ -1009,10 +1142,10 @@ server <- function(input, output, session) {
     has_non_num  <- !all(sapply(result, is.numeric))
     warn_msg <- NULL
     if (has_non_num) {
-      warn_msg <- "Some columns are non-numeric — this file may not be an expression matrix. Check that genes are rows and samples are columns."
+      warn_msg <- "Some columns are non-numeric - this file may not be an expression matrix. Check that genes are rows and samples are columns."
     } else if (na_frac > 0.20) {
       warn_msg <- sprintf(
-        "%.0f%% of values are missing after parsing — the file may not be a numeric expression matrix, or the separator / decimal character was misdetected.",
+        "%.0f%% of values are missing after parsing - the file may not be a numeric expression matrix, or the separator / decimal character was misdetected.",
         na_frac * 100
       )
     }
@@ -1020,11 +1153,11 @@ server <- function(input, output, session) {
 
     expr_data(result)
     module_meta_active(FALSE)
-    log_step(paste0("Expression data loaded: uploaded file '", input$expr_file$name, "' — ",
+    log_step(paste0("Expression data loaded: uploaded file '", input$expr_file$name, "' - ",
                     nrow(result), " genes × ", ncol(result), " samples."))
   })
   
-  ###### > GEO data — delegated to geoImportModule ######
+  ###### > GEO data - delegated to geoImportModule ######
 
   # ── Instantiate the module ─────────────────────────────────────────────────
   geo_module <- geoImportServer("geo_import", log_fn = log_step)
@@ -1039,7 +1172,7 @@ server <- function(input, output, session) {
     if (!is.null(mod_expr)) {
       e <- as.data.frame(mod_expr)
       expr_data(e)
-      log_step(paste0("Expression data loaded: GEO import — ",
+      log_step(paste0("Expression data loaded: GEO import - ",
                       nrow(e), " genes × ", ncol(e), " samples."))
     }
 
@@ -1048,7 +1181,7 @@ server <- function(input, output, session) {
       module_meta_active(TRUE)
       full_geo_meta(mod_meta)
       meta_data(mod_meta)
-      log_step(paste0("Metadata loaded: GEO — ",
+      log_step(paste0("Metadata loaded: GEO - ",
                       nrow(mod_meta), " samples × ", ncol(mod_meta), " variables."))
       # Automatically switch metadata source to geo so column selectors appear
       updateRadioButtons(session, "meta_source", selected = "geo")
@@ -1195,7 +1328,7 @@ server <- function(input, output, session) {
   #   })
   # }
   
-  # --- Extraction helpers for archives (legacy — superseded by geo_import_module) ---
+  # --- Extraction helpers for archives (legacy - superseded by geo_import_module) ---
   extract_files <- function(file_path, depth = 0, max_depth = 5) {
     
     if (depth > max_depth) return(character(0))
@@ -1500,7 +1633,7 @@ server <- function(input, output, session) {
   
  
   # NOTE: GEO fetch/parse/rescue logic has been replaced by geoImportServer("geo_import").
-  # The block below is DEAD CODE — kept only for reference. It is never called.
+  # The block below is DEAD CODE - kept only for reference. It is never called.
   .LEGACY_observeEvent_geo_fetch <- function() {
   observeEvent(input$geo_fetch, {
     req(input$geo_accession)
@@ -1642,7 +1775,7 @@ server <- function(input, output, session) {
       selectInput(
         "geo_selected_supp",
         "Select a supplementary file containing expression data:",
-        choices = c("— Please choose a file —" = "",
+        choices = c("- Please choose a file -" = "",
                     setNames(files, basename(files))),
         selected = ""
       ),
@@ -1701,7 +1834,38 @@ server <- function(input, output, session) {
         
         if (is.null(expr)) return()
         expr_data(expr)
-        showNotification("Expression data loaded from supplementary file.", type = "default")
+        # Auto-align metadata to the supplementary file's sample columns
+        meta <- meta_data()
+        if (!is.null(meta) && nrow(meta) > 0L) {
+          expr_cols <- colnames(expr)
+          id_col    <- if ("SampleID" %in% colnames(meta)) "SampleID" else colnames(meta)[1]
+          meta_ids  <- as.character(meta[[id_col]])
+          common    <- intersect(expr_cols, meta_ids)
+          if (length(common) == length(expr_cols)) {
+            # Perfect match (possibly reordered) - just reorder
+            meta_data(align_meta_to_expr(meta, expr))
+            showNotification("Expression data loaded from supplementary file.", type = "default")
+          } else if (length(common) > 0L) {
+            # Partial match - restrict to common samples automatically
+            idx       <- match(common, meta_ids)
+            meta_sub  <- meta[idx, , drop = FALSE]
+            # Also restrict expression to matched samples
+            expr_data(expr[, common, drop = FALSE])
+            meta_data(align_meta_to_expr(meta_sub, expr[, common, drop = FALSE]))
+            showNotification(
+              shiny::HTML(paste0("Expression data loaded. ",
+                "<b>", length(common), "/", ncol(expr), " samples</b> matched to metadata - ",
+                "restricted automatically. Check the Data tab if needed.")),
+              type = "warning", duration = 10)
+          } else {
+            showNotification(
+              shiny::HTML(paste0("Expression data loaded but <b>no sample names matched</b> metadata. ",
+                "Use the sample management controls in the sidebar to align them.")),
+              type = "warning", duration = 12)
+          }
+        } else {
+          showNotification("Expression data loaded from supplementary file.", type = "default")
+        }
         
       }, error = function(e) {
         expr_data(NULL)
@@ -1854,7 +2018,7 @@ server <- function(input, output, session) {
     if (input$meta_source == "example") .dl_meta_example()
   })
 
-  observeEvent(input$retry_meta_example, { shiny::removeModal(); .dl_meta_example() }, ignoreInit = TRUE)
+  observeEvent(input$retry_meta_example, { .dl_meta_example() }, ignoreInit = TRUE)
   
   
   
@@ -1874,7 +2038,7 @@ server <- function(input, output, session) {
       n_match <- length(intersect(ids, colnames(expr)))
       paste0(", ", n_match, "/", ncol(expr), " samples matched to expression columns")
     } else ""
-    log_step(paste0("Metadata loaded: '", input$meta_file$name, "' — ",
+    log_step(paste0("Metadata loaded: '", input$meta_file$name, "' - ",
                     nrow(raw), " samples × ", ncol(raw), " variables", match_info, "."))
   })
   
@@ -1889,7 +2053,7 @@ server <- function(input, output, session) {
       
       # Determine default SampleID column.
       # When the geo_import_module provided the data it already built a "SampleID"
-      # column — prefer that unconditionally. For the legacy pData path, fall back
+      # column - prefer that unconditionally. For the legacy pData path, fall back
       # to geo_accession (the canonical GEO sample identifier).
       default_sampleid <- if (isTRUE(module_meta_active()) && "SampleID" %in% colnames(df)) {
         "SampleID"
@@ -1937,65 +2101,60 @@ server <- function(input, output, session) {
     }
   })
   
-  # ── Persistent sample mismatch banner ─────────────────────────────────────
-  output$sample_mismatch_banner <- shiny::renderUI({
-    expr <- expr_data()
-    meta <- meta_data()
-    if (is.null(expr) || is.null(meta)) return(NULL)
-
-    n_expr <- ncol(expr)
-    n_meta <- nrow(meta)
-    e_nms  <- colnames(expr)
-
-    count_ok <- (n_expr == n_meta)
-
-    # Primary check: first column of metadata vs expression column names.
-    # Also try rownames and any "SampleID" column as fallbacks so we never
-    # produce a false positive when data is internally consistent.
-    names_ok <- FALSE
-    if (count_ok) {
-      candidates <- unique(list(
-        as.character(meta[[ colnames(meta)[1] ]]),          # first column  ← primary
-        if (!is.null(meta[["SampleID"]])) as.character(meta[["SampleID"]]) else NULL,
-        rownames(meta)
-      ))
-      candidates <- Filter(Negate(is.null), candidates)
-      names_ok <- any(vapply(candidates, function(ids) setequal(e_nms, ids), logical(1)))
-    }
-
-    if (count_ok && names_ok) return(NULL)
-
-    # Build the best-guess ID vector for the message (prefer first column)
-    m_ids <- as.character(meta[[ colnames(meta)[1] ]])
-
-    msg <- if (!count_ok) {
-      paste0(n_expr, " expression sample", if (n_expr != 1) "s" else "",
-             " vs ", n_meta, " metadata row", if (n_meta != 1) "s" else "", ".")
-    } else {
-      n_missing <- length(setdiff(e_nms, m_ids))
-      paste0(n_expr, " samples in both, but names differ — ",
-             n_missing, " expression column", if (n_missing != 1) "s" else "",
-             " not found in metadata.")
-    }
-
-    shiny::tags$div(
-      style = paste0(
-        "background:#fff3cd;border:1px solid #ffc107;border-left:4px solid #ffc107;",
-        "border-radius:4px;padding:9px 14px;margin:8px 8px 0 8px;"
-      ),
-      shiny::tags$div(
-        style = "display:flex;align-items:center;gap:7px;",
-        shiny::tags$span(style = "font-size:1em;", "⚠️"),
-        shiny::tags$strong(style = "font-size:0.9em;", "Sample mismatch — "),
-        shiny::tags$span(style = "font-size:0.87em;", msg)
-      ),
-      shiny::tags$div(
-        style = "font-size:0.8em;color:#856404;margin-top:3px;",
-        "Use the sample management controls in the sidebar to fix this before running analysis."
+  # ── GEO metadata mismatch management UI ───────────────────────────────────
+  output$geo_meta_manage_ui <- shiny::renderUI({
+    shiny::req(input$meta_source == "geo")
+    meta <- meta_data(); expr <- expr_data()
+    if (is.null(meta) || is.null(expr)) return(NULL)
+    id_col  <- if ("SampleID" %in% colnames(meta)) "SampleID" else colnames(meta)[1]
+    meta_ids <- as.character(meta[[id_col]])
+    e_nms    <- colnames(expr)
+    common   <- intersect(e_nms, meta_ids)
+    if (setequal(e_nms, meta_ids)) return(NULL)  # already matched - nothing to show
+    n_common <- length(common)
+    n_expr   <- length(e_nms)
+    shiny::tagList(
+      shiny::hr(style="margin:8px 0;"),
+      shiny::div(
+        style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:9px 12px;",
+        shiny::tags$strong(style="font-size:0.88em;",
+          paste0("⚠️ ", n_common, "/", n_expr, " samples matched")),
+        shiny::tags$p(style="font-size:0.83em;margin:4px 0 8px;",
+          paste0("Expression columns don't fully match the SampleID column. ",
+                 if (n_common > 0)
+                   paste0(n_common, " common samples found.")
+                 else "No overlap found.")),
+        if (n_common > 0 && n_common < n_expr)
+          shiny::actionButton("geo_restrict_common", paste0("Use ", n_common, " matched samples"),
+            class="btn-sm btn-warning"),
+        shiny::tags$p(style="font-size:0.8em;color:#856404;margin:6px 0 0;",
+          "Or change the SampleID column above to one that matches expression column names.")
       )
     )
   })
 
+  shiny::observeEvent(input$geo_restrict_common, {
+    meta <- meta_data(); expr <- expr_data()
+    shiny::req(meta, expr)
+    id_col   <- if ("SampleID" %in% colnames(meta)) "SampleID" else colnames(meta)[1]
+    meta_ids <- as.character(meta[[id_col]])
+    e_nms    <- colnames(expr)
+    common   <- intersect(e_nms, meta_ids)
+    if (length(common) == 0L) {
+      shiny::showNotification("No common samples found.", type="error"); return()
+    }
+    idx  <- match(common, meta_ids)
+    meta_sub <- meta[idx, , drop=FALSE]
+    expr_sub <- expr[, common, drop=FALSE]
+    meta_data(align_meta_to_expr(meta_sub, expr_sub))
+    expr_data(expr_sub)
+    log_step(paste0("GEO metadata restricted to ", length(common), " matched samples."))
+    shiny::showNotification(
+      paste0("Restricted to ", length(common), " matched samples."),
+      type="default", duration=5)
+  })
+
+  # ── Persistent sample mismatch banner ─────────────────────────────────────
   # ── Upload: expression sample management ───────────────────────────────────
   output$upload_expr_manage_ui <- shiny::renderUI({
     req(input$expr_source == "upload", expr_data())
@@ -2037,7 +2196,7 @@ server <- function(input, output, session) {
         log_step(paste0("Expression samples removed: ", removed,
                         " removed, ", length(keep), " kept."))
         shiny::showNotification(
-          paste0(removed, " expression sample(s) removed — ", length(keep), " kept."),
+          paste0(removed, " expression sample(s) removed - ", length(keep), " kept."),
           type = "warning", duration = 5
         )
       }
@@ -2170,7 +2329,7 @@ server <- function(input, output, session) {
         )
       )
     } else {
-      # Fully matched — still show simple remove picker
+      # Fully matched - still show simple remove picker
       shiny::tagList(
         shiny::tags$strong(style = "font-size:0.87em;", "Remove samples"),
         shinyWidgets::pickerInput(
@@ -2216,10 +2375,10 @@ server <- function(input, output, session) {
     removed <- nrow(raw) - nrow(result)
     log_step(paste0("Metadata updated: SampleID column = '", id_col, "'",
                     if (removed > 0L) paste0(", ", removed, " sample(s) removed") else "",
-                    " — ", nrow(result), " samples kept."))
+                    " - ", nrow(result), " samples kept."))
     if (removed > 0L)
       shiny::showNotification(
-        paste0(removed, " metadata sample(s) removed — ", nrow(result), " kept."),
+        paste0(removed, " metadata sample(s) removed - ", nrow(result), " kept."),
         type = "warning", duration = 5
       )
   })
@@ -2253,7 +2412,7 @@ server <- function(input, output, session) {
     meta_data(align_meta_to_expr(result, expr_data()))
 
     matched <- intersect(new_ids, colnames(expr_data()))
-    log_step(paste0("Metadata Sample IDs renamed — ", length(matched), "/",
+    log_step(paste0("Metadata Sample IDs renamed - ", length(matched), "/",
                     ncol(expr_data()), " now matched to expression columns."))
     shiny::showNotification(
       paste0(length(matched), "/", ncol(expr_data()),
@@ -2307,12 +2466,12 @@ server <- function(input, output, session) {
     meta_data(align_meta_to_expr(result, expr_data()))
 
     dropped <- nrow(raw) - nrow(result)
-    log_step(paste0("Metadata matched by keyword in column '", match_col, "' — ",
+    log_step(paste0("Metadata matched by keyword in column '", match_col, "' - ",
                     n_matched, "/", ncol(expr_data()), " samples matched",
                     if (dropped > 0) paste0(", ", dropped, " unmatched rows dropped") else "", "."))
     shiny::showNotification(
       paste0(n_matched, "/", ncol(expr_data()), " samples matched via '", match_col, "'",
-             if (dropped > 0) paste0(" — ", dropped, " unmatched rows removed") else "", "."),
+             if (dropped > 0) paste0(" - ", dropped, " unmatched rows removed") else "", "."),
       type = if (n_matched == ncol(expr_data())) "default" else "warning",
       duration = 7
     )
@@ -2349,13 +2508,90 @@ server <- function(input, output, session) {
     )
   })
 
-  # ── Global log bar (fixed bottom — visible across all tabs) ───────────────
+  # ── Proceed / mismatch banner (shown at the TOP of the Data card) ────────────
+  # Combines: persistent mismatch warning (same logic as sample_mismatch_banner)
+  # with the "proceed to preprocessing" button when everything is OK.
+  output$data_proceed_btn <- shiny::renderUI({
+    expr <- tryCatch(expr_data(), error = function(x) NULL)
+    meta <- tryCatch(meta_data(), error = function(x) NULL)
+
+    # Nothing loaded yet — show nothing
+    if (is.null(expr)) return(NULL)
+
+    n_g <- nrow(expr); n_s <- ncol(expr)
+
+    # Reuse the same mismatch check as .tab_lock_state / sample_mismatch_banner
+    lock <- .tab_lock_state(expr, meta)
+
+    if (lock$locked) {
+      # ── Mismatch state: show the yellow warning banner ──────────────────────
+      n_expr <- ncol(expr)
+      n_meta <- if (!is.null(meta)) nrow(meta) else 0L
+      e_nms  <- colnames(expr)
+      msg <- if (!is.null(meta) && n_expr != n_meta) {
+        paste0(n_expr, " expression sample", if (n_expr != 1) "s" else "",
+               " vs ", n_meta, " metadata row", if (n_meta != 1) "s" else "", ".")
+      } else if (!is.null(meta)) {
+        m_ids <- as.character(meta[[ colnames(meta)[1] ]])
+        n_miss <- length(setdiff(e_nms, m_ids))
+        paste0(n_expr, " samples in both, but names differ — ",
+               n_miss, " expression column", if (n_miss != 1) "s" else "",
+               " not found in metadata.")
+      } else {
+        "Metadata not loaded."
+      }
+      shiny::tags$div(
+        style = paste0(
+          "background:#fff3cd;border:1px solid #ffc107;border-left:4px solid #ffc107;",
+          "border-radius:4px;padding:9px 14px;margin:8px 8px 0 8px;"
+        ),
+        shiny::tags$div(
+          style = "display:flex;align-items:center;gap:7px;",
+          shiny::tags$span(style = "font-size:1em;", "⚠️"),
+          shiny::tags$strong(style = "font-size:0.9em;", "Sample mismatch — "),
+          shiny::tags$span(style = "font-size:0.87em;", msg)
+        ),
+        shiny::tags$div(
+          style = "font-size:0.8em;color:#856404;margin-top:3px;",
+          "Use the sample management controls in the sidebar to fix this before proceeding."
+        )
+      )
+    } else if (!is.null(expr)) {
+      # ── All good: show the green proceed banner ─────────────────────────────
+      shiny::div(
+        style = paste0(
+          "background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #22c55e;",
+          "border-radius:4px;padding:9px 14px;margin:8px 8px 0 8px;",
+          "display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;"
+        ),
+        shiny::tags$div(
+          shiny::tags$span(style = "font-weight:600;color:#166534;font-size:0.9em;",
+            paste0("✅ Data ready: ",
+                   format(n_g, big.mark = ","), " genes × ", n_s, " samples")),
+          shiny::tags$div(style = "font-size:0.82em;color:#4b7a5e;margin-top:1px;",
+            "Proceed to Preprocessing to filter, normalise, and review your data.")
+        ),
+        shiny::tags$button(
+          onclick = paste0(
+            "var lnk=Array.from(document.querySelectorAll('.nav-link'))",
+            ".find(function(el){return el.textContent.trim()==='Preprocessing';});",
+            "if(lnk&&!lnk.classList.contains('nav-tab-locked'))lnk.click();"
+          ),
+          class = "btn btn-success btn-sm",
+          style = "white-space:nowrap;",
+          shiny::icon("arrow-right"), " Proceed to Preprocessing"
+        )
+      )
+    }
+  })
+
+  # ── Global log bar (fixed bottom - visible across all tabs) ───────────────
   output$global_log_header <- shiny::renderUI({
     n <- length(data_log())
     shiny::tags$span(
       style = "color:#e2e8f0; font-size:0.88em;",
       if (n == 0L) "📋 Processing log (no entries yet)"
-      else paste0("📋 Processing log — ", n,
+      else paste0("📋 Processing log - ", n,
                    if (n == 1L) " entry" else " entries",
                    " (click to expand)")
     )
@@ -2399,7 +2635,7 @@ server <- function(input, output, session) {
     if (input$geneset_source == "example") .dl_gs_example()
   })
 
-  observeEvent(input$retry_gs_example, { shiny::removeModal(); .dl_gs_example() }, ignoreInit = TRUE)
+  observeEvent(input$retry_gs_example, { .dl_gs_example() }, ignoreInit = TRUE)
 
 
 
@@ -2420,7 +2656,7 @@ server <- function(input, output, session) {
     }
     gene_sets(compiled)
     log_step(paste0("Gene sets loaded: ",
-                    nrow(input$geneset_files), " file(s) uploaded — ",
+                    nrow(input$geneset_files), " file(s) uploaded - ",
                     length(compiled), " set(s) parsed."))
   })
   
@@ -2461,7 +2697,7 @@ server <- function(input, output, session) {
     if (is.null(expr) && is.null(meta) && is.null(gs)) {
       return(shiny::tags$p(
         style = "color:#9ca3af;font-size:0.88em;padding:6px 0;",
-        "No data loaded yet — use the sidebar to load expression data, metadata, and gene sets."
+        "No data loaded yet - use the sidebar to load expression data, metadata, and gene sets."
       ))
     }
 
@@ -2537,7 +2773,7 @@ server <- function(input, output, session) {
       shiny::tags$div(
         style = "display:flex;align-items:center;gap:7px;",
         shiny::tags$span(style = "font-size:1em;", "⚠️"),
-        shiny::tags$strong(style = "font-size:0.9em;", "Suspicious data — "),
+        shiny::tags$strong(style = "font-size:0.9em;", "Suspicious data - "),
         shiny::tags$span(style = "font-size:0.87em;", msg)
       )
     )

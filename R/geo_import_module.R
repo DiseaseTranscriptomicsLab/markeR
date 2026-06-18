@@ -42,7 +42,8 @@
 #' @importFrom readxl read_xls read_xlsx excel_sheets
 #' @importFrom data.table fread
 #' @importFrom R.utils gunzip
-#' @importFrom stringdist stringdistmatrix
+#' @importFrom shinyWidgets pickerInput pickerOptions
+# Note: stringdist and tximport are optional (Suggests); accessed via :: with requireNamespace guards
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CONSTANTS
@@ -1292,8 +1293,12 @@ geoImportServer <- function(id, log_fn = NULL) {
         e <- rv$expr; m <- rv$meta
         if (is.null(e) || is.null(m)) return(NULL)
         n_expr  <- ncol(e)
-        matched <- sum(colnames(e) %in% rownames(m))
-        dropped <- n_expr - matched
+        # Check against SampleID column, first column, and rownames — same
+        # logic as align_meta_to_expr in the main app
+        id_col   <- if ("SampleID" %in% colnames(m)) "SampleID" else colnames(m)[1]
+        meta_ids <- unique(c(as.character(m[[id_col]]), rownames(m)))
+        matched  <- sum(colnames(e) %in% meta_ids)
+        dropped  <- n_expr - matched
         msg <- paste0(matched, "/", n_expr, " sample",
                       if (n_expr != 1) "s" else "", " matched")
         if (dropped > 0)

@@ -30,6 +30,8 @@ Additional_repositories: https://bioconductor.org/packages/release/bioc
 Imports:
     circlize,
     edgeR,
+    DESeq2,
+    SummarizedExperiment,
     ComplexHeatmap,
     ggh4x,
     ggplot2,
@@ -52,20 +54,31 @@ Imports:
     shiny,
     bslib,
     GEOquery,
-    DT
-Suggests: 
+    DT,
+    base64enc,
+    grDevices,
+    jsonlite,
+    plotly,
+    R.utils,
+    readxl,
+    Biobase,
+    shinyWidgets
+Suggests:
     devtools,
     markdown,
     renv,
     testthat,
     BiocManager,
     knitr,
-    rmarkdown, 
+    rmarkdown,
     roxygen2,
     mockery,
     covr,
     magick,
-    BiocStyle
+    BiocStyle,
+    AnnotationDbi,
+    stringdist,
+    tximport
 Config/testthat/edition: 3
 Depends: 
     R (>= 4.5.0)
