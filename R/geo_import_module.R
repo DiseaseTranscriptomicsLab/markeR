@@ -1306,13 +1306,21 @@ geoImportServer <- function(id, log_fn = NULL) {
         msg
       }
       match_summary <- .fmt_match()
-      if (!is.null(match_summary))
-        glog(paste0("Sample alignment summary: ", match_summary, "."))
+      # Log import summary (counts only — no alignment performed yet)
+      if (!is.null(rv$expr) && !is.null(rv$meta)) {
+        glog(paste0("GEO import complete: ",
+                    ncol(rv$expr), " expression samples, ",
+                    nrow(rv$meta), " metadata rows loaded. ",
+                    "Use the Data tab to review and align before proceeding."))
+      }
 
       # Show result notification
+      import_counts <- if (!is.null(rv$expr) && !is.null(rv$meta))
+        paste0(ncol(rv$expr), " expression samples, ", nrow(rv$meta), " metadata rows")
+      else match_summary
       if (rv$status == "ok") {
         shiny::showNotification(
-          paste0(accession, " imported — ", match_summary),
+          paste0(accession, " imported — ", import_counts),
           type = "default", duration = 6
         )
       } else if (rv$status == "excluded") {
@@ -1329,7 +1337,7 @@ geoImportServer <- function(id, log_fn = NULL) {
           "format|file|parse|GSM|column|TAR|gz|supplementary",
           rv$messages, value = TRUE, ignore.case = TRUE
         )
-        body <- if (!is.null(match_summary)) match_summary else ""
+        body <- if (!is.null(import_counts)) import_counts else ""
         if (length(user_warns) > 0)
           body <- paste(c(body, user_warns), collapse = "<br>")
         shiny::showNotification(

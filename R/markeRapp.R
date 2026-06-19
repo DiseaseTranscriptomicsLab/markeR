@@ -549,24 +549,22 @@ ui <- tagList(
         display: inline-block;
         position: relative;
       }
-      .nav-tab-locked-wrap::after {
-        content: attr(data-lock-tip);
-        position: absolute;
-        bottom: calc(100% + 6px);
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(30,30,30,0.88);
+      /* tooltip rendered by JS into <body> to avoid overflow clipping */
+      #lock-tip-floating {
+        position: fixed;
+        background: rgba(30,30,30,0.93);
         color: #fff;
-        font-size: 0.78em;
-        white-space: nowrap;
-        padding: 4px 8px;
-        border-radius: 4px;
+        font-size: 0.83em;
+        line-height: 1.45;
+        max-width: 300px;
+        padding: 7px 11px;
+        border-radius: 5px;
+        border: 1px solid rgba(255,255,255,0.14);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.4);
         pointer-events: none;
-        opacity: 0;
+        z-index: 99999;
         transition: opacity 0.15s;
-        z-index: 9999;
       }
-      .nav-tab-locked-wrap:hover::after { opacity: 1; }
     "))
   ),
   ui,
@@ -611,6 +609,35 @@ ui <- tagList(
       return null;
     }
 
+    // Floating tooltip helper — appended to <body> so it is never clipped by overflow:hidden
+    (function() {
+      var _tip = null;
+      function _showTip(text, rect) {
+        if (!_tip) {
+          _tip = document.createElement('div');
+          _tip.id = 'lock-tip-floating';
+          document.body.appendChild(_tip);
+        }
+        _tip.textContent = text;
+        _tip.style.opacity = '0';
+        _tip.style.display = 'block';
+        // Position above the hovered element, centred
+        var tipW = _tip.offsetWidth || 220;
+        var left = rect.left + rect.width / 2 - tipW / 2;
+        var top  = rect.top - _tip.offsetHeight - 8;
+        if (left < 6) left = 6;
+        if (top  < 6) top  = rect.bottom + 6;   // flip below if no room above
+        _tip.style.left = left + 'px';
+        _tip.style.top  = top  + 'px';
+        _tip.style.opacity = '1';
+      }
+      function _hideTip() {
+        if (_tip) { _tip.style.opacity = '0'; _tip.style.display = 'none'; }
+      }
+      window._lockTipShow = _showTip;
+      window._lockTipHide = _hideTip;
+    })();
+
     Shiny.addCustomMessageHandler('lockNavTabs', function(msg) {
       // msg: { tabs: ['Preprocessing','Gene Sets',...], locked: true/false, tip: '...' }
       var tabs = msg.tabs || [];
@@ -621,7 +648,7 @@ ui <- tagList(
         if (!a) return;
         if (locked) {
           a.classList.add('nav-tab-locked');
-          // Wrap in tooltip div if not already
+          // Wrap in span if not already, attach mouse listeners
           var parent = a.parentNode;
           if (!parent.classList.contains('nav-tab-locked-wrap')) {
             var wrap = document.createElement('span');
@@ -629,6 +656,11 @@ ui <- tagList(
             wrap.setAttribute('data-lock-tip', tip);
             parent.insertBefore(wrap, a);
             wrap.appendChild(a);
+            wrap.addEventListener('mouseenter', function() {
+              window._lockTipShow(this.getAttribute('data-lock-tip'),
+                                  this.getBoundingClientRect());
+            });
+            wrap.addEventListener('mouseleave', window._lockTipHide);
           } else {
             parent.setAttribute('data-lock-tip', tip);
           }
@@ -640,6 +672,7 @@ ui <- tagList(
             wrap.parentNode.insertBefore(a, wrap);
             wrap.parentNode.removeChild(wrap);
           }
+          window._lockTipHide();
         }
       });
     });
@@ -666,6 +699,15 @@ server <- function(input, output, session) {
   geo_supp_files  <- reactiveVal(NULL)
   expr_candidates_available <- reactiveVal(FALSE) # Flag to indicate multiple candidate files are available after auto detection
   
+  # Append a timestamped entry to the processing log.
+  # isolate() prevents the calling observer from taking a reactive dependency
+  # on data_log - without it, writing data_log() re-invalidates the observer
+  # that called log_step(), causing an infinite reactive loop.
+  log_step <- function(msg) {
+    ts <- format(Sys.time(), "[%Y-%m-%d %H:%M:%S]")
+    data_log(c(isolate(data_log()), paste(ts, msg)))
+  }
+
   ###### PREPROCESSING MODULE ######
 
   pp_module <- preprocessingServer(
@@ -771,15 +813,6 @@ server <- function(input, output, session) {
                         style = "color:#777;font-size:0.9em;margin-top:6px;")
       )
     ))
-  }
-
-  # Append a timestamped entry to the processing log.
-  # isolate() prevents the calling observer from taking a reactive dependency
-  # on data_log - without it, writing data_log() re-invalidates the observer
-  # that called log_step(), causing an infinite reactive loop.
-  log_step <- function(msg) {
-    ts <- format(Sys.time(), "[%Y-%m-%d %H:%M:%S]")
-    data_log(c(isolate(data_log()), paste(ts, msg)))
   }
 
   # Show a Zenodo download-failure modal with a "Try Again" button.

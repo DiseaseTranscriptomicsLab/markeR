@@ -137,7 +137,8 @@
 
 # samps_plot: if provided, bypasses selection logic (ensures before/after use same samples)
 .pp_make_boxplot <- function(log_d, all_s, display, n_box, color_by, meta, title_str,
-                              samps_plot = NULL, hide_xlabels = FALSE) {
+                              samps_plot = NULL, hide_xlabels = FALSE,
+                              y_label = "log₂(count + 1)") {
   if (is.null(samps_plot)) {
     samps_plot <- switch(display,
       random  = { set.seed(42L + n_box); sample(all_s, min(n_box, length(all_s))) },
@@ -172,6 +173,9 @@
     ggplot2::element_text(angle = 90, hjust = 1, size = 8)
   ggplot2::ggplot(df, ggplot2::aes(x = Sample, y = LogCount, fill = Group, text = Sample)) +
     ggplot2::geom_boxplot(outlier.size = 0.3, outlier.alpha = 0.3, lwd = 0.3) +
+    ggplot2::scale_fill_manual(values = stats::setNames(
+      rep(.pp_palette, length.out = length(unique(df$Group))),
+      unique(df$Group))) +
     ggplot2::theme_bw() +
     ggplot2::theme(
       axis.text.x  = x_text_theme,
@@ -179,15 +183,15 @@
       panel.border = ggplot2::element_blank(),
       axis.line    = ggplot2::element_line(colour = "black"),
       legend.position = "bottom") +
-    ggplot2::xlab("") + ggplot2::ylab("log₂(count + 1)") +
+    ggplot2::xlab("") + ggplot2::ylab(y_label) +
     ggplot2::ggtitle(paste0(title_str, " - ", length(samps_plot), " samples")) +
     ggplot2::labs(fill = color_by)
 }
 
 # ── PCA: compute once, render many times ──────────────────────────────────────
 
-.pp_run_pca <- function(log_counts, n_pcs = 10L) {
-  pca   <- stats::prcomp(t(as.matrix(log_counts)), scale = FALSE, center = TRUE)
+.pp_run_pca <- function(log_counts, n_pcs = 10L, scale = FALSE, center = TRUE) {
+  pca   <- stats::prcomp(t(as.matrix(log_counts)), scale = scale, center = center)
   n_use <- min(n_pcs, ncol(pca$x))
   list(
     df = as.data.frame(pca$x[, 1:n_use, drop = FALSE]),
@@ -217,11 +221,19 @@
   df$x_coord   <- df[[pc_x]]
   df$y_coord   <- df[[pc_y]]
   df$SampleLbl <- rownames(df)
+  # Clamp axes to data range so zero-reference lines don't collapse the plot
+  xl <- range(df$x_coord, na.rm = TRUE); px <- diff(xl) * 0.06
+  yl <- range(df$y_coord, na.rm = TRUE); py <- diff(yl) * 0.06
+  grps <- unique(df$ColorVar)
   ggplot2::ggplot(df, ggplot2::aes(x = x_coord, y = y_coord,
                                     colour = ColorVar, text = SampleLbl)) +
     ggplot2::geom_point(size = 3.5, alpha = 0.8) +
-    ggplot2::geom_vline(xintercept = 0, linetype = "dotted", colour = "grey55") +
-    ggplot2::geom_hline(yintercept = 0, linetype = "dotted", colour = "grey55") +
+    ggplot2::geom_vline(xintercept = 0, linetype = "dotted", colour = "grey70") +
+    ggplot2::geom_hline(yintercept = 0, linetype = "dotted", colour = "grey70") +
+    ggplot2::scale_colour_manual(values = stats::setNames(
+      rep(.pp_palette, length.out = length(grps)), grps)) +
+    ggplot2::coord_cartesian(xlim = c(xl[1] - px, xl[2] + px),
+                              ylim = c(yl[1] - py, yl[2] + py)) +
     ggplot2::theme_bw() +
     ggplot2::theme(legend.position = "bottom", legend.box = "vertical",
                    legend.margin = ggplot2::margin(),
@@ -235,19 +247,21 @@
 .pp_scree_plot <- function(ev, n_show = 10L, pc_x = "PC1", pc_y = "PC2") {
   n   <- min(n_show, length(ev))
   pct <- round(100 * ev[1:n] / sum(ev), 1)
-  df  <- data.frame(PC = paste0("PC", 1:n), Pct = pct, stringsAsFactors = FALSE)
-  df$PC       <- factor(df$PC, levels = df$PC)
+  pc_labels <- paste0("PC", 1:n)
+  df  <- data.frame(PC = factor(pc_labels, levels = pc_labels),
+                    Pct = pct, Num = 1:n, stringsAsFactors = FALSE)
   df$Selected <- df$PC %in% c(pc_x, pc_y)
   ggplot2::ggplot(df, ggplot2::aes(x = PC, y = Pct, fill = Selected)) +
     ggplot2::geom_col(colour = "white", width = 0.7) +
     ggplot2::scale_fill_manual(values = c("FALSE" = "#d1d5db", "TRUE" = "#EBB43E"),
                                 guide = "none") +
+    ggplot2::scale_x_discrete(labels = setNames(as.character(1:n), pc_labels)) +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.border     = ggplot2::element_blank(),
                    axis.line        = ggplot2::element_line(colour = "black"),
                    panel.grid.minor = ggplot2::element_blank(),
                    axis.text.x      = ggplot2::element_text(size = 7)) +
-    ggplot2::xlab("") + ggplot2::ylab("% variance")
+    ggplot2::xlab("PC") + ggplot2::ylab("% variance")
 }
 
 # ── Interactive report helpers ────────────────────────────────────────────────
@@ -268,7 +282,14 @@
   }), colnames(mat))
 }
 
-.pp_report_palette <- '["#EBB43E","#3b82f6","#ef4444","#10b981","#8b5cf6","#f97316","#06b6d4","#84cc16","#ec4899","#14b8a6","#f59e0b","#6366f1","#22c55e","#e11d48","#0ea5e9","#a855f7","#64748b","#dc2626","#7c3aed","#059669"]'
+# Shared colour palette — used in both ggplot2 (Shiny) and Plotly (HTML report)
+.pp_palette <- c(
+  "#E63946", "#457B9D", "#2A9D8F", "#F4A261", "#6A4C93",
+  "#1D8348", "#C77DFF", "#F72585", "#4CC9F0", "#F9C74F",
+  "#90BE6D", "#577590", "#7B2D8B", "#F94144", "#43AA8B",
+  "#FF6B6B", "#118AB2", "#06D6A0", "#FFD166", "#EF476F"
+)
+.pp_report_palette <- jsonlite::toJSON(.pp_palette, auto_unbox = FALSE)
 
 # Align metadata to a vector of sample names → named list of character vectors per column
 .pp_align_meta <- function(samples, meta, meta_cols) {
@@ -284,7 +305,7 @@
 
 # Interactive Plotly boxplot div with colour-by dropdown (uses pre-computed box stats)
 .report_box_div <- function(box_stats, meta, meta_cols, initial_color, div_id,
-                             title = "", height = "460px") {
+                             title = "", height = "460px", y_label = "log₂(count + 1)") {
   samples <- names(box_stats)
   if (length(samples) == 0L) return("<p style='color:#9ca3af;'>No data</p>")
   meta_aln <- .pp_align_meta(samples, meta, meta_cols)
@@ -328,7 +349,7 @@
     '}',
     'var lay={title:{text:ttl,font:{size:13}},',
     '  xaxis:{tickangle:-45,tickfont:{size:9},automargin:true},',
-    '  yaxis:{title:"log₂(expression)",titlefont:{size:11}},',
+    '  yaxis:{title:', jsonlite::toJSON(y_label, auto_unbox=TRUE), ',titlefont:{size:11}},',
     '  showlegend:true,legend:{orientation:"h",y:-0.25,font:{size:11}},',
     '  margin:{l:55,r:10,t:ttl?40:20,b:80},',
     '  plot_bgcolor:"white",paper_bgcolor:"white"};',
@@ -367,7 +388,7 @@
 }
 
 .report_pca_div <- function(pca_df, ev, meta, meta_cols, initial_color, pc_x, pc_y,
-                             div_id, height = "480px") {
+                             div_id, height = "620px") {
   if (is.null(pca_df) || nrow(pca_df) == 0L)
     return("<p style='color:#9ca3af;'>PCA not available</p>")
   samples <- rownames(pca_df)
@@ -432,15 +453,92 @@
 
 # ── Gene ID detection ──────────────────────────────────────────────────────────
 
+# Map of species key → list(label, pkg, biomart_dataset, ensembl_prefix)
+# pkg:             org.*.eg.db fallback (optional — needs separate install)
+# biomart_dataset: Ensembl BioMart dataset name (primary — needs only biomaRt)
+# ensembl_prefix:  regex to auto-detect species from gene IDs
+.pp_species_map <- list(
+  human       = list(label="Human (Homo sapiens)",         pkg="org.Hs.eg.db",   biomart_dataset="hsapiens_gene_ensembl",      ensembl_prefix="^ENSG[0-9]"),
+  mouse       = list(label="Mouse (Mus musculus)",         pkg="org.Mm.eg.db",   biomart_dataset="mmusculus_gene_ensembl",     ensembl_prefix="^ENSMUSG[0-9]"),
+  rat         = list(label="Rat (Rattus norvegicus)",      pkg="org.Rn.eg.db",   biomart_dataset="rnorvegicus_gene_ensembl",   ensembl_prefix="^ENSRNOG[0-9]"),
+  zebrafish   = list(label="Zebrafish (Danio rerio)",      pkg="org.Dr.eg.db",   biomart_dataset="drerio_gene_ensembl",        ensembl_prefix="^ENSDARG[0-9]"),
+  fly         = list(label="Fruit fly (D. melanogaster)",  pkg="org.Dm.eg.db",   biomart_dataset="dmelanogaster_gene_ensembl", ensembl_prefix="^FBgn[0-9]"),
+  worm        = list(label="C. elegans",                   pkg="org.Ce.eg.db",   biomart_dataset="celegans_gene_ensembl",      ensembl_prefix="^WBGene[0-9]"),
+  yeast       = list(label="Yeast (S. cerevisiae)",        pkg="org.Sc.sgd.db",  biomart_dataset="scerevisiae_gene_ensembl",   ensembl_prefix=NULL),
+  arabidopsis = list(label="Arabidopsis thaliana",         pkg="org.At.tair.db", biomart_dataset="athaliana_eg_gene",          ensembl_prefix="^AT[0-9]G[0-9]"),
+  chicken     = list(label="Chicken (Gallus gallus)",      pkg="org.Gg.eg.db",   biomart_dataset="ggallus_gene_ensembl",       ensembl_prefix="^ENSGALG[0-9]"),
+  pig         = list(label="Pig (Sus scrofa)",             pkg="org.Ss.eg.db",   biomart_dataset="sscrofa_gene_ensembl",       ensembl_prefix="^ENSSSCG[0-9]"),
+  bovine      = list(label="Bovine (Bos taurus)",          pkg="org.Bt.eg.db",   biomart_dataset="btaurus_gene_ensembl",       ensembl_prefix="^ENSBTAG[0-9]"),
+  macaque     = list(label="Macaque (M. mulatta)",         pkg="org.Mmu.eg.db",  biomart_dataset="mmulatta_gene_ensembl",      ensembl_prefix="^ENSMMUG[0-9]"),
+  dog         = list(label="Dog (Canis lupus familiaris)", pkg="org.Cf.eg.db",   biomart_dataset="cfamiliaris_gene_ensembl",   ensembl_prefix="^ENSCAFG[0-9]"),
+  horse       = list(label="Horse (Equus caballus)",       pkg=NULL,             biomart_dataset="ecaballus_gene_ensembl",     ensembl_prefix="^ENSECAG[0-9]"),
+  sheep       = list(label="Sheep (Ovis aries)",           pkg=NULL,             biomart_dataset="oaries_gene_ensembl",        ensembl_prefix="^ENSOARG[0-9]"),
+  cat         = list(label="Cat (Felis catus)",            pkg=NULL,             biomart_dataset="fcatus_gene_ensembl",        ensembl_prefix="^ENSFCAG[0-9]"),
+  rabbit      = list(label="Rabbit (Oryctolagus cuniculus)",pkg=NULL,            biomart_dataset="ocuniculus_gene_ensembl",    ensembl_prefix="^ENSOCUG[0-9]")
+)
+
+# Convert gene IDs to symbols via biomaRt (queries Ensembl API — no per-species install needed)
+.pp_convert_biomart <- function(ids_clean, keytype, biomart_dataset) {
+  if (!requireNamespace("biomaRt", quietly = TRUE)) return(NULL)
+  bm_filter <- switch(keytype,
+    ENSEMBL  = "ensembl_gene_id",
+    ENTREZID = "entrezgene_id",
+    REFSEQ   = "refseq_mrna",
+    NULL)
+  if (is.null(bm_filter) || is.null(biomart_dataset)) return(NULL)
+  mart <- tryCatch(
+    suppressMessages(biomaRt::useEnsembl("genes", dataset = biomart_dataset)),
+    error = function(e) NULL)
+  if (is.null(mart)) return(NULL)
+  res <- tryCatch(
+    suppressMessages(biomaRt::getBM(
+      attributes = c(bm_filter, "external_gene_name"),
+      filters    = bm_filter,
+      values     = ids_clean,
+      mart       = mart)),
+    error = function(e) NULL)
+  if (is.null(res) || nrow(res) == 0L) return(NULL)
+  # Return named vector: input_id → symbol (first hit per ID)
+  res <- res[res$external_gene_name != "", , drop = FALSE]
+  res <- res[!duplicated(res[[bm_filter]]), , drop = FALSE]
+  stats::setNames(res$external_gene_name, res[[bm_filter]])[ids_clean]
+}
+
+# Convert via org.*.eg.db (requires per-species package installed)
+.pp_convert_orgdb <- function(ids_clean, keytype, pkg) {
+  if (is.null(pkg) || !requireNamespace(pkg, quietly = TRUE)) return(NULL)
+  if (!requireNamespace("AnnotationDbi", quietly = TRUE)) return(NULL)
+  org_db <- tryCatch(get(pkg, envir = asNamespace(pkg)), error = function(e) NULL)
+  if (is.null(org_db)) return(NULL)
+  tryCatch(
+    suppressMessages(AnnotationDbi::mapIds(org_db, keys = ids_clean,
+                                            column = "SYMBOL", keytype = keytype,
+                                            multiVals = "first")),
+    error = function(e) NULL)
+}
+
 .pp_detect_gene_id_type <- function(gene_ids) {
   s <- utils::head(gene_ids[nchar(gene_ids) > 0], 30)
   if (length(s) == 0L) return("symbol")
-  if (mean(grepl("^ENSG[0-9]",              s)) > 0.5) return("ensembl_human")
-  if (mean(grepl("^ENSMUSG[0-9]",           s)) > 0.5) return("ensembl_mouse")
-  if (mean(grepl("^ENS[A-Z]+G[0-9]",        s)) > 0.5) return("ensembl_other")
-  if (mean(grepl("^(NM_|NR_|XM_|XR_)[0-9]",s)) > 0.5) return("refseq")
-  if (mean(grepl("^[0-9]+$",                s)) > 0.5) return("entrez")
+  # Check species-specific Ensembl prefixes first
+  for (sp in names(.pp_species_map)) {
+    pfx <- .pp_species_map[[sp]]$ensembl_prefix
+    if (!is.null(pfx) && mean(grepl(pfx, s)) > 0.5)
+      return(paste0("ensembl_", sp))
+  }
+  if (mean(grepl("^ENS[A-Z]+[0-9]", s)) > 0.5) return("ensembl_other")
+  if (mean(grepl("^(NM_|NR_|XM_|XR_)[0-9]", s)) > 0.5) return("refseq")
+  if (mean(grepl("^[0-9]+$", s)) > 0.5) return("entrez")
   return("symbol")
+}
+
+# Infer default species key from detected id_type
+.pp_default_species <- function(id_type) {
+  if (grepl("^ensembl_", id_type)) {
+    sp <- sub("^ensembl_", "", id_type)
+    if (sp %in% names(.pp_species_map)) return(sp)
+  }
+  "human"
 }
 
 # ── Colour warning ─────────────────────────────────────────────────────────────
@@ -665,6 +763,21 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
     ns   <- session$ns
     glog <- function(msg) if (!is.null(log_fn)) log_fn(msg)
 
+    # ── Startup: check gene ID conversion backends ────────────────────────────
+    local({
+      has_biomart  <- requireNamespace("biomaRt",      quietly = TRUE)
+      has_annotdbi <- requireNamespace("AnnotationDbi", quietly = TRUE)
+      if (!has_biomart && !has_annotdbi) {
+        glog(paste0("[WARN] Neither biomaRt nor AnnotationDbi is installed. ",
+                    "Gene ID conversion will not work. ",
+                    "Recommended: BiocManager::install('biomaRt')"))
+      } else if (!has_biomart) {
+        glog(paste0("[INFO] biomaRt not installed — gene ID conversion will use local ",
+                    "org.*.eg.db packages only. For full species support install: ",
+                    "BiocManager::install('biomaRt')"))
+      }
+    })
+
     modal_plot        <- shiny::reactiveVal(NULL)
     .data_fingerprint <- shiny::reactiveVal(NULL)  # tracks identity of loaded data
     .finalized_fp     <- shiny::reactiveVal(NULL)   # fingerprint at finalization (fed-back output)
@@ -679,6 +792,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       s1_run            = FALSE, s2_run = FALSE,
       s3_norm_done      = FALSE, s3_run = FALSE, s3_method_used = NULL,
       s4_run            = FALSE, s4_bc_run = FALSE,
+      s4_pca_scale      = FALSE, s4_pca_center = TRUE,
       s1_plot_a         = NULL, s1_plot_b = NULL,
       s4_pca_df_before  = NULL, s4_pca_ev_before = NULL,
       s4_pca_df_after   = NULL, s4_pca_ev_after  = NULL,
@@ -745,29 +859,31 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       shiny::req(rv$data_s0)
       id_type <- rv$gene_id_type
       if (id_type == "symbol" || rv$gene_id_dismissed) return(NULL)
-      type_label <- switch(id_type,
-        ensembl_human  = "Ensembl (human) - ENSG...",
-        ensembl_mouse  = "Ensembl (mouse) - ENSMUSG...",
-        ensembl_other  = "Ensembl (non-human/mouse)",
-        refseq         = "RefSeq - NM_, NR_, ...",
-        entrez         = "Entrez Gene IDs",
+      type_label <- if (grepl("^ensembl_", id_type)) {
+        sp <- sub("^ensembl_", "", id_type)
+        lbl <- .pp_species_map[[sp]]$label %||% sp
+        paste0("Ensembl (", lbl, ")")
+      } else switch(id_type,
+        ensembl_other = "Ensembl (other species)",
+        refseq        = "RefSeq - NM_, NR_, ...",
+        entrez        = "Entrez Gene IDs",
         "unknown format"
       )
-      default_species <- if (id_type == "ensembl_mouse") "mouse" else "human"
+      default_species <- .pp_default_species(id_type)
+      sp_choices <- stats::setNames(
+        names(.pp_species_map),
+        vapply(.pp_species_map, `[[`, character(1), "label"))
       shiny::div(class = "pp-geneid-banner",
         shiny::tags$h6(style = "margin-bottom:6px;font-weight:700;color:#3730a3;",
           "\U0001f9ec Gene ID format detected: ", type_label),
         shiny::tags$p(style = "font-size:0.86em;margin-bottom:8px;",
           "Your gene identifiers appear to be in ", shiny::tags$b(type_label), " format. ",
-          "Would you like to convert them to gene symbols (e.g. BRCA1, TP53)?",
+          "Would you like to convert them to gene symbols?",
           shiny::tags$br(),
           shiny::tags$span(style = "color:#6b7280;font-size:0.9em;",
-            "Version numbers (e.g. .2 in ENSG00000141736.2) will be stripped automatically. ",
-            "Requires org.Hs.eg.db / org.Mm.eg.db (Bioconductor).")),
-        if (id_type %in% c("ensembl_other", "refseq", "entrez"))
-          shiny::selectInput(ns("gene_id_species"), "Species:",
-            choices  = c("Human (Homo sapiens)" = "human", "Mouse (Mus musculus)" = "mouse"),
-            selected = default_species, width = "280px"),
+            "Version numbers (e.g. .2 in ENSG00000141736.2) will be stripped automatically.")),
+        shiny::selectInput(ns("gene_id_species"), "Species:",
+          choices = sp_choices, selected = default_species, width = "300px"),
         shiny::div(style = "display:flex;gap:8px;margin-top:8px;",
           shiny::actionButton(ns("convert_gene_ids"), "✓ Convert to gene symbols",
                                class = "btn-primary btn-sm"),
@@ -785,35 +901,72 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
     shiny::observeEvent(input$convert_gene_ids, {
       shiny::req(rv$data_s0)
       id_type <- shiny::isolate(rv$gene_id_type)
-      species <- shiny::isolate(input$gene_id_species %||%
-        if (id_type == "ensembl_mouse") "mouse" else "human")
+      species <- shiny::isolate(input$gene_id_species %||% .pp_default_species(id_type))
+      sp_info <- .pp_species_map[[species]] %||% list()
       shiny::withProgress(message = "\U0001f9ec Converting gene IDs to symbols…", value = 0, {
-        shiny::incProgress(0.1, "Loading annotation database…")
-        pkg <- if (species == "mouse") "org.Mm.eg.db" else "org.Hs.eg.db"
-        if (!requireNamespace(pkg, quietly = TRUE)) {
-          shiny::showNotification(paste0("Install: BiocManager::install('", pkg, "')"),
-                                   type = "error", duration = 12)
-          return(NULL)
-        }
-        if (!requireNamespace("AnnotationDbi", quietly = TRUE)) {
-          shiny::showNotification("Install: BiocManager::install('AnnotationDbi')",
-                                   type = "error", duration = 12)
-          return(NULL)
-        }
         gene_ids  <- rownames(rv$data_s0)
         ids_clean <- sub("\\.[0-9]+$", "", gene_ids)
-        keytype <- switch(id_type, ensembl_human="ENSEMBL", ensembl_mouse="ENSEMBL",
-                          ensembl_other="ENSEMBL", refseq="REFSEQ", entrez="ENTREZID", "SYMBOL")
-        shiny::incProgress(0.3, paste0("Mapping ", length(ids_clean), " IDs…"))
-        org_db  <- getExportedValue(pkg, pkg)
-        symbols <- tryCatch(
-          suppressMessages(AnnotationDbi::mapIds(org_db, keys = ids_clean, column = "SYMBOL",
-                                                  keytype = keytype, multiVals = "first")),
-          error = function(e) {
-            shiny::showNotification(paste("Conversion error:", e$message), type="error", duration=12)
-            NULL
-          })
-        if (is.null(symbols)) return(NULL)
+        keytype   <- if (grepl("^ensembl", id_type)) "ENSEMBL"
+                     else switch(id_type, refseq = "REFSEQ", entrez = "ENTREZID", "SYMBOL")
+
+        # ── 1. Try biomaRt (no per-species install required) ─────────────────
+        symbols <- NULL
+        if (requireNamespace("biomaRt", quietly = TRUE)) {
+          shiny::showModal(shiny::modalDialog(
+            title = NULL, footer = NULL, easyClose = FALSE,
+            shiny::tags$div(
+              style = "text-align:center; padding:40px 20px;",
+              shiny::tags$div(class = "spinner-border text-primary",
+                style = "width:3.5rem; height:3.5rem;", role = "status",
+                shiny::tags$span(class = "visually-hidden", "Loading…")),
+              shiny::tags$h5(
+                paste0("Querying Ensembl BioMart for ", sp_info$label %||% species, "…"),
+                style = "margin-top:18px; color:#333;"),
+              shiny::tags$p(
+                "Mapping gene IDs to symbols via Ensembl — this may take 15–30 s.",
+                style = "color:#777; font-size:0.9em; margin-top:6px;")
+            )
+          ))
+          glog(paste0("Gene ID conversion: trying biomaRt (", sp_info$biomart_dataset, ")…"))
+          symbols <- .pp_convert_biomart(ids_clean, keytype, sp_info$biomart_dataset)
+          shiny::removeModal()
+          if (!is.null(symbols))
+            glog("Gene ID conversion: biomaRt query succeeded.")
+          else
+            glog("Gene ID conversion: biomaRt returned no results, trying local db…")
+        }
+
+        # ── 2. Fall back to org.*.eg.db if biomaRt unavailable/failed ────────
+        if (is.null(symbols)) {
+          pkg <- sp_info$pkg
+          if (!is.null(pkg) && requireNamespace(pkg, quietly = TRUE) &&
+              requireNamespace("AnnotationDbi", quietly = TRUE)) {
+            shiny::incProgress(0.2, paste0("Using local annotation (", pkg, ")…"))
+            glog(paste0("Gene ID conversion: using ", pkg, "."))
+            symbols <- .pp_convert_orgdb(ids_clean, keytype, pkg)
+          }
+        }
+
+        # ── 3. Neither method worked ──────────────────────────────────────────
+        if (is.null(symbols)) {
+          has_biomart <- requireNamespace("biomaRt", quietly = TRUE)
+          install_hint <- if (!has_biomart)
+            "BiocManager::install('biomaRt')  # works for all species, recommended"
+          else
+            paste0("BiocManager::install('", sp_info$pkg %||% "org.*.eg.db", "')")
+          msg <- paste0("Gene ID conversion failed for species '", species, "'. ",
+                        "Install biomaRt (recommended) or the species-specific package: ",
+                        install_hint)
+          glog(paste0("[ERROR] ", msg))
+          shiny::showNotification(
+            shiny::HTML(paste0(
+              "<b>Conversion failed.</b> Install biomaRt (works for all species):<br>",
+              "<code>BiocManager::install('biomaRt')</code>")),
+            type = "error", duration = 30)
+          return(NULL)
+        }
+
+        shiny::incProgress(0.5, "Updating gene identifiers…")
         new_ids <- ifelse(is.na(symbols) | symbols == "", ids_clean, as.character(symbols))
         dups <- duplicated(new_ids)
         if (any(dups)) {
@@ -1016,25 +1169,29 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
     shiny::observeEvent(input$expand_s3_before, {
       shiny::req(rv$s3_norm_done, rv$data_s2)
       log_d      <- log2(as.matrix(rv$data_s2) + 1); all_s <- colnames(log_d)
-      display    <- shiny::isolate(input$s3_sample_display %||% "all")
-      n_box      <- as.integer(shiny::isolate(input$s3_n_box %||% 20L))
       col_by     <- shiny::isolate(input$s3_color_by)
       hide_xlabs <- shiny::isolate(isTRUE(input$s3_hide_xlabels))
-      modal_plot(.pp_make_boxplot(log_d, all_s, display, n_box, col_by, rv$meta_s,
+      samps      <- shiny::isolate(.s3_samps())
+      modal_plot(.pp_make_boxplot(log_d, all_s, NULL, NULL, col_by, rv$meta_s,
                                    "Raw counts (before normalisation)",
+                                   samps_plot = samps,
                                    hide_xlabels = hide_xlabs))
       shiny::showModal(.pp_plot_modal(ns("modal_plot_render"), ns("dl_plot_png")))
     })
     shiny::observeEvent(input$expand_s3_after, {
       shiny::req(rv$s3_norm_done, rv$norm_linear)
       log_d      <- log2(as.matrix(rv$norm_linear) + 1); all_s <- colnames(log_d)
-      display    <- shiny::isolate(input$s3_sample_display %||% "all")
-      n_box      <- as.integer(shiny::isolate(input$s3_n_box %||% 20L))
       col_by     <- shiny::isolate(input$s3_color_by)
       hide_xlabs <- shiny::isolate(isTRUE(input$s3_hide_xlabels))
-      modal_plot(.pp_make_boxplot(log_d, all_s, display, n_box, col_by, rv$meta_s,
+      samps      <- shiny::isolate(.s3_samps())
+      method     <- rv$s3_method_used %||% "TMM"
+      y_lbl      <- if (grepl("DESeq2", method, ignore.case = TRUE)) "VST"
+                    else "log₂(CPM + 1)"
+      modal_plot(.pp_make_boxplot(log_d, all_s, NULL, NULL, col_by, rv$meta_s,
                                    "After normalisation",
-                                   hide_xlabels = hide_xlabs))
+                                   samps_plot = samps,
+                                   hide_xlabels = hide_xlabs,
+                                   y_label = y_lbl))
       shiny::showModal(.pp_plot_modal(ns("modal_plot_render"), ns("dl_plot_png")))
     })
     shiny::observeEvent(input$expand_pca_before, {
@@ -1197,7 +1354,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
     )
 
     output$dl_report <- shiny::downloadHandler(
-      filename = function() paste0("markeR_preprocessing_report_", Sys.Date(), ".html"),
+      filename = function() paste0("markeR_preprocessing_report_", format(Sys.time(), "%Y-%m-%d_%H%M"), ".html"),
       content  = function(file) {
         shiny::req(rv$pp_summary, rv$final_data)
         s  <- rv$pp_summary
@@ -1214,10 +1371,11 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         display_mode <- if (identical(samp_choice, "all")) "all" else s3d
 
         # All available sample names across both matrices (consistent set for all plots)
-        all_samp_names <- unique(c(
-          if (!is.null(rv$data_s2))     colnames(rv$data_s2)     else character(0),
-          if (!is.null(rv$norm_linear)) colnames(rv$norm_linear) else character(0)
-        ))
+        # Use data_s2 column order as canonical — matches .s3_samps() in the app
+        # so random/extreme sample selection is identical between UI and report.
+        all_samp_names <- if (!is.null(rv$data_s2)) colnames(rv$data_s2)
+                          else if (!is.null(rv$norm_linear)) colnames(rv$norm_linear)
+                          else character(0)
         # Cap s3n to at most floor(n_available/2) to avoid over-requesting samples
         s3n <- min(s3n_raw, max(2L, floor(length(all_samp_names) / 2L)))
 
@@ -1226,9 +1384,12 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           n_pick <- min(s3n, length(all_samp_names))
           set.seed(42L + s3n)
           sample(all_samp_names, n_pick, replace = FALSE)
-        } else if (display_mode == "extreme" && !is.null(rv$data_s2)) {
-          ref_d  <- log2(as.matrix(rv$data_s2) + 1)
-          avail  <- intersect(all_samp_names, colnames(ref_d))
+        } else if (display_mode == "extreme" &&
+                   (!is.null(rv$norm_linear) || !is.null(rv$data_s2))) {
+          # Use post-normalisation data for ranking (matches step 3 display)
+          ref_mat <- if (!is.null(rv$norm_linear)) rv$norm_linear else rv$data_s2
+          ref_d   <- log2(as.matrix(ref_mat) + 1)
+          avail   <- intersect(all_samp_names, colnames(ref_d))
           meds   <- apply(ref_d[, avail, drop = FALSE], 2L, median)
           ord    <- order(meds)
           nb     <- floor(s3n / 2L); nt <- s3n - nb
@@ -1343,26 +1504,22 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           keep <- intersect(rownames(rv$meta_s), shared_samp)
           if (length(keep) > 0L) rv$meta_s[keep, , drop = FALSE] else rv$meta_s
         } else rv$meta_s
-        # Subsample PCA data frames (rows = samples)
-        # Use the same consistent sample set as the boxplots
-        .subs_pca <- function(pca_df) {
-          if (is.null(pca_df) || is.null(plot_samp_names)) return(pca_df)
-          keep <- intersect(plot_samp_names, rownames(pca_df))
-          if (length(keep) == 0L) return(pca_df)
-          pca_df[keep, , drop = FALSE]
-        }
-
+        norm_method_rep <- s$norm_method %||% "TMM"
+        after_ylabel <- if (grepl("DESeq2", norm_method_rep, ignore.case = TRUE)) "VST"
+                        else "log₂(CPM + 1)"
         s3_before_div <- tryCatch(
           if (!is.null(d_s2_plot))
             .report_box_div(.pp_box_stats_report(log2(as.matrix(d_s2_plot) + 1)),
-                            mt_plot, mcols, s3c, "s3bef", "Before normalisation")
+                            mt_plot, mcols, s3c, "s3bef", "Before normalisation",
+                            y_label = "log₂(count + 1)")
           else plot_to_img(rv$report_s3_before, h=420),
           error = function(e) plot_to_img(rv$report_s3_before, h=420)
         )
         s3_after_div  <- tryCatch(
           if (!is.null(d_norm_plot))
             .report_box_div(.pp_box_stats_report(log2(as.matrix(d_norm_plot) + 1)),
-                            mt_plot, mcols, s3c, "s3aft", "After normalisation")
+                            mt_plot, mcols, s3c, "s3aft", "After normalisation",
+                            y_label = after_ylabel)
           else plot_to_img(rv$report_s3_after, h=420),
           error = function(e) plot_to_img(rv$report_s3_after, h=420)
         )
@@ -1372,13 +1529,13 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         pc_y  <- if (!is.null(rid)) rid$pc_y else "PC2"
         s4c   <- if (!is.null(rid)) rid$s4_pca_color else NULL
         s4_before_div <- tryCatch(
-          .report_pca_div(.subs_pca(rv$s4_pca_df_before), rv$s4_pca_ev_before,
+          .report_pca_div(rv$s4_pca_df_before, rv$s4_pca_ev_before,
                           rv$meta_s, mcols, s4c, pc_x, pc_y, "pca_bef"),
           error = function(e) plot_to_img(rv$report_s4_before)
         )
         s4_after_div  <- if (!is.null(rv$s4_pca_df_after))
           tryCatch(
-            .report_pca_div(.subs_pca(rv$s4_pca_df_after), rv$s4_pca_ev_after,
+            .report_pca_div(rv$s4_pca_df_after, rv$s4_pca_ev_after,
                             rv$meta_s, mcols, s4c, pc_x, pc_y, "pca_aft"),
             error = function(e) plot_to_img(rv$report_s4_after)
           )
@@ -1389,7 +1546,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           bc_p  <- if (!is.null(s$bc_vars)   && length(s$bc_vars)   > 0L)
                      paste0("Batch removed: [", paste(s$bc_vars,   collapse=", "), "]") else NULL
           eff_p <- if (!is.null(s$bc_effect) && length(s$bc_effect) > 0L)
-                     paste0("Biology retained: [", paste(s$bc_effect, collapse=", "), "]") else NULL
+                     paste0("Retained: [", paste(s$bc_effect, collapse=", "), "]") else NULL
           paste0("Applied - ", paste(Filter(Negate(is.null), list(bc_p, eff_p)), collapse=" | "))
         } else "Not applied"
 
@@ -1409,12 +1566,13 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           if (is.null(gmap)) {
             "<p style='color:#9ca3af;font-size:0.86em;'>Gene ID conversion was not applied.</p>"
           } else {
-            n_total  <- nrow(gmap)
-            n_mapped <- sum(gmap$status == "mapped")
-            n_notfnd <- sum(gmap$status %in% c("not found", "kept (original ID)"))
-            n_removed<- sum(gmap$status == "not found" & !(gmap$new_id %in% rownames(fd)))
-            id_type  <- .html_esc(rv$gene_id_type %||% "symbol")
-            pct      <- if (n_total > 0) round(100 * n_mapped / n_total, 1) else 0
+            n_total      <- nrow(gmap)
+            n_mapped     <- sum(gmap$status == "mapped")
+            n_notfnd     <- sum(gmap$status == "not found")
+            n_kept_orig  <- sum(gmap$status == "kept (original ID)")
+            n_removed    <- sum(gmap$status == "removed")
+            id_type      <- .html_esc(rv$gene_id_type %||% "symbol")
+            pct          <- if (n_total > 0) round(100 * n_mapped / n_total, 1) else 0
             # Build a compact mapping table (show original, new, status columns)
             tbl_df <- gmap[, c("original_id", "new_id", "symbol", "status"), drop = FALSE]
             colnames(tbl_df) <- c("Original ID", "Converted ID", "Gene Symbol", "Status")
@@ -1424,9 +1582,18 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
               "<div class='kv-grid'>",
               kv("Conversion type", id_type),
               kv("Total genes",     format(n_total, big.mark = ",")),
-              kv("Mapped",          paste0(format(n_mapped, big.mark = ","), " (", pct, "%)")),
-              kv("Not found",       format(n_notfnd, big.mark = ",")),
-              kv("Removed from data", format(n_removed, big.mark = ",")),
+              kv("Mapped to symbol", paste0(format(n_mapped, big.mark = ","), " (", pct, "%)")),
+              if (n_kept_orig > 0)
+                kv("Kept with original ID",
+                   paste0(format(n_kept_orig, big.mark = ","),
+                          " — kept in data using original identifiers")) else "",
+              if (n_notfnd > 0)
+                kv("Not found (unresolved)",
+                   paste0(format(n_notfnd, big.mark = ","),
+                          " — no symbol found; kept in data with cleaned ID")) else "",
+              if (n_removed > 0)
+                kv("Removed from data", format(n_removed, big.mark = ",")) else
+                kv("Removed from data", "0 — all genes retained"),
               "</div>",
               map_tbl
             )
@@ -1481,6 +1648,10 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           "<p style='color:#6b7280;font-size:0.86em;'>Generated: ",
           format(Sys.time(), "%Y-%m-%d %H:%M"), "</p>",
 
+          # Gene ID conversion (before summary — it's the first step)
+          "<h2>Gene ID Conversion</h2>",
+          geneid_block,
+
           # Summary
           "<h2>Summary</h2>",
           "<div class='kv-grid'>",
@@ -1494,10 +1665,6 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           kv("Batch correction", bc_txt),
           kv("Data scale", s$data_scale),
           "</div>",
-
-          # Gene ID conversion
-          "<h2>Gene ID Conversion</h2>",
-          geneid_block,
 
           # Step 1
           "<div class='step-section'>",
@@ -2055,7 +2222,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
                         selected = {
                           prev <- shiny::isolate(input$s3_sample_display)
                           if (!is.null(prev)) prev
-                          else if (!is.null(rv$data_s2) && ncol(rv$data_s2) > 50L) "extreme"
+                          else if (!is.null(rv$data_s2) && ncol(rv$data_s2) > 20L) "extreme"
                           else "all"
                         }),
                       shiny::conditionalPanel(sprintf("input['%s'] != 'all'",ns("s3_sample_display")),
@@ -2142,6 +2309,25 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
             nl  <- edgeR::cpm(dge, log=FALSE)
             list(norm_linear=nl, log_norm=log2(nl+1), method="TMM")
           } else {
+            # DESeq2 requires non-negative raw integer counts
+            if (any(d < 0)) {
+              msg <- "DESeq2/VST requires non-negative counts. Data contains negative values — it may be log-transformed or pre-normalised. Use TMM instead, or supply raw counts."
+              shiny::showNotification(msg, type = "error", duration = NULL)
+              glog(paste0("[DESeq2 ERROR] ", msg))
+              return(NULL)
+            }
+            # Warn if data looks pre-normalised (many fractional values or very low max)
+            frac_pct <- mean(abs(d - round(d)) > 0.01) * 100
+            if (frac_pct > 30) {
+              msg <- paste0("DESeq2 WARNING: ", round(frac_pct), "% of values are non-integer. DESeq2 expects raw integer read counts. Values rounded — results may be unreliable if data is pre-normalised (TPM, FPKM, CPM). Consider using TMM instead.")
+              shiny::showNotification(shiny::HTML(paste0("<b>DESeq2 warning:</b> ", msg)),
+                type = "warning", duration = 15)
+              glog(msg)
+            } else if (frac_pct > 0) {
+              msg <- paste0("DESeq2: ", round(frac_pct, 1), "% of values were non-integer and have been rounded to the nearest integer.")
+              shiny::showNotification(msg, type = "message", duration = 8)
+              glog(msg)
+            }
             int_d <- round(d); storage.mode(int_d) <- "integer"
             col_df <- if(!is.null(rv$meta_s)) rv$meta_s else data.frame(row.names=colnames(int_d))
             dds <- tryCatch(DESeq2::DESeqDataSetFromMatrix(int_d,colData=col_df,design=~1),
@@ -2151,6 +2337,8 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
               error=function(e){shiny::showNotification(e$message,type="error");NULL})
             if (is.null(vst_obj)) return(NULL)
             lg <- SummarizedExperiment::assay(vst_obj)
+            # VST output is in a log-like scale; store as-is for PCA/downstream.
+            # norm_linear holds a pseudo-linear back-transform used for batch correction input.
             list(norm_linear=2^lg-1, log_norm=lg, method="DESeq2/VST")
           }
           if (is.null(res)) return(NULL)
@@ -2167,8 +2355,10 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
     .s3_samps <- shiny::reactive({
       shiny::req(rv$s3_norm_done, rv$data_s2, rv$norm_linear)
       all_s   <- colnames(rv$data_s2)
-      display <- input$s3_sample_display %||% "all"
-      n_box   <- as.integer(input$s3_n_box %||% 20L)
+      # Use same default threshold as the radioButtons selected= logic
+      display <- input$s3_sample_display %||%
+        if (length(all_s) > 20L) "extreme" else "all"
+      n_box   <- as.integer(input$s3_n_box %||% min(20L, max(2L, floor(length(all_s) / 2L))))
       switch(display,
         random  = { set.seed(42L + n_box); sample(all_s, min(n_box, length(all_s))) },
         extreme = {
@@ -2194,11 +2384,15 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
                         input$s3_sample_display %||% "all",
                         as.integer(input$s3_n_box %||% 20L),
                         color_by, rv$meta_s, "Before normalisation",
-                        samps_plot = samps, hide_xlabels = hide_xlabs)
+                        samps_plot = samps, hide_xlabels = hide_xlabs,
+                        y_label = "log₂(count + 1)")
     })
     output$plot_s3_after <- shiny::renderPlot({
       shiny::req(rv$s3_norm_done, rv$norm_linear)
       samps       <- .s3_samps()
+      method      <- rv$s3_method_used %||% "TMM"
+      y_lbl       <- if (grepl("DESeq2", method, ignore.case = TRUE)) "VST"
+                     else "log₂(CPM + 1)"
       log_d       <- log2(as.matrix(rv$norm_linear) + 1)
       color_by    <- input$s3_color_by
       hide_xlabs  <- isTRUE(input$s3_hide_xlabels)
@@ -2206,7 +2400,8 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
                         input$s3_sample_display %||% "all",
                         as.integer(input$s3_n_box %||% 20L),
                         color_by, rv$meta_s, "After normalisation",
-                        samps_plot = samps, hide_xlabels = hide_xlabs)
+                        samps_plot = samps, hide_xlabels = hide_xlabs,
+                        y_label = y_lbl)
     })
 
     output$s3_remove_picker <- shiny::renderUI({
@@ -2282,14 +2477,21 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       if (!rv$s4_run)
         return(shiny::div(class = "pp-run-btn",
           .pp_slow_warn(paste0("⏳ PCA decomposes the full normalised matrix (", n_g, " genes × ", n_s,
-            " samples). This runs once - changing colour or PCs only redraws.")),
+            " samples). This runs once — changing colour or PCs only redraws.")),
+          shiny::div(style = "margin: 10px 0 8px 0;",
+            shiny::tags$p(style = "font-size:0.82em;font-weight:600;margin-bottom:4px;", "PCA options:"),
+            shiny::checkboxInput(ns("s4_pca_center"), "Center genes (subtract mean per gene — recommended)",
+              value = shiny::isolate(input$s4_pca_center) %||% TRUE),
+            shiny::checkboxInput(ns("s4_pca_scale"),
+              "Scale genes (divide by SD — equalises variance; use with caution for RNA-seq)",
+              value = shiny::isolate(input$s4_pca_scale) %||% FALSE)
+          ),
           shiny::actionButton(ns("s4_run_btn"), "\U0001f4ca Compute PCA", class = "btn-primary btn-sm")))
 
       n_pcs_avail <- if (!is.null(rv$s4_pca_df_before)) ncol(rv$s4_pca_df_before) else 2L
       pc_choices  <- paste0("PC", 1:n_pcs_avail)
       # bc_done depends only on rv state - not checkbox - so layout survives checkbox toggles
       bc_done     <- rv$s4_bc_run && !is.null(rv$s4_bc_result)
-
       # ── Finalize ─────────────────────────────────────────────────────────────
       finalize_ui <- if (bc_done) {
         shiny::tagList(
@@ -2309,7 +2511,10 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
             "Updates expression data used by all downstream analyses."))
       }
 
-      # ── BC controls (above plots) ─────────────────────────────────────────────
+      # ── PCA options panel: rendered separately so checkbox changes react live ──
+      pca_top_ui <- shiny::uiOutput(ns("s4_pca_top_ui"))
+
+      # ── BC controls ───────────────────────────────────────────────────────────
       bc_controls_ui <- shiny::div(
         shiny::checkboxInput(ns("s4_do_bc"), "Apply batch correction (voom/lmFit)",
           value = shiny::isolate(input$s4_do_bc) %||% FALSE),
@@ -2339,7 +2544,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
                 if (n_pcs_avail >= 2L) "PC2" else "PC1", width = "100%"))
         ),
         shiny::tags$p(style = "font-size:0.75em;color:#9ca3af;margin:0 0 6px 0;",
-          "Colour/PC changes redraw instantly - no re-PCA."),
+          "Colour/PC changes redraw instantly — no re-PCA."),
         shiny::plotOutput(ns("pca_before"), height = "320px"),
         .pp_expand_btn(ns("expand_pca_before")),
         shiny::tags$p(style = "font-size:0.8em;font-weight:600;color:#6b7280;
@@ -2398,6 +2603,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       }
 
       shiny::tagList(
+        pca_top_ui,
         bc_controls_ui,
         shiny::hr(style = "margin:10px 0;"),
         shiny::fluidRow(
@@ -2457,19 +2663,25 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       )
     })
 
-    # PCA COMPUTATION (once)
+    # PCA COMPUTATION (once, or re-run when settings change)
     shiny::observeEvent(input$s4_run_btn, {
       shiny::req(rv$step>=4L, rv$data_s3)
       n_g <- nrow(rv$data_s3); n_s <- ncol(rv$data_s3)
+      do_scale  <- isTRUE(shiny::isolate(input$s4_pca_scale)  %||% FALSE)
+      do_center <- isTRUE(shiny::isolate(input$s4_pca_center) %||% TRUE)
       shiny::withProgress(
         message=paste0("\U0001f4ca Computing PCA - ",format(n_g,big.mark=",")," genes × ",n_s," samples…"),
         value=0, {
           shiny::incProgress(0.4,"Decomposing variance…")
-          result <- tryCatch(.pp_run_pca(rv$data_s3, n_pcs=min(10L,n_s-1L,n_g-1L)),
+          result <- tryCatch(
+            .pp_run_pca(rv$data_s3, n_pcs=min(10L,n_s-1L,n_g-1L),
+                        scale=do_scale, center=do_center),
             error=function(e){shiny::showNotification(paste("PCA error:",e$message),type="error");NULL})
           if (!is.null(result)) {
             rv$s4_pca_df_before <- result$df
             rv$s4_pca_ev_before <- result$ev
+            rv$s4_pca_scale     <- do_scale
+            rv$s4_pca_center    <- do_center
             n_pcs <- ncol(result$df); pc_ch <- paste0("PC",1:n_pcs)
             shiny::updateSelectInput(session,"s4_pc_x",choices=pc_ch,selected="PC1")
             shiny::updateSelectInput(session,"s4_pc_y",choices=pc_ch,
@@ -2478,6 +2690,52 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           shiny::incProgress(0.6,"Done.")
           rv$s4_run <- TRUE
         })
+    })
+
+    # PCA OPTIONS PANEL — separate renderUI so checkbox changes react without
+    # re-rendering the whole step-4 layout (plots, BC section, etc.)
+    output$s4_pca_top_ui <- shiny::renderUI({
+      if (!rv$s4_run) return(NULL)   # pre-run panel handles options itself
+      # Read inputs WITHOUT isolate so changes propagate
+      cur_scale  <- input$s4_pca_scale  %||% rv$s4_pca_scale
+      cur_center <- input$s4_pca_center %||% rv$s4_pca_center
+      pca_stale  <- !isTRUE(cur_scale  == rv$s4_pca_scale) ||
+                    !isTRUE(cur_center == rv$s4_pca_center)
+      shiny::div(
+        style = "background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:10px 14px;margin-bottom:10px;",
+        shiny::div(style = "display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap;",
+          shiny::div(
+            shiny::tags$p(style = "font-size:0.82em;font-weight:600;margin:0 0 4px 0;", "PCA options:"),
+            shiny::checkboxInput(ns("s4_pca_center"), "Center (subtract mean per gene)", value = cur_center),
+            shiny::checkboxInput(ns("s4_pca_scale"),  "Scale (divide by SD per gene)",  value = cur_scale)
+          ),
+          shiny::div(style = "display:flex;align-items:center;gap:8px;margin-top:22px;",
+            if (pca_stale)
+              shiny::div(
+                shiny::tags$span(style = "font-size:0.8em;color:#b45309;font-weight:600;margin-right:4px;",
+                  "⚠ Settings changed —"),
+                shiny::actionButton(ns("s4_reset_pca"), "↺ Reset & Recompute",
+                  class = "btn-warning btn-sm", style = "padding:3px 10px;font-size:0.8em;"))
+            else
+              shiny::tagList(
+                shiny::tags$span(style = "font-size:0.75em;color:#9ca3af;",
+                  paste0(if (cur_center) "centered" else "not centered",
+                         ", ", if (cur_scale) "scaled" else "not scaled")),
+                shiny::actionButton(ns("s4_reset_pca"), "↺ Reset PCA",
+                  class = "btn-outline-secondary btn-sm",
+                  style = "font-size:0.75em;padding:3px 9px;"))
+          )
+        )
+      )
+    })
+
+    # RESET PCA — clears results so the user can change options and re-run
+    shiny::observeEvent(input$s4_reset_pca, {
+      rv$s4_run           <- FALSE
+      rv$s4_bc_run        <- FALSE
+      rv$s4_pca_df_before <- NULL; rv$s4_pca_ev_before <- NULL
+      rv$s4_pca_df_after  <- NULL; rv$s4_pca_ev_after  <- NULL
+      rv$s4_bc_result     <- NULL
     })
 
     # PCA RENDERING - reacts to colour + PC selectors (no recomputation)
@@ -2539,7 +2797,9 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           if (!is.null(corrdf)) {
             shiny::incProgress(0.25,"Computing post-correction PCA…")
             log_bc    <- log2(as.matrix(corrdf)+1)
-            pca_after <- tryCatch(.pp_run_pca(log_bc, n_pcs=min(10L,n_s-1L)),
+            pca_after <- tryCatch(
+              .pp_run_pca(log_bc, n_pcs=min(10L,n_s-1L),
+                          scale=isTRUE(rv$s4_pca_scale), center=isTRUE(rv$s4_pca_center)),
               error=function(e){shiny::showNotification(paste("Post-BC PCA:",e$message),type="error");NULL})
             rv$s4_bc_result    <- corrdf
             rv$s4_pca_df_after <- if (!is.null(pca_after)) pca_after$df else NULL
