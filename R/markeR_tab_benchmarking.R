@@ -1,0 +1,777 @@
+# =============================================================================
+# Benchmarking Tab - Shiny Module
+#
+# Three sub-modes:
+#   Enrichment  - calculateDE() -> runGSEA() -> plotNESlollipop()
+#   Score       - CalculateScores() -> PlotScores() + ROCandAUCplot()
+#   FPR         - FPR_Simulation() (violin of Cohen's d vs null distribution)
+#
+# Data contract (reactive accessors from main server):
+#   get_expr()      - data.frame: genes x samples (normalised counts)
+#   get_meta()      - data.frame: samples x variables (first col = SampleID)
+#   get_gene_sets() - named list: char vectors or 2-col data.frames
+# =============================================================================
+
+# ---- Helpers ----------------------------------------------------------------
+
+.bm_cat_cols <- function(meta) {
+  if (is.null(meta)) return(character(0))
+  cols <- setdiff(colnames(meta), colnames(meta)[1])
+  cols[sapply(meta[cols], function(x) is.character(x) || is.factor(x))]
+}
+
+.dyn_height_bm <- function(n, base = 300, per_item = 35, max_h = 3000) {
+  as.integer(min(max_h, base + n * per_item))
+}
+
+# ---- UI ---------------------------------------------------------------------
+
+benchmarkingUI <- function(id) {
+  ns <- shiny::NS(id)
+
+  bslib::layout_sidebar(
+
+    sidebar = bslib::sidebar(
+      width = 320,
+
+      shiny::div(
+        style = "padding-bottom:10px;",
+        shiny::h4("Benchmarking Mode", style = "color:#020201;"),
+        shiny::p("Test gene set robustness via GSEA enrichment, sample-wise
+                  scoring, or FPR simulation.", style = "color:#6c757d;"),
+        shiny::hr()
+      ),
+
+      bslib::accordion(
+        open = FALSE,
+
+        # ---- Enrichment settings -------------------------------------------
+        bslib::accordion_panel(
+          "Enrichment (GSEA)",
+
+          shiny::uiOutput(ns("enrich_var_ui")),
+
+          shiny::radioButtons(
+            ns("enrich_mode"), "Contrast mode:",
+            choices  = c("Simple pairwise"  = "simple",
+                         "One vs rest"       = "medium",
+                         "All combinations"  = "extensive"),
+            selected = "simple"
+          ),
+
+          shiny::radioButtons(
+            ns("contrast_correction"), "Multiple-testing scope:",
+            choices  = c("Per gene set"          = "FALSE",
+                         "Across all contrasts"  = "TRUE"),
+            selected = "FALSE"
+          ),
+
+          shiny::selectInput(
+            ns("padj_method"), "p-adjust method:",
+            choices  = c("BH", "bonferroni", "holm", "BY", "fdr", "none"),
+            selected = "BH"
+          ),
+
+          shiny::numericInput(
+            ns("gsea_nperm"), "Permutations:",
+            value = 100, min = 100, max = 100000, step = 100
+          ),
+
+          shiny::numericInput(ns("gsea_fontsize"), "Axis font size (pt):",
+                              value = 10, min = 6, max = 20, step = 1),
+
+          shiny::actionButton(ns("run_gsea"), "Run GSEA",
+                              class = "btn-primary btn-sm", width = "100%")
+        ),
+
+        # ---- Score settings ------------------------------------------------
+        bslib::accordion_panel(
+          "Score Analysis",
+
+          shiny::radioButtons(
+            ns("score_method"), "Scoring method:",
+            choices  = c("Log-median"       = "logmedian",
+                         "Ranking"           = "ranking",
+                         "ssGSEA"            = "ssGSEA",
+                         "All methods (Cohen heatmap)" = "all"),
+            selected = "logmedian"
+          ),
+
+          shiny::uiOutput(ns("score_var_ui")),
+
+          shiny::radioButtons(
+            ns("score_mode"), "Contrast mode:",
+            choices  = c("Simple pairwise"  = "simple",
+                         "One vs rest"       = "medium",
+                         "All combinations"  = "extensive"),
+            selected = "simple"
+          ),
+
+          shiny::checkboxInput(ns("show_roc"), "Compute ROC / AUC", value = TRUE),
+
+          shiny::numericInput(ns("score_fontsize"), "Axis font size (pt):",
+                              value = 10, min = 6, max = 20, step = 1),
+
+          shiny::actionButton(ns("run_scores"), "Run Score Analysis",
+                              class = "btn-primary btn-sm", width = "100%")
+        ),
+
+        # ---- FPR settings --------------------------------------------------
+        bslib::accordion_panel(
+          "FPR Simulation",
+
+          shiny::div(
+            class = "alert alert-warning",
+            style = "font-size:0.85em; padding:6px 10px; margin-bottom:8px;",
+            shiny::icon("clock"),
+            shiny::strong(" This analysis is slow."),
+            " Runtime scales with number of gene sets × simulations.
+             Progress is reported per gene set."
+          ),
+          shiny::helpText(
+            "Compares the observed Cohen's d / f for each gene set against
+             a null distribution generated by sampling random gene sets of
+             equal size. Demonstrates whether the signal is gene-set-specific."
+          ),
+
+          shiny::uiOutput(ns("fpr_var_ui")),
+
+          shiny::radioButtons(
+            ns("fpr_mode"), "Contrast mode:",
+            choices = c("None (overall Cohen f)" = "none",
+                        "Simple pairwise"         = "simple",
+                        "One vs rest"             = "medium",
+                        "All combinations"        = "extensive"),
+            selected = "simple"
+          ),
+
+          shiny::numericInput(ns("fpr_nsims"), "No. of simulations:",
+                              value = 100, min = 10, max = 2000, step = 10),
+
+          shiny::numericInput(ns("fpr_fontsize"), "Axis font size (pt):",
+                              value = 10, min = 6, max = 20, step = 1),
+
+          shiny::actionButton(ns("run_fpr"), "Run FPR Simulation",
+                              class = "btn-primary btn-sm", width = "100%")
+        )
+      )
+    ),
+
+    # ---- Main panel --------------------------------------------------------
+    bslib::navset_card_tab(
+
+      bslib::nav_panel(
+        "Enrichment (GSEA)",
+        shiny::uiOutput(ns("gsea_status_ui")),
+        shiny::uiOutput(ns("nes_plot_ui")),
+        bslib::card(
+          full_screen = TRUE,
+          bslib::card_header("GSEA Results Table"),
+          shiny::uiOutput(ns("gsea_table_hdr_ui")),
+          DT::DTOutput(ns("gsea_table"))
+        )
+      ),
+
+      bslib::nav_panel(
+        "Score Analysis",
+        shiny::uiOutput(ns("score_status_ui")),
+        shiny::uiOutput(ns("score_plot_ui")),
+        shiny::uiOutput(ns("roc_plot_ui"))
+      ),
+
+      bslib::nav_panel(
+        "FPR Simulation",
+        shiny::uiOutput(ns("fpr_status_ui")),
+        shiny::uiOutput(ns("fpr_plot_ui"))
+      ),
+
+      bslib::nav_panel(
+        "Insights",
+        bslib::card(
+          bslib::card_header("Statistical Insights"),
+          shiny::uiOutput(ns("bm_insights_ui"))
+        )
+      )
+    )
+  )
+}
+
+# ---- Server -----------------------------------------------------------------
+
+#' @importFrom ggpubr ggarrange
+benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
+
+  shiny::moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+
+    # Cached results
+    gsea_result  <- shiny::reactiveVal(NULL)
+    score_result <- shiny::reactiveVal(NULL)
+    fpr_result   <- shiny::reactiveVal(NULL)
+
+    # Per-plot reactive heights (drives both plotOutput container and renderPlot raster)
+    nes_h   <- shiny::reactiveVal(500L)
+    score_h <- shiny::reactiveVal(500L)
+    roc_h   <- shiny::reactiveVal(400L)
+    fpr_h   <- shiny::reactiveVal(500L)
+
+    # ---- Dynamic UI ---------------------------------------------------------
+
+    output$enrich_var_ui <- shiny::renderUI({
+      meta <- get_meta(); shiny::req(!is.null(meta))
+      cat_cols <- .bm_cat_cols(meta)
+      if (length(cat_cols) == 0)
+        return(shiny::helpText("No categorical metadata variables found."))
+      shiny::selectInput(ns("enrich_var"), "Contrast variable:",
+                         choices = cat_cols, selected = cat_cols[1])
+    })
+
+    output$score_var_ui <- shiny::renderUI({
+      meta <- get_meta(); shiny::req(!is.null(meta))
+      # All non-ID columns (categorical and numeric)
+      cols <- setdiff(colnames(meta), colnames(meta)[1])
+      if (length(cols) == 0)
+        return(shiny::helpText("No metadata variables found."))
+      shiny::selectInput(ns("score_var"), "Grouping variable:",
+                         choices = cols, selected = cols[1])
+    })
+
+    output$fpr_var_ui <- shiny::renderUI({
+      meta <- get_meta(); shiny::req(!is.null(meta))
+      cat_cols <- .bm_cat_cols(meta)
+      if (length(cat_cols) == 0)
+        return(shiny::helpText("No categorical metadata variables found."))
+      shiny::selectInput(ns("fpr_var"), "Variable to test:",
+                         choices = cat_cols, selected = cat_cols[1])
+    })
+
+    # ---- Run GSEA ----------------------------------------------------------
+    shiny::observeEvent(input$run_gsea, {
+      expr <- get_expr(); meta <- get_meta(); gs <- get_gene_sets()
+      shiny::req(expr, meta, gs, input$enrich_var)
+
+      enrich_var  <- shiny::isolate(input$enrich_var)
+      enrich_mode <- shiny::isolate(input$enrich_mode)
+      nperm       <- shiny::isolate(input$gsea_nperm)
+      padj_m      <- shiny::isolate(input$padj_method)
+      cont_corr   <- as.logical(shiny::isolate(input$contrast_correction))
+
+      message(sprintf(
+        "[markeR][GSEA] Starting | variable=%s | mode=%s | nperm=%d | padj=%s | n_gene_sets=%d",
+        enrich_var, enrich_mode, nperm, padj_m, length(gs)
+      ))
+
+      shiny::withProgress(message = "Running GSEA...", value = 0, {
+        result <- tryCatch({
+          message("[markeR][GSEA] Step 1/3 – building contrasts")
+          shiny::incProgress(0.10, detail = "Building contrasts...")
+          uvals <- gsub(" ", "", unique(as.character(meta[[enrich_var]])))
+          contrasts_vec <- remove_division(
+            generate_all_contrasts(uvals, mode = enrich_mode)
+          )
+          message(sprintf("[markeR][GSEA] Contrasts (%d): %s",
+                          length(contrasts_vec), paste(contrasts_vec, collapse = ", ")))
+
+          message("[markeR][GSEA] Step 2/3 – fitting linear models (calculateDE)")
+          shiny::incProgress(0.20, detail = "Fitting linear models...")
+          DEGs <- calculateDE(
+            data      = expr,
+            metadata  = meta,
+            variables = enrich_var,
+            contrasts = contrasts_vec
+          )
+          message(sprintf("[markeR][GSEA] calculateDE done | contrasts=%d", length(DEGs)))
+
+          message(sprintf("[markeR][GSEA] Step 3/3 – fgsea permutations (nPerm=%d)", nperm))
+          shiny::incProgress(0.55, detail = sprintf("Running fgsea (%d permutations)...", nperm))
+          gsea_res <- runGSEA(
+            DEGList            = DEGs,
+            gene_sets          = gs,
+            ContrastCorrection = cont_corr,
+            nPermSimple        = nperm,
+            p.adjust.method    = padj_m
+          )
+
+          shiny::incProgress(0.15, detail = "Done.")
+          message("[markeR][GSEA] Complete")
+          list(gsea_res   = gsea_res,
+               contrasts  = contrasts_vec,
+               var        = enrich_var,
+               n_sets     = length(gs),
+               n_cont     = length(contrasts_vec),
+               run_params = list(
+                 enrich_var  = enrich_var,
+                 enrich_mode = enrich_mode,
+                 nperm       = nperm,
+                 padj_m      = padj_m,
+                 n_gene_sets = length(gs)
+               ))
+
+        }, error = function(e) {
+          message(sprintf("[markeR][GSEA] ERROR: %s", conditionMessage(e)))
+          shiny::showNotification(paste("GSEA failed:", conditionMessage(e)),
+                                  type = "error", duration = 12)
+          NULL
+        })
+      })
+      if (!is.null(result))
+        nes_h(.dyn_height_bm(result$n_sets * result$n_cont, base = 280, per_item = 35))
+      gsea_result(result)
+    })
+
+    # ---- Run Score Analysis ------------------------------------------------
+    shiny::observeEvent(input$run_scores, {
+      expr <- get_expr(); meta <- get_meta(); gs <- get_gene_sets()
+      shiny::req(expr, meta, gs, input$score_var)
+      method     <- shiny::isolate(input$score_method)
+      score_var  <- shiny::isolate(input$score_var)  # capture now, before withProgress
+      score_mode <- shiny::isolate(input$score_mode)
+      show_roc   <- shiny::isolate(input$show_roc)
+
+      message(sprintf(
+        "[markeR][Score] Starting | method=%s | variable=%s | mode=%s | n_gene_sets=%d | roc=%s",
+        method, score_var, score_mode, length(gs), show_roc
+      ))
+
+      shiny::withProgress(message = "Computing scores...", value = 0, {
+        result <- tryCatch({
+          message(sprintf("[markeR][Score] Step 1/%d – PlotScores", if (show_roc && method != "all") 2L else 1L))
+          shiny::incProgress(0.4, detail = paste("Scoring method:", method))
+          plot_res <- PlotScores(
+            data      = expr,
+            metadata  = meta,
+            gene_sets = gs,
+            method    = method,
+            Variable  = score_var,
+            mode      = score_mode
+          )
+          message("[markeR][Score] PlotScores done")
+
+          roc_res <- NULL
+          if (show_roc && method != "all") {
+            message("[markeR][Score] Step 2/2 – ROCAUC_Scores_Calculate")
+            shiny::incProgress(0.4, detail = "Computing ROC/AUC...")
+            roc_res <- tryCatch({
+              r <- ROCAUC_Scores_Calculate(
+                data      = expr,
+                metadata  = meta,
+                gene_sets = gs,
+                method    = method,
+                variable  = score_var,
+                mode      = score_mode
+              )
+              message("[markeR][Score] ROCAUC done")
+              r
+            }, error = function(e) {
+              message(sprintf("[markeR][Score] ROCAUC ERROR: %s", conditionMessage(e)))
+              shiny::showNotification(paste("ROC/AUC failed:", conditionMessage(e)),
+                                      type = "warning", duration = 8)
+              NULL
+            })
+          }
+
+          shiny::incProgress(0.2, detail = "Done.")
+          message("[markeR][Score] Complete")
+          list(plot_res  = plot_res,
+               roc_res   = roc_res,
+               method    = method,
+               score_var = score_var,
+               n_gs      = length(gs))
+
+        }, error = function(e) {
+          message(sprintf("[markeR][Score] ERROR: %s", conditionMessage(e)))
+          shiny::showNotification(paste("Score analysis failed:", conditionMessage(e)),
+                                  type = "error", duration = 12)
+          NULL
+        })
+      })
+      if (!is.null(result)) {
+        score_h(.dyn_height_bm(result$n_gs, base = 320, per_item = 90))
+        roc_h(.dyn_height_bm(result$n_gs, base = 260, per_item = 65))
+      }
+      score_result(result)
+    })
+
+    # ---- Run FPR Simulation ------------------------------------------------
+    # NOTE: Runs FPR_Simulation once per gene set so we can report per-gene-set
+    # progress. Results are combined with ggarrange at the end.
+    shiny::observeEvent(input$run_fpr, {
+      expr <- get_expr(); meta <- get_meta(); gs <- get_gene_sets()
+      shiny::req(expr, meta, gs, input$fpr_var)
+
+      fpr_var  <- shiny::isolate(input$fpr_var)
+      fpr_nsims <- shiny::isolate(input$fpr_nsims)
+      fpr_mode  <- shiny::isolate(input$fpr_mode)
+      gs_names  <- names(gs)
+      n_gs      <- length(gs_names)
+
+      message(sprintf(
+        "[markeR][FPR] Starting | variable=%s | mode=%s | nsims=%d | n_gene_sets=%d",
+        fpr_var, fpr_mode, fpr_nsims, n_gs
+      ))
+      message(sprintf("[markeR][FPR] Estimated time: ~%d s per gene set (ssGSEA × logmedian × ranking × %d sims)",
+                      fpr_nsims %/% 10, fpr_nsims))
+
+      shiny::withProgress(
+        message = sprintf("FPR Simulation (0 / %d gene sets done)...", n_gs),
+        value   = 0,
+        {
+          result <- tryCatch({
+            all_plots <- list()
+            all_data  <- list()
+
+            for (i in seq_along(gs_names)) {
+              sig_name <- gs_names[i]
+
+              message(sprintf("[markeR][FPR] Gene set %d/%d: %s", i, n_gs, sig_name))
+              shiny::setProgress(
+                value   = (i - 1) / n_gs,
+                message = sprintf("FPR Simulation (%d / %d done)...", i - 1, n_gs),
+                detail  = sprintf("Processing: %s", sig_name)
+              )
+
+              res_i <- FPR_Simulation(
+                data                = expr,
+                metadata            = meta,
+                original_signatures = gs[sig_name],
+                Variable            = fpr_var,
+                number_of_sims      = fpr_nsims,
+                mode                = fpr_mode
+              )
+
+              all_plots[[sig_name]] <- res_i$plot
+              all_data[[sig_name]]  <- res_i$data[[sig_name]]
+              message(sprintf("[markeR][FPR] Gene set %d/%d done: %s", i, n_gs, sig_name))
+            }
+
+            # Combine individual plots
+            message("[markeR][FPR] Combining plots...")
+            shiny::setProgress(value = 1, message = "FPR Simulation – combining plots...",
+                               detail = "")
+            ncol_g <- ceiling(sqrt(n_gs))
+            nrow_g <- ceiling(n_gs / ncol_g)
+            combined <- ggpubr::ggarrange(
+              plotlist     = all_plots,
+              ncol         = ncol_g,
+              nrow         = nrow_g,
+              common.legend = TRUE,
+              legend       = "top"
+            )
+
+            message("[markeR][FPR] Complete")
+            list(fpr_res = list(plot = combined, data = all_data),
+                 var     = fpr_var,
+                 nsims   = fpr_nsims,
+                 n_gs    = n_gs)
+
+          }, error = function(e) {
+            message(sprintf("[markeR][FPR] ERROR: %s", conditionMessage(e)))
+            shiny::showNotification(paste("FPR simulation failed:", conditionMessage(e)),
+                                    type = "error", duration = 12)
+            NULL
+          })
+        }
+      )
+      if (!is.null(result))
+        fpr_h(.dyn_height_bm(result$n_gs, base = 320, per_item = 130))
+      fpr_result(result)
+    })
+
+    # ---- Renders: GSEA -----------------------------------------------------
+
+    output$gsea_status_ui <- shiny::renderUI({
+      if (is.null(gsea_result()))
+        shiny::div(class = "alert alert-info", style = "margin:10px 0;",
+                   shiny::icon("circle-info"),
+                   " Select a contrast variable and click ",
+                   shiny::strong("Run GSEA"), ".")
+    })
+
+    output$nes_plot_ui <- shiny::renderUI({
+      shiny::req(!is.null(gsea_result()))
+      shiny::tagList(
+        shiny::h5("Normalized Enrichment Scores – Lollipop Plot",
+                  style = "margin:12px 0 4px;"),
+        shiny::plotOutput(ns("nes_lollipop"), height = paste0(nes_h(), "px"))
+      )
+    })
+
+    output$nes_lollipop <- shiny::renderPlot({
+      res <- gsea_result(); shiny::req(!is.null(res))
+      font <- input$gsea_fontsize
+      p <- tryCatch(
+        plotNESlollipop(GSEA_results = res$gsea_res, grid = TRUE,
+                        labsize = font, titlesize = font + 2),
+        error = function(e) {
+          shiny::showNotification(paste("Lollipop plot error:", e$message),
+                                  type = "warning"); NULL
+        })
+      shiny::req(!is.null(p)); print(p)
+    }, height = function() nes_h(), res = 150)
+
+    output$gsea_table_hdr_ui <- shiny::renderUI({
+      res <- gsea_result()
+      if (is.null(res)) return(NULL)
+      p <- res$run_params
+      if (is.null(p)) return(NULL)
+      mode_label <- switch(p$enrich_mode,
+        "all_vs_all"    = "All vs All",
+        "one_vs_rest"   = "One vs Rest",
+        "sequential"    = "Sequential",
+        p$enrich_mode)
+      n_rows <- sum(vapply(res$gsea_res, nrow, integer(1)))
+      shiny::div(
+        style = "margin-bottom:6px; font-size:0.85em;",
+        shiny::icon("circle-info", style = "color:#0d6efd; margin-right:4px;"),
+        shiny::tags$span(style = "color:#555; margin-right:6px;",
+          sprintf("%d result(s) across %d contrast(s) — filtered by:", n_rows, res$n_cont)),
+        shiny::tags$span(class = "badge bg-primary me-1",   style = "font-weight:500;",
+          paste0("Variable: ", p$enrich_var)),
+        shiny::tags$span(class = "badge bg-secondary me-1", style = "font-weight:500;",
+          paste0("Mode: ", mode_label)),
+        shiny::tags$span(class = "badge bg-secondary me-1", style = "font-weight:500;",
+          paste0("Padj: ", p$padj_m)),
+        shiny::tags$span(class = "badge bg-secondary me-1", style = "font-weight:500;",
+          paste0("Gene sets: ", p$n_gene_sets))
+      )
+    })
+
+    output$gsea_table <- DT::renderDT({
+      res <- gsea_result(); shiny::req(!is.null(res))
+      combined <- do.call(rbind, lapply(names(res$gsea_res), function(ct) {
+        df <- res$gsea_res[[ct]]; df$contrast <- ct
+        if ("leadingEdge" %in% colnames(df))
+          df$leadingEdge <- vapply(df$leadingEdge,
+                                   function(x) paste(x, collapse = ", "),
+                                   character(1))
+        df
+      }))
+      combined[sapply(combined, is.numeric)] <-
+        lapply(combined[sapply(combined, is.numeric)], round, 4)
+      DT::datatable(combined, rownames = FALSE, filter = "top",
+                    extensions = "Buttons",
+                    options = list(pageLength = 15, dom = "Bfrtip",
+                                   buttons = c("csv", "excel"), scrollX = TRUE))
+    })
+
+    # ---- Renders: Score ----------------------------------------------------
+
+    output$score_status_ui <- shiny::renderUI({
+      if (is.null(score_result()))
+        shiny::div(class = "alert alert-info", style = "margin:10px 0;",
+                   shiny::icon("circle-info"),
+                   " Select a scoring method and grouping variable, then click ",
+                   shiny::strong("Run Score Analysis"), ".")
+    })
+
+    output$score_plot_ui <- shiny::renderUI({
+      shiny::req(!is.null(score_result()))
+      shiny::tagList(
+        shiny::h5("Score Distributions", style = "margin:12px 0 4px;"),
+        shiny::plotOutput(ns("score_plot"), height = paste0(score_h(), "px"))
+      )
+    })
+
+    output$score_plot <- shiny::renderPlot({
+      res <- score_result(); shiny::req(!is.null(res))
+      font <- input$score_fontsize
+      method <- res$method
+
+      tryCatch({
+        p_raw <- res$plot_res
+        # PlotScores returns:
+        #   method="all"  -> list(heatmap=ggplot, volcano=ggplot)
+        #   categorical   -> list with $plot (ggplot)
+        #   numeric       -> similar
+        if (method == "all") {
+          # Show the Cohen's d heatmap
+          print(p_raw$heatmap)
+        } else if (is.list(p_raw) && !inherits(p_raw, "gg")) {
+          p <- p_raw$plot %||% p_raw[[1]]$plot %||% p_raw[[1]]
+          if (inherits(p, c("gg", "ggplot"))) {
+            print(p + ggplot2::theme(
+              axis.text  = ggplot2::element_text(size = font),
+              axis.title = ggplot2::element_text(size = font + 1),
+              strip.text = ggplot2::element_text(size = font + 1, face = "bold"),
+              legend.text = ggplot2::element_text(size = font)
+            ))
+          } else {
+            print(p)
+          }
+        } else {
+          print(p_raw)
+        }
+      }, error = function(e) {
+        shiny::showNotification(paste("Score plot failed:", e$message),
+                                type = "warning", duration = 8)
+      })
+    }, height = function() score_h(), res = 150)
+
+    output$roc_plot_ui <- shiny::renderUI({
+      res <- score_result()
+      shiny::req(!is.null(res), !is.null(res$roc_res))
+      shiny::tagList(
+        shiny::h5("ROC / AUC", style = "margin:12px 0 4px;"),
+        shiny::plotOutput(ns("roc_plot"), height = paste0(roc_h(), "px"))
+      )
+    })
+
+    output$roc_plot <- shiny::renderPlot({
+      res <- score_result(); shiny::req(!is.null(res), !is.null(res$roc_res))
+      font <- input$score_fontsize
+      # ROCAUC_Scores_Calculate returns nested list; extract AUC values and
+      # plot via ROCandAUCplot (which needs condition_var and class args).
+      # We stored the raw roc_result; draw the AUC barplot using pROC values.
+      roc_data <- res$roc_res
+      method_name <- names(roc_data)[1]
+      sigs <- roc_data[[method_name]]
+
+      auc_df <- do.call(rbind, lapply(names(sigs), function(sig) {
+        do.call(rbind, lapply(names(sigs[[sig]]), function(cont) {
+          data.frame(Signature = sig, Contrast = cont,
+                     AUC = as.numeric(sigs[[sig]][[cont]]$AUC),
+                     stringsAsFactors = FALSE)
+        }))
+      }))
+
+      p <- ggplot2::ggplot(auc_df, ggplot2::aes(
+        x    = .data$Contrast,
+        y    = .data$AUC,
+        fill = .data$Signature)) +
+        ggplot2::geom_col(position = "dodge", alpha = 0.85, width = 0.7) +
+        ggplot2::geom_hline(yintercept = 0.5, linetype = "dashed",
+                            color = "grey40") +
+        ggplot2::geom_hline(yintercept = 0.7, linetype = "dotted",
+                            color = "grey60") +
+        ggplot2::scale_y_continuous(limits = c(0, 1),
+                                    breaks = seq(0, 1, 0.1)) +
+        ggplot2::coord_flip() +
+        ggplot2::labs(x = "Contrast", y = "AUC",
+                      title = paste("AUC per Contrast -", res$method),
+                      fill  = "Gene set") +
+        ggplot2::theme_classic() +
+        ggplot2::theme(
+          axis.text  = ggplot2::element_text(size = font),
+          axis.title = ggplot2::element_text(size = font + 1),
+          legend.text  = ggplot2::element_text(size = font),
+          legend.title = ggplot2::element_text(size = font + 1),
+          plot.title   = ggplot2::element_text(hjust = 0.5, size = font + 2)
+        )
+      print(p)
+    }, height = function() roc_h(), res = 150)
+
+    # ---- Renders: FPR ------------------------------------------------------
+
+    output$fpr_status_ui <- shiny::renderUI({
+      if (is.null(fpr_result()))
+        shiny::div(class = "alert alert-info", style = "margin:10px 0;",
+                   shiny::icon("circle-info"),
+                   " Select a variable and number of simulations, then click ",
+                   shiny::strong("Run FPR Simulation"), ".")
+    })
+
+    output$fpr_plot_ui <- shiny::renderUI({
+      res <- fpr_result(); shiny::req(!is.null(res))
+      shiny::tagList(
+        shiny::h5(paste("FPR Simulation –", res$var, "(", res$nsims, "simulations)"),
+                  style = "margin:12px 0 4px;"),
+        shiny::plotOutput(ns("fpr_plot"), height = paste0(fpr_h(), "px"))
+      )
+    })
+
+    output$fpr_plot <- shiny::renderPlot({
+      res <- fpr_result(); shiny::req(!is.null(res))
+      font <- input$fpr_fontsize
+      fpr <- res$fpr_res
+
+      # FPR_Simulation returns list(plot=ggplot, data=df)
+      p_raw <- if (is.list(fpr) && !inherits(fpr, "gg")) {
+        fpr$plot %||% fpr[[1]]
+      } else {
+        fpr
+      }
+
+      if (inherits(p_raw, c("gg", "ggplot"))) {
+        print(p_raw + ggplot2::theme(
+          axis.text  = ggplot2::element_text(size = font),
+          axis.title = ggplot2::element_text(size = font + 1),
+          strip.text = ggplot2::element_text(size = font + 1, face = "bold"),
+          legend.text = ggplot2::element_text(size = font)
+        ))
+      }
+    }, height = function() fpr_h(), res = 150)
+
+    # ---- Insights ----------------------------------------------------------
+
+    output$bm_insights_ui <- shiny::renderUI({
+      gsea <- gsea_result(); scr <- score_result(); fpr <- fpr_result()
+
+      if (is.null(gsea) && is.null(scr) && is.null(fpr))
+        return(shiny::p("Run analyses in the sidebar to generate insights.",
+                        style = "color:#6c757d;"))
+
+      items <- list()
+
+      if (!is.null(gsea)) {
+        all_r <- do.call(rbind, gsea$gsea_res)
+        n_sig <- sum(all_r$padj < 0.05, na.rm = TRUE)
+        items <- c(items, list(
+          shiny::h5("GSEA Enrichment", style = "color:#020201;"),
+          shiny::p(shiny::strong(n_sig), " of ",
+                   shiny::strong(nrow(all_r)),
+                   " gene set x contrast combinations reached padj < 0.05.")
+        ))
+        if (n_sig > 0) {
+          top <- all_r[!is.na(all_r$padj) & all_r$padj < 0.05, ]
+          top <- top[order(top$padj), ][seq_len(min(5, nrow(top))), ]
+          items <- c(items, list(
+            shiny::tags$ul(lapply(seq_len(nrow(top)), function(i)
+              shiny::tags$li(sprintf("%s | NES = %.2f | padj = %.3e",
+                                     top$pathway[i], top$NES[i], top$padj[i]))
+            ))
+          ))
+        }
+        items <- c(items, list(shiny::hr()))
+      }
+
+      if (!is.null(scr)) {
+        items <- c(items, list(
+          shiny::h5("Score Analysis", style = "color:#020201;"),
+          shiny::p("Method: ", shiny::strong(scr$method),
+                   "  |  grouped by: ", shiny::strong(scr$score_var), ".")
+        ))
+        if (!is.null(scr$roc_res)) {
+          method_name <- names(scr$roc_res)[1]
+          auc_vals <- unlist(lapply(scr$roc_res[[method_name]], function(sig)
+            lapply(sig, function(ct) ct$AUC)))
+          auc_vals <- as.numeric(unlist(auc_vals))
+          items <- c(items, list(
+            shiny::p("AUC range: ",
+                     shiny::strong(sprintf("%.3f", min(auc_vals, na.rm = TRUE))),
+                     " - ",
+                     shiny::strong(sprintf("%.3f", max(auc_vals, na.rm = TRUE))),
+                     ". AUC > 0.7 indicates good discriminative power.")
+          ))
+        }
+        items <- c(items, list(shiny::hr()))
+      }
+
+      if (!is.null(fpr)) {
+        items <- c(items, list(
+          shiny::h5("FPR Simulation", style = "color:#020201;"),
+          shiny::p(shiny::strong(fpr$nsims),
+                   " random gene sets simulated for variable ",
+                   shiny::strong(fpr$var), ". ",
+                   "Gene sets whose observed effect sizes fall outside the
+                    null violin are specific to the phenotype.")
+        ))
+      }
+
+      do.call(shiny::tagList, items)
+    })
+
+  })
+}
+
+# Null-coalescing helper (available in R >= 4.4 natively, but kept for safety)
+`%||%` <- function(a, b) if (!is.null(a)) a else b

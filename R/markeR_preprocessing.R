@@ -248,19 +248,20 @@
   n   <- min(n_show, length(ev))
   pct <- round(100 * ev[1:n] / sum(ev), 1)
   pc_labels <- paste0("PC", 1:n)
-  df  <- data.frame(PC = factor(pc_labels, levels = pc_labels),
-                    Pct = pct, Num = 1:n, stringsAsFactors = FALSE)
-  df$Selected <- df$PC %in% c(pc_x, pc_y)
-  ggplot2::ggplot(df, ggplot2::aes(x = PC, y = Pct, fill = Selected)) +
+  sel_nums  <- suppressWarnings(as.integer(sub("PC", "", c(pc_x, pc_y))))
+  sel_nums  <- sel_nums[!is.na(sel_nums)]
+  df <- data.frame(Num = 1:n, Pct = pct, stringsAsFactors = FALSE)
+  df$Selected <- df$Num %in% sel_nums
+  ggplot2::ggplot(df, ggplot2::aes(x = .data$Num, y = .data$Pct, fill = .data$Selected)) +
     ggplot2::geom_col(colour = "white", width = 0.7) +
     ggplot2::scale_fill_manual(values = c("FALSE" = "#d1d5db", "TRUE" = "#EBB43E"),
                                 guide = "none") +
-    ggplot2::scale_x_discrete(labels = setNames(as.character(1:n), pc_labels)) +
+    ggplot2::scale_x_continuous(breaks = 1:n, labels = 1:n) +
     ggplot2::theme_bw() +
     ggplot2::theme(panel.border     = ggplot2::element_blank(),
                    axis.line        = ggplot2::element_line(colour = "black"),
                    panel.grid.minor = ggplot2::element_blank(),
-                   axis.text.x      = ggplot2::element_text(size = 7)) +
+                   axis.text.x      = ggplot2::element_text(size = 8)) +
     ggplot2::xlab("PC") + ggplot2::ylab("% variance")
 }
 

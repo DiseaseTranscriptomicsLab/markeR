@@ -51,6 +51,15 @@
 #' @param jaccard_threshold (only if method == "jaccard" only) Numeric. Minimum
 #'   Jaccard index required for a gene set to be included in the plot. Default
 #'   is `0`.
+#' @param organism Character. Species name passed to [msigdbr::msigdbr()].
+#'   Defaults to `"Homo sapiens"`. Use `msigdbr::msigdbr_species()` to see all
+#'   supported species (e.g. `"Mus musculus"`, `"Rattus norvegicus"`).
+#'   Only relevant when `collection` is specified.
+#' @param db_species Character or NULL. Controls which MSigDB database to query.
+#'   `NULL` (default) omits the argument, using the msigdbr default (human gene
+#'   sets with ortholog mapping). Pass `"MM"` to retrieve gene sets natively
+#'   curated in mouse, or `"HS"` to explicitly request human-curated sets.
+#'   Only relevant in msigdbr >= 2024 and when `collection` is specified.
 #' @param msig_subset Optional. Character vector of MSigDB gene set names to
 #'   subset from the specified collection. Useful to restrict analysis to a
 #'   specific set of pathways. If supplied, other filters will apply only to
@@ -93,7 +102,7 @@
 #' # Odds ratio example (requires universe)
 #' gene_universe <- unique(c(
 #'   sig1, sig2,
-#'   msigdbr::msigdbr(species = "Homo sapiens", category = "C2")$gene_symbol
+#'   msigdbr::msigdbr(species = "Homo sapiens", collection = "C2")$gene_symbol
 #' ))
 #'
 #' plt_or <- geneset_similarity(
@@ -110,6 +119,8 @@ geneset_similarity <- function(
     other_user_signatures = NULL,
     collection = NULL,
     subcollection = NULL,
+    organism = "Homo sapiens",
+    db_species = NULL,
     metric = c("jaccard","odds_ratio"),
     universe = NULL,
     or_threshold = 1,
@@ -137,6 +148,12 @@ geneset_similarity <- function(
   }
   if (!is.null(collection) && !is.character(collection)) {
     stop("Collection must be a character string or NULL.")
+  }
+  if (!is.character(organism) || length(organism) != 1 || !nzchar(organism)) {
+    stop("organism must be a non-empty character string (e.g. 'Homo sapiens', 'Mus musculus').")
+  }
+  if (!is.null(db_species) && (!is.character(db_species) || length(db_species) != 1 || !nzchar(db_species))) {
+    stop("db_species must be a single character string (e.g. 'HS', 'MM') or NULL.")
   }
   if (!is.null(subcollection) && !is.character(subcollection)) {
     stop("Subcollection must be a character string or NULL.")
@@ -196,18 +213,16 @@ geneset_similarity <- function(
 
   if (!is.null(collection)) {
 
-    if (collection=="all"){
-      gs <- msigdbr::msigdbr(
-        species = "Homo sapiens",
-        collection = NULL,
-        subcollection = NULL
-      )
+    .msigdbr_call <- function(collection_arg, subcollection_arg) {
+      args <- list(species = organism, collection = collection_arg,
+                   subcollection = subcollection_arg)
+      if (!is.null(db_species)) args$db_species <- db_species
+      do.call(msigdbr::msigdbr, args)
+    }
+    if (collection == "all") {
+      gs <- .msigdbr_call(NULL, NULL)
     } else {
-      gs <- msigdbr::msigdbr(
-        species = "Homo sapiens",
-        collection = collection,
-        subcollection = subcollection
-      )
+      gs <- .msigdbr_call(collection, subcollection)
     }
 
 

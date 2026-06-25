@@ -1,4 +1,4 @@
-#' @importFrom bslib bs_theme nav_panel page_navbar sidebar layout_sidebar accordion accordion_panel
+#' @importFrom bslib bs_theme nav_panel page_navbar sidebar layout_sidebar accordion accordion_panel navset_card_tab card card_header
 #' @import shiny
 #' @import GEOquery
 #' @import DT
@@ -9,6 +9,7 @@
 #' @importFrom shinyWidgets pickerInput pickerOptions
 #' @importFrom utils download.file read.csv read.delim read.table untar unzip packageVersion
 #' @importFrom tools file_ext file_path_sans_ext
+#' @importFrom ComplexHeatmap draw
 
 ui <- bslib::page_navbar(
   
@@ -460,23 +461,20 @@ ui <- bslib::page_navbar(
   ##### GENE SETS #####
   bslib::nav_panel(
     "Gene Sets",
-    shiny::h4("Coming soon..."),
-    shiny::h1("👁️👄👁")
+    geneSetsUI("gene_sets")
   ),
 
   ##### BENCHMARKING MODE #####
   bslib::nav_panel(
     "Benchmarking Mode",
-    shiny::h4("Coming soon..."),
-    shiny::h1("👁️👄👁")
+    benchmarkingUI("benchmarking")
   ),
 
   ##### DISCOVERY MODE #####
   bslib::nav_panel(
     "Discovery Mode",
-    shiny::h4("Coming soon..."),
-    shiny::h1("👁️👄👁")
-  ) 
+    discoveryUI("discovery")
+  )
   
   
   
@@ -726,10 +724,33 @@ server <- function(input, output, session) {
     expr_quality_warn(NULL)   # clear any earlier quality warning
   }, ignoreInit = TRUE)
 
+  ###### ANALYSIS MODULES ######
+
+  geneSetsServer(
+    id            = "gene_sets",
+    get_expr      = expr_data,
+    get_meta      = meta_data,
+    get_gene_sets = gene_sets
+  )
+
+  benchmarkingServer(
+    id            = "benchmarking",
+    get_expr      = expr_data,
+    get_meta      = meta_data,
+    get_gene_sets = gene_sets
+  )
+
+  discoveryServer(
+    id            = "discovery",
+    get_expr      = expr_data,
+    get_meta      = meta_data,
+    get_gene_sets = gene_sets
+  )
+
   ###### NAV TAB LOCKING ######
 
-  # Tabs that require valid, matched data to be usable.
-  .analysis_tabs <- c("Preprocessing", "Gene Sets", "Benchmarking Mode", "Discovery Mode")
+  # Tabs that require valid, matched data AND finalised preprocessing.
+  .analysis_tabs <- c("Benchmarking Mode", "Discovery Mode")
 
   # Mirror exactly the sample_mismatch_banner logic.
   # Tabs are locked ONLY when both expr and meta are loaded AND sample names/counts mismatch.
@@ -779,13 +800,42 @@ server <- function(input, output, session) {
   }
 
   shiny::observe({
-    expr <- expr_data()
-    meta <- meta_data()
-    state <- .tab_lock_state(expr, meta)
+    expr      <- expr_data()
+    meta      <- meta_data()
+    finalized <- pp_module$finalized()   # reactive dependency
+
+    # ── Preprocessing tab: locked only when data is not loaded / mismatched.
+    pp_state <- .tab_lock_state(expr, meta)
     session$sendCustomMessage("lockNavTabs", list(
-      tabs   = .analysis_tabs,
-      locked = state$locked,
-      tip    = if (!is.null(state$tip)) state$tip else ""
+      tabs   = list("Preprocessing"),
+      locked = pp_state$locked,
+      tip    = if (!is.null(pp_state$tip)) pp_state$tip else ""
+    ))
+
+    # ── Gene Sets tab: same condition as Preprocessing (data loaded + matched)
+    # but does NOT require preprocessing to be finalised — gene sets are always
+    # explorable as long as expression + metadata are loaded and matched.
+    session$sendCustomMessage("lockNavTabs", list(
+      tabs   = list("Gene Sets"),
+      locked = pp_state$locked,
+      tip    = if (!is.null(pp_state$tip)) pp_state$tip else ""
+    ))
+
+    # ── Benchmarking / Discovery: also require preprocessing to have been finalised.
+    analysis_state <- if (pp_state$locked) {
+      pp_state   # same "fix your data first" message
+    } else if (finalized == 0L) {
+      list(locked = TRUE,
+           tip = paste0("Complete preprocessing first — click ",
+                        "’Finalize’ or ‘Use Data As-Is’ in the Preprocessing tab."))
+    } else {
+      list(locked = FALSE, tip = NULL)
+    }
+
+    session$sendCustomMessage("lockNavTabs", list(
+      tabs   = as.list(.analysis_tabs),
+      locked = analysis_state$locked,
+      tip    = if (!is.null(analysis_state$tip)) analysis_state$tip else ""
     ))
   })
 
@@ -947,6 +997,55 @@ server <- function(input, output, session) {
          ". Supported formats: .txt, .csv, .tsv, .xls, .xlsx, .rds")
   }
   
+  # ── Gene-set–specific reader ─────────────────────────────────────────────────
+  # Unlike safe_read_table (designed for numeric expression matrices), this reader
+  # preserves character data and handles the many formats gene sets come in:
+  #   • RDS: character vector, named list, or data frame with gene names in col 1
+  #   • RDA: same as RDS but stores an object by variable name (first object used)
+  #   • CSV / TXT / TSV: gene names in first column; optional direction in second
+  safe_read_geneset <- function(path) {
+    ext <- tolower(tools::file_ext(path))
+
+    if (ext == "rds") {
+      obj <- readRDS(path)
+      # Already the right type — return as-is for parse_geneset_object to handle
+      return(obj)
+    }
+
+    if (ext == "rda") {
+      e <- new.env(parent = emptyenv())
+      load(path, envir = e)
+      nms <- ls(e)
+      if (length(nms) == 0) stop("RDA file is empty.")
+      return(get(nms[1], envir = e))
+    }
+
+    if (ext %in% c("xls", "xlsx")) {
+      df <- if (ext == "xls") readxl::read_xls(path) else readxl::read_xlsx(path)
+      return(as.data.frame(df, stringsAsFactors = FALSE, check.names = FALSE))
+    }
+
+    if (ext %in% c("txt", "csv", "tsv")) {
+      first_line <- readLines(path, n = 1, warn = FALSE, encoding = "UTF-8")
+      first_line <- sub("^\xef\xbb\xbf", "", first_line)   # strip BOM
+      sep <- if (grepl("\t", first_line)) "\t" else
+             if (grepl(";",  first_line)) ";" else
+             if (grepl(",",  first_line)) "," else " "
+      df <- utils::read.table(
+        path, header = TRUE, sep = sep, check.names = FALSE,
+        stringsAsFactors = FALSE, comment.char = "", fill = TRUE,
+        colClasses = "character"
+      )
+      df[] <- lapply(df, function(x) gsub("^[\"']|[\"']$", "", trimws(x)))
+      df   <- df[, colSums(!is.na(df) & df != "") > 0, drop = FALSE]
+      if (ncol(df) == 0) stop("File appears empty after parsing.")
+      return(df)
+    }
+
+    stop("Unsupported gene set format: .", ext,
+         ". Supported: .csv, .txt, .tsv, .rds, .rda, .xls, .xlsx")
+  }
+
   # ── Metadata-specific reader: preserves character columns ───────────────────
   safe_read_meta <- function(path) {
     ext <- tolower(tools::file_ext(path))
@@ -992,18 +1091,57 @@ server <- function(input, output, session) {
          ". Supported: .txt, .csv, .tsv, .xls, .xlsx, .rds")
   }
 
+  # ── Gene set format rules ────────────────────────────────────────────────────
+  # Accepted input formats (single gene set):
+  #   • character vector       → gene names
+  #   • data frame / matrix    → col 1 = gene names (character), col 2 = direction (optional)
+  # Accepted input formats (multiple gene sets):
+  #   • named list of the above
+  # After parsing each element is either a character vector or a 2-col data frame
+  # with colnames c("gene","direction").
   parse_geneset_object <- function(obj, name_hint) {
+    # Matrix → coerce to data frame (keeps colnames/rownames)
+    if (is.matrix(obj)) obj <- as.data.frame(obj, stringsAsFactors = FALSE)
+
+    # Character vector → single gene set
     if (is.character(obj)) return(stats::setNames(list(obj), name_hint))
+
+    # Data frame → single gene set
     if (is.data.frame(obj)) {
-      if (ncol(obj) == 1) return(stats::setNames(list(obj[[1]]), name_hint))
-      if (ncol(obj) >= 2) {
-        df <- obj[, 1:2]
-        colnames(df) <- c("gene", "direction")
-        return(stats::setNames(list(df), name_hint))
+      if (ncol(obj) == 0) stop("Gene set data frame has no columns.")
+      # If first column is numeric (e.g. expression matrix passed by mistake) flag it
+      col1 <- obj[[1]]
+      if (!is.character(col1) && !is.factor(col1)) {
+        stop("The first column of the gene set must contain gene names (character), not numeric values. ",
+             "Check your file format: col 1 = gene name, col 2 = direction (+1 / -1, optional).")
       }
+      if (ncol(obj) == 1) {
+        # Just gene names
+        return(stats::setNames(list(as.character(col1)), name_hint))
+      }
+      # Take first two columns as gene + direction
+      df <- obj[, 1:2, drop = FALSE]
+      colnames(df) <- c("gene", "direction")
+      df$gene      <- as.character(df$gene)
+      df$direction <- suppressWarnings(as.numeric(df$direction))
+      return(stats::setNames(list(df), name_hint))
     }
-    if (is.list(obj)) return(obj)
-    stop("Invalid gene set format.")
+
+    # Named list → each element is its own gene set; recurse
+    if (is.list(obj)) {
+      nms <- names(obj)
+      if (is.null(nms) || any(!nzchar(nms))) {
+        # Give unnamed elements generic names
+        nms <- ifelse(is.null(nms) | !nzchar(nms),
+                      paste0(name_hint, "_", seq_along(obj)), nms)
+      }
+      parsed <- unlist(mapply(parse_geneset_object, obj, nms,
+                               SIMPLIFY = FALSE, USE.NAMES = FALSE), recursive = FALSE)
+      return(parsed)
+    }
+
+    stop("Invalid gene set format. Expected a character vector, data frame/matrix ",
+         "(col 1 = gene names, col 2 = direction), or a named list of those.")
   }
   
   # ── Helper: reorder metadata rows to match expression column order ──────────
@@ -2683,9 +2821,26 @@ server <- function(input, output, session) {
     for (i in seq_len(nrow(input$geneset_files))) {
       path <- input$geneset_files$datapath[i]
       name <- clean_name(input$geneset_files$name[i])
-      obj <- safe_read_table(path)
-      parsed <- parse_geneset_object(obj, name)
-      compiled <- c(compiled, parsed)
+      obj <- tryCatch(
+        safe_read_geneset(path),
+        error = function(e) {
+          shiny::showNotification(
+            paste0("Could not read '", input$geneset_files$name[i], "': ", conditionMessage(e)),
+            type = "error", duration = 10)
+          NULL
+        }
+      )
+      if (is.null(obj)) next
+      parsed <- tryCatch(
+        parse_geneset_object(obj, name),
+        error = function(e) {
+          shiny::showNotification(
+            paste0("Could not parse '", input$geneset_files$name[i], "': ", conditionMessage(e)),
+            type = "error", duration = 10)
+          NULL
+        }
+      )
+      if (!is.null(parsed)) compiled <- c(compiled, parsed)
     }
     gene_sets(compiled)
     log_step(paste0("Gene sets loaded: ",
