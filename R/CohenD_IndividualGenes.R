@@ -164,12 +164,13 @@ CohenD_IndividualGenes <- function(data, metadata,
     n1 <- length(x)
     n2 <- length(y)
     if(n1 < 2 || n2 < 2) return(NA)
-    m1 <- mean(x)
-    m2 <- mean(y)
-    s1 <- stats::sd(x)
-    s2 <- stats::sd(y)
+    m1 <- mean(x, na.rm = TRUE)
+    m2 <- mean(y, na.rm = TRUE)
+    s1 <- stats::sd(x, na.rm = TRUE)
+    s2 <- stats::sd(y, na.rm = TRUE)
+    if (!is.finite(s1) || !is.finite(s2)) return(NA)
     pooled_sd <- sqrt(((n1 - 1) * s1^2 + (n2 - 1) * s2^2) / (n1 + n2 - 2))
-    if (pooled_sd == 0) return(NA)
+    if (!is.finite(pooled_sd) || pooled_sd == 0) return(NA)
     d <- (m1 - m2) / pooled_sd
     # for this application we don't need the direction of the classification, just if it works
     d <- abs(d)
@@ -205,17 +206,20 @@ CohenD_IndividualGenes <- function(data, metadata,
     if (is.null(title)) title <- paste("Cohen's d for variable", condition_var,
                                        "(", paste(class, collapse = ", "), " vs others)")
 
+    max_d_val <- max(effect_values$CohensD, na.rm = TRUE)
+
     barplot <- ggplot2::ggplot(effect_values, ggplot2::aes(y = stats::reorder(.data$Gene, .data$CohensD),
                                                            x = .data$CohensD)) +
       ggplot2::geom_bar(stat = "identity", fill = fillcolor) +
-      #ggplot2::coord_flip()  +
-      coord_cartesian(xlim = c(0, max(effect_values$CohensD) + 0.1))+
       ggplot2::labs(y = "Gene", x = "Cohen's d", title = title) +
       ggplot2::theme_minimal() +
       ggplot2::theme(
         plot.title = ggplot2::element_text(size = 14, face = "bold",hjust = 0.5),
         axis.text = ggplot2::element_text(size = 10),
       )
+    if (is.finite(max_d_val)) {
+      barplot <- barplot + ggplot2::coord_cartesian(xlim = c(0, max_d_val + 0.1))
+    }
 
     print(barplot)
 

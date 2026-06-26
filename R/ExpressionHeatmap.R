@@ -96,6 +96,7 @@ ExpressionHeatmap <- function(data, metadata = NULL, genes, annotate.by = NULL,
                               colorlist = list(low = "blue", mid = "white", high = "red"),
                               cluster_rows = TRUE, cluster_columns = TRUE,
                               title = NULL, titlesize = 20,
+                              fontsize = 10,
                               scale_position = c("right", "top", "bottom"),
                               legend_position = c("top", "right", "bottom"),
                               show_row_names=TRUE,
@@ -209,16 +210,16 @@ ExpressionHeatmap <- function(data, metadata = NULL, genes, annotate.by = NULL,
                                 cluster_columns = cluster_columns,
                                 show_row_names = show_row_names,
                                 show_column_names = show_column_names,
+                                row_names_gp    = grid::gpar(fontsize = fontsize),
+                                column_names_gp = grid::gpar(fontsize = fontsize),
                                 top_annotation = sample_annotation,
                                 column_title = title,
                                 column_title_gp = grid::gpar(fontsize = titlesize),
                                 heatmap_legend_param = scale_legend_param)
 
-  # Draw the heatmap, forcing the heatmap legend to appear at scale_position
-  # and annotation legend at legend_position.
-  ht_drawn <- ComplexHeatmap::draw(ht,
-                                   heatmap_legend_side = scale_side,
-                                   annotation_legend_side = annot_side)
-
-  invisible(list(data = data_scaled, plot = ht_drawn))
+  # Return the Heatmap object (not yet drawn) together with the legend-side
+  # parameters so the caller (renderPlot) can call draw() fresh inside a
+  # proper graphics device, avoiding stale viewport dimensions.
+  invisible(list(data = data_scaled, plot = ht,
+                 scale_side = scale_side, annot_side = annot_side))
 }

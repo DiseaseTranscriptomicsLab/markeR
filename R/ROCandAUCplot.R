@@ -132,6 +132,7 @@ ROCandAUCplot <- function(data, metadata,
                           plot_type = "roc",  # "roc", "heatmap", or "all"
                           title = NULL,       # Custom plot title (optional)
                           titlesize = 14,
+                          invert_auc = TRUE,       # If TRUE, flip genes whose raw AUC < 0.5
                           roc_params = list(),     # ROC-specific parameters
                           auc_params= list(),
                           commomplot_params = list()) {  # Additional parameters for combined plots
@@ -188,37 +189,43 @@ ROCandAUCplot <- function(data, metadata,
       # Convert condition to binary labels (1 for class, 0 for others)
       subset_data$Binary_Label <- as.numeric(subset_data[[condition_var]] %in% class)
 
-      # Compute ROC curve
-      roc_obj <- pROC::roc(subset_data$Binary_Label, subset_data[[gene]],
-                           direction = "<", quiet = TRUE)
-
-      # Adjust AUC if needed (ensure AUC is always ≥ 0.5)
-      auc_value <- pROC::auc(roc_obj)
-      if (auc_value < 0.5) {
-        auc_value <- 1 - auc_value
+      # Wrap pROC call per-gene: genes with constant expression (no variance),
+      # or where all samples fall in one class, are skipped with a warning.
+      gene_result <- tryCatch({
         roc_obj <- pROC::roc(subset_data$Binary_Label, subset_data[[gene]],
-                             direction = ">", quiet = TRUE)
+                             direction = "<", quiet = TRUE)
+
+        auc_value <- as.numeric(pROC::auc(roc_obj))
+        # When invert_auc = TRUE (default), flip genes whose raw AUC < 0.5 so
+        # the reported value reflects separation strength regardless of direction.
+        if (isTRUE(invert_auc) && auc_value < 0.5) {
+          auc_value <- 1 - auc_value
+          roc_obj <- pROC::roc(subset_data$Binary_Label, subset_data[[gene]],
+                               direction = ">", quiet = TRUE)
+        }
+
+        roc_points <- data.frame(
+          FPR = rev(1 - roc_obj$specificities),
+          TPR = rev(roc_obj$sensitivities),
+          Gene = gene,
+          Group = group
+        )
+        list(roc_points = roc_points, auc_value = as.numeric(auc_value))
+      }, error = function(e) {
+        warning(sprintf("Skipping gene '%s' (group '%s'): %s", gene, group, conditionMessage(e)))
+        NULL
+      })
+
+      if (!is.null(gene_result)) {
+        roc_df     <- rbind(roc_df, gene_result$roc_points)
+        auc_values <- rbind(auc_values, data.frame(Gene = gene, Group = group,
+                                                   AUC = gene_result$auc_value))
       }
-
-      # Store ROC curve points
-      roc_points <- data.frame(
-        FPR = rev(1 - roc_obj$specificities),
-        TPR = rev(roc_obj$sensitivities),
-        Gene = gene,
-        Group = group
-      )
-      roc_df <- rbind(roc_df, roc_points)
-
-      # Store AUC values with facet labels
-      auc_values <- rbind(auc_values, data.frame(Gene = gene, Group = group,
-                                                 AUC = auc_value))
     }
   }
 
-  # Check for NAs in auc_values
-  if (any(is.na(auc_values$AUC))) {
-    stop("AUC values contain NAs. Please check the data.")
-  }
+  if (nrow(auc_values) == 0)
+    stop("No valid AUC values could be computed. Ensure genes have expression variation between groups.")
 
   auc_values$AUC <- as.numeric(auc_values$AUC)
 
@@ -359,7 +366,7 @@ ROCandAUCplot <- function(data, metadata,
     barplot <- ggplot2::ggplot(auc_sorted, ggplot2::aes(y = stats::reorder(.data$Gene, .data$AUC), x = .data$AUC)) +
       ggplot2::geom_bar(stat = "identity", fill = fillcolor) +
       #ggplot2::coord_flip()  +
-      coord_cartesian(xlim = c(0.5, 1))+
+      coord_cartesian(xlim = c(if (isTRUE(invert_auc)) 0.5 else 0, 1)) +
       ggplot2::labs(y = "Gene", x = "AUC", title = final_title) +
       ggplot2::theme_minimal() +
       ggplot2::theme(
