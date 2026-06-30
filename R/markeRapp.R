@@ -193,10 +193,11 @@ ui <- bslib::page_navbar(
           
           shiny::div(
             style = "padding-bottom:15px;",
-            shiny::h4("Data Configuration"),
+            shiny::h4("Data", style = "font-weight:700; color:#306F1D; margin-bottom:4px;"),
             shiny::p(
-              "Load gene expression, metadata and gene sets.",
-              style = "color:#6c757d;"
+              "Load your gene expression matrix, sample metadata, and gene sets.",
+              " Everything downstream depends on what you configure here.",
+              style = "color:#6c757d; font-size:0.85em; margin-bottom:6px;"
             ),
             shiny::hr()
           ),
@@ -692,7 +693,36 @@ server <- function(input, output, session) {
   full_geo_meta      <- reactiveVal(NULL)
   upload_meta_raw    <- reactiveVal(NULL)   # Raw uploaded metadata (for SampleID re-mapping)
   module_meta_active <- reactiveVal(FALSE)  # TRUE while geo_import_module owns meta_data()
-  data_log           <- reactiveVal(character(0))  # Timestamped processing log
+  # Session log: initialise with R + all DESCRIPTION dependency versions.
+  .session_preamble <- tryCatch({
+    # Parse Imports + Suggests + Depends from the installed package DESCRIPTION
+    .parse_dep_field <- function(field) {
+      if (is.null(field) || is.na(field)) return(character(0))
+      pkgs <- strsplit(field, ",")[[1]]
+      pkgs <- trimws(sub("\\s*\\(.*?\\)", "", pkgs))  # strip version specs like (>= 4.0)
+      pkgs[nzchar(pkgs) & pkgs != "R"]
+    }
+    desc  <- utils::packageDescription("markeR",
+                                        fields = c("Imports", "Suggests", "Depends"))
+    pkgs  <- sort(unique(c(
+      "markeR",
+      .parse_dep_field(desc$Imports),
+      .parse_dep_field(desc$Suggests),
+      .parse_dep_field(desc$Depends)
+    )))
+    pkg_lines <- vapply(pkgs, function(p) {
+      v <- tryCatch(as.character(utils::packageVersion(p)), error = function(e) "not installed")
+      paste0("[Session]   ", p, ": ", v)   # note: ALL lines prefixed with [Session]
+    }, character(1L))
+    c(
+      paste0("[Session] Session started: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S")),
+      paste0("[Session] R version: ", R.version$major, ".", R.version$minor,
+             " (", R.version$`svn rev`, ") | Platform: ", R.version$platform),
+      "[Session] Package versions:",
+      pkg_lines
+    )
+  }, error = function(e) character(0))
+  data_log <- reactiveVal(.session_preamble)  # Session log with timestamped entries
   expr_quality_warn  <- reactiveVal(NULL)           # Warning message for suspicious expression data
   geo_supp_files  <- reactiveVal(NULL)
   expr_candidates_available <- reactiveVal(FALSE) # Flag to indicate multiple candidate files are available after auto detection
@@ -812,16 +842,7 @@ server <- function(input, output, session) {
       tip    = if (!is.null(pp_state$tip)) pp_state$tip else ""
     ))
 
-    # ── Gene Sets tab: same condition as Preprocessing (data loaded + matched)
-    # but does NOT require preprocessing to be finalised — gene sets are always
-    # explorable as long as expression + metadata are loaded and matched.
-    session$sendCustomMessage("lockNavTabs", list(
-      tabs   = list("Gene Sets"),
-      locked = pp_state$locked,
-      tip    = if (!is.null(pp_state$tip)) pp_state$tip else ""
-    ))
-
-    # ── Benchmarking / Discovery: also require preprocessing to have been finalised.
+    # ── Gene Sets / Benchmarking / Discovery: all require preprocessing to be finalised.
     analysis_state <- if (pp_state$locked) {
       pp_state   # same "fix your data first" message
     } else if (finalized == 0L) {
@@ -833,7 +854,7 @@ server <- function(input, output, session) {
     }
 
     session$sendCustomMessage("lockNavTabs", list(
-      tabs   = as.list(.analysis_tabs),
+      tabs   = as.list(c("Gene Sets", .analysis_tabs)),
       locked = analysis_state$locked,
       tip    = if (!is.null(analysis_state$tip)) analysis_state$tip else ""
     ))
@@ -2648,17 +2669,20 @@ server <- function(input, output, session) {
     )
   }, ignoreInit = TRUE)
 
-  # ── Processing log UI + download ───────────────────────────────────────────
+  # ── Session log UI + download ─────────────────────────────────────────────
   output$data_log_ui <- shiny::renderUI({
     log <- data_log()
-    if (length(log) == 0L) return(NULL)
+    # Separate session preamble ([Session] lines) from action entries
+    is_session <- startsWith(log, "[Session]")
+    session_lines <- log[is_session]
+    action_lines  <- log[!is_session]
 
     shiny::tagList(
       shiny::tags$div(
         style = "display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;",
         shiny::tags$p(
           style = "font-size:0.75em;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin:0;",
-          "Processing log"
+          "Session log"
         ),
         shiny::downloadButton(
           "download_log", "Download log",
@@ -2666,15 +2690,37 @@ server <- function(input, output, session) {
           style = "font-size:0.78em;padding:2px 10px;"
         )
       ),
+      # Session preamble (collapsible, closed by default)
+      if (length(session_lines) > 0)
+        shiny::tags$details(
+          style = "margin-bottom:6px;",
+          shiny::tags$summary(
+            style = "font-size:0.75em;color:#9ca3af;cursor:pointer;user-select:none;",
+            "Session info"
+          ),
+          shiny::tags$pre(
+            style = paste0(
+              "background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;",
+              "padding:6px 10px;margin-top:4px;max-height:180px;overflow-y:auto;",
+              "font-family:monospace;font-size:0.74em;line-height:1.6;color:#6b7280;",
+              "white-space:pre-wrap;word-break:break-all;"
+            ),
+            paste(sub("^\\[Session\\]\\s*", "", session_lines), collapse = "\n")
+          )
+        ),
+      # Action log entries (newest first)
       shiny::tags$div(
         style = paste0(
           "background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;",
           "padding:8px 12px;max-height:200px;overflow-y:auto;",
           "font-family:monospace;font-size:0.78em;line-height:1.7;color:#374151;"
         ),
-        lapply(rev(log), function(entry) {  # newest first
-          shiny::tags$div(entry)
-        })
+        if (length(action_lines) == 0)
+          shiny::tags$div(style = "color:#9ca3af;", "No actions logged yet.")
+        else
+          lapply(rev(action_lines), function(entry) {
+            shiny::tags$div(entry)
+          })
       )
     )
   })
@@ -2758,26 +2804,45 @@ server <- function(input, output, session) {
 
   # ── Global log bar (fixed bottom - visible across all tabs) ───────────────
   output$global_log_header <- shiny::renderUI({
-    n <- length(data_log())
+    log <- data_log()
+    n   <- sum(!startsWith(log, "[Session]"))  # count only action entries
     shiny::tags$span(
       style = "color:#e2e8f0; font-size:0.88em;",
-      if (n == 0L) "📋 Processing log (no entries yet)"
-      else paste0("📋 Processing log - ", n,
-                   if (n == 1L) " entry" else " entries",
-                   " (click to expand)")
+      if (n == 0L) "📋 Session log"
+      else paste0("📋 Session log (", n,
+                   if (n == 1L) " action" else " actions",
+                   " — click to expand)")
     )
   })
 
   output$global_log_entries <- shiny::renderUI({
     log <- data_log()
-    if (length(log) == 0L) {
-      return(shiny::tags$div(
-        style = "color:#64748b; padding:4px 0;", "No log entries yet."))
-    }
+    action_lines  <- log[!startsWith(log, "[Session]")]
+    session_lines <- log[startsWith(log, "[Session]")]
     shiny::tagList(
-      lapply(rev(log), function(e)
-        shiny::tags$div(class = "glog-entry", e)
-      ),
+      # Session info collapsed at top
+      if (length(session_lines) > 0)
+        shiny::tags$details(
+          style = "margin-bottom:6px;",
+          shiny::tags$summary(
+            style = "font-size:0.8em; color:#94a3b8; cursor:pointer; user-select:none;",
+            "Session info"
+          ),
+          shiny::tags$pre(
+            style = paste0(
+              "font-size:0.75em; color:#94a3b8; padding:4px 0; margin:4px 0 0;",
+              "background:transparent; border:none; white-space:pre-wrap; word-break:break-all;",
+              "max-height:160px; overflow-y:auto;"
+            ),
+            paste(sub("^\\[Session\\]\\s*", "", session_lines), collapse = "\n")
+          )
+        ),
+      if (length(action_lines) == 0)
+        shiny::tags$div(style = "color:#64748b; padding:4px 0;", "No actions logged yet.")
+      else
+        lapply(rev(action_lines), function(e)
+          shiny::tags$div(class = "glog-entry", e)
+        ),
       shiny::downloadButton(
         "download_log", "Download log",
         class = "btn-sm btn-outline-light",
@@ -2787,10 +2852,14 @@ server <- function(input, output, session) {
   })
 
   output$download_log <- shiny::downloadHandler(
-    filename = function() paste0("markeR_processing_log_",
+    filename = function() paste0("markeR_session_log_",
                                  format(Sys.time(), "%Y%m%d_%H%M%S"), ".txt"),
     content  = function(file) {
-      writeLines(data_log(), file)
+      log <- data_log()
+      # Write session info first, then a blank line, then action entries
+      session_lines <- log[startsWith(log, "[Session]")]
+      action_lines  <- log[!startsWith(log, "[Session]")]
+      writeLines(c(session_lines, "", action_lines), file)
     }
   )
 

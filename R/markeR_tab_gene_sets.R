@@ -271,6 +271,19 @@ if (!exists("%||%", mode = "function"))
   )
 }
 
+# Helper: nav_panel title with a small ℹ tooltip after the name.
+.tab_title <- function(name, info) {
+  shiny::tagList(
+    name,
+    bslib::tooltip(
+      shiny::icon("circle-info",
+                  style = "color:#bbb; cursor:help; font-size:0.78em; margin-left:5px; vertical-align:middle;"),
+      shiny::tags$div(style = "max-width:320px; font-size:0.83em; line-height:1.5; text-align:left;", info),
+      placement = "bottom"
+    )
+  )
+}
+
 # ---- UI ---------------------------------------------------------------------
 
 #' @importFrom bslib layout_sidebar sidebar navset_card_tab nav_panel tooltip
@@ -350,14 +363,16 @@ geneSetsUI <- function(id) {
       width = 310,
       shiny::div(
         style = "padding-bottom:6px;",
-        shiny::h4("Gene Sets", style = "color:#801F4F;"),
-        shiny::p(shiny::em("Assess overlap with MSigDB, cross-gene-set similarity, and per-gene expression."),
+        shiny::h4("Gene Sets", style = "font-weight:700; color:#801F4F; margin-bottom:4px;"),
+        shiny::p("Explore gene set composition, overlap with MSigDB, cross-set similarity, and per-gene expression profiles.",
                  style = "color:#6c757d; font-size:0.85em;"),
+        shiny::p(style = "font-size:0.78em; color:#888; margin:0;",
+          "All analyses use only the genes from the loaded gene sets, not all genes in the dataset."),
         shiny::hr()
       ),
       shiny::tags$small(shiny::tags$b("Active gene set")),
       shiny::helpText(style = "margin-bottom:4px; font-size:0.8em; color:#888;",
-        shiny::icon("circle-info"), " Pairwise Overlap uses all loaded gene sets."),
+        shiny::icon("circle-info"), " Pairwise Overlap and Similarity use all loaded gene sets."),
       shiny::uiOutput(ns("gs_picker_ui")),
       shiny::uiOutput(ns("gs_overlap_warn_ui")),
       shiny::uiOutput(ns("gs_composition_ui"))
@@ -367,30 +382,47 @@ geneSetsUI <- function(id) {
     bslib::navset_card_tab(id = ns("gs_navset"),
 
       # ---- 1. Pairwise Overlap -----------------------------------------------
-      bslib::nav_panel("Pairwise Overlap",
+      bslib::nav_panel(
+        .tab_title("Pairwise Overlap",
+          "Computes pairwise gene overlap between all loaded gene sets using the Jaccard index or odds ratio. Useful for understanding redundancy and identifying highly similar or complementary signatures."),
         .tab_settings(
+          # ── Metric (always visible) ───────────────────────────────────────────
           shiny::div(
-            style = "display:grid; grid-template-columns:1fr 1fr; gap:10px;",
-            shiny::div(
-              shiny::tags$label("Metric ",
-                bslib::tooltip(shiny::icon("circle-question", style="color:#6c757d;cursor:help;"),
-                  shiny::tags$span(
-                    shiny::tags$b("Jaccard index:"), " |A ∩ B| / |A ∪ B|. JI=0: no shared genes.",
-                    shiny::tags$br(),
-                    shiny::tags$b("Odds ratio:"), " OR=0: no overlap. OR=1: chance. OR>1: enriched.",
-                    " Self-comparisons = Inf (shown at max colour)."
-                  ), placement = "right")),
-              shiny::radioButtons(ns("pw_metric"), label = NULL,
-                choices  = c("Jaccard index" = "jaccard", "Odds ratio" = "odds_ratio"),
-                selected = "jaccard")
+            style = "margin-bottom:8px;",
+            shiny::tags$label(
+              style = "font-size:0.85em; font-weight:600;",
+              "Metric ",
+              bslib::tooltip(
+                shiny::icon("circle-question", style = "color:#6c757d; cursor:help;"),
+                shiny::tags$span(
+                  shiny::tags$b("Jaccard index:"), " |A ∩ B| / |A ∪ B| — fraction of shared genes.",
+                  " JI = 0: no overlap; JI = 1: identical sets.",
+                  shiny::tags$br(),
+                  shiny::tags$b("Odds ratio:"), " enrichment of overlap relative to chance.",
+                  " OR = 1: chance overlap; OR > 1: enriched. Self-comparisons = Inf."
+                ),
+                placement = "right"
+              )
+            ),
+            shiny::radioButtons(ns("pw_metric"), label = NULL,
+              choices  = c("Jaccard index" = "jaccard", "Odds ratio" = "odds_ratio"),
+              selected = "jaccard", inline = TRUE)
+          ),
+          # ── Display options (collapsible) ─────────────────────────────────────
+          shiny::tags$details(
+            style = "margin-bottom:10px;",
+            shiny::tags$summary(
+              style = "cursor:pointer; font-size:0.85em; color:#555; user-select:none;",
+              "Display options"
             ),
             shiny::div(
-              shiny::numericInput(ns("pw_fontsize"), "Axis font size (pt):",
-                                  value = 10, min = 6, max = 20, step = 1),
-              shiny::actionButton(ns("run_pairwise"), "Run Pairwise Overlap",
-                                  class = "btn-primary btn-sm", width = "100%")
+              style = "padding:8px 0 4px;",
+              shiny::numericInput(ns("pw_fontsize"), "Font size (pt):",
+                                  value = 10, min = 6, max = 20, step = 1)
             )
-          )
+          ),
+          shiny::actionButton(ns("run_pairwise"), "Run Pairwise Overlap",
+                              class = "btn-primary btn-sm", width = "100%")
         ),
         shiny::uiOutput(ns("pairwise_status_ui")),
         shiny::uiOutput(ns("pairwise_plot_ui")),
@@ -399,67 +431,109 @@ geneSetsUI <- function(id) {
       ),
 
       # ---- 2. Similarity vs MSigDB ------------------------------------------
-      bslib::nav_panel("Similarity vs MSigDB",
+      bslib::nav_panel(
+        .tab_title("Similarity vs MSigDB",
+          "Compares your loaded gene sets against MSigDB collections or custom reference sets to find known pathways with high overlap. Even a strong discriminatory gene set may reflect a well-characterised biological pathway rather than a novel finding."),
         .tab_settings(
-          # Metric at top (inline radio)
+          # ── Metric (always visible, single compact row) ───────────────────────
           shiny::div(
             style = "margin-bottom:10px;",
-            shiny::tags$label("Similarity metric ",
-              bslib::tooltip(shiny::icon("circle-question", style="color:#6c757d;cursor:help;"),
-                shiny::tags$span(
-                  shiny::tags$b("Jaccard:"), " JI=0: no overlap. JI=1: identical.",
-                  " Pathway kept if ANY signature exceeds threshold.",
-                  shiny::tags$br(),
-                  shiny::tags$b("Odds ratio:"), " OR=1: chance. OR>1: enriched.",
-                  " Pathway removed only if ALL fail OR+p-value thresholds."
-                ), placement = "right")),
+            shiny::tags$label("Metric", style = "font-size:0.85em; font-weight:600;"),
             shiny::radioButtons(ns("gs_metric"), label = NULL,
               choices  = c("Jaccard index" = "jaccard", "Odds ratio" = "odds_ratio"),
               selected = "jaccard", inline = TRUE)
           ),
-          # Two-column layout
+          # ── Organism + collection (always visible, two columns, aligned top) ──
           shiny::div(
-            style = "display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:10px;",
-            # Left column: organism / database / collection / subcollection
+            style = "display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; margin-bottom:8px;",
             shiny::div(
-              shiny::tags$label("Organism ",
-                bslib::tooltip(shiny::icon("circle-question", style="color:#6c757d;cursor:help;"),
-                  shiny::tags$span(
-                    "Selects the species whose gene symbols are used from MSigDB.",
-                    shiny::tags$br(),
-                    shiny::tags$b("Note:"), " Pathway names are identical across species —",
-                    " only the gene members change. Check the plot title to confirm which organism was used."
-                  ), placement = "right")),
+              shiny::tags$label("Organism", style = "font-size:0.85em; font-weight:600;"),
               shinyWidgets::pickerInput(ns("gs_organism"), label = NULL,
                 choices  = .msigdb_organisms,
                 selected = "Homo sapiens",
                 options  = shinyWidgets::pickerOptions(liveSearch = TRUE)),
               shiny::uiOutput(ns("gs_db_species_ui")),
-              shiny::uiOutput(ns("gs_organism_info_ui")),
-              shiny::uiOutput(ns("gs_collection_ui")),
-              shiny::textInput(ns("gs_subcollection"), "Sub-collection (optional):",
-                placeholder = "e.g. CP:REACTOME")
+              shiny::uiOutput(ns("gs_organism_info_ui"))
             ),
-            # Right column: pathway filter / thresholds / font size
             shiny::div(
+              shiny::uiOutput(ns("gs_collection_ui"))
+            )
+          ),
+
+          # ── Advanced options (collapsible) ────────────────────────────────────
+          shiny::tags$details(
+            style = "margin-bottom:6px;",
+            shiny::tags$summary(
+              style = "cursor:pointer; font-size:0.85em; color:#555; user-select:none;",
+              "Advanced options"
+            ),
+            shiny::div(
+              style = "padding:10px 0 4px;",
+              shiny::textInput(ns("gs_subcollection"), "Sub-collection:",
+                placeholder = "e.g. CP:REACTOME"),
               shiny::textAreaInput(ns("msig_subset"),
-                label = shiny::tags$span("Restrict to pathways (optional) ",
-                  bslib::tooltip(shiny::icon("circle-question", style="color:#6c757d;cursor:help;"),
-                    "Comma-separated exact MSigDB pathway names.", placement = "right")),
-                placeholder = "HALLMARK_APOPTOSIS, ...", rows = 2),
+                label = shiny::tags$span("Restrict to specific pathways ",
+                  bslib::tooltip(shiny::icon("circle-question", style="color:#aaa;cursor:help;font-size:0.85em;"),
+                    "Enter exact MSigDB pathway names, comma-separated.", placement = "right")),
+                placeholder = "HALLMARK_APOPTOSIS, HALLMARK_HYPOXIA, ...", rows = 2, width = "100%"),
               shiny::conditionalPanel(paste0("input['", ns("gs_metric"), "'] == 'jaccard'"),
                 shiny::sliderInput(ns("jaccard_threshold"), "Min. Jaccard index:",
                                    min = 0, max = 1, value = 0, step = 0.01),
                 shiny::uiOutput(ns("jaccard_size_warn_ui"))),
               shiny::conditionalPanel(paste0("input['", ns("gs_metric"), "'] == 'odds_ratio'"),
-                shiny::numericInput(ns("or_threshold"), "Min. odds ratio:", value = 2, min = 0, step = 0.5),
-                shiny::sliderInput(ns("or_pval"), "Max adj. p-value:",
-                                   min = 0, max = 1, value = 0.05, step = 0.01)),
-              shiny::numericInput(ns("sim_fontsize"), "Axis font size (pt):",
-                                  value = 9, min = 6, max = 20, step = 1)
+                shiny::div(
+                  style = "display:grid; grid-template-columns:1fr 1fr; gap:10px;",
+                  shiny::numericInput(ns("or_threshold"), "Min. odds ratio:", value = 2, min = 0, step = 0.5),
+                  shiny::numericInput(ns("or_pval"), "Max adj. p-value:", value = 0.05, min = 0, max = 1, step = 0.01)
+                ))
             )
           ),
-          # Run button — left aligned, not full width
+
+          # ── Custom gene sets (collapsible) ────────────────────────────────────
+          shiny::tags$details(
+            style = "margin-bottom:6px;",
+            shiny::tags$summary(
+              style = "cursor:pointer; font-size:0.85em; color:#555; user-select:none;",
+              "Custom reference gene sets"
+            ),
+            shiny::div(
+              style = "padding:10px 0 4px;",
+              shiny::tags$p(style = "font-size:0.8em; color:#888; margin-bottom:6px;",
+                "Compare your signatures against your own gene sets in addition to (or instead of) MSigDB.",
+                " Format: ", shiny::tags$code(">SetName"), " on one line, then gene symbols comma-separated on the next."),
+              shiny::textAreaInput(ns("user_gs_paste"),
+                label = NULL,
+                placeholder = ">MySignature\nGENE1,GENE2,GENE3\n>AnotherSet\nGENEA,GENEB",
+                rows = 4, width = "100%"),
+              shiny::fileInput(ns("user_gs_file"), label = NULL,
+                accept = ".txt",
+                buttonLabel = shiny::tags$span(shiny::icon("upload"), " Upload .txt"),
+                placeholder = "or upload a .txt file with the same format", width = "100%"),
+              shiny::uiOutput(ns("user_gs_parse_ui"))
+            )
+          ),
+
+          # ── Plot options (collapsible) ────────────────────────────────────────
+          shiny::tags$details(
+            style = "margin-bottom:10px;",
+            shiny::tags$summary(
+              style = "cursor:pointer; font-size:0.85em; color:#555; user-select:none;",
+              "Plot options"
+            ),
+            shiny::div(
+              style = "padding:10px 0 4px; display:grid; grid-template-columns:1fr 1fr; gap:10px;",
+              shiny::numericInput(ns("sim_fontsize"), "Font size (pt):",
+                                  value = 9, min = 6, max = 20, step = 1),
+              shiny::div(
+                shiny::tags$label(style = "font-size:0.85em;", "View mode"),
+                shiny::checkboxInput(ns("sim_interactive"), "Interactive (zoom/pan)", value = FALSE),
+                shiny::tags$small(style = "color:#aaa; font-size:0.78em;",
+                  "Interactive is slower but lets you zoom into pathway clusters.")
+              )
+            )
+          ),
+
+          # ── Run button ────────────────────────────────────────────────────────
           shiny::actionButton(ns("run_similarity"), "Run Similarity",
                               class = "btn-primary btn-sm")
         ),
@@ -469,63 +543,303 @@ geneSetsUI <- function(id) {
         shiny::uiOutput(ns("similarity_table_container"))
       ),
 
-      # ---- 3. Expression (violins + heatmap) --------------------------------
-      bslib::nav_panel("Expression",
+      # ---- 3. Correlation ---------------------------------------------------
+      bslib::nav_panel(
+        .tab_title("Correlation",
+          "Displays pairwise correlations between selected genes, revealing co-expression patterns within the gene set. Highly correlated genes may be co-regulated or redundant, while uncorrelated genes contribute independently to the signature score."),
+        .tab_settings(
+          shiny::uiOutput(ns("corr_overlap_warn_ui")),
+          # ── Primary settings (always visible) ────────────────────────────────
+          shiny::div(
+            style = "display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; margin-bottom:8px;",
+            shiny::div(
+              shiny::uiOutput(ns("corr_genes_ui")),
+              shiny::uiOutput(ns("corr_gene_count_warn_ui"))
+            ),
+            shiny::div(
+              shiny::selectInput(ns("corr_method"), "Correlation method:",
+                choices = c("Spearman" = "spearman", "Pearson" = "pearson", "Kendall" = "kendall"),
+                selected = "spearman")
+            )
+          ),
+          # ── Advanced options (collapsible) ────────────────────────────────────
+          shiny::tags$details(
+            style = "margin-bottom:10px;",
+            shiny::tags$summary(
+              style = "cursor:pointer; font-size:0.85em; color:#555; user-select:none;",
+              "Advanced options"
+            ),
+            shiny::div(
+              style = "padding:10px 0 4px;",
+              shiny::uiOutput(ns("corr_sep_ui")),
+              shiny::div(
+                style = "display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:start; margin-top:6px;",
+                shiny::div(
+                  shiny::checkboxInput(ns("corr_cluster_rows"), "Cluster genes (rows)",    value = TRUE),
+                  shiny::checkboxInput(ns("corr_cluster_cols"), "Cluster genes (columns)", value = TRUE),
+                  shiny::checkboxInput(ns("corr_show_row_names"), "Show row labels",       value = TRUE),
+                  shiny::checkboxInput(ns("show_col_names"),      "Show column labels",    value = TRUE)
+                ),
+                shiny::div(
+                  shiny::numericInput(ns("corr_fontsize"), "Font size (pt):",
+                                      value = 10, min = 6, max = 20, step = 1),
+                  shiny::checkboxInput(ns("corr_interactive"), "Interactive (zoom/pan)", value = FALSE),
+                  shiny::tags$small(style = "color:#aaa; font-size:0.78em;",
+                    "Interactive is slower but lets you zoom into co-expression clusters and inspect gene pairs.")
+                )
+              )
+            )
+          ),
+          shiny::actionButton(ns("run_corr"), "Plot Correlation Heatmap",
+                              class = "btn-primary btn-sm")
+        ),
+        shiny::uiOutput(ns("corr_status_ui")),
+        shiny::uiOutput(ns("corr_plot_ui"))
+      ),
+
+      # ---- 5. Effect Size ---------------------------------------------------
+      bslib::nav_panel(
+        .tab_title("Effect Size",
+          "Computes Cohen's d for each gene: the standardised difference in expression between the selected class and all others (one-vs-rest). Useful for identifying which individual genes drive the overall gene set signal and which contribute little."),
+        .tab_settings(
+          shiny::uiOutput(ns("cohend_overlap_warn_ui")),
+          # ── Gene selection (always visible) ───────────────────────────────────
+          shiny::tags$label("Gene selection", style = "font-size:0.85em; font-weight:600;"),
+          shiny::radioButtons(ns("cohend_mode"), label = NULL,
+            choices  = c("Specific genes" = "manual", "Top / random N" = "n_based"),
+            selected = "n_based", inline = TRUE),
+          shiny::conditionalPanel(
+            condition = sprintf("input['%s'] === 'manual'", ns("cohend_mode")),
+            shiny::uiOutput(ns("cohend_genes_ui"))
+          ),
+          shiny::conditionalPanel(
+            condition = sprintf("input['%s'] === 'n_based'", ns("cohend_mode")),
+            shiny::div(
+              style = "margin-bottom:8px;",
+              shiny::numericInput(ns("cohend_max_genes"), "Number of genes (N):",
+                value = 30, min = 1, max = 500, step = 5, width = "50%"),
+              shiny::radioButtons(ns("cohend_gene_sel"), "Criterion:",
+                choices  = c("Top N by Cohen's d" = "top_d", "First N (gene set order)" = "first", "Random N" = "random"),
+                selected = "top_d", inline = TRUE)
+            )
+          ),
+          shiny::tags$hr(style = "margin:6px 0 10px;"),
+          # ── Group comparison (always visible) ─────────────────────────────────
+          shiny::tags$label(
+            "Group comparison ",
+            bslib::tooltip(
+              shiny::icon("circle-question", style = "color:#aaa; cursor:help; font-size:0.85em;"),
+              shiny::tags$span(
+                shiny::tags$b("Cohen's d"), " measures the standardised difference in gene expression",
+                " between the selected class and all other samples (one-vs-rest), using pooled standard deviation.",
+                " It is always computed as a binary comparison regardless of how many levels the variable has.",
+                " d = 0: no separation; d ≈ 0.5: moderate; d ≥ 0.8: large."
+              ), placement = "right"
+            ),
+            style = "font-size:0.85em; font-weight:600;"
+          ),
+          shiny::div(
+            style = "display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; margin-bottom:8px;",
+            shiny::uiOutput(ns("cohend_cond_var_ui")),
+            shiny::uiOutput(ns("cohend_cond_class_ui"))
+          ),
+          # ── Display options (collapsible) ─────────────────────────────────────
+          shiny::tags$details(
+            style = "margin-bottom:10px;",
+            shiny::tags$summary(
+              style = "cursor:pointer; font-size:0.85em; color:#555; user-select:none;",
+              "Display options"
+            ),
+            shiny::div(
+              style = "padding:8px 0 4px;",
+              shiny::numericInput(ns("cohend_fontsize"), "Font size (pt):",
+                                  value = 10, min = 6, max = 20, step = 1)
+            )
+          ),
+          shiny::actionButton(ns("run_cohend"), "Plot Effect Size",
+                              class = "btn-primary btn-sm")
+        ),
+        shiny::uiOutput(ns("cohend_status_ui")),
+        shiny::uiOutput(ns("cohend_plot_ui"))
+      ),
+
+      # ---- 6. Gene PCA ------------------------------------------------------
+      bslib::nav_panel(
+        .tab_title("Gene PCA",
+          "Performs PCA on the expression of the gene set genes to test whether they explain enough variance to visually separate groups of interest. A complementary, unsupervised view alongside quantitative metrics like AUC: if the genes drive the biology, samples should cluster by the colour variable."),
+        .tab_settings(
+          # ── Primary settings (always visible) ────────────────────────────────
+          shiny::div(
+            style = "display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; margin-bottom:8px;",
+            shiny::div(
+              shiny::uiOutput(ns("pca_genes_ui")),
+              shiny::uiOutput(ns("pca_overlap_warn_ui")),
+              shiny::tags$small(style = "color:#888; font-size:0.78em; display:block; margin-top:2px;",
+                "All gene set genes with matching expression data are used.",
+                " Higher coverage means the PCA better captures the biology of interest.")
+            ),
+            shiny::uiOutput(ns("pca_color_var_ui"))
+          ),
+          # ── Display options (collapsible) ─────────────────────────────────────
+          shiny::tags$details(
+            style = "margin-bottom:10px;",
+            shiny::tags$summary(
+              style = "cursor:pointer; font-size:0.85em; color:#555; user-select:none;",
+              "Display options"
+            ),
+            shiny::div(
+              style = "padding:8px 0 4px;",
+              shiny::div(
+                style = "display:grid; grid-template-columns:1fr 1fr; gap:8px;",
+                shiny::selectInput(ns("pca_x_pc"), "X axis:", choices = paste0("PC", 1:10), selected = "PC1"),
+                shiny::selectInput(ns("pca_y_pc"), "Y axis:", choices = paste0("PC", 1:10), selected = "PC2")
+              ),
+              shiny::numericInput(ns("pca_fontsize"), "Font size (pt):",
+                                  value = 10, min = 6, max = 20, step = 1)
+            )
+          ),
+          shiny::actionButton(ns("run_pca"), "Plot Gene PCA",
+                              class = "btn-primary btn-sm")
+        ),
+        shiny::uiOutput(ns("pca_status_ui")),
+        shiny::uiOutput(ns("pca_plots_ui"))
+      ),
+
+      # ---- 7. Discriminatory Power ------------------------------------------
+      bslib::nav_panel(
+        .tab_title("Discriminatory Power",
+          shiny::tagList(
+            "Evaluates each gene's ability to discriminate between two groups via ROC curves and AUC values.",
+            shiny::tags$br(),
+            "AUC = 0.5: no better than chance. AUC = 1.0: perfect separation.",
+            " A raw AUC below 0.5 means the gene separates in the opposite direction and is still informative.",
+            shiny::tags$br(),
+            "Colours are consistent between the ROC curves and the AUC barplot.",
+            shiny::tags$br(),
+            shiny::tags$em("Tip: to explore per-sample expression for any gene, use the Expression tab.")
+          )),
+        .tab_settings(
+          # ── Gene selection (always visible) ──────────────────────────────────
+          shiny::uiOutput(ns("roc_overlap_warn_ui")),
+          shiny::tags$small(style = "color:#888; font-size:0.78em; display:block; margin-bottom:6px;",
+            "Genes shown are from the active gene set only."),
+          shiny::tags$label("Gene selection", style = "font-size:0.85em; font-weight:600;"),
+          shiny::radioButtons(ns("roc_mode"), label = NULL,
+            choices  = c("Specific genes" = "manual",
+                         "Top / random N" = "n_based"),
+            selected = "n_based", inline = TRUE),
+          shiny::conditionalPanel(
+            condition = sprintf("input['%s'] === 'manual'", ns("roc_mode")),
+            shiny::uiOutput(ns("roc_genes_ui"))
+          ),
+          shiny::conditionalPanel(
+            condition = sprintf("input['%s'] === 'n_based'", ns("roc_mode")),
+            shiny::numericInput(ns("roc_max_genes"), "Number of genes (N):",
+              value = 20, min = 1, max = 500, step = 5, width = "50%"),
+            shiny::radioButtons(ns("roc_gene_sel"), "Criterion:",
+              choices  = c("Top N by AUC" = "top_auc", "Random N" = "random"),
+              selected = "top_auc", inline = TRUE),
+            shiny::tags$small(style = "color:#6c757d; display:block; margin-bottom:8px;",
+              shiny::icon("circle-info"),
+              " Top N by AUC ranks by ", shiny::tags$b("effective AUC"),
+              " = max(AUC, 1 − AUC) — captures discriminatory genes in both directions.")
+          ),
+          # ── Separator ────────────────────────────────────────────────────────
+          shiny::tags$hr(style = "margin:8px 0;"),
+          # ── Group comparison (always visible) ─────────────────────────────────
+          shiny::tags$p(style = "font-size:0.85em; font-weight:600; margin-bottom:4px;",
+            "Group comparison"),
+          shiny::div(
+            style = "display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:start; margin-bottom:6px;",
+            shiny::uiOutput(ns("roc_cond_var_ui")),
+            shiny::uiOutput(ns("roc_cond_class_ui"))
+          ),
+          shiny::checkboxInput(ns("roc_invert_auc"),
+            "Invert AUC < 0.5 genes (flip ROC direction)", value = TRUE),
+          shiny::tags$small(style = "color:#6c757d; display:block; margin:-4px 0 8px;",
+            "When checked: genes with raw AUC < 0.5 are flipped so the reported",
+            " AUC = 1 − raw. An AUC = 0 becomes 1.0 (perfect in reverse direction)."),
+          # ── Display options (collapsible) ─────────────────────────────────────
+          shiny::tags$details(
+            style = "margin-bottom:10px;",
+            shiny::tags$summary(
+              style = "cursor:pointer; font-size:0.85em; color:#555; user-select:none;",
+              "Display options"
+            ),
+            shiny::div(
+              style = "padding:8px 0 4px;",
+              shiny::numericInput(ns("roc_fontsize"), "Font size (pt):",
+                                  value = 10, min = 6, max = 20, step = 1)
+            )
+          ),
+          shiny::actionButton(ns("run_rocauc"), "Plot Discriminatory Power",
+                              class = "btn-primary btn-sm", width = "100%")
+        ),
+        shiny::uiOutput(ns("rocauc_status_ui")),
+        shiny::uiOutput(ns("roc_curves_ui")),
+        shiny::uiOutput(ns("rocauc_plot_ui"))
+      ),
+
+      # ---- 7. Expression (violins + heatmap) — last tab ---------------------
+      bslib::nav_panel(
+        .tab_title("Expression",
+          "Displays expression levels of selected gene set genes across samples (violin plots and heatmap), annotated by a chosen metadata variable. Useful for inspecting individual gene behaviour and validating whether key genes show the expected pattern of change."),
         .tab_settings(
           shiny::uiOutput(ns("expr_overlap_warn_ui")),
-          shiny::p(style = "font-size:0.88em; color:#555; margin-bottom:6px;",
-            "Visualise per-gene expression distributions across groups (violin plots) and",
-            " a sample × gene expression heatmap. Both use the same gene selection."),
-          # Gene picker + grouping variable — shared between violins AND heatmap
-          shiny::div(style = "display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:4px;",
+          # ── Shared settings (always visible) ─────────────────────────────────
+          shiny::div(
+            style = "display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; margin-bottom:10px;",
             shiny::div(
               shiny::uiOutput(ns("expr_genes_ui")),
-              shiny::uiOutput(ns("expr_gene_count_warn_ui")),
-              shiny::tags$small(style = "color:#6c757d;",
-                shiny::icon("circle-info"),
-                " Gene selection applies to both violin plots and the heatmap.")
+              shiny::uiOutput(ns("expr_gene_count_warn_ui"))
             ),
             shiny::div(
               shiny::uiOutput(ns("expr_group_var_ui")),
-              shiny::uiOutput(ns("expr_level_warning_ui")),
-              shiny::tags$small(style = "color:#6c757d; display:block; margin:-2px 0 4px;",
-                shiny::icon("circle-info"),
-                " Used as x-axis in violins and annotation bar in the heatmap.")
+              shiny::uiOutput(ns("expr_level_warning_ui"))
             )
           ),
-          shiny::div(
-            style = "display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:6px;",
-            # ---- Violin column ----
+          # ── Violin plots (collapsible, open by default) ───────────────────────
+          shiny::tags$details(
+            open = NA,
+            style = "margin-bottom:6px;",
+            shiny::tags$summary(
+              style = "cursor:pointer; font-size:0.85em; font-weight:600; color:#333; user-select:none; margin-bottom:6px;",
+              "Violin plots"
+            ),
             shiny::div(
-              style = "display:flex; flex-direction:column;",
-              shiny::tags$small(shiny::tags$b("Violin options")),
-              shiny::div(style = "margin-top:6px; flex:1;",
-                shiny::uiOutput(ns("expr_color_var_ui")),
-                shiny::numericInput(ns("expr_fontsize"), "Axis font size (pt):",
+              style = "padding:8px 0 4px; display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:end;",
+              shiny::uiOutput(ns("expr_color_var_ui")),
+              shiny::numericInput(ns("expr_fontsize"), "Font size (pt):",
+                                  value = 10, min = 6, max = 20, step = 1)
+            ),
+            shiny::actionButton(ns("run_expression"), "Plot Violins",
+                                class = "btn-primary btn-sm")
+          ),
+          shiny::tags$hr(style = "margin:4px 0 6px;"),
+          # ── Expression heatmap (collapsible, open by default) ─────────────────
+          shiny::tags$details(
+            open = NA,
+            style = "margin-bottom:4px;",
+            shiny::tags$summary(
+              style = "cursor:pointer; font-size:0.85em; font-weight:600; color:#333; user-select:none; margin-bottom:6px;",
+              "Expression heatmap"
+            ),
+            shiny::div(
+              style = "padding:8px 0 6px;",
+              shiny::div(
+                style = "display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:start; margin-bottom:6px;",
+                shiny::div(
+                  shiny::checkboxInput(ns("hm_cluster_rows"), "Cluster genes",   value = TRUE),
+                  shiny::checkboxInput(ns("hm_cluster_cols"), "Cluster samples", value = TRUE)
+                ),
+                shiny::numericInput(ns("hm_fontsize"), "Font size (pt):",
                                     value = 10, min = 6, max = 20, step = 1)
               ),
-              shiny::div(style = "margin-top:10px;",
-                shiny::actionButton(ns("run_expression"), "Plot Violins",
-                                    class = "btn-primary btn-sm", width = "100%"))
-            ),
-            # ---- Heatmap column ----
-            shiny::div(
-              style = "display:flex; flex-direction:column;",
-              shiny::tags$small(shiny::tags$b("Heatmap options")),
-              shiny::div(style = "margin-top:6px; flex:1;",
-                shiny::checkboxInput(ns("hm_cluster_rows"), "Cluster genes",   value = TRUE),
-                shiny::checkboxInput(ns("hm_cluster_cols"), "Cluster samples", value = TRUE),
-                shiny::numericInput(ns("hm_fontsize"), "Row/column font size (pt):",
-                                    value = 10, min = 6, max = 20, step = 1),
-                shiny::checkboxInput(ns("hm_interactive"), "Interactive view (zoom/pan)", value = FALSE),
-                shiny::tags$small(style = "color:#6c757d; display:block; margin:-4px 0 4px;",
-                  "Interactive: same Z-scored data and clustering as the static heatmap,",
-                  " with row/column dendrograms and zoom/pan. Sample-group info appears in",
-                  " hover tooltips. Use static view for publication figures.")
-              ),
-              shiny::div(style = "margin-top:10px;",
-                shiny::actionButton(ns("run_heatmap"), "Plot Heatmap",
-                                    class = "btn-primary btn-sm", width = "100%"))
+              shiny::checkboxInput(ns("hm_interactive"), "Interactive view (zoom/pan)", value = FALSE),
+              shiny::tags$small(style = "color:#aaa; font-size:0.78em; display:block; margin:-4px 0 8px;",
+                "Interactive is slower but lets you zoom into gene clusters and hover over samples."),
+              shiny::actionButton(ns("run_heatmap"), "Plot Heatmap",
+                                  class = "btn-primary btn-sm")
             )
           )
         ),
@@ -533,192 +847,6 @@ geneSetsUI <- function(id) {
         shiny::uiOutput(ns("expr_plot_ui")),
         shiny::uiOutput(ns("heatmap_status_ui")),
         shiny::uiOutput(ns("heatmap_plot_ui"))
-      ),
-
-      # ---- 4. Correlation ---------------------------------------------------
-      bslib::nav_panel("Correlation",
-        .tab_settings(
-          shiny::uiOutput(ns("corr_overlap_warn_ui")),
-          shiny::p(style = "font-size:0.88em; color:#555; margin-bottom:6px;",
-            "Pairwise gene-gene correlation heatmap. High correlation suggests co-regulation or",
-            " shared biological function. Useful for identifying gene modules within the gene set."),
-          shiny::div(
-            style = "display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:start;",
-            # Left: gene picker + method + separator + warning
-            shiny::div(
-              shiny::uiOutput(ns("corr_genes_ui")),
-              shiny::selectInput(ns("corr_method"), "Correlation method:",
-                choices = c("Spearman" = "spearman", "Pearson" = "pearson", "Kendall" = "kendall"),
-                selected = "spearman"),
-              shiny::uiOutput(ns("corr_sep_ui")),
-              shiny::uiOutput(ns("corr_gene_count_warn_ui"))
-            ),
-            # Right: display options + button (always at top of its column)
-            shiny::div(
-              shiny::checkboxInput(ns("corr_cluster_rows"), "Cluster genes (rows)", value = TRUE),
-              shiny::checkboxInput(ns("corr_cluster_cols"), "Cluster genes (columns)", value = TRUE),
-              shiny::checkboxInput(ns("corr_show_row_names"), "Show gene labels (rows)", value = TRUE),
-              shiny::checkboxInput(ns("show_col_names"), "Show gene labels (columns)", value = TRUE),
-              shiny::numericInput(ns("corr_fontsize"), "Axis font size (pt):",
-                                  value = 10, min = 6, max = 20, step = 1),
-              shiny::checkboxInput(ns("corr_interactive"), "Interactive view (zoom/pan)", value = FALSE),
-              shiny::div(style = "margin-top:10px;",
-                shiny::actionButton(ns("run_corr"), "Plot Correlation Heatmap",
-                                    class = "btn-primary btn-sm", width = "100%"))
-            )
-          )
-        ),
-        shiny::uiOutput(ns("corr_status_ui")),
-        shiny::uiOutput(ns("corr_plot_ui"))
-      ),
-
-      # ---- 5. Effect Size ---------------------------------------------------
-      bslib::nav_panel("Effect Size",
-        .tab_settings(
-          shiny::uiOutput(ns("cohend_overlap_warn_ui")),
-          shiny::p(style = "font-size:0.88em; color:#555; margin-bottom:6px;",
-            "Cohen's d quantifies how strongly each gene separates the selected group from all others,",
-            " in units of pooled standard deviation. Larger values indicate stronger separation,",
-            " independent of sample size."),
-          shiny::div(
-            style = "display:grid; grid-template-columns:1fr 1fr; gap:14px;",
-            # Left: gene selection — manual OR N-based (mutually exclusive)
-            shiny::div(
-              shiny::tags$small(shiny::tags$b("Gene selection")),
-              shiny::div(style = "margin-top:6px;",
-                shiny::radioButtons(ns("cohend_mode"), NULL,
-                  choices  = c("Select specific genes" = "manual",
-                               "Select by criterion (top / first / random N)" = "n_based"),
-                  selected = "n_based"),
-                # Manual mode: show picker
-                shiny::conditionalPanel(
-                  condition = sprintf("input['%s'] === 'manual'", ns("cohend_mode")),
-                  shiny::uiOutput(ns("cohend_genes_ui"))
-                ),
-                # N-based mode: show N + criterion
-                shiny::conditionalPanel(
-                  condition = sprintf("input['%s'] === 'n_based'", ns("cohend_mode")),
-                  shiny::numericInput(ns("cohend_max_genes"), "Number of genes (N):",
-                    value = 30, min = 1, max = 500, step = 5),
-                  shiny::radioButtons(ns("cohend_gene_sel"), "Selection criterion:",
-                    choices  = c("Top N by |effect size|" = "top_d",
-                                 "First N (gene set order)" = "first",
-                                 "Random N"                 = "random"),
-                    selected = "top_d")
-                )
-              )
-            ),
-            # Right: analysis parameters
-            shiny::div(
-              shiny::tags$small(shiny::tags$b("Analysis parameters")),
-              shiny::div(style = "margin-top:6px;",
-                shiny::uiOutput(ns("cohend_cond_var_ui")),
-                shiny::uiOutput(ns("cohend_cond_class_ui")),
-                shiny::numericInput(ns("cohend_fontsize"), "Axis font size (pt):",
-                                    value = 10, min = 6, max = 20, step = 1),
-                shiny::div(style = "margin-top:10px;",
-                  shiny::actionButton(ns("run_cohend"), "Plot Effect Size",
-                                      class = "btn-primary btn-sm", width = "100%"))
-              )
-            )
-          )
-        ),
-        shiny::uiOutput(ns("cohend_status_ui")),
-        shiny::uiOutput(ns("cohend_plot_ui"))
-      ),
-
-      # ---- 6. Gene PCA ------------------------------------------------------
-      bslib::nav_panel("Gene PCA",
-        .tab_settings(
-          shiny::uiOutput(ns("pca_overlap_warn_ui")),
-          shiny::p(style = "font-size:0.88em; color:#555; margin-bottom:6px;",
-            "PCA run on the expression matrix subsetted to the selected genes.",
-            "Each point is a sample; genes drive the axes. Samples that cluster together",
-            "share similar expression profiles for this gene set."),
-          shiny::div(
-            style = "display:grid; grid-template-columns:1fr 1fr; gap:14px;",
-            shiny::div(
-              shiny::uiOutput(ns("pca_genes_ui"))
-            ),
-            shiny::div(
-              shiny::uiOutput(ns("pca_color_var_ui")),
-              shiny::div(
-                style = "display:grid; grid-template-columns:1fr 1fr; gap:8px;",
-                shiny::selectInput(ns("pca_x_pc"), "X axis:", choices = paste0("PC", 1:10), selected = "PC1"),
-                shiny::selectInput(ns("pca_y_pc"), "Y axis:", choices = paste0("PC", 1:10), selected = "PC2")
-              ),
-              shiny::numericInput(ns("pca_fontsize"), "Axis font size (pt):", value = 10, min = 6, max = 20, step = 1),
-              shiny::div(style = "margin-top:8px;",
-                shiny::actionButton(ns("run_pca"), "Plot Gene PCA",
-                                    class = "btn-primary btn-sm", width = "100%"))
-            )
-          )
-        ),
-        shiny::uiOutput(ns("pca_status_ui")),
-        shiny::uiOutput(ns("pca_plots_ui"))
-      ),
-
-      # ---- 7. Discriminatory Power ------------------------------------------
-      bslib::nav_panel("Discriminatory Power",
-        .tab_settings(
-          shiny::uiOutput(ns("roc_overlap_warn_ui")),
-          shiny::p(style = "font-size:0.88em; color:#555; margin-bottom:4px;",
-            "ROC curves and AUC values measure each gene's ability to separate two groups.",
-            " AUC = 0.5 is no better than chance; AUC = 1.0 is perfect separation.",
-            " Raw AUC < 0.5 means the gene discriminates in the opposite direction",
-            " (higher expression in the reference group) — it is still informative.",
-            " Colours are consistent between the ROC curves and the AUC barplot.",
-            shiny::br(),
-            shiny::tags$span(style = "color:#6c757d;",
-              shiny::icon("circle-info"),
-              " To explore expression values per sample for any gene of interest,",
-              " select it in the ", shiny::strong("Expression"), " tab.")),
-          shiny::div(
-            style = "display:grid; grid-template-columns:1fr 1fr; gap:14px;",
-            # Left: gene selection
-            shiny::div(
-              shiny::tags$small(shiny::tags$b("Gene selection")),
-              shiny::div(style = "margin-top:6px;",
-                shiny::radioButtons(ns("roc_mode"), NULL,
-                  choices  = c("Select specific genes"                          = "manual",
-                               "Select by criterion (top / random N)"           = "n_based"),
-                  selected = "n_based"),
-                shiny::conditionalPanel(
-                  condition = sprintf("input['%s'] === 'manual'", ns("roc_mode")),
-                  shiny::uiOutput(ns("roc_genes_ui"))
-                ),
-                shiny::conditionalPanel(
-                  condition = sprintf("input['%s'] === 'n_based'", ns("roc_mode")),
-                  shiny::numericInput(ns("roc_max_genes"), "Number of genes (N):",
-                    value = 20, min = 1, max = 500, step = 5),
-                  shiny::radioButtons(ns("roc_gene_sel"), "Selection criterion:",
-                    choices  = c("Top N by AUC" = "top_auc", "Random N" = "random"),
-                    selected = "top_auc", inline = TRUE)
-                )
-              )
-            ),
-            shiny::div(
-              shiny::tags$small(shiny::tags$b("Analysis parameters")),
-              shiny::div(style = "margin-top:6px;",
-                shiny::uiOutput(ns("roc_cond_var_ui")),
-                shiny::uiOutput(ns("roc_cond_class_ui")),
-                shiny::numericInput(ns("roc_fontsize"), "Axis font size (pt):",
-                                    value = 10, min = 6, max = 20, step = 1),
-                shiny::checkboxInput(ns("roc_invert_auc"),
-                  "Invert AUC < 0.5 genes (flip ROC direction)", value = TRUE),
-                shiny::tags$small(style = "color:#6c757d; display:block; margin:-4px 0 6px;",
-                  "When checked: genes with raw AUC < 0.5 are flipped so the reported",
-                  " AUC = 1 − raw. An AUC = 0 becomes 1.0 (perfect in reverse direction)."),
-                shiny::div(style = "margin-top:8px;",
-                  shiny::actionButton(ns("run_rocauc"), "Plot Discriminatory Power",
-                                      class = "btn-primary btn-sm", width = "100%"))
-              )
-            )
-          )
-        ),
-        shiny::uiOutput(ns("rocauc_status_ui")),
-        shiny::uiOutput(ns("roc_curves_ui")),
-        shiny::uiOutput(ns("rocauc_plot_ui"))
       )
     ),
     js_ready_script
@@ -741,6 +869,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
     # ---- Cached results -----------------------------------------------------
     pairwise_result   <- shiny::reactiveVal(NULL)
     similarity_result <- shiny::reactiveVal(NULL)
+    user_gs_parsed    <- shiny::reactiveVal(NULL)   # user-defined ref gene sets for Similarity
     expression_result <- shiny::reactiveVal(NULL)
     heatmap_result    <- shiny::reactiveVal(NULL)
     corr_result       <- shiny::reactiveVal(NULL)
@@ -1069,17 +1198,17 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
     })
 
     # ---- Per-tab: colour variable -------------------------------------------
-    .make_color_picker <- function(input_id) {
+    .make_color_picker <- function(input_id, label = "Colour by (optional):") {
       shiny::renderUI({
         meta <- get_meta()
         if (is.null(meta)) return(NULL)
         cols <- setdiff(colnames(meta), colnames(meta)[1])
-        shiny::selectInput(ns(input_id), "Colour by (optional):",
+        shiny::selectInput(ns(input_id), label,
                            choices = c("None" = "", cols), selected = "")
       })
     }
     output$expr_color_var_ui <- .make_color_picker("expr_color_var")
-    output$pca_color_var_ui  <- .make_color_picker("pca_color_var")
+    output$pca_color_var_ui  <- .make_color_picker("pca_color_var", "Colour by:")
 
     # =========================================================================
     # ---- PER-TAB: dynamic UI ------------------------------------------------
@@ -1244,7 +1373,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       if (length(valid) == 0)
         return(shiny::div(class = "alert alert-warning", style = "font-size:0.82em;",
           "No metadata variable with ≥2 unique values found."))
-      shiny::selectInput(ns("cohend_cond_var"), "Condition variable:",
+      shiny::selectInput(ns("cohend_cond_var"), "Grouping variable:",
                          choices = valid, selected = valid[1])
     })
 
@@ -1267,7 +1396,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       if (length(valid) == 0)
         return(shiny::div(class = "alert alert-warning", style = "font-size:0.82em;",
           "No metadata variable with ≥2 unique values found."))
-      shiny::selectInput(ns("roc_cond_var"), "Condition variable:",
+      shiny::selectInput(ns("roc_cond_var"), "Grouping variable:",
                          choices = valid, selected = valid[1])
     })
 
@@ -1309,6 +1438,52 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
           pw_h(.dyn_h(length(unique(result$data$Compared_Signature)), base = 280, per_item = 45))
       }
       pairwise_result(result)
+    })
+
+    # ---- Parse user-defined gene sets (paste or file upload) ----------------
+    .parse_user_gs_text <- function(txt) {
+      if (is.null(txt) || !nzchar(trimws(txt))) return(NULL)
+      lines  <- strsplit(txt, "\n")[[1]]
+      result <- list(); cur_name <- NULL; cur_genes <- NULL
+      for (ln in lines) {
+        ln <- trimws(ln)
+        if (!nzchar(ln)) next
+        if (startsWith(ln, ">")) {
+          if (!is.null(cur_name) && length(cur_genes) > 0)
+            result[[cur_name]] <- cur_genes
+          cur_name  <- trimws(substring(ln, 2))
+          cur_genes <- character(0)
+        } else if (!is.null(cur_name)) {
+          g <- trimws(unlist(strsplit(ln, "[,;\\s]+")))
+          cur_genes <- c(cur_genes, g[nzchar(g)])
+        }
+      }
+      if (!is.null(cur_name) && length(cur_genes) > 0)
+        result[[cur_name]] <- cur_genes
+      if (length(result) == 0) NULL else result
+    }
+
+    shiny::observeEvent(input$user_gs_paste, {
+      parsed <- .parse_user_gs_text(input$user_gs_paste)
+      user_gs_parsed(parsed)
+    }, ignoreInit = TRUE)
+
+    shiny::observeEvent(input$user_gs_file, {
+      f <- input$user_gs_file
+      if (is.null(f)) return()
+      txt <- paste(readLines(f$datapath, warn = FALSE), collapse = "\n")
+      shiny::updateTextAreaInput(session, "user_gs_paste", value = txt)
+      parsed <- .parse_user_gs_text(txt)
+      user_gs_parsed(parsed)
+    }, ignoreInit = TRUE)
+
+    output$user_gs_parse_ui <- shiny::renderUI({
+      parsed <- user_gs_parsed()
+      if (is.null(parsed)) return(NULL)
+      shiny::tags$small(style = "color:#28a745; display:block; margin:-4px 0 6px;",
+        shiny::icon("circle-check"),
+        sprintf(" %d gene set(s) loaded: %s", length(parsed),
+                paste(names(parsed), collapse = ", ")))
     })
 
     shiny::observeEvent(input$run_similarity, {
@@ -1353,9 +1528,12 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
           "…"), value = 0, {
         result <- tryCatch({
           shiny::incProgress(0.3)
+          user_gs  <- shiny::isolate(user_gs_parsed())
           args <- list(signatures = gs_char, collection = collection,
                        subcollection = subcollection, msig_subset = msig_subset, metric = metric,
                        organism = organism, db_species = db_species)
+          if (!is.null(user_gs) && length(user_gs) > 0)
+            args$other_user_signatures <- user_gs
           if (metric == "jaccard") {
             args$jaccard_threshold <- shiny::isolate(input$jaccard_threshold)
           } else {
@@ -1794,11 +1972,16 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
             roc_params = list(ncol = roc_ncol))
           shiny::incProgress(0.7)
 
-          # Post-filter for "top_auc": keep only genes with the highest AUC.
+          # Post-filter for "top_auc": keep only genes with the highest effective AUC.
+          # Always rank by pmax(AUC, 1 - AUC) so that genes with AUC near 0 are
+          # treated as equally discriminatory as genes with AUC near 1, regardless
+          # of whether the user has checked "Invert AUC". The invert checkbox only
+          # controls how the AUC is *displayed*, not which genes are selected.
           if (gene_sel == "top_auc" && !is.null(max_g) && max_g > 0) {
             auc_df <- res$auc_values
             if (!is.null(auc_df) && is.data.frame(auc_df) && nrow(auc_df) > max_g) {
-              top_genes <- auc_df$Gene[order(auc_df$AUC, decreasing = TRUE)][seq_len(max_g)]
+              effective_auc <- pmax(auc_df$AUC, 1 - auc_df$AUC)
+              top_genes <- auc_df$Gene[order(effective_auc, decreasing = TRUE)][seq_len(max_g)]
               res$auc_values <- auc_df[auc_df$Gene %in% top_genes, , drop = FALSE]
               if (!is.null(res$roc_plot) && is.data.frame(res$roc_plot$data))
                 res$roc_plot$data <- res$roc_plot$data[res$roc_plot$data$Gene %in% top_genes, ]
@@ -1911,11 +2094,18 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
     output$similarity_plot_ui <- shiny::renderUI({
       res <- similarity_result()
       if (is.null(res)) return(NULL)
-      shiny::tagList(shiny::h5("Similarity Heatmap", style = "margin:12px 0 4px;"),
-                     plotly::plotlyOutput(ns("similarity_plot"), height = paste0(sim_h(), "px")))
+      interactive <- isTRUE(input$sim_interactive)
+      shiny::tagList(
+        shiny::h5("Similarity Heatmap", style = "margin:12px 0 4px;"),
+        if (interactive)
+          plotly::plotlyOutput(ns("similarity_plot"), height = paste0(sim_h(), "px"))
+        else
+          shiny::plotOutput(ns("similarity_plot_static"), width = "100%", height = paste0(sim_h(), "px"))
+      )
     })
 
     output$similarity_plot <- plotly::renderPlotly({
+      shiny::req(isTRUE(input$sim_interactive))
       res  <- similarity_result(); shiny::req(!is.null(res))
       font <- input$sim_fontsize
       metric <- shiny::isolate(input$gs_metric)
@@ -1930,6 +2120,21 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       plotly::ggplotly(p, tooltip = "text") |>
         plotly::layout(hoverlabel = list(bgcolor = "white"), height = sim_h())
     })
+
+    output$similarity_plot_static <- shiny::renderPlot({
+      shiny::req(!isTRUE(input$sim_interactive))
+      res  <- similarity_result(); shiny::req(!is.null(res))
+      font <- input$sim_fontsize
+      metric <- shiny::isolate(input$gs_metric)
+      org_label <- if (!is.null(res$organism)) res$organism else "Homo sapiens"
+      if (metric == "odds_ratio" && !is.null(res$data))
+        .build_or_heatmap(res$data, font = font,
+          title = paste0("Similarity vs MSigDB (Odds Ratio) — ", org_label))
+      else if (!is.null(res$data))
+        .build_ji_heatmap(res$data, font = font,
+          title = paste0("Similarity vs MSigDB (Jaccard Index) — ", org_label))
+      else shiny::req(FALSE)
+    }, height = function() sim_h())
 
     # Similarity table header — shows every active filter/threshold from the last run
     output$similarity_table_hdr_ui <- shiny::renderUI({
@@ -2397,7 +2602,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       show_row <- if (!is.null(input$corr_show_row_names)) input$corr_show_row_names else TRUE
       show_col <- if (!is.null(input$show_col_names))      input$show_col_names      else TRUE
       method_lbl <- switch(res$method %||% "spearman",
-        spearman = "Spearman r", pearson = "Pearson r", kendall = "Kendall τ", "Correlation")
+        spearman = "Spearman Corr.", pearson = "Pearson Corr.", kendall = "Kendall Corr.", "Correlation")
 
       # Helper: build one plotly heatmap for a single correlation matrix (no dendrogram)
       .make_one_corr <- function(mat_i, cond_title = NULL, show_y = TRUE, show_cbar = TRUE) {
@@ -2711,17 +2916,14 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         ggplot2::labs(x = x_lab, y = y_lab) +
         ggplot2::geom_vline(xintercept = 0, linetype = "dotted", color = "grey60") +
         ggplot2::geom_hline(yintercept = 0, linetype = "dotted", color = "grey60") +
-        ggplot2::coord_fixed() +
         ggplot2::theme_bw() +
         ggplot2::theme(axis.text     = ggplot2::element_text(size = font),
                        axis.title    = ggplot2::element_text(size = font + 1),
                        legend.text   = ggplot2::element_text(size = font),
-                       legend.position = "bottom",
-                       aspect.ratio  = 1)
+                       legend.position = "bottom")
 
       plotly::ggplotly(p, tooltip = "text") |>
-        plotly::layout(height = pca_h(), legend = list(orientation = "h"),
-                       yaxis = list(scaleanchor = "x", scaleratio = 1))
+        plotly::layout(height = pca_h(), legend = list(orientation = "h"))
     })
 
     # ---- ROC / AUC ----------------------------------------------------------

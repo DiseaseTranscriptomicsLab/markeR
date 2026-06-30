@@ -39,12 +39,12 @@ discoveryUI <- function(id) {
 
       shiny::div(
         style = "padding-bottom:10px;",
-        shiny::h4("Discovery Mode", style = "color:#1E497B;"),
+        shiny::h4("Discovery Mode", style = "font-weight:700; color:#1E497B; margin-bottom:4px;"),
         shiny::p(
-          "Systematically test all metadata variables for association with
-           the gene set signal. Use for hypothesis generation once a robust
-           gene set has been established.",
-          style = "color:#6c757d;"
+          "Systematically test all metadata variables for association with",
+          " the gene set signal.",
+          " Use for hypothesis generation once a robust gene set has been established.",
+          style = "color:#6c757d; font-size:0.85em;"
         ),
         shiny::hr()
       ),

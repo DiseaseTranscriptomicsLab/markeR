@@ -726,6 +726,21 @@ preprocessingUI <- function(id) {
     bslib::layout_sidebar(fill = FALSE,
       sidebar = bslib::sidebar(width = 230, open = TRUE,
         style = "overflow-y: auto; max-height: 100vh; padding-bottom: 55px;",
+        shiny::div(
+          style = "padding-bottom:10px;",
+          shiny::h4("Preprocessing", style = "font-weight:700; color:#EBB43E; margin-bottom:4px;"),
+          shiny::p(
+            "Normalize and quality-control your data before analysis.",
+            " Steps are optional and applied in sequence.",
+            style = "color:#6c757d; font-size:0.85em; margin-bottom:6px;"
+          ),
+          shiny::hr(style = "margin:6px 0;")
+        ),
+        shiny::div(class = "alert alert-info", style = "font-size:0.78em; padding:6px 8px; margin-bottom:8px;",
+          shiny::icon("file-lines"),
+          shiny::tags$b(" A preprocessing report"),
+          " will be generated at the end, including all plots and any comments",
+          " you add at each step."),
         shiny::tags$h6("Progress", style = "font-weight:700;margin-bottom:6px;"),
         shiny::uiOutput(ns("sidebar_progress")),
         shiny::hr(style = "margin:8px 0;"),
@@ -742,6 +757,7 @@ preprocessingUI <- function(id) {
         shiny::div(style = "min-height: 60px; flex-shrink: 0;")
       ),
       shiny::div(class = "pp-main-scroll", style = "padding:10px;",
+        shiny::uiOutput(ns("pp_step0_card")),
         shiny::uiOutput(ns("gene_id_banner")),
         shiny::uiOutput(ns("gene_id_map_ui")),
         shiny::uiOutput(ns("step1_card")),
@@ -811,7 +827,10 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       downloads_available = FALSE,
       pp_summary        = NULL,
       note_s1 = "", note_s2 = "", note_s3 = "", note_s4 = "",
-      report_interactive_data = NULL
+      report_interactive_data = NULL,
+      meta_type_log = character(0),  # tracks Step 0 column type changes for report
+      s0_done       = FALSE,         # Step 0 confirmed (apply or skip)
+      meta_s0_orig  = NULL           # immutable snapshot of metadata at load time for Step 0
     )
 
     shiny::observe({
@@ -846,7 +865,8 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         # (no notification — silent reset to avoid noise during normal data-tab usage)
       }
       rv$data_s0 <- d0; rv$data_s1 <- d0; rv$meta_s <- m
-      rv$data_s0_orig <- d0   # keep an unmodified copy for full reset
+      rv$data_s0_orig  <- d0  # keep an unmodified copy for full reset
+      rv$meta_s0_orig  <- m   # immutable snapshot for Step 0 preview (never overwritten)
       rv$orig_n_genes <- nrow(d0); rv$orig_n_samples <- ncol(d0)
       rv$gene_id_type <- .pp_detect_gene_id_type(rownames(d0))
       if (is.null(prev_fp)) rv$gene_id_dismissed <- FALSE  # only clear on first load
@@ -1221,6 +1241,8 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
     # =========================================================================
 
     step_info <- list(
+      list(n=0L, label="Metadata Types",
+        tip="Verify that each metadata column has the correct type. Incorrect types limit available analyses."),
       list(n=1L, label="Sample QC",
         tip="Check sample quality before filtering. Poor-quality or outlier samples caught here prevent downstream artefacts."),
       list(n=2L, label="Gene Filtering",
@@ -1232,14 +1254,22 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
     )
 
     output$sidebar_progress <- shiny::renderUI({
-      step <- rv$step
+      step    <- rv$step
+      s0_done <- isTRUE(rv$s0_done)
+      has_meta <- !is.null(rv$meta_s)
       n_steps <- length(step_info)
       shiny::div(
         lapply(seq_along(step_info), function(i) {
           x      <- step_info[[i]]
           is_last <- i == n_steps
-          is_done <- x$n < step
-          is_act  <- x$n == step
+          # Step 0 uses its own done flag; steps 1-4 use rv$step
+          if (x$n == 0L) {
+            is_done <- s0_done
+            is_act  <- has_meta && !s0_done
+          } else {
+            is_done <- x$n < step
+            is_act  <- x$n == step
+          }
           if (is_done)       { dot_cls <- "pp-num pp-num-done";   txt <- "✓" }
           else if (is_act)   { dot_cls <- "pp-num pp-num-active"; txt <- as.character(x$n) }
           else               { dot_cls <- "pp-num pp-num-locked";  txt <- as.character(x$n) }
@@ -1649,6 +1679,42 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           "<p style='color:#6b7280;font-size:0.86em;'>Generated: ",
           format(Sys.time(), "%Y-%m-%d %H:%M"), "</p>",
 
+          # Step 0: metadata column types table
+          {
+            meta_rep <- rv$meta_s
+            if (!is.null(meta_rep)) {
+              .detect_type_rep <- function(x) {
+                if (is.logical(x)) "logical"
+                else if (is.integer(x)) "integer"
+                else if (is.numeric(x)) "numeric"
+                else if (is.factor(x)) "factor"
+                else "character"
+              }
+              rep_cols  <- colnames(meta_rep)[-1]
+              rep_rows  <- vapply(rep_cols, function(cn)
+                paste0("<tr><td>", .html_esc(cn), "</td><td>",
+                       .html_esc(.detect_type_rep(meta_rep[[cn]])), "</td></tr>"),
+                character(1L))
+              paste0(
+                "<div class='step-section'>",
+                "<div class='step-header'><span class='step-num'>0</span>",
+                "<span class='step-title'>Metadata Column Types</span></div>",
+                "<div class='step-summary'>",
+                "<table style='border-collapse:collapse;font-size:0.88em;width:100%;max-width:400px;'>",
+                "<thead><tr>",
+                "<th style='text-align:left;border-bottom:2px solid #dee2e6;padding:4px 10px;'>Column</th>",
+                "<th style='text-align:left;border-bottom:2px solid #dee2e6;padding:4px 10px;'>Type</th>",
+                "</tr></thead><tbody>",
+                paste(rep_rows, collapse = ""),
+                "</tbody></table>",
+                if (length(rv$meta_type_log) > 0L)
+                  paste0("<p style='margin-top:6px;font-size:0.82em;color:#6b7280;'>",
+                         length(rv$meta_type_log), " type change(s) applied — see session log for details.</p>")
+                else "",
+                "</div></div>")
+            } else ""
+          },
+
           # Gene ID conversion (before summary — it's the first step)
           "<h2>Gene ID Conversion</h2>",
           geneid_block,
@@ -1769,6 +1835,313 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         rownames= FALSE)
     })
 
+    # ── Metadata variable type editor ─────────────────────────────────────────
+
+    output$pp_step0_card <- shiny::renderUI({
+      shiny::req(!is.null(rv$meta_s))
+      meta <- rv$meta_s
+      cols <- colnames(meta)[-1]
+      if (length(cols) == 0L) return(NULL)
+
+      .detect_type <- function(x) {
+        if (is.logical(x))        "logical"
+        else if (is.integer(x))   "integer"
+        else if (is.numeric(x))   "numeric"
+        else if (is.factor(x))    "factor"
+        else                      "character"
+      }
+
+      # ── Collapsed / done view ───────────────────────────────────────────────
+      if (isTRUE(rv$s0_done)) {
+        n_changed <- length(rv$meta_type_log)
+        summary_txt <- if (n_changed > 0L)
+          paste0(n_changed, " type change(s) applied")
+        else
+          "No type changes (confirmed as-is)"
+        return(.pp_done_card(0L, "Metadata Column Types", summary_txt, ns("back_to_s0")))
+      }
+
+      # ── Active view ─────────────────────────────────────────────────────────
+      # Use the original snapshot for selector defaults (not rv$meta_s)
+      meta_orig <- rv$meta_s0_orig %||% meta
+      type_choices <- c("Character" = "character", "Numeric" = "numeric",
+                        "Integer"   = "integer",   "Factor"  = "factor",
+                        "Logical"   = "logical")
+
+      # Type selectors — use native <select> (selectize=FALSE) to avoid
+      # dropdown clipping inside grid containers.
+      # Defaults are always from the ORIGINAL snapshot.
+      selectors <- lapply(cols, function(col) {
+        cur <- .detect_type(meta_orig[[col]])
+        shiny::div(
+          style = "display:flex; flex-direction:column; gap:2px;",
+          shiny::tags$label(
+            style = "font-size:0.78em; font-weight:600; color:#374151; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;",
+            title = col, col
+          ),
+          shiny::selectInput(
+            ns(paste0("meta_type_", make.names(col))),
+            label = NULL, choices = type_choices, selected = cur,
+            width = "100%", selectize = FALSE
+          )
+        )
+      })
+
+      bslib::card(
+        class = "pp-step-card",
+        bslib::card_header(
+          shiny::tags$div(
+            style = "display:flex; align-items:center;",
+            shiny::tags$span(class = "pp-num pp-num-active", "0"),
+            shiny::tags$strong("Step 0 — Verify Metadata Column Types"),
+            bslib::tooltip(
+              shiny::icon("circle-question",
+                style = "color:#aaa; cursor:help; margin-left:8px; font-size:0.85em;"),
+              "Change a column type and the preview updates immediately.",
+              " Conversions that would introduce NAs are highlighted in red and blocked.",
+              " Changes always apply on the original import — not on each other.",
+              placement = "right"
+            )
+          )
+        ),
+        shiny::div(
+          style = "padding:10px 12px 4px;",
+          shiny::tags$p(
+            style = "font-size:0.82em; color:#6b7280; margin:0 0 8px;",
+            "Select the target type for each column. The table below previews the result.",
+            " Columns highlighted in green will be converted; red columns cannot be converted",
+            " without data loss and will be left unchanged."
+          ),
+          # Dynamic preview table (updates as selectors change; avoids full card re-render)
+          shiny::uiOutput(ns("s0_preview_table")),
+          # Type selectors grid
+          shiny::div(
+            style = "display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; overflow:visible; margin-top:8px;",
+            shiny::tagList(selectors)
+          )
+        ),
+        shiny::div(
+          style = "padding:8px 12px 12px; display:flex; gap:8px;",
+          shiny::actionButton(ns("apply_meta_types"), "Apply changes",
+            icon = shiny::icon("check"), class = "btn-sm btn-success",
+            style = "flex:1;"),
+          shiny::actionButton(ns("skip_s0"), "Confirm as-is",
+            icon = shiny::icon("forward"), class = "btn-sm btn-outline-secondary",
+            style = "flex:1;",
+            title = "Accept current column types without changes")
+        )
+      )
+    })
+
+    shiny::observeEvent(input$skip_s0, {
+      rv$s0_done <- TRUE
+      glog("Step 0 confirmed as-is (no metadata type changes applied).")
+    }, ignoreNULL = FALSE, ignoreInit = TRUE)
+
+    shiny::observeEvent(input$back_to_s0, {
+      rv$s0_done <- FALSE
+    }, ignoreNULL = FALSE, ignoreInit = TRUE)
+
+    # ── Step 0: live preview reactive ────────────────────────────────────────
+    # Always operates on rv$meta_s0_orig (never cascades changes).
+    # Returns list(data, changes, errors, msgs) where:
+    #   changes = column names that will be successfully re-typed
+    #   errors  = columns whose conversion would introduce new NAs (blocked)
+    .s0_detect_type <- function(x) {
+      if (is.logical(x)) "logical"
+      else if (is.integer(x)) "integer"
+      else if (is.numeric(x)) "numeric"
+      else if (is.factor(x)) "factor"
+      else "character"
+    }
+
+    s0_preview_res <- shiny::reactive({
+      meta_orig <- rv$meta_s0_orig
+      if (is.null(meta_orig)) return(NULL)
+      cols <- colnames(meta_orig)[-1]
+      if (length(cols) == 0L) return(NULL)
+
+      result         <- meta_orig   # starts as original; only valid changes applied
+      changes        <- character(0)
+      errors         <- character(0)
+      msgs           <- character(0)
+      change_details <- list()      # col → list(from, to) for specific log messages
+
+      for (col in cols) {
+        input_id <- paste0("meta_type_", make.names(col))
+        new_type <- input[[input_id]]
+        if (is.null(new_type)) next
+
+        old_val   <- meta_orig[[col]]
+        old_token <- .s0_detect_type(old_val)
+        if (identical(old_token, new_type)) next  # no change requested
+
+        # Attempt coercion (muffle expected coercion warnings)
+        new_val <- tryCatch({
+          withCallingHandlers(
+            switch(new_type,
+              character = as.character(old_val),
+              numeric   = as.numeric(as.character(old_val)),
+              integer   = as.integer(as.character(old_val)),
+              factor    = as.factor(old_val),
+              logical   = as.logical(old_val)
+            ),
+            warning = function(w) invokeRestart("muffleWarning")
+          )
+        }, error = function(e) NULL)
+
+        orig_non_na <- sum(!is.na(old_val))
+        new_non_na  <- if (is.null(new_val)) 0L else sum(!is.na(new_val))
+
+        # Block: null result OR any previously non-NA value became NA
+        if (is.null(new_val) || (orig_non_na > 0L && new_non_na < orig_non_na)) {
+          errors <- c(errors, col)
+          msgs   <- c(msgs, sprintf(
+            "'%s': cannot convert %s → %s (would introduce NAs in %d value(s))",
+            col, old_token, new_type,
+            if (is.null(new_val)) orig_non_na else orig_non_na - new_non_na))
+        } else {
+          result[[col]] <- new_val
+          changes <- c(changes, col)
+          change_details[[col]] <- list(from = old_token, to = new_type)
+        }
+      }
+
+      list(data = result, changes = changes, errors = errors, msgs = msgs,
+           change_details = change_details)
+    })
+
+    # ── Step 0: preview table (separate output so selectors don't re-render) ─
+    output$s0_preview_table <- shiny::renderUI({
+      meta_orig <- rv$meta_s0_orig
+      if (is.null(meta_orig)) return(NULL)
+      prev <- s0_preview_res()
+      if (is.null(prev)) return(NULL)
+
+      data_show <- if (nrow(prev$data) > 6L) prev$data[1:6, , drop = FALSE] else prev$data
+      all_cols  <- colnames(data_show)
+
+      # Build column-status lookup
+      col_status <- stats::setNames(rep("unchanged", length(all_cols)), all_cols)
+      col_status[prev$changes] <- "changed"
+      col_status[prev$errors]  <- "error"
+
+      # Header row
+      th_cells <- lapply(all_cols, function(cn) {
+        bg <- switch(col_status[cn],
+          changed   = "#d1fae5",  # green
+          error     = "#fee2e2",  # red
+          "#f8f9fa" # grey
+        )
+        old_type <- .s0_detect_type(meta_orig[[cn]])
+        new_type_sel <- input[[paste0("meta_type_", make.names(cn))]] %||% old_type
+        type_label <- if (col_status[cn] == "changed")
+          paste0(old_type, " → ", new_type_sel)
+        else if (col_status[cn] == "error")
+          paste0(old_type, " ✗ ", new_type_sel)
+        else old_type
+
+        shiny::tags$th(
+          style = paste0("background:", bg, "; font-weight:600; padding:4px 10px;",
+                         "font-size:0.88em; white-space:nowrap;"),
+          shiny::div(cn),
+          shiny::tags$small(
+            style = paste0("font-weight:400; color:",
+                           if (col_status[cn] == "error") "#dc2626"
+                           else if (col_status[cn] == "changed") "#065f46"
+                           else "#9ca3af", ";"),
+            type_label)
+        )
+      })
+
+      # Body rows
+      body_rows <- lapply(seq_len(nrow(data_show)), function(r) {
+        cells <- lapply(all_cols, function(cn) {
+          bg <- switch(col_status[cn],
+            changed = "#f0fdf4",
+            error   = "#fff5f5",
+            "#ffffff")
+          shiny::tags$td(
+            style = paste0("padding:3px 10px; font-size:0.88em; background:", bg, ";",
+                           "max-width:160px; overflow:hidden; text-overflow:ellipsis;",
+                           "white-space:nowrap;"),
+            as.character(data_show[r, cn]))
+        })
+        shiny::tags$tr(shiny::tagList(cells))
+      })
+
+      n_rows <- nrow(prev$data)
+
+      shiny::tagList(
+        shiny::div(
+          style = "overflow-x:auto; max-height:260px; overflow-y:auto; margin-bottom:6px; border:1px solid #dee2e6; border-radius:4px;",
+          shiny::tags$table(
+            class = "table table-sm table-bordered",
+            style = "font-size:0.88em; margin:0; border-collapse:collapse;",
+            shiny::tags$thead(
+              style = "position:sticky; top:0; z-index:1;",
+              shiny::tags$tr(shiny::tagList(th_cells))
+            ),
+            shiny::tags$tbody(shiny::tagList(body_rows))
+          ),
+          if (n_rows > 6L)
+            shiny::tags$small(style = "color:#9ca3af; font-style:italic; padding:2px 6px; display:block;",
+              sprintf("Showing 6 of %d rows", n_rows))
+        ),
+        # Error messages
+        if (length(prev$errors) > 0L)
+          shiny::div(
+            style = "background:#fef2f2; border:1px solid #fca5a5; border-radius:4px;",
+            "padding:6px 10px; margin-bottom:4px; font-size:0.8em; color:#991b1b;",
+            shiny::tags$b("Blocked conversions (would introduce NAs):"),
+            shiny::tags$ul(
+              style = "margin:4px 0 0 0; padding-left:16px;",
+              lapply(prev$msgs, function(m) shiny::tags$li(m))
+            )
+          )
+      )
+    })
+
+    shiny::observeEvent(input$apply_meta_types, {
+      # Use the pre-computed preview (always from original, never cascaded)
+      prev <- shiny::isolate(s0_preview_res())
+      shiny::req(!is.null(prev))
+
+      changed <- prev$changes
+      failed  <- prev$errors
+
+      if (length(changed) > 0L) {
+        # Commit validated result to rv$meta_s (already computed from original)
+        rv$meta_s <- prev$data
+        # Build one specific log entry per changed column: "Col: character → factor"
+        details   <- prev$change_details %||% list()
+        per_col   <- vapply(changed, function(col) {
+          d <- details[[col]]
+          if (!is.null(d)) paste0(col, ": ", d$from, " → ", d$to)
+          else col
+        }, character(1L))
+        glog_msg <- paste0("Step 0 — type changes: ", paste(per_col, collapse = "; "))
+        glog(glog_msg)
+        rv$meta_type_log <- c(rv$meta_type_log, glog_msg)
+        shiny::showNotification(
+          paste0("Types updated: ", paste(per_col, collapse = ", "), "."),
+          type = "message", duration = 6)
+      }
+
+      if (length(failed) > 0L)
+        shiny::showNotification(
+          paste0("Blocked (would introduce NAs): ", paste(failed, collapse = ", "), "."),
+          type = "warning", duration = 9)
+
+      if (length(changed) == 0L && length(failed) == 0L)
+        shiny::showNotification(
+          "All selected types already match — nothing changed.",
+          type = "default", duration = 4)
+
+      # Mark step 0 as confirmed regardless
+      rv$s0_done <- TRUE
+    })
+
     shiny::observeEvent(input$skip_preprocessing, {
       d <- rv$data_s0 %||% tryCatch(as.data.frame(get_expr()), error=function(e) NULL)
       if (is.null(d)) {
@@ -1787,6 +2160,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       rv$s1_summary <- "not applied"
       rv$s2_summary <- "not applied"
       rv$s3_summary <- "not applied"
+      rv$s0_done    <- TRUE   # confirm Step 0 as-is so card collapses to green
       rv$downloads_available <- TRUE
       rv$step <- 5L; rv$active_step <- 5L
       rv$finalized <- rv$finalized + 1L      # triggers parent app to pick up final_data
@@ -1828,8 +2202,11 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       rv$report_s4_before <- NULL; rv$report_s4_after <- NULL
       rv$note_s1 <- ""; rv$note_s2 <- ""; rv$note_s3 <- ""; rv$note_s4 <- ""
       rv$report_interactive_data <- NULL
+      rv$meta_type_log <- character(0)
+      rv$s0_done       <- FALSE
+      rv$meta_s0_orig  <- m   # re-snapshot from freshly restored meta
       .finalized_fp(NULL)
-      # (silent reset — no notification needed)
+      glog("Preprocessing reset to initial state (all steps cleared).")
     })
 
     # =========================================================================
