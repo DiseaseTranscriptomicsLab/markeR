@@ -263,7 +263,11 @@ benchmarkingUI <- function(id) {
                       "Maximum characters per line in legend entries. Affects how gene set names",
                       " are displayed in the plot legend.",
                       placement = "right"
-                    )
+                    ),
+                    shiny::numericInput(ns("score_titlesize"), "Title size (pt):",
+                                        value = 16, min = 8, max = 30, step = 1),
+                    shiny::numericInput(ns("score_labsize"), "Label size (pt):",
+                                        value = 12, min = 8, max = 26, step = 1)
                   )
                 )
               ),
@@ -371,6 +375,19 @@ benchmarkingUI <- function(id) {
                       shiny::numericInput(ns("all_width_legend"), "Legend wrap (chars):",
                                           value = 32, min = 10, max = 60, step = 2),
                       "Maximum characters per line for gene set names in the volcano legend.",
+                      placement = "right"
+                    ),
+                    bslib::tooltip(
+                      shiny::numericInput(ns("all_heatmap_textsize"), "Heatmap cell text size:",
+                                          value = 3, min = 1, max = 8, step = 0.5),
+                      "Font size of the Cohen's d/f and p-value labels drawn inside each",
+                      " heatmap cell.",
+                      placement = "right"
+                    ),
+                    bslib::tooltip(
+                      shiny::numericInput(ns("all_heatmap_titlesize"), "Heatmap title size (pt):",
+                                          value = 9, min = 4, max = 20, step = 1),
+                      "Font size of each gene set's panel title in the Cohen's d/f heatmap.",
                       placement = "right"
                     )
                   )
@@ -566,7 +583,7 @@ benchmarkingUI <- function(id) {
               style = "padding:8px 0 4px;",
               shiny::div(
                 style = "display:grid; grid-template-columns:1fr 1fr; gap:8px;",
-                shiny::numericInput(ns("gsea_sig_threshold"), "Significance threshold (padj):",
+                shiny::numericInput(ns("gsea_sig_threshold"), "Significance threshold (adjusted p-value):",
                                     value = 0.05, min = 0.001, max = 0.5, step = 0.01),
                 shiny::numericInput(ns("gsea_point_size"), "Point size:",
                                     value = 7, min = 1, max = 16, step = 1),
@@ -624,6 +641,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
     roc_h    <- shiny::reactiveVal(600L)
     auc_h    <- shiny::reactiveVal(400L)
     all_h    <- shiny::reactiveVal(500L)
+    all_vol_h <- shiny::reactiveVal(480L)
     nes_h      <- shiny::reactiveVal(500L)
     enrich_h   <- shiny::reactiveVal(500L)
     gsea_vol_h <- shiny::reactiveVal(500L)
@@ -703,10 +721,11 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
     # ---- Contrast filter (Score Analysis shared) ---------------------------
     # Shows all available pairwise contrasts. The selected subset is used
     # as a display filter: FPR data is filtered post-hoc by contrast column;
-    # the ROC contrast dropdown is populated from this list.
-    # Note: Score Distributions and All Methods always show every contrast
-    # because those functions build contrasts internally and cannot be
-    # post-hoc filtered without re-running.
+    # the ROC contrast dropdown, the AUC heatmap, and the All Methods Summary
+    # heatmap/volcano are all restricted to this selection.
+    # Note: Score Distributions always shows every contrast because that
+    # function builds contrasts internally and cannot be post-hoc filtered
+    # without re-running.
 
     output$score_contrasts_ui <- shiny::renderUI({
       meta <- get_meta(); var <- input$score_var; mode <- input$score_mode %||% "simple"
@@ -723,8 +742,9 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         shiny::tags$label("Contrasts to show:", style = "font-size:0.85em; font-weight:600;"),
         shiny::tags$small(
           style = "display:block; color:#6b7280; font-size:0.78em; margin-bottom:4px;",
-          "Filters the FPR plots and the ROC contrast dropdown.",
-          " Score Distributions and All Methods always compute every contrast."
+          "Filters the FPR plots, the ROC contrast dropdown, the AUC heatmap,",
+          " and the All Methods Summary heatmap/volcano.",
+          " Score Distributions always shows every contrast."
         ),
         shinyWidgets::pickerInput(
           ns("score_selected_groups"), label = NULL,
@@ -838,6 +858,253 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         1L)
     }
 
+    # Helper: build the score distribution figure directly from
+    # CalculateScores() output, replicating the *exact* per-signature
+    # aesthetic of PlotScores_Categorical() / PlotScores_Numeric() — gene set
+    # name as a plot title (not a facet strip), angled x-axis labels, and
+    # Cohen's d/f (+ p-value) reported as a plot *subtitle*, exactly as those
+    # exported functions do it — without modifying those functions. Each
+    # signature becomes its own ggplot, arranged with ggpubr::ggarrange()
+    # (same as the package functions) and rendered as a static plot.
+    .build_score_dist_plotly <- function(expr, meta, gs, method, var_arg, is_cat,
+                                         color_arg, compute_cohen, cond_cohend,
+                                         pvalcalc, connect_g, cor_m, pointsize,
+                                         wid_title, ncol = 3L, color_values = NULL,
+                                         titlesize = 16, labsize = 12) {
+      scores_list <- CalculateScores(data = expr, metadata = meta,
+                                     gene_sets = gs, method = method)
+      sig_names <- names(scores_list)
+      ncol_grid <- max(1L, min(ncol, length(sig_names)))
+      nrow_grid <- ceiling(length(sig_names) / ncol_grid)
+
+      gg_list <- list()
+
+      # ---- Case 1: no grouping variable -> density plot per gene set --------
+      if (is.null(var_arg) || is.null(meta)) {
+
+        fill_col <- if (is.null(color_values)) "#ECBD78" else unname(color_values)[1]
+
+        for (sig in sig_names) {
+          df <- scores_list[[sig]]
+          wrapped_title <- wrap_title(sig, wid_title)
+
+          p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$score)) +
+            ggplot2::geom_density(fill = fill_col, alpha = 0.5) +
+            ggplot2::geom_rug(ggplot2::aes(x = .data$score), color = fill_col, sides = "b",
+                              alpha = 0.8, linewidth = .5, length = grid::unit(0.035, "npc")) +
+            ggplot2::theme_classic() +
+            ggplot2::labs(title = wrapped_title, x = "", y = "") +
+            ggplot2::theme(
+              axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = labsize - .5),
+              axis.text.y = ggplot2::element_text(size = labsize - .5),
+              plot.title  = ggplot2::element_text(hjust = 0.5, size = titlesize - 1))
+
+          gg_list[[sig]] <- p
+        }
+
+        xlab <- switch(method,
+                       ssGSEA    = "ssGSEA Enrichment Score",
+                       logmedian = "Normalised Signature Score",
+                       ranking   = "Signature Genes' Ranking")
+        ylab <- "Density"
+        tooltip_vars <- c("x")
+
+      } else if (is_cat) {
+
+        # ---- Case 2: categorical variable -> violin + jitter ---------------
+        for (sig in sig_names) {
+          df <- scores_list[[sig]]
+          df[[var_arg]] <- factor(df[[var_arg]],
+                                  levels = sort(unique(as.character(df[[var_arg]]))))
+          wrapped_title <- wrap_title(sig, wid_title)
+
+          p <- ggplot2::ggplot(df, ggplot2::aes(x = .data[[var_arg]], y = .data$score))
+
+          if (!is.null(color_arg)) {
+            p <- p + ggplot2::geom_jitter(
+              ggplot2::aes(color = .data[[color_arg]], text = .data$sample),
+              width = 0.2, height = 0, size = pointsize, alpha = 0.6)
+          } else {
+            p <- p + ggplot2::geom_jitter(
+              ggplot2::aes(text = .data$sample),
+              width = 0.2, height = 0, size = pointsize, alpha = 0.6, color = "#5264B6")
+          }
+
+          p <- p +
+            ggplot2::geom_violin(alpha = 0.4, scale = "width") +
+            ggplot2::stat_summary(fun = stats::median, fun.min = stats::median,
+                                  fun.max = stats::median, geom = "crossbar", width = 0.25,
+                                  position = ggplot2::position_dodge(width = 0.13))
+
+          if (isTRUE(connect_g) && !is.null(color_arg)) {
+            p <- p + ggplot2::stat_summary(
+              ggplot2::aes(group = .data[[color_arg]], color = .data[[color_arg]]),
+              fun = stats::median, geom = "line", linewidth = 1, alpha = 0.75,
+              show.legend = FALSE)
+          }
+
+          # ---- Cohen's d/f (+ p-value) subtitle, exactly as computed in
+          # PlotScores_Categorical() -----------------------------------------
+          subtitle <- NULL
+          if (isTRUE(compute_cohen)) {
+            subtitle <- tryCatch({
+              if (!is.null(cond_cohend)) {
+
+                x <- df[df[[var_arg]] %in% cond_cohend$A, "score", drop = TRUE]
+                y <- df[df[[var_arg]] %in% cond_cohend$B, "score", drop = TRUE]
+                cohen_d_results <- cohen_d(x, y)
+
+                if (isTRUE(pvalcalc)) {
+                  pv <- stats::t.test(x, y, var.equal = TRUE)$p.value
+                  line1 <- wrap_title(paste0("Cohen's d = ",
+                                             format(signif(cohen_d_results, digits = 3),
+                                                    scientific = FALSE)), width = wid_title)
+                  line2 <- wrap_title(paste0("p = ", format(signif(pv, digits = 3),
+                                                            scientific = TRUE)), width = wid_title)
+                  paste(line1, line2, sep = "\n")
+                } else {
+                  wrap_title(paste0("Cohen's d = ",
+                                    format(signif(cohen_d_results, digits = 3),
+                                           scientific = FALSE)), width = wid_title)
+                }
+
+              } else if (length(levels(df[[var_arg]])) == 2) {
+
+                g1 <- levels(df[[var_arg]])[1]; g2 <- levels(df[[var_arg]])[2]
+                x <- df[df[[var_arg]] == g1, "score", drop = TRUE]
+                y <- df[df[[var_arg]] == g2, "score", drop = TRUE]
+                cohen_d_results <- cohen_d(x, y)
+
+                if (isTRUE(pvalcalc)) {
+                  ttest_results <- rstatix::t_test(df, formula =
+                                                     as.formula(paste("score ~", var_arg)))
+                  pv <- ttest_results$p[1]
+                  line1 <- wrap_title(paste0("Cohen's d = ",
+                                             format(signif(cohen_d_results, digits = 3),
+                                                    scientific = FALSE)), width = wid_title)
+                  line2 <- wrap_title(paste0("p = ", format(signif(pv, digits = 3),
+                                                            scientific = TRUE)), width = wid_title)
+                  paste(line1, line2, sep = "\n")
+                } else {
+                  wrap_title(paste0("Cohen's d = ",
+                                    format(signif(cohen_d_results, digits = 3),
+                                           scientific = FALSE)), width = wid_title)
+                }
+
+              } else if (length(levels(df[[var_arg]])) > 2) {
+
+                type  <- identify_variable_type(df, var_arg)[var_arg]
+                model <- lm(score ~ get(var_arg), data = df)
+                results_var <- compute_cohens_f_pval(model, type)
+
+                if (isTRUE(pvalcalc)) {
+                  line1 <- wrap_title(paste0("Cohen's f = ",
+                                             format(signif(results_var["Cohen_f"], digits = 3),
+                                                    scientific = FALSE)), width = wid_title)
+                  line2 <- wrap_title(paste0("p = ",
+                                             format(signif(results_var["P_Value"], digits = 3),
+                                                    scientific = TRUE)), width = wid_title)
+                  paste(line1, line2, sep = "\n")
+                } else {
+                  wrap_title(paste0("Cohen's f = ",
+                                    format(signif(results_var["Cohen_f"], digits = 3),
+                                           scientific = FALSE)), width = wid_title)
+                }
+
+              } else NULL
+            }, error = function(e) NULL)
+          }
+
+          p <- p + ggplot2::theme_bw() +
+            ggplot2::theme(
+              axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = labsize),
+              axis.text.y = ggplot2::element_text(size = labsize),
+              plot.title    = ggplot2::element_text(hjust = 0.5, size = titlesize - 1),
+              plot.subtitle = ggplot2::element_text(hjust = 0.5, size = titlesize - 1.5,
+                                                    face = "italic")) +
+            ggplot2::labs(title = wrapped_title, subtitle = subtitle, color = "", x = "", y = "")
+
+          if (!is.null(color_arg) && !is.null(color_values)) {
+            p <- p + ggplot2::scale_color_manual(values = color_values)
+          } else if (!is.null(color_arg)) {
+            p <- p + ggplot2::scale_color_brewer(palette = "Set3")
+          }
+
+          gg_list[[sig]] <- p
+        }
+
+        xlab <- var_arg
+        ylab <- paste0("Gene Set's Score (", method, ")")
+        tooltip_vars <- c("x", "y", "text", "colour")
+
+      } else {
+
+        # ---- Case 3: numeric variable -> scatter + linear fit --------------
+        pt_col <- if (is.null(color_values)) "#5264B6" else unname(color_values)[1]
+
+        for (sig in sig_names) {
+          df <- scores_list[[sig]]
+          wrapped_title <- wrap_title(sig, wid_title)
+
+          p <- ggplot2::ggplot(df, ggplot2::aes(x = .data[[var_arg]], y = .data$score,
+                                                text = .data$sample)) +
+            ggplot2::geom_point(size = pointsize, alpha = 0.5, color = pt_col) +
+            ggplot2::geom_smooth(method = "lm", col = "black", se = FALSE, linewidth = 1)
+
+          subtitle <- tryCatch({
+            if (isTRUE(compute_cohen)) {
+              type  <- identify_variable_type(df, var_arg)[var_arg]
+              model <- lm(score ~ get(var_arg), data = df)
+              results_var <- compute_cohens_f_pval(model, type)
+
+              if (isTRUE(pvalcalc)) {
+                line1 <- wrap_title(paste0("Cohen's f = ",
+                                           format(signif(results_var["Cohen_f"], digits = 3),
+                                                  scientific = FALSE)), width = wid_title)
+                line2 <- wrap_title(paste0("p = ",
+                                           format(signif(results_var["P_Value"], digits = 3),
+                                                  scientific = TRUE)), width = wid_title)
+                paste(line1, line2, sep = "\n")
+              } else {
+                wrap_title(paste0("Cohen's f = ",
+                                  format(signif(results_var["Cohen_f"], digits = 3),
+                                         scientific = FALSE)), width = wid_title)
+              }
+            } else NULL
+          }, error = function(e) NULL)
+
+          p <- p + ggplot2::theme_bw() +
+            ggplot2::theme(
+              axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = labsize),
+              axis.text.y = ggplot2::element_text(size = labsize),
+              plot.title    = ggplot2::element_text(hjust = 0.5, size = titlesize - 1),
+              plot.subtitle = ggplot2::element_text(hjust = 0.5, size = titlesize - 1.5,
+                                                    face = "italic")) +
+            ggplot2::labs(title = wrapped_title, subtitle = subtitle, x = "", y = "")
+
+          gg_list[[sig]] <- p
+        }
+
+        xlab <- var_arg
+        ylab <- paste0("Gene Set's Score (", method, ")")
+        tooltip_vars <- c("x", "y", "text")
+      }
+
+      # ---- Combined static figure: identical layout to the original
+      # PlotScores_Categorical()/PlotScores_Numeric() (ggarrange + shared
+      # outer axis labels, common legend, per-panel title + subtitle). -----
+      combined_static <- ggpubr::ggarrange(plotlist = gg_list, ncol = ncol_grid,
+                                           nrow = nrow_grid, common.legend = TRUE,
+                                           align = "h")
+      combined_static <- ggpubr::annotate_figure(combined_static,
+        left = grid::textGrob(ylab, rot = 90, vjust = 1,
+                              gp = grid::gpar(cex = 1.3, fontsize = labsize)),
+        bottom = grid::textGrob(xlab,
+                                gp = grid::gpar(cex = 1.3, fontsize = labsize)))
+
+      list(gg = combined_static)
+    }
+
     # ---- Run: Score Distributions -----------------------------------------
 
     shiny::observeEvent(input$run_scores, {
@@ -864,18 +1131,17 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       shiny::withProgress(message = "Computing score distributions...", value = 0, {
         result <- tryCatch({
           shiny::incProgress(0.4, detail = paste("Scoring:", meth))
-          plot_res <- PlotScores(
-            data          = expr, metadata = meta, gene_sets = gs,
-            method        = meth, Variable = p$var_arg,
-            ColorVariable = p$color_arg,
-            ColorValues   = score_color_vals,
-            mode          = p$mode, compute_cohen = do_cohen,
-            cond_cohend   = p$cond_cohend, pvalcalc = p$pvalcalc,
-            ConnectGroups = p$connect_g, cor = p$cor_m,
-            pointSize     = shiny::isolate(input$score_pointsize) %||% 4L,
-            widthTitle    = shiny::isolate(input$score_width_title)  %||% 32L,
-            widthlegend   = shiny::isolate(input$score_width_legend) %||% 32L,
-            ncol          = 3L
+          plot_res <- .build_score_dist_plotly(
+            expr = expr, meta = meta, gs = gs,
+            method = meth, var_arg = p$var_arg, is_cat = p$is_cat,
+            color_arg = p$color_arg, compute_cohen = do_cohen,
+            cond_cohend = p$cond_cohend, pvalcalc = p$pvalcalc,
+            connect_g = p$connect_g, cor_m = p$cor_m,
+            pointsize = shiny::isolate(input$score_pointsize) %||% 4L,
+            wid_title = shiny::isolate(input$score_width_title) %||% 32L,
+            titlesize = shiny::isolate(input$score_titlesize) %||% 16L,
+            labsize   = shiny::isolate(input$score_labsize)   %||% 12L,
+            ncol = 3L, color_values = score_color_vals
           )
           shiny::incProgress(0.6, detail = "Done.")
           list(plot_res = plot_res, n_gs = length(gs),
@@ -887,9 +1153,93 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         })
       })
       if (!is.null(result))
-        score_h(as.integer(min(4000L, 400L + ceiling(result$n_gs / 3L) * 400L)))
+        score_h(as.integer(min(5000L, 560L + ceiling(result$n_gs / 3L) * 480L)))
       score_dist_result(result)
     })
+
+    # Helper: build the AUC heatmap grid (one panel per gene set) directly
+    # from the raw ROCAUC_Scores_Calculate() output, with an optional
+    # contrasts filter and a fixed-column grid. Mirrors AUC_Scores() without
+    # modifying the exported package function (and avoids recomputing the
+    # ROC/AUC data a second time, since the caller already has it).
+    .build_auc_heatmap <- function(auc_list, contrasts = NULL,
+                                   ncol = NULL, nrow = NULL, limits = NULL,
+                                   widthTitle = 22, titlesize = 12,
+                                   ColorValues = c("#F9F4AE", "#B44141"),
+                                   title = NULL) {
+      heatmaps <- list()
+
+      for (signature_name in names(auc_list[[1]])) {
+        auc_matrix <- matrix(nrow = length(auc_list[[1]][[signature_name]]),
+                             ncol = length(auc_list))
+        rownames(auc_matrix) <- names(auc_list[[1]][[signature_name]])  # Contrasts
+        colnames(auc_matrix) <- names(auc_list)                        # Methods
+
+        for (method_name in names(auc_list)) {
+          for (contrast_name in names(auc_list[[method_name]][[signature_name]])) {
+            auc_matrix[contrast_name, method_name] <-
+              auc_list[[method_name]][[signature_name]][[contrast_name]]$AUC
+          }
+        }
+
+        # Restrict to the requested contrasts, if given (falls back to all if
+        # none of the requested names match, e.g. a stale selection).
+        if (!is.null(contrasts) && length(contrasts) > 0) {
+          keep_rows <- intersect(contrasts, rownames(auc_matrix))
+          if (length(keep_rows) > 0) auc_matrix <- auc_matrix[keep_rows, , drop = FALSE]
+        }
+
+        long_data <- as.data.frame(as.table(auc_matrix))
+        colnames(long_data) <- c("Contrast", "Method", "AUC")
+        long_data$label <- sprintf("%.2f", long_data$AUC)
+
+        signature_title <- wrap_title(signature_name, widthTitle)
+        lims <- if (is.null(limits)) c(0.5, 1) else limits
+
+        p <- ggplot2::ggplot(long_data, ggplot2::aes(x = .data$Method, y = .data$Contrast,
+                                                     fill = .data$AUC)) +
+          ggplot2::geom_tile() +
+          ggplot2::geom_text(ggplot2::aes(label = .data$label), color = "black", size = 3) +
+          ggplot2::scale_fill_gradientn(colors = ColorValues, limits = lims) +
+          ggplot2::labs(title = signature_title, x = NULL, y = NULL, fill = "AUC") +
+          ggplot2::theme_bw() +
+          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+                        plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize))
+
+        heatmaps[[signature_name]] <- p
+      }
+
+      num_signatures <- length(heatmaps)
+      if (is.null(nrow) && is.null(ncol)) {
+        ncol <- min(4L, num_signatures)
+        nrow <- ceiling(num_signatures / ncol)
+      } else if (is.null(nrow)) {
+        nrow <- ceiling(num_signatures / ncol)
+      } else if (is.null(ncol)) {
+        ncol <- ceiling(num_signatures / nrow)
+      }
+
+      for (i in seq_along(heatmaps)) {
+        col_idx <- (i - 1) %% ncol + 1
+        heatmaps[[i]] <- heatmaps[[i]] +
+          ggplot2::theme(
+            axis.text.y  = if (col_idx == 1) ggplot2::element_text() else ggplot2::element_blank(),
+            axis.ticks.y = if (col_idx == 1) ggplot2::element_line() else ggplot2::element_blank(),
+            plot.margin  = ggplot2::margin(4, 0, 0, 0)
+          )
+      }
+
+      widths <- c(1.5, rep(1, ncol - 1))
+      plt <- ggpubr::ggarrange(
+        plotlist = heatmaps, ncol = ncol, nrow = nrow,
+        common.legend = TRUE, legend = "right", align = "h", widths = widths
+      )
+      if (!is.null(title))
+        plt <- ggpubr::annotate_figure(plt, top = grid::textGrob(
+          title, gp = grid::gpar(cex = 1.3, fontsize = titlesize + 2)))
+
+      list(plt = plt, ncol = ncol, nrow = nrow)
+    }
 
     # ---- Run: ROC / AUC ---------------------------------------------------
 
@@ -912,6 +1262,9 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         length(remove_division(generate_all_contrasts(levs_var, mode = p$mode)))
       }, error = function(e) .est_n_cont(meta, p$var_arg, p$mode))
 
+      # AUC heatmap only shows the contrasts selected in "Contrasts to show" above.
+      sel_conts <- shiny::isolate(input$score_selected_groups)
+
       shiny::withProgress(message = "Computing ROC curves and AUC...", value = 0, {
         result <- tryCatch({
           roc_wid_title <- shiny::isolate(input$roc_width_title) %||% 32L
@@ -924,9 +1277,10 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
             method = meth, variable = p$var_arg, mode = p$mode)
 
           shiny::incProgress(0.4, detail = "AUC heatmap...")
-          auc_res <- AUC_Scores(data = expr, metadata = meta, gene_sets = gs,
-                                method = meth, variable = p$var_arg, mode = p$mode,
-                                titlesize = roc_titlesize)
+          auc_ncol   <- min(4L, length(gs))
+          auc_heat   <- .build_auc_heatmap(roc_raw, contrasts = sel_conts,
+                                           ncol = auc_ncol, titlesize = roc_titlesize)
+          auc_res    <- auc_heat$plt
           shiny::incProgress(0.2, detail = "Done.")
 
           # Extract contrast names from raw data (they're in [[method]][[sig]][[contrast]])
@@ -935,6 +1289,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
           list(roc_raw      = roc_raw,
                roc_contrasts = roc_contrasts,
                auc_res       = auc_res,
+               auc_ncol      = auc_ncol,
                n_gs          = length(gs),
                n_cont        = n_cont,
                roc_wid_title = roc_wid_title,
@@ -945,14 +1300,186 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         })
       })
       if (!is.null(result)) {
-        # Height: one contrast displayed at a time => n_gs panels, 3 cols
+        # Same schema as the Score Distributions grid: fixed columns (up to 3),
+        # height grows with the number of rows needed, not linearly with n_gs.
         n_cols_roc <- min(3L, result$n_gs)
         n_rows_roc <- ceiling(result$n_gs / n_cols_roc)
-        roc_h(as.integer(min(6000L, max(400L, n_rows_roc * 450L))))
-        auc_h(as.integer(min(3000L, max(300L, result$n_gs * 250L))))
+        roc_h(as.integer(min(6000L, max(400L, n_rows_roc * 420L))))
+
+        n_rows_auc <- ceiling(result$n_gs / result$auc_ncol)
+        auc_h(as.integer(min(3000L, max(300L, n_rows_auc * 300L + 100L))))
       }
       score_roc_result(result)
     })
+
+    # Helper: subset a cohenlist (output of CohenD_allConditions /
+    # CohenF_allConditions) down to a chosen set of contrasts (columns).
+    # Falls back to the full cohenlist if no contrasts match/are given.
+    .filter_cohenlist_contrasts <- function(cohenlist, contrasts) {
+      if (is.null(contrasts) || length(contrasts) == 0) return(cohenlist)
+      lapply(cohenlist, function(sig_res) {
+        keep <- intersect(contrasts, colnames(sig_res[[1]]))
+        if (length(keep) == 0) return(sig_res)
+        lapply(sig_res, function(df) df[, keep, drop = FALSE])
+      })
+    }
+
+    # Helper: rebuild the Cohen's d/f heatmap grid from cohenlist data, with an
+    # adjustable cell text size. Mirrors Heatmap_Cohen() (which hard-codes the
+    # cell label size) without modifying the exported package function.
+    .build_cohen_heatmap <- function(cohenlist, ncol = NULL, nrow = NULL,
+                                     limits = NULL, widthTitle = 22,
+                                     titlesize = 12, textsize = 3,
+                                     ColorValues = NULL, title = NULL) {
+      cohentype <- if ("CohenD" %in% names(cohenlist[[1]])) "d"
+                   else if ("CohenF" %in% names(cohenlist[[1]])) "f"
+                   else stop("Error: cohenlist format not valid.")
+
+      if (!is.null(ColorValues)) {
+        ColorValues <- if (!is.null(ColorValues[["heatmap"]])) ColorValues[["heatmap"]]
+                       else ColorValues[[1]]
+      }
+      if (is.null(ColorValues)) ColorValues <- c("#F9F4AE", "#B44141")
+
+      heatmaps <- list()
+      for (signature in names(cohenlist)) {
+        cohen_mat <- if (cohentype == "d") t(as.matrix(cohenlist[[signature]]$CohenD))
+                     else t(as.matrix(cohenlist[[signature]]$CohenF))
+        p_value_mat <- t(as.matrix(cohenlist[[signature]]$padj))
+
+        long_data <- data.frame(
+          Var1 = rep(rownames(cohen_mat), times = ncol(cohen_mat)),
+          Var2 = rep(colnames(cohen_mat), each = nrow(cohen_mat)),
+          Cohen = abs(as.vector(cohen_mat)),
+          PValue = as.vector(p_value_mat),
+          stringsAsFactors = FALSE
+        )
+        long_data$label <- paste0(sprintf("%.2f", long_data$Cohen), "\n(",
+                                  format.pval(long_data$PValue, digits = 1), ")")
+
+        signature_title <- wrap_title(signature, widthTitle)
+        lims <- if (is.null(limits)) c(0, max(long_data$Cohen, na.rm = TRUE)) else limits
+
+        p <- ggplot2::ggplot(long_data, ggplot2::aes(x = .data$Var2, y = .data$Var1,
+                                                     fill = .data$Cohen)) +
+          ggplot2::geom_tile() +
+          ggplot2::geom_text(ggplot2::aes(label = .data$label), color = "black",
+                             size = textsize) +
+          ggplot2::scale_fill_gradientn(colors = ColorValues, limits = lims) +
+          ggplot2::labs(title = signature_title, x = NULL, y = NULL,
+                       fill = if (cohentype == "d") "|Cohen's d|" else "|Cohen's f|") +
+          ggplot2::theme_bw() +
+          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+                        plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize))
+
+        heatmaps[[signature]] <- p
+      }
+
+      num_signatures <- length(heatmaps)
+      if (is.null(nrow) && is.null(ncol)) {
+        ncol <- min(3L, num_signatures)
+        nrow <- ceiling(num_signatures / ncol)
+      } else if (is.null(nrow)) {
+        nrow <- ceiling(num_signatures / ncol)
+      } else if (is.null(ncol)) {
+        ncol <- ceiling(num_signatures / nrow)
+      }
+
+      for (i in seq_along(heatmaps)) {
+        col_idx <- (i - 1) %% ncol + 1
+        heatmaps[[i]] <- heatmaps[[i]] +
+          ggplot2::theme(
+            axis.text.y  = if (col_idx == 1) ggplot2::element_text() else ggplot2::element_blank(),
+            axis.ticks.y = if (col_idx == 1) ggplot2::element_line() else ggplot2::element_blank(),
+            plot.margin  = ggplot2::margin(4, 0, 0, 0)
+          )
+      }
+
+      widths <- c(1.5, rep(1, ncol - 1))
+      plt <- ggpubr::ggarrange(
+        plotlist = heatmaps, ncol = ncol, nrow = nrow,
+        common.legend = TRUE, legend = "right", align = "h", widths = widths
+      )
+      plt <- ggpubr::annotate_figure(plt, top = grid::textGrob(
+        title, gp = grid::gpar(cex = 1.3, fontsize = titlesize + 2)))
+
+      list(plt = plt, data = cohenlist, ncol = ncol, nrow = nrow)
+    }
+
+    # Helper: rebuild the Cohen's d/f volcano from cohenlist data, with the
+    # facet grid capped at a given number of columns. Mirrors Volcano_Cohen()
+    # (whose facet_wrap() ignores its own ncol/nrow arguments) without
+    # modifying the exported package function.
+    .build_cohen_volcano <- function(cohenlist, ncol = NULL, nrow = NULL,
+                                     titlesize = 12, ColorValues = NULL,
+                                     title = NULL, widthlegend = 22,
+                                     pointSize = 3, sig_threshold = 0.05,
+                                     cohen_threshold = 0.5,
+                                     colorPalette = "Set3") {
+      cohentype <- if ("CohenD" %in% names(cohenlist[[1]])) "d"
+                   else if ("CohenF" %in% names(cohenlist[[1]])) "f"
+                   else stop("Error: cohenlist format not valid.")
+
+      rows <- list()
+      for (signature in names(cohenlist)) {
+        sig_data <- cohenlist[[signature]]
+        cohen_mat <- if (cohentype == "d") sig_data$CohenD else sig_data$CohenF
+        padj_mat  <- sig_data$padj
+
+        for (method in rownames(cohen_mat)) {
+          for (contrast in colnames(cohen_mat)) {
+            rows[[length(rows) + 1]] <- data.frame(
+              signature = signature, contrast = contrast, method = method,
+              cohen = cohen_mat[method, contrast],
+              padj  = padj_mat[method, contrast],
+              stringsAsFactors = FALSE
+            )
+          }
+        }
+      }
+      final_df <- do.call(rbind, rows)
+      final_df$signature <- vapply(final_df$signature,
+                                   function(x) wrap_title(x, widthlegend),
+                                   character(1))
+
+      if (is.null(ColorValues)) {
+        ColorValues <- grDevices::colorRampPalette(
+          RColorBrewer::brewer.pal(12, colorPalette))(length(unique(final_df$signature)))
+      } else {
+        ColorValues <- if (!is.null(ColorValues[["volcano"]])) ColorValues[["volcano"]]
+                       else ColorValues[[2]]
+      }
+
+      ggplot2::ggplot(final_df, ggplot2::aes(x = abs(.data$cohen),
+                                             y = -log10(.data$padj),
+                                             shape = .data$method)) +
+        ggplot2::geom_point(colour = "black", size = pointSize) +
+        ggplot2::geom_point(ggplot2::aes(colour = .data$signature),
+                            size = pointSize - 1.5) +
+        ggplot2::facet_wrap(. ~ .data$contrast, scales = "free", ncol = ncol, nrow = nrow) +
+        ggplot2::geom_hline(yintercept = -log10(sig_threshold),
+                            linetype = "dashed", color = "black", linewidth = 0.5) +
+        ggplot2::geom_vline(xintercept = cohen_threshold,
+                            linetype = "dashed", color = "black", linewidth = 0.5) +
+        ggplot2::scale_color_manual(values = ColorValues) +
+        ggplot2::scale_shape_manual(
+          values = 15:(15 + length(unique(final_df$method)) - 1)) +
+        ggplot2::labs(
+          x = if (cohentype == "d") "|Cohen's d|" else "|Cohen's f|",
+          y = "-log10(Adj. p-value)", color = "Signature", shape = "Method"
+        ) +
+        ggplot2::theme_bw() +
+        ggplot2::theme(
+          legend.position  = "right",
+          strip.text       = ggplot2::element_text(size = titlesize, face = "bold"),
+          plot.title       = ggplot2::element_text(hjust = 0.5, face = "bold"),
+          strip.background = ggplot2::element_rect(fill = "white")
+        ) +
+        ggplot2::ggtitle(if (!is.null(title)) title else
+          if (cohentype == "d") "Cohen's d Volcano Plot" else "Cohen's f Volcano Plot") +
+        ggplot2::scale_x_continuous(limits = c(0, NA)) +
+        ggplot2::scale_y_continuous(limits = c(0, NA))
+    }
 
     # ---- Run: All Methods Summary ------------------------------------------
 
@@ -961,12 +1488,18 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       gs   <- .active_gs(); shiny::req(expr, meta, gs, length(gs) > 0)
       p <- .score_shared_params()
 
-      # Read display params (used both in PlotScores and for color name matching)
+      # Read display params (used both in the heatmap/volcano and for color name matching)
       all_wid_title  <- shiny::isolate(input$all_width_title)  %||% 32L
       all_wid_legend <- shiny::isolate(input$all_width_legend) %||% 32L
+      all_textsize   <- shiny::isolate(input$all_heatmap_textsize) %||% 3
+      all_titlesize  <- shiny::isolate(input$all_heatmap_titlesize) %||% 9
+
+      # Only the currently selected contrasts (from the "Contrasts to show"
+      # picker above) are included in the heatmap and volcano.
+      sel_conts <- shiny::isolate(input$score_selected_groups)
 
       # ColorValues must be a named list:
-      #   [[1]]/"heatmap" → 2-colour gradient for Heatmap_Cohen
+      #   [[1]]/"heatmap" → 2-colour gradient
       #   [[2]]/"volcano" → named per-signature vector for Volcano_Cohen
       # Volcano_Cohen wraps signature names with wrap_title(width=widthlegend)
       # before building the data frame, so our color names must use the same
@@ -980,28 +1513,58 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
 
       shiny::withProgress(message = "Running all scoring methods...", value = 0, {
         result <- tryCatch({
-          shiny::incProgress(0.6, detail = "Computing Cohen's d/f across all methods...")
-          plot_res <- PlotScores(
-            data            = expr, metadata = meta, gene_sets = gs,
-            method          = "all", Variable = p$var_arg,
-            ColorValues     = gs_colors,
-            mode            = p$mode, compute_cohen = TRUE,
-            cond_cohend     = p$cond_cohend,
-            ConnectGroups   = p$connect_g, cor = p$cor_m,
-            sig_threshold   = shiny::isolate(input$sig_threshold)   %||% 0.05,
-            cohen_threshold = shiny::isolate(input$cohen_threshold)  %||% 0.5,
-            widthTitle      = all_wid_title,
-            widthlegend     = all_wid_legend
+          shiny::incProgress(0.4, detail = "Computing Cohen's d/f across all methods...")
+
+          cohentype <- if (p$is_cat) "d" else "f"
+          cohenlist_full <- if (cohentype == "f") {
+            CohenF_allConditions(data = expr, metadata = meta, gene_sets = gs,
+                                 variable = p$var_arg)
+          } else {
+            CohenD_allConditions(data = expr, metadata = meta, gene_sets = gs,
+                                 variable = p$var_arg, mode = p$mode)
+          }
+          cohenlist <- .filter_cohenlist_contrasts(cohenlist_full, sel_conts)
+          n_cont    <- ncol(cohenlist[[1]][[1]])
+
+          shiny::incProgress(0.3, detail = "Building heatmap...")
+          heat_res <- .build_cohen_heatmap(
+            cohenlist   = cohenlist,
+            widthTitle  = all_wid_title,
+            textsize    = all_textsize,
+            titlesize   = all_titlesize,
+            ColorValues = gs_colors
           )
-          shiny::incProgress(0.4, detail = "Done.")
-          list(plot_res = plot_res, n_gs = length(gs))
+
+          shiny::incProgress(0.2, detail = "Building volcano...")
+          vol_plt <- .build_cohen_volcano(
+            cohenlist       = cohenlist,
+            ColorValues     = gs_colors,
+            widthlegend     = all_wid_legend,
+            pointSize       = 4,
+            sig_threshold   = shiny::isolate(input$sig_threshold)   %||% 0.05,
+            cohen_threshold = shiny::isolate(input$cohen_threshold) %||% 0.5,
+            ncol            = min(2L, n_cont)
+          )
+          shiny::incProgress(0.1, detail = "Done.")
+
+          list(plot_res  = list(heatmap = heat_res$plt, volcano = vol_plt),
+               n_gs       = length(gs),
+               n_cont     = n_cont,
+               heat_ncol  = heat_res$ncol, heat_nrow = heat_res$nrow,
+               cohentype  = cohentype)
         }, error = function(e) {
           shiny::showNotification(paste("All methods failed:", conditionMessage(e)),
                                   type = "error", duration = 12); NULL
         })
       })
-      if (!is.null(result))
-        all_h(as.integer(min(4000L, max(350L, result$n_gs * 80L + 300L))))
+      if (!is.null(result)) {
+        # Heatmap: height grows with the number of gene-set-panel rows.
+        all_h(as.integer(min(4000L, max(350L, result$heat_nrow * 280L + 220L))))
+        # Volcano: fixed 2-column facet grid (by contrast); height grows with rows.
+        vol_ncol <- min(2L, result$n_cont)
+        vol_nrow <- ceiling(result$n_cont / max(1L, vol_ncol))
+        all_vol_h(as.integer(min(3000L, max(420L, vol_nrow * 380L + 120L))))
+      }
       score_all_result(result)
     })
 
@@ -1091,12 +1654,94 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         })
       })
       if (!is.null(result)) {
-        nes_h(as.integer(min(5000L, max(350L, result$n_sets * result$n_cont * 45L))))
+        # NES lollipop is rendered as one full-width row per contrast (ncol = 1,
+        # see output$nes_lollipop below), so the total figure height scales
+        # linearly with the number of contrasts (rows stacked) and, within each
+        # row, with the number of gene sets on the y-axis (~22px per gene set
+        # plus a fixed allowance for the title, the two stat_used facet strips,
+        # and axis text).
+        nes_h(as.integer(min(10000L, max(400L,
+          result$n_cont * (result$n_sets * 34L + 180L)))))
         enrich_h(as.integer(min(6000L, max(400L, result$n_sets * result$n_cont * 220L))))
         gsea_vol_h(as.integer(min(5000L, max(400L, result$n_cont * 350L))))
       }
       gsea_result(result)
     })
+
+    # Helper: build one small violin panel per (gene set x contrast)
+    # combination directly from the $data returned by FPR_Simulation(), so we
+    # can lay panels out in a flat grid with the contrast shown as a subtitle
+    # (FPR_Simulation()'s own plot facets contrasts as a strip label inside
+    # each gene-set panel, which is harder to read and cannot be restyled
+    # without modifying the exported function).
+    .build_fpr_plots <- function(fpr_data, ylab, pointSize = 2,
+                                 titlesize = 12, labsize = 10, widthTitle = 32) {
+      color_values <- c(Original = "#68B393", Simulated = "#666666")
+      plot_list <- list()
+
+      for (sig in names(fpr_data)) {
+        df_sig <- fpr_data[[sig]]
+        for (ct in unique(df_sig$contrast)) {
+          df_ct <- df_sig[df_sig$contrast == ct, ]
+          lvls  <- levels(df_ct$method)
+          if (is.null(lvls)) lvls <- unique(as.character(df_ct$method))
+
+          q_data <- data.frame()
+          for (mt in lvls) {
+            subset_df <- df_ct[df_ct$method == mt, ]
+            if (nrow(subset_df) == 0) next
+            q95  <- stats::quantile(subset_df$cohen, 0.95, na.rm = TRUE)
+            xpos <- which(lvls == mt)
+            q_data <- rbind(q_data, data.frame(
+              method = mt, q_high = q95, xmin = xpos - 0.3, xmax = xpos + 0.3))
+          }
+
+          all_max <- stats::aggregate(cohen ~ method, data = df_ct, FUN = max)
+          original_df <- df_ct[df_ct$type == "Original", ]
+          all_max$FPR <- NA
+          for (i in seq_len(nrow(all_max))) {
+            match_idx <- which(original_df$method == all_max$method[i])
+            if (length(match_idx) > 0) all_max$FPR[i] <- original_df$FPR[match_idx[1]]
+          }
+          all_max$label  <- sprintf("FPR=%.2f", all_max$FPR)
+          all_max$y      <- all_max$cohen + 0.3
+          all_max$method <- factor(all_max$method, levels = lvls)
+
+          p <- ggplot2::ggplot() +
+            ggplot2::geom_jitter(
+              data = df_ct[df_ct$type == "Simulated", ],
+              ggplot2::aes(y = .data$cohen, x = .data$method, color = .data$type),
+              width = 0.3, height = 0, size = pointSize, alpha = 0.5) +
+            ggplot2::geom_violin(
+              data = df_ct, ggplot2::aes(y = .data$cohen, x = .data$method),
+              fill = "#F0F0F0", color = "black", alpha = 0.5) +
+            ggplot2::geom_jitter(
+              data = df_ct[df_ct$type == "Original", ],
+              ggplot2::aes(y = .data$cohen, x = .data$method, color = .data$type),
+              width = 0.3, height = 0, size = pointSize, alpha = 1) +
+            ggplot2::geom_text(
+              data = all_max,
+              ggplot2::aes(x = .data$method, y = .data$y, label = .data$label),
+              size = 3, inherit.aes = FALSE) +
+            ggplot2::geom_segment(
+              data = q_data,
+              ggplot2::aes(x = .data$xmin, xend = .data$xmax, y = .data$q_high, yend = .data$q_high),
+              linetype = "dashed", color = "red", inherit.aes = FALSE) +
+            ggplot2::labs(title = wrap_title(sig, widthTitle),
+                         subtitle = wrap_title(as.character(ct), widthTitle),
+                         y = ylab, x = "Method", color = "") +
+            ggplot2::theme_classic() +
+            ggplot2::theme(
+              plot.title    = ggplot2::element_text(hjust = 0.5, size = titlesize),
+              plot.subtitle = ggplot2::element_text(hjust = 0.5, size = titlesize - 1.5),
+              axis.text     = ggplot2::element_text(size = labsize)) +
+            ggplot2::scale_color_manual(values = color_values)
+
+          plot_list[[paste(sig, ct, sep = " | ")]] <- p
+        }
+      }
+      plot_list
+    }
 
     # ---- Run: FPR Simulation -----------------------------------------------
 
@@ -1117,12 +1762,11 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
                           n_gs, fpr_nsims),
         value = 0.05, {
           result <- tryCatch({
-            # FPR_Simulation accepts ncol/nrow to arrange gene set panels in a grid.
-            # Calling it once for all gene sets is the intended usage and avoids
-            # ggarrange-of-annotate_figure issues that can collapse to 1 column.
-            ncol_g <- 3L
-            nrow_g <- ceiling(n_gs / ncol_g)
             shiny::setProgress(value = 0.1, detail = "Running simulations...")
+            # We only use $data from FPR_Simulation() (one data frame per gene
+            # set, with a "contrast" column); the grid layout and per-panel
+            # styling are built entirely in the app (see .build_fpr_plots(),
+            # used by the renderer below) from that data.
             res_all <- FPR_Simulation(
               data                = expr,
               metadata            = meta,
@@ -1131,9 +1775,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
               number_of_sims      = fpr_nsims,
               mode                = fpr_mode,
               titlesize           = font_s,
-              widthTitle          = 32L,
-              ncol                = ncol_g,
-              nrow                = nrow_g
+              widthTitle          = 32L
             )
             shiny::setProgress(value = 1, detail = "Done.")
             # Determine cohen type so the plot y-axis label is correct
@@ -1147,13 +1789,14 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
           })
         })
       if (!is.null(result)) {
+        # Total panels = one per (gene set x contrast); same grid schema as
+        # the Score Distributions panel (fixed columns, height grows by row).
         ncol_fpr    <- 3L
-        n_rows_fpr  <- ceiling(result$n_gs / ncol_fpr)
-        # Each gene set plot stacks n_contrasts facets vertically, ~220px each
         n_contrasts <- length(unique(unlist(
           lapply(result$fpr_res$data, function(df) unique(df$contrast)))))
-        h_per_gs <- n_contrasts * 220L + 100L
-        fpr_h(as.integer(min(12000L, max(600L, n_rows_fpr * h_per_gs + 120L))))
+        n_panels    <- max(1L, result$n_gs * max(1L, n_contrasts))
+        n_rows_fpr  <- ceiling(n_panels / ncol_fpr)
+        fpr_h(as.integer(min(8000L, max(500L, 150L + n_rows_fpr * 380L))))
       }
       fpr_result(result)
     })
@@ -1244,17 +1887,16 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
             placement = "right"
           )
         ),
-        shiny::selectizeInput(
-          ns("gsea_selected_contrasts"),
-          label   = NULL,
-          choices  = contrasts_all,
-          selected = contrasts_all,
-          multiple = TRUE,
-          width    = "100%",
-          options  = list(
-            plugins     = list("remove_button"),
-            placeholder = "Select contrasts…",
-            maxItems    = length(contrasts_all)
+        # Same widget as the "Contrasts to show" picker in Score Analysis, for
+        # a consistent contrast-selection experience across tabs.
+        shinyWidgets::pickerInput(
+          ns("gsea_selected_contrasts"), label = NULL,
+          choices = contrasts_all, selected = contrasts_all, multiple = TRUE,
+          options = shinyWidgets::pickerOptions(
+            actionsBox = TRUE, liveSearch = TRUE,
+            selectedTextFormat = "count > 3",
+            countSelectedText = "{0} contrasts selected",
+            container = "body"
           )
         )
       )
@@ -1296,8 +1938,8 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
     })
 
     output$score_dist_plot <- shiny::renderPlot({
-      res <- score_dist_result(); shiny::req(!is.null(res))
-      tryCatch(print(res$plot_res),
+      res <- score_dist_result(); shiny::req(!is.null(res), !is.null(res$plot_res$gg))
+      tryCatch(print(res$plot_res$gg),
                error = function(e)
                  shiny::showNotification(paste("Score plot error:", e$message),
                                          type = "warning", duration = 8))
@@ -1306,9 +1948,9 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
     output$dl_score_dist <- shiny::downloadHandler(
       filename = function() paste0("score_distributions_", Sys.Date(), ".png"),
       content  = function(file) {
-        res <- score_dist_result(); shiny::req(!is.null(res))
+        res <- score_dist_result(); shiny::req(!is.null(res), !is.null(res$plot_res$gg))
         h_in <- score_h() / 96
-        ggplot2::ggsave(file, plot = res$plot_res,
+        ggplot2::ggsave(file, plot = res$plot_res$gg,
                         width = 12, height = max(4, h_in),
                         dpi = 150, units = "in")
       }
@@ -1407,7 +2049,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
           " Each panel shows the ROC curve for one gene set.",
           " Dashed diagonal = chance (AUC = 0.5). Curves above the diagonal indicate discriminatory power.",
           " The displayed AUC is 1 minus raw AUC when < 0.5, restoring directionality.",
-          " The AUC heatmap below always shows all contrasts."
+          " The AUC heatmap below shows only the contrasts selected above (\"Contrasts to show\")."
         ),
         shiny::div(
           style = "padding:4px 6px 2px;",
@@ -1494,7 +2136,11 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
     })
 
     output$score_all_heatmap_ui <- shiny::renderUI({
-      shiny::req(!is.null(score_all_result()))
+      res <- score_all_result(); shiny::req(!is.null(res))
+      p_test <- if (identical(res$cohentype, "f"))
+        "a linear model F-test (score ~ variable)."
+      else
+        "a two-sample t-test (equal variances assumed)."
       bslib::card(
         full_screen = TRUE,
         .bm_card_header("Cohen's d/f Summary Heatmap", "dl_all_heatmap", ns),
@@ -1505,7 +2151,11 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
           shiny::tags$b("Cohen's d"),
           " (categorical variable: standardised mean difference between groups) or ",
           shiny::tags$b("Cohen's f"),
-          " (numeric variable). |d| > 0.2 small, |d| > 0.5 medium, |d| > 0.8 large."
+          " (numeric variable). |d| > 0.2 small, |d| > 0.5 medium, |d| > 0.8 large.",
+          " Only the contrasts selected above (\"Contrasts to show\") are included.",
+          shiny::tags$br(),
+          shiny::tags$b("P-value shown in brackets: "), " computed per gene set/method via ", p_test,
+          " Adjusted (BH) across gene sets and contrasts, within each method."
         ),
         shiny::plotOutput(ns("score_all_heatmap"), height = paste0(all_h(), "px"))
       )
@@ -1533,12 +2183,14 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
     # Helper: clean ggplotly legend for Volcano_Cohen plots.
     # ggplotly names combined-aesthetic traces as "(A,B)"; this renames them,
     # deduplicates within each aesthetic, and groups into Method / Signature sections.
-    # "Signature" header is only shown once (above the first sig entry).
+    # Each group header ("Method" / "Signature") is only shown once, above its
+    # first entry — otherwise plotly repeats the header above every entry.
     .clean_volcano_plotly <- function(plt) {
-      methods_known    <- c("logmedian", "ranking", "ssGSEA")
-      seen_methods     <- character(0)
-      seen_sigs        <- character(0)
-      sig_header_shown <- FALSE
+      methods_known       <- c("logmedian", "ranking", "ssGSEA")
+      seen_methods        <- character(0)
+      seen_sigs           <- character(0)
+      sig_header_shown    <- FALSE
+      method_header_shown <- FALSE
 
       plt$x$data <- lapply(plt$x$data, function(trace) {
         nm <- if (is.null(trace$name)) "" else trace$name
@@ -1558,9 +2210,15 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
 
           if (part_a %in% methods_known) {
             # Shape / method trace
-            trace$name             <- part_a
-            trace$legendgroup      <- "Method"
-            trace$legendgrouptitle <- list(text = "<b>Method</b>")
+            trace$name        <- part_a
+            trace$legendgroup <- "Method"
+            # Show the "Method" header only on the very first method trace
+            if (!method_header_shown) {
+              trace$legendgrouptitle <- list(text = "<b>Method</b>")
+              method_header_shown    <<- TRUE
+            } else {
+              trace$legendgrouptitle <- list(text = "")
+            }
             if (part_a %in% seen_methods) {
               trace$showlegend <- FALSE
             } else {
@@ -1719,7 +2377,12 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
     }
 
     output$score_all_volcano_ui <- shiny::renderUI({
-      shiny::req(!is.null(score_all_result()), !is.null(score_all_result()$plot_res$volcano))
+      res <- score_all_result()
+      shiny::req(!is.null(res), !is.null(res$plot_res$volcano))
+      p_test <- if (identical(res$cohentype, "f"))
+        "a linear model F-test (score ~ variable)."
+      else
+        "a two-sample t-test (equal variances assumed)."
       bslib::card(
         full_screen = TRUE,
         bslib::card_header(
@@ -1733,12 +2396,13 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         shiny::div(
           class = "text-muted", style = "font-size:0.78em; padding:4px 6px 8px;",
           shiny::icon("circle-info"),
-          " X-axis: |Cohen's d| (effect size). Y-axis: −log₁₀(adjusted p-value).",
-          " Shape = scoring method. Colour = gene set.",
+          " X-axis: |Cohen's d| (effect size). Y-axis: −log₁₀(adjusted p-value), from ", p_test,
+          " Shape = scoring method. Colour = gene set. One facet per selected contrast",
+          " (up to 2 columns, additional rows added as needed).",
           " Hover any point to see gene set, contrast, method and exact values.",
           " Dashed lines mark the significance / effect size thresholds above."
         ),
-        plotly::plotlyOutput(ns("score_all_volcano"), height = "480px")
+        plotly::plotlyOutput(ns("score_all_volcano"), height = paste0(all_vol_h(), "px"))
       )
     })
 
@@ -1784,7 +2448,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         bslib::nav_panel("DEG Volcanos",
           bslib::card(
             full_screen = TRUE,
-            .bm_card_header("logFC vs −log₁₀(padj)", "dl_gsea_deg_volcano", ns),
+            .bm_card_header("logFC vs −log₁₀(adjusted p-value)", "dl_gsea_deg_volcano", ns),
             shiny::div(
               class = "text-muted", style = "font-size:0.78em; padding:4px 6px 8px;",
               shiny::icon("circle-info"),
@@ -1811,13 +2475,23 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
                 style = "display:grid; grid-template-columns:1fr 1fr; gap:8px;",
                 shiny::numericInput(ns("vol_threshold_x"), "logFC threshold:",
                                     value = 1, min = 0, max = 10, step = 0.5),
-                shiny::numericInput(ns("vol_threshold_y"), "padj threshold:",
-                                    value = 0.05, min = 0, max = 1, step = 0.01),
-                shiny::numericInput(ns("vol_top_n"), "Annotate top/bottom N genes by logFC (0 = none):",
-                                    value = 0, min = 0, max = 50, step = 1),
-                shiny::checkboxInput(ns("vol_topn_gs_only"),
-                                     "Restrict N labels to gene set members only",
-                                     value = FALSE),
+                bslib::tooltip(
+                  shiny::numericInput(ns("vol_threshold_y"), "Adjusted p-value threshold (BH):",
+                                      value = 0.05, min = 0, max = 1, step = 0.01),
+                  "BH (Benjamini-Hochberg) adjusted p-value from the limma moderated t-test",
+                  " (adj.P.Val), used both to colour significant genes and to pick which",
+                  " genes are eligible for text labels below.",
+                  placement = "right"
+                ),
+                bslib::tooltip(
+                  shiny::numericInput(ns("vol_top_n"), "Label top N genes by |logFC| (0 = none):",
+                                      value = 0, min = 0, max = 50, step = 1),
+                  "With \"Gene set members\" highlighted: labels the N most extreme members",
+                  " of each gene set (optionally narrowed by the thresholds above).",
+                  " With \"Significant genes\" highlighted: labels the N most extreme genes",
+                  " among those passing the thresholds above.",
+                  placement = "right"
+                ),
                 shiny::numericInput(ns("vol_pointsize"), "Point size:",
                                     value = 2, min = 1, max = 8, step = 0.5),
                 shiny::numericInput(ns("vol_labsize"), "Label size (pt):",
@@ -1841,7 +2515,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         bslib::nav_panel("Combined Volcano",
           bslib::card(
             full_screen = TRUE,
-            .bm_card_header("NES vs −log₁₀(padj)", "dl_gsea_combined", ns),
+            .bm_card_header("NES vs −log₁₀(adjusted p-value)", "dl_gsea_combined", ns),
             shiny::div(
               class = "text-muted", style = "font-size:0.78em; padding:4px 6px 8px;",
               shiny::icon("circle-info"),
@@ -1857,7 +2531,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
               " Positive NES = enriched among up-regulated genes;",
               " negative NES = enriched among down-regulated genes.",
               shiny::tags$br(),
-              " y-axis: −log₁₀(padj); dashed line marks the significance threshold."
+              " y-axis: −log₁₀(adjusted p-value); dashed line marks the significance threshold."
             ),
             plotly::plotlyOutput(ns("gsea_combined_plot"), height = "520px")
           )
@@ -1905,7 +2579,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
               " Running enrichment score along the ranked gene list for each gene set × contrast.",
               " The peak of the curve indicates where the gene set is most concentrated.",
               " Bars at the bottom mark the positions of gene set members in the ranked list.",
-              " Reported NES and padj values are from fgsea.",
+              " Reported NES and adjusted p-values are from fgsea.",
               shiny::tags$br(),
               shiny::tags$b("Two panels per contrast: "),
               shiny::tags$b("Enriched/Depleted"),
@@ -1943,98 +2617,130 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       else as.character(gs_entry)
     }
 
-    output$gsea_deg_volcano_plot <- shiny::renderPlot({
-      res <- gsea_result(); shiny::req(!is.null(res), !is.null(res$DEGs))
-      thr_x    <- input$vol_threshold_x    %||% 1
-      thr_y    <- input$vol_threshold_y    %||% 0.05  # raw padj threshold
-      n_top    <- as.integer(input$vol_top_n   %||% 0L)
-      pts      <- input$vol_pointsize      %||% 2
-      lsz      <- input$vol_labsize        %||% 8L
-      hl_mode  <- input$vol_highlight_mode %||% "gene_sets"
-      gs_only  <- isTRUE(input$vol_topn_gs_only)
+    # Helper: extract per-gene direction (1 = up, -1 = down, NA = unknown) for
+    # a gene set entry. Only data-frame gene sets (Gene, Signal) carry a
+    # direction; plain vectors have no direction information.
+    .gs_gene_directions <- function(gs_entry) {
+      if (is.data.frame(gs_entry)) as.numeric(gs_entry[[2]])
+      else rep(NA_real_, length(gs_entry))
+    }
 
-      # Map highlight mode to plotVolcano arguments
-      # "gene_sets": color gene set members; no threshold-based coloring
-      # "threshold": manual ggplot highlighting genes with padj <= thr_y and |logFC| >= thr_x
+    # Helper: build one DEG volcano ggplot per contrast.
+    #
+    # Highlight mode drives BOTH which points are coloured as "of interest"
+    # AND which genes are eligible for text labels — the two were previously
+    # decoupled (labels for "Gene set members" mode used to fall back to
+    # plotVolcano()'s own top-N-by-logFC labelling across *all* genes,
+    # ignoring gene set membership entirely; "Significant genes" mode never
+    # labelled anything). Now:
+    #   - "Gene set members": points/labels restricted to genes in each set;
+    #     labels are the top N (by |logFC|) members of that set, optionally
+    #     narrowed further by the logFC / padj thresholds.
+    #   - "Significant genes (threshold)": points/labels restricted to genes
+    #     passing the logFC / padj thresholds; labels are the top N (by
+    #     |logFC|) among those.
+    .build_deg_volcano_plots <- function(res, thr_x, thr_y, n_top, pts, lsz, hl_mode) {
       use_gs    <- (hl_mode == "gene_sets")
       genes_arg <- if (use_gs && !is.null(res$gene_sets)) res$gene_sets else NULL
       # thr_y is already a raw p-value (user enters 0.05, not 1.3)
-      thr_y_raw <- if (!use_gs && thr_y > 0 && thr_y < 1) thr_y else NULL
-      thr_x_arg <- if (!use_gs && thr_x > 0) thr_x else NULL
-
+      thr_y_raw <- if (thr_y > 0 && thr_y < 1) thr_y else NULL
+      thr_x_arg <- if (thr_x > 0) thr_x else NULL
       contrast_names <- names(res$DEGs)
-      n_cont <- length(contrast_names)
-      n_gs   <- if (!is.null(genes_arg)) length(genes_arg) else 1L
-      n_rows_vol <- n_gs; n_cols_vol <- n_cont
-      gsea_vol_h(as.integer(min(10000L, max(550L, n_rows_vol * 550L + 80L))))
-      gsea_vol_w(if (n_cols_vol >= 3L) "100%"
-                 else paste0(min(100L, n_cols_vol * 50L), "%"))
 
-      tryCatch({
-        if (!use_gs) {
-          # --- Threshold mode: manual ggplot2 (plotVolcano has issues in this mode) ---
-          per_plots <- lapply(contrast_names, function(cn) {
-            df <- as.data.frame(res$DEGs[[cn]])
-            padj_col <- if ("adj.P.Val" %in% colnames(df)) "adj.P.Val" else
-                        if ("padj"      %in% colnames(df)) "padj"      else NULL
-            lfc_col  <- if ("logFC"     %in% colnames(df)) "logFC"     else
-                        if ("log2FoldChange" %in% colnames(df)) "log2FoldChange" else NULL
-            shiny::validate(shiny::need(!is.null(padj_col) && !is.null(lfc_col),
-                                        "Cannot find logFC / adj.P.Val columns."))
-            df$lfc_   <- df[[lfc_col]]
-            df$padj_  <- df[[padj_col]]
-            df$logp_  <- -log10(pmax(df$padj_, 1e-300))
-            sig <- rep(TRUE, nrow(df))
-            if (!is.null(thr_y_raw)) sig <- sig & (df$padj_ <= thr_y_raw)
-            if (!is.null(thr_x_arg)) sig <- sig & (abs(df$lfc_) >= thr_x_arg)
-            if (is.null(thr_y_raw) && is.null(thr_x_arg)) sig <- rep(FALSE, nrow(df))
-            df$.sig <- sig
-            gg <- ggplot2::ggplot(df, ggplot2::aes(x = lfc_, y = logp_)) +
-              ggplot2::geom_point(data = df[!df$.sig, , drop = FALSE],
+      if (!use_gs) {
+        # --- Significant genes (threshold) mode ---
+        lapply(contrast_names, function(cn) {
+          df <- as.data.frame(res$DEGs[[cn]])
+          padj_col <- if ("adj.P.Val" %in% colnames(df)) "adj.P.Val" else
+                      if ("padj"      %in% colnames(df)) "padj"      else "adj.P.Val"
+          lfc_col  <- if ("logFC"     %in% colnames(df)) "logFC"     else
+                      if ("log2FoldChange" %in% colnames(df)) "log2FoldChange" else "logFC"
+          df$gene_ <- rownames(df)
+          df$lfc_  <- df[[lfc_col]]
+          df$padj_ <- df[[padj_col]]
+          df$logp_ <- -log10(pmax(df$padj_, 1e-300))
+          sig <- rep(TRUE, nrow(df))
+          if (!is.null(thr_y_raw)) sig <- sig & (df$padj_ <= thr_y_raw)
+          if (!is.null(thr_x_arg)) sig <- sig & (abs(df$lfc_) >= thr_x_arg)
+          if (is.null(thr_y_raw) && is.null(thr_x_arg)) sig <- rep(FALSE, nrow(df))
+          df$.sig <- sig
+
+          gg <- ggplot2::ggplot(df, ggplot2::aes(x = .data$lfc_, y = .data$logp_)) +
+            ggplot2::geom_point(data = df[!df$.sig, , drop = FALSE],
+                                color = "#B7B7B7", size = pts, alpha = 0.4) +
+            ggplot2::geom_point(data = df[df$.sig,  , drop = FALSE],
+                                color = "#6489B4", size = pts, alpha = 0.7) +
+            ggplot2::labs(title = cn, x = lfc_col,
+                          y = "-log10(Adj. p-value)") +
+            ggplot2::theme_bw(base_size = lsz)
+          if (!is.null(thr_y_raw))
+            gg <- gg + ggplot2::geom_hline(yintercept = -log10(thr_y_raw),
+                                           linetype = "dashed", color = "#555555")
+          if (!is.null(thr_x_arg))
+            gg <- gg + ggplot2::geom_vline(xintercept = c(-thr_x_arg, thr_x_arg),
+                                           linetype = "dashed", color = "#555555")
+
+          # Label the most extreme (by |logFC|) genes among the significant ones.
+          if (n_top > 0L) {
+            df_sig <- df[df$.sig, , drop = FALSE]
+            if (nrow(df_sig) > 0L) {
+              df_sig <- df_sig[order(abs(df_sig$lfc_), decreasing = TRUE), ]
+              df_top <- head(df_sig, n_top)
+              gg <- gg + ggrepel::geom_text_repel(
+                data = df_top,
+                ggplot2::aes(x = .data$lfc_, y = .data$logp_, label = .data$gene_),
+                size = lsz / 3, max.overlaps = n_top * 2L, force = 10,
+                color = "#243B53", fontface = "bold")
+            }
+          }
+          gg
+        })
+      } else {
+        # --- Gene set members mode: colour + labels restricted to set members ---
+        lapply(contrast_names, function(cn) {
+          df <- as.data.frame(res$DEGs[[cn]])
+          lfc_col  <- if ("logFC"     %in% colnames(df)) "logFC"
+                      else if ("log2FoldChange" %in% colnames(df)) "log2FoldChange"
+                      else "logFC"
+          padj_col <- if ("adj.P.Val" %in% colnames(df)) "adj.P.Val"
+                      else if ("padj" %in% colnames(df)) "padj"
+                      else "adj.P.Val"
+          df$gene_ <- rownames(df)
+          df$lfc_  <- df[[lfc_col]]
+          df$padj_ <- df[[padj_col]]
+          df$logp_ <- -log10(pmax(df[[padj_col]], 1e-300))
+
+          gs_plots <- lapply(names(genes_arg), function(gsn) {
+            gs_genes <- .gs_gene_names(genes_arg[[gsn]])
+            gs_dirs  <- .gs_gene_directions(genes_arg[[gsn]])
+            dir_map  <- stats::setNames(gs_dirs, gs_genes)[!duplicated(gs_genes)]
+            in_gs   <- df$gene_ %in% gs_genes
+            gene_dir <- unname(dir_map[df$gene_])
+            upreg   <- in_gs & !is.na(gene_dir) & gene_dir == 1
+            downreg <- in_gs & !is.na(gene_dir) & gene_dir == -1
+            noinfo  <- in_gs & !upreg & !downreg
+
+            gg <- ggplot2::ggplot(df, ggplot2::aes(x = .data$lfc_, y = .data$logp_)) +
+              ggplot2::geom_point(data = df[!in_gs, , drop = FALSE],
                                   color = "#B7B7B7", size = pts, alpha = 0.4) +
-              ggplot2::geom_point(data = df[df$.sig,  , drop = FALSE],
-                                  color = "#6489B4", size = pts, alpha = 0.7) +
-              ggplot2::labs(title = cn, x = lfc_col,
-                            y = paste0("-log10(", padj_col, ")")) +
+              ggplot2::geom_point(data = df[noinfo, , drop = FALSE],
+                                  color = "#05254A", size = pts, alpha = 0.8) +
+              ggplot2::geom_point(data = df[upreg, , drop = FALSE],
+                                  color = "#038C65", size = pts, alpha = 0.8) +
+              ggplot2::geom_point(data = df[downreg, , drop = FALSE],
+                                  color = "#8C0303", size = pts, alpha = 0.8) +
+              ggplot2::labs(title    = gsn,
+                            subtitle = cn,
+                            x = lfc_col,
+                            y = "-log10(Adj. p-value)") +
               ggplot2::theme_bw(base_size = lsz)
-            if (!is.null(thr_y_raw))
-              gg <- gg + ggplot2::geom_hline(yintercept = -log10(thr_y_raw),
-                                             linetype = "dashed", color = "#555555")
-            if (!is.null(thr_x_arg))
-              gg <- gg + ggplot2::geom_vline(xintercept = c(-thr_x_arg, thr_x_arg),
-                                             linetype = "dashed", color = "#555555")
-            gg
-          })
-        } else if (gs_only && n_top > 0L && !is.null(genes_arg)) {
-          # --- Gene set members mode + gs_only N annotation ---
-          # plotVolcano returns a ggarrange so we cannot add layers to it.
-          # Build each gene-set x contrast plot manually so ggrepel works.
-          per_plots <- lapply(contrast_names, function(cn) {
-            df <- as.data.frame(res$DEGs[[cn]])
-            lfc_col  <- if ("logFC"     %in% colnames(df)) "logFC"
-                        else if ("log2FoldChange" %in% colnames(df)) "log2FoldChange"
-                        else "logFC"
-            padj_col <- if ("adj.P.Val" %in% colnames(df)) "adj.P.Val"
-                        else if ("padj" %in% colnames(df)) "padj"
-                        else "adj.P.Val"
-            df$gene_ <- rownames(df)
-            df$lfc_  <- df[[lfc_col]]
-            df$logp_ <- -log10(pmax(df[[padj_col]], 1e-300))
 
-            gs_plots <- lapply(names(genes_arg), function(gsn) {
-              gs_genes <- .gs_gene_names(genes_arg[[gsn]])
-              in_gs <- df$gene_ %in% gs_genes
-              gg <- ggplot2::ggplot(df, ggplot2::aes(x = .data$lfc_, y = .data$logp_)) +
-                ggplot2::geom_point(data = df[!in_gs, , drop = FALSE],
-                                    color = "#B7B7B7", size = pts, alpha = 0.4) +
-                ggplot2::geom_point(data = df[in_gs,  , drop = FALSE],
-                                    color = "#05254A", size = pts, alpha = 0.8) +
-                ggplot2::labs(title    = gsn,
-                              subtitle = cn,
-                              x = lfc_col,
-                              y = paste0("-log10(", padj_col, ")")) +
-                ggplot2::theme_bw(base_size = lsz)
+            # Label the most extreme members of THIS gene set only, optionally
+            # narrowed further by the logFC / padj thresholds.
+            if (n_top > 0L) {
               df_gs <- df[in_gs, , drop = FALSE]
+              if (!is.null(thr_x_arg)) df_gs <- df_gs[abs(df_gs$lfc_) >= thr_x_arg, , drop = FALSE]
+              if (!is.null(thr_y_raw)) df_gs <- df_gs[df_gs$padj_ <= thr_y_raw, , drop = FALSE]
               if (nrow(df_gs) > 0L) {
                 df_gs  <- df_gs[order(abs(df_gs$lfc_), decreasing = TRUE), ]
                 df_top <- head(df_gs, n_top)
@@ -2045,35 +2751,36 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
                   color = "#05254A", fontface = "bold"
                 )
               }
-              gg
-            })
-            if (length(gs_plots) == 1L) gs_plots[[1]]
-            else ggpubr::ggarrange(plotlist = gs_plots,
-                                   nrow = length(gs_plots), ncol = 1L, align = "h")
+            }
+            gg
           })
-        } else {
-          # --- Gene set members mode: per-contrast plotVolcano calls ---
-          .vol_args <- list(
-            genes                  = genes_arg,
-            N                      = if (n_top > 0L) n_top else NULL,
-            x                      = "logFC",
-            y                      = "-log10(adj.P.Val)",
-            pointSize              = pts,
-            color                  = "#6489B4",
-            highlightcolor         = "#05254A",
-            highlightcolor_upreg   = "#038C65",
-            highlightcolor_downreg = "#8C0303",
-            nointerestcolor        = "#B7B7B7",
-            threshold_y            = NULL,
-            threshold_x            = NULL,
-            labsize                = lsz,
-            widthlabs              = 32L,
-            invert                 = FALSE
-          )
-          per_plots <- lapply(contrast_names, function(cn)
-            do.call(plotVolcano, c(list(DEResultsList = res$DEGs[cn]), .vol_args)))
-        }
+          if (length(gs_plots) == 1L) gs_plots[[1]]
+          else ggpubr::ggarrange(plotlist = gs_plots,
+                                 nrow = length(gs_plots), ncol = 1L, align = "h")
+        })
+      }
+    }
 
+    output$gsea_deg_volcano_plot <- shiny::renderPlot({
+      res <- gsea_result(); shiny::req(!is.null(res), !is.null(res$DEGs))
+      thr_x    <- input$vol_threshold_x    %||% 1
+      thr_y    <- input$vol_threshold_y    %||% 0.05  # raw padj threshold
+      n_top    <- as.integer(input$vol_top_n   %||% 0L)
+      pts      <- input$vol_pointsize      %||% 2
+      lsz      <- input$vol_labsize        %||% 8L
+      hl_mode  <- input$vol_highlight_mode %||% "gene_sets"
+
+      contrast_names <- names(res$DEGs)
+      n_cont <- length(contrast_names)
+      n_gs   <- if (hl_mode == "gene_sets" && !is.null(res$gene_sets))
+        length(res$gene_sets) else 1L
+      n_rows_vol <- n_gs; n_cols_vol <- n_cont
+      gsea_vol_h(as.integer(min(10000L, max(550L, n_rows_vol * 550L + 80L))))
+      gsea_vol_w(if (n_cols_vol >= 3L) "100%"
+                 else paste0(min(100L, n_cols_vol * 50L), "%"))
+
+      tryCatch({
+        per_plots <- .build_deg_volcano_plots(res, thr_x, thr_y, n_top, pts, lsz, hl_mode)
         combined_vol <- if (length(per_plots) == 1L) {
           per_plots[[1]]
         } else {
@@ -2097,86 +2804,8 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         pts     <- input$vol_pointsize      %||% 2
         lsz     <- input$vol_labsize        %||% 8L
         hl_mode <- input$vol_highlight_mode %||% "gene_sets"
-        gs_only <- isTRUE(input$vol_topn_gs_only)
-        use_gs    <- (hl_mode == "gene_sets")
-        genes_arg <- if (use_gs && !is.null(res$gene_sets)) res$gene_sets else NULL
-        thr_y_raw <- if (!use_gs && thr_y > 0 && thr_y < 1) thr_y else NULL
-        thr_x_arg <- if (!use_gs && thr_x > 0) thr_x else NULL
-        contrast_names <- names(res$DEGs)
-        if (!use_gs) {
-          per_plots <- lapply(contrast_names, function(cn) {
-            df <- as.data.frame(res$DEGs[[cn]])
-            padj_col <- if ("adj.P.Val" %in% colnames(df)) "adj.P.Val" else "padj"
-            lfc_col  <- if ("logFC"     %in% colnames(df)) "logFC"     else "log2FoldChange"
-            df$lfc_  <- df[[lfc_col]]; df$padj_ <- df[[padj_col]]
-            df$logp_ <- -log10(pmax(df$padj_, 1e-300))
-            sig <- if (!is.null(thr_y_raw)) df$padj_ <= thr_y_raw else rep(TRUE, nrow(df))
-            if (!is.null(thr_x_arg)) sig <- sig & (abs(df$lfc_) >= thr_x_arg)
-            df$.sig <- sig
-            gg <- ggplot2::ggplot(df, ggplot2::aes(x = lfc_, y = logp_)) +
-              ggplot2::geom_point(data = df[!df$.sig, , drop = FALSE],
-                                  color = "#B7B7B7", size = pts, alpha = 0.4) +
-              ggplot2::geom_point(data = df[df$.sig, , drop = FALSE],
-                                  color = "#6489B4", size = pts, alpha = 0.7) +
-              ggplot2::labs(title = cn, x = lfc_col, y = paste0("-log10(", padj_col, ")")) +
-              ggplot2::theme_bw(base_size = lsz)
-            if (!is.null(thr_y_raw))
-              gg <- gg + ggplot2::geom_hline(yintercept = -log10(thr_y_raw),
-                                             linetype = "dashed", color = "#555555")
-            if (!is.null(thr_x_arg))
-              gg <- gg + ggplot2::geom_vline(xintercept = c(-thr_x_arg, thr_x_arg),
-                                             linetype = "dashed", color = "#555555")
-            gg
-          })
-        } else if (gs_only && n_top > 0L && !is.null(genes_arg)) {
-          # gs_only: build manually per gene set so ggrepel works on ggplots
-          per_plots <- lapply(contrast_names, function(cn) {
-            df <- as.data.frame(res$DEGs[[cn]])
-            lfc_col  <- if ("logFC"     %in% colnames(df)) "logFC"     else "log2FoldChange"
-            padj_col <- if ("adj.P.Val" %in% colnames(df)) "adj.P.Val" else "padj"
-            df$gene_ <- rownames(df)
-            df$lfc_  <- df[[lfc_col]]
-            df$logp_ <- -log10(pmax(df[[padj_col]], 1e-300))
-            gs_plots <- lapply(names(genes_arg), function(gsn) {
-              gs_genes <- .gs_gene_names(genes_arg[[gsn]])
-              in_gs <- df$gene_ %in% gs_genes
-              gg <- ggplot2::ggplot(df, ggplot2::aes(x = .data$lfc_, y = .data$logp_)) +
-                ggplot2::geom_point(data = df[!in_gs, , drop = FALSE],
-                                    color = "#B7B7B7", size = pts, alpha = 0.4) +
-                ggplot2::geom_point(data = df[in_gs,  , drop = FALSE],
-                                    color = "#05254A", size = pts, alpha = 0.8) +
-                ggplot2::labs(title = gsn, subtitle = cn, x = lfc_col,
-                              y = paste0("-log10(", padj_col, ")")) +
-                ggplot2::theme_bw(base_size = lsz)
-              df_gs <- df[in_gs, , drop = FALSE]
-              if (nrow(df_gs) > 0L) {
-                df_gs <- df_gs[order(abs(df_gs$lfc_), decreasing = TRUE), ]
-                df_top <- head(df_gs, n_top)
-                gg <- gg + ggrepel::geom_text_repel(
-                  data = df_top,
-                  ggplot2::aes(x = .data$lfc_, y = .data$logp_, label = .data$gene_),
-                  size = lsz / 3, max.overlaps = n_top * 2L, force = 10,
-                  color = "#05254A", fontface = "bold")
-              }
-              gg
-            })
-            if (length(gs_plots) == 1L) gs_plots[[1]]
-            else ggpubr::ggarrange(plotlist = gs_plots,
-                                   nrow = length(gs_plots), ncol = 1L, align = "h")
-          })
-        } else {
-          .vol_args <- list(
-            genes = genes_arg, N = if (n_top > 0L) n_top else NULL,
-            x = "logFC", y = "-log10(adj.P.Val)", pointSize = pts,
-            color = "#6489B4", highlightcolor = "#05254A",
-            highlightcolor_upreg = "#038C65", highlightcolor_downreg = "#8C0303",
-            nointerestcolor = "#B7B7B7",
-            threshold_y = NULL, threshold_x = NULL,
-            labsize = lsz, widthlabs = 32L, invert = FALSE
-          )
-          per_plots <- lapply(contrast_names, function(cn)
-            do.call(plotVolcano, c(list(DEResultsList = res$DEGs[cn]), .vol_args)))
-        }
+
+        per_plots <- .build_deg_volcano_plots(res, thr_x, thr_y, n_top, pts, lsz, hl_mode)
         combined_vol <- if (length(per_plots) == 1L) per_plots[[1]] else
           ggpubr::ggarrange(plotlist = per_plots,
                             ncol = length(per_plots), nrow = 1L, align = "h")
@@ -2215,7 +2844,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       tryCatch(
         print(plotNESlollipop(
           GSEA_results = res$gsea_res, sig_threshold = sig_thr,
-          titlesize = font_s, widthlabels = w_labels, grid = TRUE)),
+          titlesize = font_s, widthlabels = w_labels, grid = TRUE, ncol = 1L)),
         error = function(e)
           shiny::showNotification(paste("Lollipop error:", e$message),
                                   type = "warning", duration = 8))
@@ -2236,7 +2865,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       combined_data$tip <- paste0(
         "Pathway: ",  combined_data$pathway,
         "<br>NES: ",  round(combined_data$NES, 4),
-        "<br>padj: ", signif(combined_data$padj, 3),
+        "<br>Adj. p-value: ", signif(combined_data$padj, 3),
         "<br>Contrast: ", combined_data$contrast)
 
       n_paths <- length(unique(combined_data$pathway_w))
@@ -2317,7 +2946,8 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         h_in <- nes_h() / 96
         ggplot2::ggsave(file,
           plot = plotNESlollipop(res$gsea_res, sig_threshold = sig_thr,
-                                  titlesize = font_s, widthlabels = w_labels, grid = TRUE),
+                                  titlesize = font_s, widthlabels = w_labels,
+                                  grid = TRUE, ncol = 1L),
           width = 12, height = max(4, h_in), dpi = 150, units = "in")
       }
     )
@@ -2346,7 +2976,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
           sprintf("%d result(s) across %d contrast(s):", n_rows, res$n_cont)),
         shiny::tags$span(class = "badge bg-primary me-1",  paste0("Variable: ", p$enrich_var)),
         shiny::tags$span(class = "badge bg-secondary me-1", paste0("Mode: ", p$enrich_mode)),
-        shiny::tags$span(class = "badge bg-secondary me-1", paste0("Padj: ", p$padj_m)),
+        shiny::tags$span(class = "badge bg-secondary me-1", paste0("p-adjust method: ", p$padj_m)),
         shiny::tags$span(class = "badge bg-secondary me-1", paste0("Gene sets: ", p$n_gene_sets))
       )
     })
@@ -2378,100 +3008,26 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
                    shiny::strong("Run Score FPR Simulation"), ".")
     })
 
-    # Helper: rebuild FPR violin/jitter plot for ONE contrast from cached data.
-    # data_list: named list of per-signature data frames (from FPR_Simulation$data).
-    # Each df has: signature, contrast, method, cohen, padj, type, FPR columns.
-    # Rebuild the FPR plot manually from cached data_list (no re-run needed).
-    # Mirrors the original FPR_Simulation plot structure exactly:
-    #   - One ggplot per gene set, titled with the gene set name
-    #   - facet_wrap(. ~ contrast, ncol=1) — contrasts stacked vertically
-    #   - x = method (3 violins: ssGSEA / logmedian / ranking)
-    #   - Violin = null distribution (simulated); green dot = original gene set value
-    #   - Red dashed line = 95th percentile of simulated distribution
-    #   - FPR label above each violin
-    # Gene set plots are combined in a grid with ggarrange.
-    .build_fpr_all_plots <- function(data_list, fontsize = 10L, cohentype = "d",
-                                      ncol_g    = NULL,
-                                      color_vals = c(Original  = "#68B393",
-                                                     Simulated = "#666666")) {
-      method_lvls <- c("ssGSEA", "logmedian", "ranking")
+    # Helper: combine per (gene set x contrast) panels (built by
+    # .build_fpr_plots(), defined above near the FPR run observer) into a
+    # single grid, filtered to the currently selected contrasts.
+    .build_fpr_grid <- function(data_list, fontsize = 10L, cohentype = "d",
+                                ncol_g = 3L, sel_conts = NULL) {
+      if (!is.null(sel_conts) && length(sel_conts) > 0L) {
+        data_list <- lapply(data_list, function(df)
+          df[df$contrast %in% sel_conts, , drop = FALSE])
+        data_list <- Filter(function(df) nrow(df) > 0L, data_list)
+      }
+      if (length(data_list) == 0L) return(NULL)
 
-      plot_list <- lapply(names(data_list), function(sig) {
-        df <- data_list[[sig]]
-        if (is.null(df) || nrow(df) == 0L) return(NULL)
-
-        ml <- method_lvls[method_lvls %in% unique(df$method)]
-        df$method <- factor(df$method, levels = ml)
-        contrasts  <- unique(df$contrast)
-
-        # 95th-percentile dashed lines per (contrast × method)
-        q_data <- do.call(rbind, lapply(contrasts, function(ct) {
-          do.call(rbind, lapply(seq_along(ml), function(mi) {
-            sub <- df[df$contrast == ct & df$method == ml[mi], ]
-            if (nrow(sub) == 0L) return(NULL)
-            data.frame(contrast = ct,
-                       method   = factor(ml[mi], levels = ml),
-                       q_high   = stats::quantile(sub$cohen, 0.95, na.rm = TRUE),
-                       xmin = mi - 0.35, xmax = mi + 0.35,
-                       stringsAsFactors = FALSE)
-          }))
-        }))
-
-        # Max cohen + FPR label per (contrast × method)
-        orig_df <- df[df$type == "Original", ]
-        all_max <- stats::aggregate(cohen ~ method + contrast, data = df, FUN = max)
-        all_max$FPR <- NA_real_
-        for (i in seq_len(nrow(all_max))) {
-          idx <- which(orig_df$method   == all_max$method[i] &
-                         orig_df$contrast == all_max$contrast[i])
-          if (length(idx) > 0L) all_max$FPR[i] <- orig_df$FPR[idx[1L]]
-        }
-        all_max$label   <- sprintf("FPR=%.2f", all_max$FPR)
-        all_max$y_label <- all_max$cohen + 0.3
-        all_max$method  <- factor(all_max$method, levels = ml)
-
-        ggplot2::ggplot() +
-          ggplot2::geom_jitter(
-            data = df[df$type == "Simulated", ],
-            ggplot2::aes(y = cohen, x = method, color = type),
-            width = 0.3, height = 0, size = 2, alpha = 0.5) +
-          ggplot2::geom_violin(
-            data = df,
-            ggplot2::aes(y = cohen, x = method),
-            fill = "#F0F0F0", color = "black", alpha = 0.5) +
-          ggplot2::geom_jitter(
-            data = df[df$type == "Original", ],
-            ggplot2::aes(y = cohen, x = method, color = type),
-            width = 0, height = 0, size = 2, alpha = 1) +
-          ggplot2::geom_text(
-            data = all_max,
-            ggplot2::aes(x = method, y = y_label, label = label),
-            size = 3, inherit.aes = FALSE) +
-          {if (!is.null(q_data) && nrow(q_data) > 0L)
-             ggplot2::geom_segment(
-               data = q_data,
-               ggplot2::aes(x = xmin, xend = xmax, y = q_high, yend = q_high),
-               linetype = "dashed", color = "red", inherit.aes = FALSE)
-           else NULL} +
-          ggplot2::labs(
-            title = wrap_title(sig, 32L),
-            y     = if (cohentype == "d") "|Cohen's d|" else "|Cohen's f|",
-            x     = "Method", color = "") +
-          ggplot2::theme_classic(base_size = fontsize) +
-          ggplot2::theme(
-            plot.title = ggplot2::element_text(hjust = 0.5, size = fontsize),
-            strip.text = ggplot2::element_text(size = max(7L, fontsize - 1L))) +
-          ggplot2::facet_wrap(. ~ contrast, scales = "free", ncol = 1L,
-                              strip.position = "left") +
-          ggplot2::scale_color_manual(values = color_vals)
-      })
-
-      plot_list <- Filter(Negate(is.null), plot_list)
+      ylab <- if (cohentype == "d") "|Cohen's d|" else "|Cohen's f|"
+      plot_list <- .build_fpr_plots(data_list, ylab = ylab,
+                                    titlesize = fontsize, labsize = fontsize)
       n <- length(plot_list)
       if (n == 0L) return(NULL)
-      if (is.null(ncol_g)) ncol_g <- min(4L, ceiling(sqrt(n)))
-      nrow_g <- ceiling(n / ncol_g)
+      if (n == 1L) return(plot_list[[1]])
 
+      nrow_g <- ceiling(n / ncol_g)
       ggpubr::ggarrange(plotlist = plot_list, ncol = ncol_g, nrow = nrow_g,
                         common.legend = TRUE, legend = "top")
     }
@@ -2503,20 +3059,14 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       res <- fpr_result(); shiny::req(!is.null(res), !is.null(res$fpr_res$data))
       fontsize  <- input$fpr_fontsize %||% 10L
       cohentype <- res$cohentype %||% "d"
-      ncol_g    <- 3L
       # Reactively filter cached FPR data by selected contrasts (no re-run needed).
       # sel_conts is a character vector of contrast strings (e.g. "A-B", "A-C").
-      data_list  <- res$fpr_res$data
-      sel_conts  <- input$score_selected_groups
-      if (!is.null(sel_conts) && length(sel_conts) > 0L) {
-        data_list <- lapply(data_list, function(df)
-          df[df$contrast %in% sel_conts, , drop = FALSE])
-        data_list <- Filter(function(df) nrow(df) > 0L, data_list)
-      }
-      shiny::req(length(data_list) > 0L)
+      sel_conts <- input$score_selected_groups
       tryCatch({
-        p <- .build_fpr_all_plots(data_list, fontsize, cohentype, ncol_g)
-        if (!is.null(p)) print(p)
+        p <- .build_fpr_grid(res$fpr_res$data, fontsize, cohentype,
+                             ncol_g = 3L, sel_conts = sel_conts)
+        shiny::req(!is.null(p))
+        print(p)
       }, error = function(e)
         shiny::showNotification(paste("FPR plot error:", e$message),
                                 type = "warning", duration = 8))
@@ -2528,8 +3078,9 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         res <- fpr_result(); shiny::req(!is.null(res), !is.null(res$fpr_res$data))
         fontsize  <- input$fpr_fontsize %||% 10L
         cohentype <- res$cohentype %||% "d"
-        ncol_g    <- 3L
-        p    <- .build_fpr_all_plots(res$fpr_res$data, fontsize, cohentype, ncol_g)
+        sel_conts <- input$score_selected_groups
+        p    <- .build_fpr_grid(res$fpr_res$data, fontsize, cohentype,
+                                ncol_g = 3L, sel_conts = sel_conts)
         h_in <- fpr_h() / 150
         ggplot2::ggsave(file, plot = p,
                         width = 12, height = max(4, h_in),
