@@ -1,0 +1,55 @@
+name: Publish Docker image
+
+# Adjust the branch name below to whichever branch you want to deploy from
+# (e.g. "main" once the Shiny app is merged in). Publishing a GitHub Release
+# also triggers a build, tagged with that release's version.
+on:
+  push:
+    branches:
+      - ShinyApp
+  release:
+    types: [published]
+
+env:
+  dockerhub-package: ${{ secrets.DOCKERHUB_USERNAME }}/marker
+
+jobs:
+  push_to_registry:
+    name: Push Docker image to Docker Hub and GitHub Packages
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.dockerhub-package }},ghcr.io/${{ github.repository }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

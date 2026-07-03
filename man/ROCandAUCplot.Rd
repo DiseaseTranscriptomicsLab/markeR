@@ -14,6 +14,7 @@ ROCandAUCplot(
   plot_type = "roc",
   title = NULL,
   titlesize = 14,
+  invert_auc = TRUE,
   roc_params = list(),
   auc_params = list(),
   commomplot_params = list()

@@ -9,6 +9,8 @@ geneset_similarity(
   other_user_signatures = NULL,
   collection = NULL,
   subcollection = NULL,
+  organism = "Homo sapiens",
+  db_species = NULL,
   metric = c("jaccard", "odds_ratio"),
   universe = NULL,
   or_threshold = 1,
@@ -39,6 +41,17 @@ available options.}
 \item{subcollection}{Optional. Subcategory within an MSigDB collection (e.g.,
 \code{"CP:REACTOME"}). Use msigdbr::msigdbr_collections() for the available
 options.}
+
+\item{organism}{Character. Species name passed to \code{\link[msigdbr:msigdbr]{msigdbr::msigdbr()}}.
+Defaults to \code{"Homo sapiens"}. Use \code{msigdbr::msigdbr_species()} to see all
+supported species (e.g. \code{"Mus musculus"}, \code{"Rattus norvegicus"}).
+Only relevant when \code{collection} is specified.}
+
+\item{db_species}{Character or NULL. Controls which MSigDB database to query.
+\code{NULL} (default) omits the argument, using the msigdbr default (human gene
+sets with ortholog mapping). Pass \code{"MM"} to retrieve gene sets natively
+curated in mouse, or \code{"HS"} to explicitly request human-curated sets.
+Only relevant in msigdbr >= 2024 and when \code{collection} is specified.}
 
 \item{metric}{Character. Either "jaccard" or "odds_ratio".}
 
@@ -139,7 +152,7 @@ print(plt)
 # Odds ratio example (requires universe)
 gene_universe <- unique(c(
   sig1, sig2,
-  msigdbr::msigdbr(species = "Homo sapiens", category = "C2")$gene_symbol
+  msigdbr::msigdbr(species = "Homo sapiens", collection = "C2")$gene_symbol
 ))
 
 plt_or <- geneset_similarity(

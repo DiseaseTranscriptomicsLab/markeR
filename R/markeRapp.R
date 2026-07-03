@@ -3164,6 +3164,27 @@ server <- function(input, output, session) {
 }
 
 # ---- Launcher ----
+
+#' Launch the markeR Shiny Application
+#'
+#' Starts the markeR interactive Shiny app (Benchmarking and Discovery Mode
+#' tabs) in the default web browser, or as a standalone server when called
+#' with `host`/`port` (e.g. from a Docker container).
+#'
+#' @param ... Additional arguments passed to \code{\link[shiny]{runApp}}
+#'   (e.g. \code{host}, \code{port}, \code{launch.browser}).
+#'
+#' @return Does not return; runs the Shiny application until interrupted.
+#'
+#' @examples
+#' \dontrun{
+#' markeRapp()
+#'
+#' # As typically run inside a Docker container:
+#' markeRapp(host = "0.0.0.0", port = 3838, launch.browser = FALSE)
+#' }
+#'
+#' @export
 markeRapp <- function(...){
   
   # Register a URL path "/logo" that points to your package's inst/figures folder

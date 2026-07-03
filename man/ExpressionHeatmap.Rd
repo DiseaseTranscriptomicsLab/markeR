@@ -16,6 +16,7 @@ ExpressionHeatmap(
   cluster_columns = TRUE,
   title = NULL,
   titlesize = 20,
+  fontsize = 10,
   scale_position = c("right", "top", "bottom"),
   legend_position = c("top", "right", "bottom"),
   show_row_names = TRUE,
