@@ -566,6 +566,20 @@ ui <- tagList(
       }
     "))
   ),
+  # Every plotly/DT output in this app is built dynamically inside
+  # shiny::renderUI() (only appearing after the user clicks a "Run" button),
+  # and none exist in the app's static UI otherwise. With no plotly/DT widget
+  # present in the very first page load, the browser can end up never being
+  # told to load plotly.js / DataTables' JS at all, so the first widget
+  # rendered later fails with "Can't find variable: Plotly" (or the DT
+  # equivalent) even though the R package itself is installed correctly.
+  # These hidden, always-present outputs force both dependencies into the
+  # initial HTML regardless of which tab loads first.
+  shiny::div(
+    style = "position:absolute; width:1px; height:1px; overflow:hidden; visibility:hidden;",
+    plotly::plotlyOutput("markeR_dep_plotly", height = "1px"),
+    DT::DTOutput("markeR_dep_dt")
+  ),
   ui,
   # Global log bar (fixed to bottom of viewport, visible on all tabs)
   tags$div(
@@ -681,9 +695,18 @@ ui <- tagList(
 # ---- Server ----
 
 server <- function(input, output, session) {
-  
+
   #bs_themer()
-  
+
+  # Minimal, invisible renders matching the hidden plotly/DT outputs declared
+  # in the static UI above — see the comment there for why these exist.
+  output$markeR_dep_plotly <- plotly::renderPlotly({
+    plotly::plotly_empty(type = "scatter", mode = "markers")
+  })
+  output$markeR_dep_dt <- DT::renderDT({
+    DT::datatable(data.frame(x = numeric(0)))
+  })
+
   ###### REACTIVE STORAGE CONTAINERS ######
   expr_data   <- shiny::reactiveVal(NULL)  # Expression matrix/data.frame
   meta_data   <- shiny::reactiveVal(NULL)  # Sample metadata
@@ -1190,14 +1213,29 @@ server <- function(input, output, session) {
   # Called from both the main radio-button observer AND the retry observeEvent so the
   # same logic runs on first attempt and on any number of retries without code duplication.
 
+  # R's utils::download.file() default timeout is only 60 seconds, which is
+  # comfortably enough on the app's server (fast, close connection to
+  # Zenodo) but can cut off the larger example files (the raw counts file is
+  # ~70MB) partway through on a slower local connection — producing a
+  # truncated download and a "Timeout was reached" warning rather than a
+  # clean failure. Temporarily raising it just for the download call (and
+  # restoring it on exit) avoids that without changing timeout behaviour
+  # anywhere else in the app.
+  .zenodo_download <- function(url, destfile, timeout_s = 300) {
+    old_timeout <- getOption("timeout")
+    on.exit(options(timeout = old_timeout), add = TRUE)
+    options(timeout = max(timeout_s, old_timeout))
+    utils::download.file(url = url, destfile = destfile, mode = "wb", quiet = TRUE)
+  }
+
   .dl_expr_raw <- function() {
     show_loading_modal("Loading example data…",
                        "Downloading unprocessed counts from Zenodo.")
     dl_ok <- tryCatch({
       tmp <- tempfile(fileext = ".rds")
-      status <- utils::download.file(
+      status <- .zenodo_download(
         url      = "https://zenodo.org/records/18714122/files/counts.rds?download=1",
-        destfile = tmp, mode = "wb", quiet = TRUE
+        destfile = tmp
       )
       if (status != 0L) stop("Download failed (status ", status, "). Check your internet connection.")
       e <- readRDS(tmp)
@@ -1218,9 +1256,9 @@ server <- function(input, output, session) {
                        "Downloading processed counts from Zenodo.")
     dl_ok <- tryCatch({
       tmp <- tempfile(fileext = ".rds")
-      status <- utils::download.file(
+      status <- .zenodo_download(
         url      = "https://zenodo.org/records/18714122/files/corrcounts.rds?download=1",
-        destfile = tmp, mode = "wb", quiet = TRUE
+        destfile = tmp
       )
       if (status != 0L) stop("Download failed (status ", status, "). Check your internet connection.")
       e <- readRDS(tmp)
@@ -1241,9 +1279,9 @@ server <- function(input, output, session) {
                        "Downloading from Zenodo.")
     dl_ok <- tryCatch({
       tmp <- tempfile(fileext = ".rds")
-      status <- utils::download.file(
+      status <- .zenodo_download(
         url      = "https://zenodo.org/records/18714122/files/metadata.rds?download=1",
-        destfile = tmp, mode = "wb", quiet = TRUE
+        destfile = tmp
       )
       if (status != 0L) stop("Download failed (status ", status, "). Check your internet connection.")
       m <- readRDS(tmp)
@@ -1265,9 +1303,9 @@ server <- function(input, output, session) {
                        "Downloading from Zenodo.")
     dl_ok <- tryCatch({
       tmp <- tempfile(fileext = ".rds")
-      status <- utils::download.file(
+      status <- .zenodo_download(
         url      = "https://zenodo.org/records/18714122/files/SenescenceGeneSets.rds?download=1",
-        destfile = tmp, mode = "wb", quiet = TRUE
+        destfile = tmp
       )
       if (status != 0L) stop("Download failed (status ", status, "). Check your internet connection.")
       gs <- readRDS(tmp)

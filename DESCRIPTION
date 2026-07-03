@@ -62,7 +62,8 @@ Imports:
     R.utils,
     readxl,
     Biobase,
-    shinyWidgets
+    shinyWidgets,
+    data.table
 Suggests:
     devtools,
     markdown,
