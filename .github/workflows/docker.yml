@@ -32,14 +32,20 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.dockerhub-package }},ghcr.io/${{ github.repository }}
-          # `shiny_dev` is a fixed tag so it matches the ShinyProxy config
-          # (container-image: diseasetranscriptomicslab/marker:shiny_dev)
-          # without needing to edit that config every time. `type=ref,event=branch`
-          # additionally tags each push with its branch name (e.g. ShinyApp),
-          # useful for checking exactly what got built.
+          # Two independent tagging schemes, kept apart by which event fired:
+          #  - every push to ShinyApp -> overwrites the rolling `shiny_dev`
+          #    tag (matches the ShinyProxy config, which always tracks the
+          #    latest commit), plus a branch-name tag so you can see exactly
+          #    what commit produced a given `shiny_dev` build if needed.
+          #  - publishing a GitHub Release -> a separate, never-overwritten
+          #    tag using the release's git tag name as-is (e.g. a release
+          #    tagged "shinyv1.1" on GitHub publishes image tag
+          #    "shinyv1.1" directly - no extra prefix added here, since the
+          #    release tag itself already includes it).
           tags: |
-            type=raw,value=shiny_dev
-            type=ref,event=branch
+            type=raw,value=shiny_dev,enable=${{ github.event_name == 'push' }}
+            type=ref,event=branch,enable=${{ github.event_name == 'push' }}
+            type=raw,value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
