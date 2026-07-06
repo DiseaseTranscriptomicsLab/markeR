@@ -12,7 +12,18 @@
 #' @importFrom ComplexHeatmap draw
 
 ui <- bslib::page_navbar(
-  
+
+  # fillable = FALSE at the root: page_navbar() defaults to a flexbox "fill"
+  # layout that constrains all tab content to the viewport height, clipping
+  # anything taller instead of letting the page scroll. Individual tabs'
+  # layout_sidebar(fillable = FALSE) calls only override this within their
+  # own card, not the root container establishing that height constraint in
+  # the first place - setting it here too removes the constraint at its
+  # source for every tab (About included), which is more robust across
+  # different rendering contexts (e.g. plain browser vs. an iframe-embedded
+  # deployment) than relying on a single nested override.
+  fillable = FALSE,
+
   # ---- Main NavBar & Title ----
   title = shiny::tags$span(
     #shiny::a("markeR "),
@@ -36,7 +47,7 @@ ui <- bslib::page_navbar(
     #   target = "_blank",
     #   style = "font-size: 0.85em; color: #949494; text-decoration: none;"
     # )
-    shiny::a("Web App 0.99.1",
+    shiny::a("Web App 0.99.2",
              style = "font-size: 0.7em; color: #949494; text-decoration: none;")
   ),
   
@@ -49,7 +60,13 @@ ui <- bslib::page_navbar(
   ##### ABOUT #####
   
   bslib::nav_panel(
-    "About", 
+    "About",
+    # fillable = FALSE: otherwise this tab participates in bslib's flexbox
+    # "fill" chain (inherited from page_navbar()), which constrains content
+    # height to the viewport and clips overflow instead of letting the page
+    # scroll normally - the same class of bug already worked around in the
+    # other tabs' layout_sidebar() calls.
+    fillable = FALSE,
     shiny::tags$div(
       style = "
     display: flex;
@@ -527,7 +544,21 @@ ui <- bslib::page_navbar(
 ui <- tagList(
   tags$head(
     tags$style(HTML("
-      body { padding-bottom: 40px; }
+      /* Belt-and-braces on top of fillable = FALSE above: force the page
+         itself to always be scrollable and never height-clipped, since
+         bslib/htmltools can rebuild this constraint in ways that vary by
+         rendering context (plain browser vs. an iframe-embedded deployment
+         like ShinyProxy). */
+      html, body {
+        height: auto !important;
+        min-height: 100% !important;
+        overflow-y: auto !important;
+      }
+      /* Reserve enough space at the bottom of every page so its own content
+         never ends up underneath the fixed log bar below (#global-log-bar
+         is position:fixed, so it always covers this much of the viewport's
+         bottom edge regardless of scroll position). */
+      body { padding-bottom: 60px; }
       #shiny-notification-panel {
         top: auto !important;
         bottom: 56px !important;
