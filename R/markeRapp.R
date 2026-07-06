@@ -36,7 +36,7 @@ ui <- bslib::page_navbar(
     #   target = "_blank",
     #   style = "font-size: 0.85em; color: #949494; text-decoration: none;"
     # )
-    shiny::a("Web App v0.99",
+    shiny::a("Web App 0.99.1",
              style = "font-size: 0.7em; color: #949494; text-decoration: none;")
   ),
   
@@ -196,7 +196,11 @@ ui <- bslib::page_navbar(
     shiny::uiOutput("data_log_ui_about"),
 
     shiny::div(
-      style = "text-align:right; color:#adb5bd; font-size:0.72em; margin:6px 4px 0;",
+      # Extra bottom margin so this clears the app's fixed, always-on-top
+      # log bar at the very bottom of the viewport (#global-log-bar in
+      # markeRapp.R's <head> styles) - without it, the fixed bar sits over
+      # this text and hides it regardless of how short the About page is.
+      style = "text-align:right; color:#8a8f96; font-size:0.75em; margin:10px 6px 60px;",
       "markeR's Bioconductor package was converted into this Shiny web app",
       " with the help of Claude Sonnet 5 (Anthropic)."
     )

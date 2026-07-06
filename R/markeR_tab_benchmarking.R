@@ -148,18 +148,6 @@ benchmarkingUI <- function(id) {
       shiny::conditionalPanel(
         condition = sprintf("input['%s'] === 'selected'", ns("bm_gs_scope")),
         shiny::uiOutput(ns("bm_gs_picker_ui"))
-      ),
-
-      shiny::hr(),
-
-      shiny::div(
-        style = "font-size:0.78em; color:#888; line-height:1.5;",
-        shiny::tags$b("Score Analysis:"),
-        " score distributions, ROC/AUC classification, all-methods summary,",
-        " and FPR simulation (sub-tabs).",
-        shiny::tags$br(),
-        shiny::tags$b("Enrichment (GSEA):"),
-        " gene-set-level enrichment via limma + fgsea."
       )
     ),
 

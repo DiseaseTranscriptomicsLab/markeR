@@ -41,11 +41,14 @@ jobs:
           #    tag using the release's git tag name as-is (e.g. a release
           #    tagged "shinyv1.1" on GitHub publishes image tag
           #    "shinyv1.1" directly - no extra prefix added here, since the
-          #    release tag itself already includes it).
+          #    release tag itself already includes it), PLUS `latest`, so
+          #    `latest` always tracks the newest published release (not dev
+          #    builds from plain pushes).
           tags: |
             type=raw,value=shiny_dev,enable=${{ github.event_name == 'push' }}
             type=ref,event=branch,enable=${{ github.event_name == 'push' }}
             type=raw,value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
