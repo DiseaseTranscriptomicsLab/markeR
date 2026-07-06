@@ -1,6 +1,6 @@
 # =============================================================================
 # geo_import_module.R
-# Adaptive GEO Data Import Pipeline for RNA-Seq — markeR Shiny Module
+# Adaptive GEO Data Import Pipeline for RNA-Seq - markeR Shiny Module
 #
 # Phase 1 Analysis Summary (20 GEO accessions)
 # ─────────────────────────────────────────────
@@ -74,7 +74,7 @@
   "peak", "bigwig", "bw", "bed", "idat", "bam", "bai",
   "metadata", "phenotype", "samplesheet", "readme", "annotation",
   "sra", "fastq", "barcode",
-  # NOTE: "feature" removed — false-positive on "featureCounts" expression files
+  # NOTE: "feature" removed - false-positive on "featureCounts" expression files
   # Scoped 10x file detection is handled in classify_supp_file via barcodes/features.tsv
   # Analysis results (not raw counts): should not be used as expression matrix
   "gsea", "enrichment", "pathway", "volcano", "gene_set",
@@ -85,7 +85,7 @@
 .SALMON_KEYWORDS <- c("quant.sf", "quant.genes.sf", "\\.sf$")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 1 — ASSAY-TYPE CLASSIFICATION
+# SECTION 1 - ASSAY-TYPE CLASSIFICATION
 # ─────────────────────────────────────────────────────────────────────────────
 
 #' Classify a GEO object's assay type
@@ -101,7 +101,7 @@ classify_geo_assay <- function(obj, gse_accession = "") {
   experiment_title <- tryCatch(tolower(Biobase::experimentData(obj)@title), error = function(e) "")
   if (length(experiment_title) == 0L) experiment_title <- ""
 
-  # Official GEO experiment type field — the most authoritative classification signal
+  # Official GEO experiment type field - the most authoritative classification signal
   experiment_type <- tryCatch({
     other <- Biobase::experimentData(obj)@other
     if (is.list(other) && !is.null(other[["type"]])) {
@@ -120,7 +120,7 @@ classify_geo_assay <- function(obj, gse_accession = "") {
                 reason = paste0("Single-cell / 10x signals for ", gse_accession)))
   }
 
-  # ── Priority 2: Non-coding RNA — check experiment_type only (authoritative) ──
+  # ── Priority 2: Non-coding RNA - check experiment_type only (authoritative) ──
   if (grepl("non-coding rna profiling|ncrna profiling|mirna sequencing|small rna sequencing",
             experiment_type, ignore.case = TRUE)) {
     return(list(type   = "excluded",
@@ -140,11 +140,11 @@ classify_geo_assay <- function(obj, gse_accession = "") {
   }
 
   # ── Priority 4: Unknown / "Other" experiment type ────────────────────────────
-  # Do NOT exclude based on title keywords — titles of multi-assay studies (e.g.
+  # Do NOT exclude based on title keywords - titles of multi-assay studies (e.g.
   # "Hi-C and RNA-seq of X") would cause false exclusions.  Instead, pass through
   # and let the supplementary-file scorer be the gatekeeper.  If no expression
   # matrix is found in the files, import_geo_data returns status="warning".
-  # Only the platform annotation (GPL string) is checked — it's more reliable.
+  # Only the platform annotation (GPL string) is checked - it's more reliable.
   if (grepl("affymetrix|illumina.*bead|agilent", platform_title, ignore.case = TRUE)) {
     expr_mat <- tryCatch(Biobase::exprs(obj), error = function(e) NULL)
     if (!is.null(expr_mat) && nrow(expr_mat) > 0)
@@ -153,7 +153,7 @@ classify_geo_assay <- function(obj, gse_accession = "") {
 
   return(list(type   = "bulk_rnaseq",
               reason = paste0("Experiment type '", experiment_type,
-                              "' — proceeding to file-level classification")))
+                              "' - proceeding to file-level classification")))
 }
 
 
@@ -188,7 +188,7 @@ classify_supp_file <- function(fname) {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 2 — SMART SUPPLEMENTARY FILE SCORER
+# SECTION 2 - SMART SUPPLEMENTARY FILE SCORER
 # ─────────────────────────────────────────────────────────────────────────────
 
 #' Score candidate supplementary files by expression-matrix likelihood
@@ -214,8 +214,8 @@ score_supp_files <- function(file_names) {
       "csv"  = 0.55,
       "xls"  = 0.6,
       "xlsx" = 0.6,
-      "sf"   = 0.7,   # Salmon — handle separately
-      "tar"  = 0.2,   # Archive — needs inspection
+      "sf"   = 0.7,   # Salmon - handle separately
+      "tar"  = 0.2,   # Archive - needs inspection
       "zip"  = 0.2,
       0.1
     )
@@ -253,7 +253,7 @@ score_supp_files <- function(file_names) {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 3 — SWISS ARMY KNIFE FILE PARSER
+# SECTION 3 - SWISS ARMY KNIFE FILE PARSER
 # ─────────────────────────────────────────────────────────────────────────────
 
 #' Unified expression file reader
@@ -309,9 +309,9 @@ parse_expression_file <- function(path, orig_name = NULL, sheet = 1) {
 
     } else if (ext %in% c("sf")) {
 
-      # Salmon quant.sf — return tximport-ready path, not matrix
+      # Salmon quant.sf - return tximport-ready path, not matrix
       return(list(matrix = NULL, type = "salmon_sf", path = actual_path,
-                  warnings = "Salmon .sf file detected — use tximport for gene-level aggregation."))
+                  warnings = "Salmon .sf file detected - use tximport for gene-level aggregation."))
 
     } else {
 
@@ -380,7 +380,7 @@ parse_expression_file <- function(path, orig_name = NULL, sheet = 1) {
   # Fallback: try transposed layout (samples as rows)
   if (length(numeric_cols) < 2 && ncol(df) > nrow(df)) {
     warnings_out <- c(warnings_out,
-      "Matrix appears transposed — attempting automatic transpose.")
+      "Matrix appears transposed - attempting automatic transpose.")
     df <- as.data.frame(t(df), stringsAsFactors = FALSE)
     # Re-assess
     num_fraction  <- sapply(df, function(col) suppressWarnings(
@@ -492,7 +492,7 @@ parse_expression_file <- function(path, orig_name = NULL, sheet = 1) {
       matrix   = NULL,
       type     = "bw_tar",
       warnings = paste0(
-        "⚠️ TAR archive contains only BigWig/BW/BED files — ",
+        "⚠️ TAR archive contains only BigWig/BW/BED files - ",
         "not a bulk RNA-seq expression matrix. Dataset excluded."
       )
     ))
@@ -537,7 +537,7 @@ parse_expression_file <- function(path, orig_name = NULL, sheet = 1) {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 4 — TIDY METADATA EXTRACTOR
+# SECTION 4 - TIDY METADATA EXTRACTOR
 # ─────────────────────────────────────────────────────────────────────────────
 
 #' Extract tidy metadata from a GEO ExpressionSet
@@ -569,7 +569,7 @@ extract_geo_metadata <- function(obj) {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 5 — EXPRESSION–METADATA BRIDGE (FUZZY MATCHING)
+# SECTION 5 - EXPRESSION–METADATA BRIDGE (FUZZY MATCHING)
 # ─────────────────────────────────────────────────────────────────────────────
 
 #' Internal: token-overlap match between expression column names and metadata values
@@ -718,7 +718,7 @@ align_expr_to_meta <- function(expr_mat, meta_df,
 
   # ── 5. No match found ─────────────────────────────────────────────────────
 
-  # ── 6. User-specified column — token-overlap matching ──────────────────────
+  # ── 6. User-specified column - token-overlap matching ──────────────────────
   # Invoked when the user selects a specific metadata column via the Shiny UI.
   # Handles mismatches like expr col "counts.sampA" vs meta value "library: sampA".
   if (!is.null(match_col) && match_col %in% colnames(meta_df)) {
@@ -755,7 +755,7 @@ align_expr_to_meta <- function(expr_mat, meta_df,
 
     warnings_out <- c(warnings_out,
       paste0("Token match via column '", match_col,
-             "' also failed — no shared tokens found."))
+             "' also failed - no shared tokens found."))
   }
 
   warnings_out <- c(warnings_out,
@@ -767,7 +767,7 @@ align_expr_to_meta <- function(expr_mat, meta_df,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 6 — SUPERSERIES HANDLER
+# SECTION 6 - SUPERSERIES HANDLER
 # ─────────────────────────────────────────────────────────────────────────────
 
 #' Detect if a GEO accession is a SuperSeries
@@ -785,7 +785,7 @@ detect_superseries <- function(gse_accession) {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 7 — SALMON (.sf) HANDLER via tximport
+# SECTION 7 - SALMON (.sf) HANDLER via tximport
 # ─────────────────────────────────────────────────────────────────────────────
 
 #' Import Salmon .sf files using tximport
@@ -821,7 +821,7 @@ import_salmon_sf <- function(sf_files, tx2gene = NULL) {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 8 — MAIN ORCHESTRATOR
+# SECTION 8 - MAIN ORCHESTRATOR
 # ─────────────────────────────────────────────────────────────────────────────
 
 #' Full GEO import pipeline
@@ -1041,7 +1041,7 @@ import_geo_data <- function(gse_accession,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 8b — SAMPLEID COLUMN HELPER
+# SECTION 8b - SAMPLEID COLUMN HELPER
 # ─────────────────────────────────────────────────────────────────────────────
 
 #' Ensure metadata has a SampleID first column derived from rownames
@@ -1064,7 +1064,7 @@ import_geo_data <- function(gse_accession,
   other_cols <- setdiff(colnames(meta), "SampleID")
   meta_clean <- meta[, other_cols, drop = FALSE]
 
-  # Use data.frame() — cbind() does not accept stringsAsFactors and would
+  # Use data.frame() - cbind() does not accept stringsAsFactors and would
   # create a spurious column named "stringsAsFactors" instead of ignoring it.
   result <- data.frame(SampleID = rn, meta_clean,
                        check.names = FALSE, stringsAsFactors = FALSE)
@@ -1074,10 +1074,10 @@ import_geo_data <- function(gse_accession,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 9 — SHINY MODULE
+# SECTION 9 - SHINY MODULE
 # ─────────────────────────────────────────────────────────────────────────────
 
-#' GEO Import Module — UI
+#' GEO Import Module - UI
 #'
 #' @param id Shiny module namespace ID.
 #' @export
@@ -1085,6 +1085,19 @@ geoImportUI <- function(id) {
   ns <- shiny::NS(id)
 
   shiny::tagList(
+
+    shiny::div(
+      class = "alert alert-warning", style = "font-size:0.85em; padding:8px 12px;",
+      shiny::icon("flask"),
+      shiny::tags$b(" GEO import is in beta."),
+      " GEO submissions aren't standardised, so some accessions may not parse or",
+      " import correctly. We apologise for any inconvenience.",
+      " If an accession doesn't work as expected, please ",
+      shiny::tags$a(href = "https://github.com/DiseaseTranscriptomicsLab/markeR/issues",
+                    target = "_blank", rel = "noopener noreferrer",
+                    "open an issue on markeR's GitHub page"),
+      " and we'll look into it."
+    ),
 
     shiny::textInput(
       ns("accession"),
@@ -1123,7 +1136,7 @@ geoImportUI <- function(id) {
     # Metadata column configuration
     shiny::uiOutput(ns("meta_col_selector")),
 
-    # Sample alignment panel — mismatch resolution + optional rename
+    # Sample alignment panel - mismatch resolution + optional rename
     shiny::uiOutput(ns("sample_alignment_ui")),
 
     shiny::hr()
@@ -1131,7 +1144,7 @@ geoImportUI <- function(id) {
 }
 
 
-#' GEO Import Module — Server
+#' GEO Import Module - Server
 #'
 #' @param id         Shiny module namespace ID.
 #' @param session    Parent Shiny session (for notifications).
@@ -1143,7 +1156,7 @@ geoImportServer <- function(id, log_fn = NULL) {
 
     ns <- session$ns
 
-    # Internal logging helper — calls log_fn (app-level) if provided.
+    # Internal logging helper - calls log_fn (app-level) if provided.
     # isolate() prevents taking reactive dependencies inside observers.
     glog <- function(msg) {
       if (!is.null(log_fn)) log_fn(msg)
@@ -1186,7 +1199,7 @@ geoImportServer <- function(id, log_fn = NULL) {
           "Invalid accession format. Expected 'GSExxxxxx'.",
           type = "error", duration = 5
         )
-        glog(paste0("Invalid accession entered: '", accession, "' — expected GSExxxxxx format."))
+        glog(paste0("Invalid accession entered: '", accession, "' - expected GSExxxxxx format."))
         return()
       }
 
@@ -1215,7 +1228,7 @@ geoImportServer <- function(id, log_fn = NULL) {
             style = "margin-top:18px; color:#333;"
           ),
           shiny::tags$p(
-            "Downloading metadata & supplementary files — this usually takes 30–90 s.",
+            "Downloading metadata & supplementary files - this usually takes 30–90 s.",
             style = "color:#777; font-size:0.9em; margin-top:6px;"
           )
         )
@@ -1293,7 +1306,7 @@ geoImportServer <- function(id, log_fn = NULL) {
         e <- rv$expr; m <- rv$meta
         if (is.null(e) || is.null(m)) return(NULL)
         n_expr  <- ncol(e)
-        # Check against SampleID column, first column, and rownames — same
+        # Check against SampleID column, first column, and rownames - same
         # logic as align_meta_to_expr in the main app
         id_col   <- if ("SampleID" %in% colnames(m)) "SampleID" else colnames(m)[1]
         meta_ids <- unique(c(as.character(m[[id_col]]), rownames(m)))
@@ -1302,11 +1315,11 @@ geoImportServer <- function(id, log_fn = NULL) {
         msg <- paste0(matched, "/", n_expr, " sample",
                       if (n_expr != 1) "s" else "", " matched")
         if (dropped > 0)
-          msg <- paste0(msg, " — ", dropped, " dropped (no metadata)")
+          msg <- paste0(msg, " - ", dropped, " dropped (no metadata)")
         msg
       }
       match_summary <- .fmt_match()
-      # Log import summary (counts only — no alignment performed yet)
+      # Log import summary (counts only - no alignment performed yet)
       if (!is.null(rv$expr) && !is.null(rv$meta)) {
         glog(paste0("GEO import complete: ",
                     ncol(rv$expr), " expression samples, ",
@@ -1320,7 +1333,7 @@ geoImportServer <- function(id, log_fn = NULL) {
       else match_summary
       if (rv$status == "ok") {
         shiny::showNotification(
-          paste0(accession, " imported — ", import_counts),
+          paste0(accession, " imported - ", import_counts),
           type = "default", duration = 6
         )
       } else if (rv$status == "excluded") {
@@ -1426,8 +1439,8 @@ geoImportServer <- function(id, log_fn = NULL) {
 
       glog(paste0("Platform/object selected: #", idx,
                   if (!is.null(expr) && nrow(expr) > 0)
-                    paste0(" — ", nrow(expr), " genes × ", ncol(expr), " samples")
-                  else " — no expression matrix"))
+                    paste0(" - ", nrow(expr), " genes × ", ncol(expr), " samples")
+                  else " - no expression matrix"))
     })
 
     # ── 4. SuperSeries selector ─────────────────────────────────────────────
@@ -1442,7 +1455,7 @@ geoImportServer <- function(id, log_fn = NULL) {
         shiny::selectInput(
           session$ns("selected_subseries"),
           "Import a sub-series instead:",
-          choices = c("— Use full series —" = "", rv$subseries)
+          choices = c("(Use full series)" = "", rv$subseries)
         )
       )
     })
@@ -1532,7 +1545,7 @@ geoImportServer <- function(id, log_fn = NULL) {
         shiny::selectInput(
           session$ns("selected_supp"),
           "Choose a supplementary file:",
-          choices  = c("— Auto-selected —" = "",
+          choices  = c("(Auto-selected)" = "",
                        stats::setNames(paths, labels)[order(-scores)]),
           selected = ""
         )
@@ -1599,7 +1612,7 @@ geoImportServer <- function(id, log_fn = NULL) {
       rv$expr <- res$candidates[[idx]]
       nm  <- names(res$candidates)[idx]
       m   <- res$candidates[[idx]]
-      glog(paste0("Expression matrix selected: '", nm, "' — ",
+      glog(paste0("Expression matrix selected: '", nm, "' - ",
                   nrow(m), " genes × ", ncol(m), " samples."))
     })
 
@@ -1625,7 +1638,7 @@ geoImportServer <- function(id, log_fn = NULL) {
 
       shiny::tagList(
 
-        # Popover CSS — scrollable body, reasonable max-width
+        # Popover CSS - scrollable body, reasonable max-width
         shiny::tags$style(shiny::HTML(
           ".geo-abs-pop .popover { max-width:420px; }
            .geo-abs-pop .popover-body {
@@ -1654,7 +1667,7 @@ geoImportServer <- function(id, log_fn = NULL) {
               style  = "font-size:0.8em;color:#4f46e5;",
               shiny::icon("arrow-up-right-from-square")
             ),
-            # Abstract hover icon — Bootstrap 5 popover
+            # Abstract hover icon - Bootstrap 5 popover
             shiny::tags$span(
               id                = uid,
               style             = "cursor:pointer;color:#4f46e5;margin-left:auto;",
@@ -1871,7 +1884,7 @@ geoImportServer <- function(id, log_fn = NULL) {
 
       # ── OPTION CARD helper ───────────────────────────────────────────────────
       # Creates a bordered card with a numbered badge, title, subtitle, and body.
-      # NOTE: overflow must NOT be hidden — Bootstrap dropdown menus need to
+      # NOTE: overflow must NOT be hidden - Bootstrap dropdown menus need to
       # escape the card boundaries (they use position:absolute).
       opt_card <- function(num, title, subtitle, body, border_color = "#dee2e6") {
         shiny::tags$div(
@@ -1915,7 +1928,7 @@ geoImportServer <- function(id, log_fn = NULL) {
       }
 
       # ────────────────────────────────────────────────────────────────────────
-      # MODE A: mismatch — show all three options
+      # MODE A: mismatch - show all three options
       # ────────────────────────────────────────────────────────────────────────
       if (rv$match_col_needed) {
         ex_col <- rv$example_expr_col
@@ -1940,18 +1953,18 @@ geoImportServer <- function(id, log_fn = NULL) {
             )
           ),
 
-          # Option 1 — Remove samples
+          # Option 1 - Remove samples
           opt_card(
             "1",
             "Remove samples",
             paste0("Deselect the samples you want to drop. ",
-                   "Expression columns and metadata rows are listed separately — ",
+                   "Expression columns and metadata rows are listed separately - ",
                    "you can remove from one or both independently."),
             remove_samples_ui(),
             border_color = "#f5c6cb"
           ),
 
-          # Option 2 — Token / keyword match
+          # Option 2 - Token / keyword match
           opt_card(
             "2",
             "Match by keyword in a metadata column",
@@ -1974,7 +1987,7 @@ geoImportServer <- function(id, log_fn = NULL) {
             border_color = "#ffc107"
           ),
 
-          # Option 3 — Rename expression columns
+          # Option 3 - Rename expression columns
           opt_card(
             "3",
             "Rename expression columns to match metadata",
@@ -1990,7 +2003,7 @@ geoImportServer <- function(id, log_fn = NULL) {
             )
           ),
 
-          # Option 4 — Set metadata sample IDs
+          # Option 4 - Set metadata sample IDs
           opt_card(
             "4",
             "Assign sample names to metadata rows",
@@ -2008,7 +2021,7 @@ geoImportServer <- function(id, log_fn = NULL) {
         )
 
       # ────────────────────────────────────────────────────────────────────────
-      # MODE B: aligned (or data not fully loaded) — compact edit section
+      # MODE B: aligned (or data not fully loaded) - compact edit section
       # ────────────────────────────────────────────────────────────────────────
       } else {
         shiny::tags$details(
@@ -2159,7 +2172,7 @@ geoImportServer <- function(id, log_fn = NULL) {
         .check_alignment()
         shiny::showNotification(
           if (!rv$match_col_needed) "✅ Columns renamed and aligned."
-          else "⚠️ Columns renamed — alignment still unresolved.",
+          else "⚠️ Columns renamed - alignment still unresolved.",
           type = if (!rv$match_col_needed) "default" else "warning",
           duration = 6
         )
@@ -2216,7 +2229,7 @@ geoImportServer <- function(id, log_fn = NULL) {
         .check_alignment()
         shiny::showNotification(
           if (!rv$match_col_needed) "✅ Sample IDs set and aligned."
-          else "⚠️ Sample IDs set — alignment still unresolved.",
+          else "⚠️ Sample IDs set - alignment still unresolved.",
           type = if (!rv$match_col_needed) "default" else "warning",
           duration = 6
         )

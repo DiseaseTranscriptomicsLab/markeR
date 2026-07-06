@@ -7,33 +7,6 @@
 if (!exists("%||%", mode = "function"))
   `%||%` <- function(a, b) if (!is.null(a)) a else b
 
-# Compute (x0,x1,y0,y1) segment coordinates for drawing a dendrogram.
-# Leaves are placed at integers 1..n in the visual order given by hc$order.
-.hclust_to_segments <- function(hc) {
-  n <- length(hc$order)   # always set; hc$labels can be NULL for unlabelled dists
-  if (n < 2L)
-    return(data.frame(x0 = numeric(), x1 = numeric(), y0 = numeric(), y1 = numeric()))
-  # Map original (1-based) label index → visual position 1..n
-  lpos <- integer(n); lpos[hc$order] <- seq_len(n)
-  node_x <- numeric(n - 1L)
-  node_h <- hc$height
-  x0 <- x1 <- y0 <- y1 <- numeric(3L * (n - 1L))
-  for (i in seq_len(n - 1L)) {
-    l <- hc$merge[i, 1L]; r <- hc$merge[i, 2L]
-    xl <- if (l < 0L) lpos[[-l]] else node_x[[l]]
-    xr <- if (r < 0L) lpos[[-r]] else node_x[[r]]
-    yl <- if (l < 0L) 0 else node_h[[l]]
-    yr <- if (r < 0L) 0 else node_h[[r]]
-    node_x[[i]] <- (xl + xr) / 2L
-    hi <- node_h[[i]]
-    j  <- 3L * (i - 1L)
-    x0[[j+1L]]<-xl; x1[[j+1L]]<-xl; y0[[j+1L]]<-yl; y1[[j+1L]]<-hi  # left arm
-    x0[[j+2L]]<-xl; x1[[j+2L]]<-xr; y0[[j+2L]]<-hi; y1[[j+2L]]<-hi  # crossbar
-    x0[[j+3L]]<-xr; x1[[j+3L]]<-xr; y0[[j+3L]]<-yr; y1[[j+3L]]<-hi  # right arm
-  }
-  data.frame(x0=x0, x1=x1, y0=y0, y1=y1)
-}
-
 .gs_genes <- function(gs_entry) {
   if (is.data.frame(gs_entry)) as.character(gs_entry[[1]]) else as.character(gs_entry)
 }
@@ -152,9 +125,10 @@ if (!exists("%||%", mode = "function"))
   as.integer(min(max_h, base + n * per_item))
 }
 
-# Build OR heatmap from res$data — caps Inf self-comparisons and provides text aesthetic
+# Build OR heatmap from res$data, capping Inf self-comparisons.
 .build_or_heatmap <- function(data, font = 10, title = "Odds Ratio",
-                               cold = "#4173B4", mid = "white", hot = "#B44141") {
+                               cold = "#4173B4", mid = "white", hot = "#B44141",
+                               wrap_width = NULL) {
   df <- data
   finite_or <- df$Score[is.finite(df$Score) & df$Score > 0]
   if (length(finite_or) == 0) finite_or <- 1
@@ -163,25 +137,21 @@ if (!exists("%||%", mode = "function"))
   df$fill_val[!is.finite(df$fill_val)] <- log10(1e-6)
   log_range <- range(df$fill_val, na.rm = TRUE)
   if (diff(log_range) < 1e-9) log_range <- log_range + c(-0.5, 0.5)
-  pval_col <- intersect(c("Pval", "pval", "p_adj", "padj"), colnames(df))
-  df$hover_text <- paste0(
-    "Reference: ", df$Reference_Signature,
-    "\nCompared: ", df$Compared_Signature,
-    "\nOR: ", ifelse(is.infinite(df$Score), "Inf", sprintf("%.2f", df$Score)),
-    if (length(pval_col) > 0) paste0("\np-adj: ", sprintf("%.3e", df[[pval_col[1]]])) else ""
-  )
   zero_in_range <- (log_range[1] < 0 && log_range[2] > 0)
   grad_colors <- if (zero_in_range) c(cold, mid, hot) else c(mid, hot)
   grad_values <- scales::rescale(
     if (zero_in_range) c(log_range[1], 0, log_range[2]) else log_range)
+  wrap_fun <- function(x) if (is.null(wrap_width)) x else
+    vapply(x, wrap_title, character(1), width = wrap_width)
   ggplot2::ggplot(df, ggplot2::aes(x = .data$Reference_Signature,
                                    y = .data$Compared_Signature,
-                                   fill = .data$fill_val,
-                                   text = .data$hover_text)) +
+                                   fill = .data$fill_val)) +
     ggplot2::geom_tile(color = "white") +
     ggplot2::scale_fill_gradientn(colors = grad_colors, values = grad_values,
       limits = log_range, oob = scales::squish, na.value = "grey90",
       breaks = pretty(log_range, n = 5), labels = function(x) sprintf("%.1f", 10^x)) +
+    ggplot2::scale_x_discrete(labels = wrap_fun) +
+    ggplot2::scale_y_discrete(labels = wrap_fun) +
     ggplot2::labs(x = "", y = "Compared Signature", fill = "Odds Ratio", title = title) +
     ggplot2::theme_minimal() +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = font),
@@ -189,24 +159,24 @@ if (!exists("%||%", mode = "function"))
                    legend.text = ggplot2::element_text(size = font),
                    legend.title = ggplot2::element_text(size = font + 1),
                    legend.position = "bottom",
-                   plot.title = ggplot2::element_text(hjust = 0.5)) +
+                   plot.title = ggplot2::element_text(hjust = 0.5, size = font + 3, face = "bold")) +
     ggplot2::guides(fill = ggplot2::guide_colorbar(barwidth = ggplot2::unit(10, "lines"),
                     barheight = ggplot2::unit(0.8, "lines"), title.position = "top"))
 }
 
-# Build Jaccard heatmap with text aesthetic for ggplotly hover
-.build_ji_heatmap <- function(data, font = 10, title = "Jaccard Index") {
+# Build Jaccard heatmap.
+.build_ji_heatmap <- function(data, font = 10, title = "Jaccard Index", wrap_width = NULL) {
   df <- data
-  df$hover_text <- paste0("Signature: ", df$Reference_Signature,
-                          "\nPathway: ", df$Compared_Signature,
-                          "\nJaccard: ", sprintf("%.4f", df$Score))
+  wrap_fun <- function(x) if (is.null(wrap_width)) x else
+    vapply(x, wrap_title, character(1), width = wrap_width)
   ggplot2::ggplot(df, ggplot2::aes(x = .data$Reference_Signature,
                                    y = .data$Compared_Signature,
-                                   fill = .data$Score,
-                                   text = .data$hover_text)) +
+                                   fill = .data$Score)) +
     ggplot2::geom_tile(color = "white") +
     ggplot2::scale_fill_gradientn(colors = c("white", "#4173B4", "#801F4F"),
       limits = c(0, 1), oob = scales::squish, na.value = "grey90") +
+    ggplot2::scale_x_discrete(labels = wrap_fun) +
+    ggplot2::scale_y_discrete(labels = wrap_fun) +
     ggplot2::labs(x = "", y = "", fill = "Jaccard Index", title = title) +
     ggplot2::theme_minimal() +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = font),
@@ -214,9 +184,113 @@ if (!exists("%||%", mode = "function"))
                    legend.text = ggplot2::element_text(size = font),
                    legend.title = ggplot2::element_text(size = font + 1),
                    legend.position = "bottom",
-                   plot.title = ggplot2::element_text(hjust = 0.5)) +
+                   plot.title = ggplot2::element_text(hjust = 0.5, size = font + 3, face = "bold")) +
     ggplot2::guides(fill = ggplot2::guide_colorbar(barwidth = ggplot2::unit(10, "lines"),
                     barheight = ggplot2::unit(0.8, "lines"), title.position = "top"))
+}
+
+# App-only expression heatmap builder. Mirrors the exported ExpressionHeatmap()
+# (kept untouched in R/ExpressionHeatmap.R) but additionally scales the
+# annotation-legend and colour-scale-legend text with `fontsize`, so a single
+# font-size control affects the whole plot rather than just row/column names.
+.build_expr_heatmap <- function(data, metadata = NULL, genes, annotate.by = NULL,
+                                annotation_colors = NULL,
+                                colorlist = list(low = "blue", mid = "white", high = "red"),
+                                cluster_rows = TRUE, cluster_columns = TRUE,
+                                title = NULL, titlesize = 20, fontsize = 10,
+                                scale_position = c("right", "top", "bottom"),
+                                legend_position = c("top", "right", "bottom"),
+                                show_row_names = TRUE, show_column_names = FALSE) {
+  data <- as.data.frame(data)
+  scale_position  <- match.arg(scale_position)
+  legend_position <- match.arg(legend_position)
+
+  if (scale_position == "right") {
+    scale_side <- "right"; scale_direct <- "vertical"
+  } else {
+    scale_side <- scale_position; scale_direct <- "horizontal"
+  }
+  if (legend_position == "top") {
+    annot_side <- "top"; annot_direct <- "horizontal"
+  } else if (legend_position == "bottom") {
+    annot_side <- "bottom"; annot_direct <- "horizontal"
+  } else {
+    annot_side <- "right"; annot_direct <- "vertical"
+  }
+
+  data <- data[rownames(data) %in% genes, , drop = FALSE]
+  if (!is.null(annotate.by) && is.null(metadata))
+    stop("annotate.by is specified but metadata is NULL.")
+  if (!is.null(metadata)) {
+    colnames(metadata)[1] <- "Sample"
+    rownames(metadata) <- metadata$Sample
+    metadata <- metadata[colnames(data), , drop = FALSE]
+  }
+  if (!cluster_columns && !is.null(metadata) && !is.null(annotate.by)) {
+    annotate.by <- annotate.by[annotate.by %in% colnames(metadata)]
+    if (length(annotate.by) > 0) {
+      order_idx <- do.call(order, metadata[, annotate.by, drop = FALSE])
+      data <- data[, order_idx, drop = FALSE]
+      metadata <- metadata[order_idx, , drop = FALSE]
+    }
+  }
+
+  data_scaled <- t(scale(t(data)))
+
+  sample_annotation <- NULL
+  if (!is.null(metadata) && !is.null(annotate.by)) {
+    ann_data <- metadata[, annotate.by, drop = FALSE]
+    ann_colors <- list()
+    for (var in annotate.by) {
+      if (!is.null(annotation_colors) && var %in% names(annotation_colors)) {
+        ann_colors[[var]] <- annotation_colors[[var]]
+      } else {
+        unique_vals <- unique(ann_data[[var]])
+        palette_choices <- c("Set1", "Set2", "Set3", "Paired", "Dark2",
+                             "Set1", "Set2", "Set3", "Paired", "Dark2")
+        n_colors <- length(unique_vals)
+        n_colors <- ifelse(n_colors < 3, 3, min(n_colors, 9))
+        pal <- RColorBrewer::brewer.pal(
+          n_colors,
+          palette_choices[(which(annotate.by == var) - 1) %% length(palette_choices) + 1])
+        pal <- pal[seq_along(unique_vals)]
+        names(pal) <- unique_vals
+        ann_colors[[var]] <- pal
+      }
+    }
+    sample_annotation <- ComplexHeatmap::HeatmapAnnotation(
+      df = ann_data, col = ann_colors,
+      annotation_name_gp = grid::gpar(fontsize = fontsize),
+      annotation_legend_param = list(
+        direction = annot_direct,
+        title_gp  = grid::gpar(fontsize = fontsize + 2),
+        labels_gp = grid::gpar(fontsize = fontsize)
+      ))
+  }
+
+  col_fun <- circlize::colorRamp2(c(-2, 0, 2), unname(colorlist))
+  scale_legend_param <- list(
+    direction = scale_direct,
+    title_gp  = grid::gpar(fontsize = fontsize + 2),
+    labels_gp = grid::gpar(fontsize = fontsize)
+  )
+
+  ht <- ComplexHeatmap::Heatmap(data_scaled,
+    name = "Expression \nZ-score",
+    col = col_fun,
+    cluster_rows = cluster_rows,
+    cluster_columns = cluster_columns,
+    show_row_names = show_row_names,
+    show_column_names = show_column_names,
+    row_names_gp    = grid::gpar(fontsize = fontsize),
+    column_names_gp = grid::gpar(fontsize = fontsize),
+    top_annotation = sample_annotation,
+    column_title = title,
+    column_title_gp = grid::gpar(fontsize = titlesize),
+    heatmap_legend_param = scale_legend_param)
+
+  invisible(list(data = data_scaled, plot = ht,
+                 scale_side = scale_side, annot_side = annot_side))
 }
 
 # Build correlation heatmap at render time with controllable font size.
@@ -224,7 +298,8 @@ if (!exists("%||%", mode = "function"))
 .build_corr_heatmap <- function(corrmat_data, method = "spearman", font = 10,
                                  cold = "#4173B4", mid = "white", hot = "#B44141",
                                  show_row_names = TRUE, show_col_names = TRUE,
-                                 cluster_rows = TRUE, cluster_columns = TRUE) {
+                                 cluster_rows = TRUE, cluster_columns = TRUE,
+                                 titlesize = 13) {
   col_fun <- circlize::colorRamp2(c(-1, 0, 1), c(cold, mid, hot))
   legend_title <- switch(method,
     spearman = "Spearman\nCorr.",
@@ -238,6 +313,7 @@ if (!exists("%||%", mode = "function"))
       name        = legend_title,
       col         = col_fun,
       column_title = title,
+      column_title_gp = grid::gpar(fontsize = titlesize, fontface = "bold"),
       cluster_rows      = cluster_rows,
       cluster_columns   = cluster_columns,
       show_row_names    = show_row_names,
@@ -290,13 +366,12 @@ if (!exists("%||%", mode = "function"))
 #' @importFrom shiny NS radioButtons sliderInput selectInput numericInput
 #'   actionButton uiOutput plotOutput hr h4 h5 p tags div icon checkboxInput
 #' @importFrom shinyWidgets pickerInput pickerOptions
-#' @importFrom plotly plotlyOutput
 #' @importFrom DT DTOutput
 
 geneSetsUI <- function(id) {
   ns <- shiny::NS(id)
 
-  # Custom JS handler for tab visibility — bypasses bslib nav_hide/nav_show
+  # Custom JS handler for tab visibility - bypasses bslib nav_hide/nav_show
   # timing issues by directly manipulating the DOM.
   # Registered at script-load time (no navset-init dependency).
   js_ready_script <- shiny::tags$script(shiny::HTML(sprintf(
@@ -395,7 +470,7 @@ geneSetsUI <- function(id) {
               bslib::tooltip(
                 shiny::icon("circle-question", style = "color:#6c757d; cursor:help;"),
                 shiny::tags$span(
-                  shiny::tags$b("Jaccard index:"), " |A ∩ B| / |A ∪ B| — fraction of shared genes.",
+                  shiny::tags$b("Jaccard index:"), " |A ∩ B| / |A ∪ B| - fraction of shared genes.",
                   " JI = 0: no overlap; JI = 1: identical sets.",
                   shiny::tags$br(),
                   shiny::tags$b("Odds ratio:"), " enrichment of overlap relative to chance.",
@@ -416,9 +491,11 @@ geneSetsUI <- function(id) {
               "Display options"
             ),
             shiny::div(
-              style = "padding:8px 0 4px;",
+              style = "padding:8px 0 4px; display:grid; grid-template-columns:1fr 1fr; gap:10px;",
               shiny::numericInput(ns("pw_fontsize"), "Font size (pt):",
-                                  value = 10, min = 6, max = 20, step = 1)
+                                  value = 6, min = 4, max = 20, step = 1),
+              shiny::numericInput(ns("pw_wraplabels"), "Wrap gene set names (chars):",
+                                  value = 28, min = 8, max = 60, step = 2)
             )
           ),
           shiny::actionButton(ns("run_pairwise"), "Run Pairwise Overlap",
@@ -523,13 +600,9 @@ geneSetsUI <- function(id) {
             shiny::div(
               style = "padding:10px 0 4px; display:grid; grid-template-columns:1fr 1fr; gap:10px;",
               shiny::numericInput(ns("sim_fontsize"), "Font size (pt):",
-                                  value = 9, min = 6, max = 20, step = 1),
-              shiny::div(
-                shiny::tags$label(style = "font-size:0.85em;", "View mode"),
-                shiny::checkboxInput(ns("sim_interactive"), "Interactive (zoom/pan)", value = FALSE),
-                shiny::tags$small(style = "color:#aaa; font-size:0.78em;",
-                  "Interactive is slower but lets you zoom into pathway clusters.")
-              )
+                                  value = 6, min = 4, max = 20, step = 1),
+              shiny::numericInput(ns("sim_wraplabels"), "Wrap gene set names (chars):",
+                                  value = 60, min = 8, max = 60, step = 2)
             )
           ),
 
@@ -582,10 +655,17 @@ geneSetsUI <- function(id) {
                 ),
                 shiny::div(
                   shiny::numericInput(ns("corr_fontsize"), "Font size (pt):",
-                                      value = 10, min = 6, max = 20, step = 1),
-                  shiny::checkboxInput(ns("corr_interactive"), "Interactive (zoom/pan)", value = FALSE),
-                  shiny::tags$small(style = "color:#aaa; font-size:0.78em;",
-                    "Interactive is slower but lets you zoom into co-expression clusters and inspect gene pairs.")
+                                      value = 6, min = 4, max = 20, step = 1),
+                  shiny::conditionalPanel(
+                    condition = sprintf("input['%s'] !== ''", ns("corr_sep")),
+                    bslib::tooltip(
+                      shiny::numericInput(ns("corr_titlesize"), "Panel title size (pt):",
+                                          value = 13, min = 6, max = 24, step = 1),
+                      "Font size of each panel's title when the heatmap is split by",
+                      " \"Separate by\".",
+                      placement = "right"
+                    )
+                  )
                 )
               )
             )
@@ -619,7 +699,7 @@ geneSetsUI <- function(id) {
               shiny::numericInput(ns("cohend_max_genes"), "Number of genes (N):",
                 value = 30, min = 1, max = 500, step = 5, width = "50%"),
               shiny::radioButtons(ns("cohend_gene_sel"), "Criterion:",
-                choices  = c("Top N by Cohen's d" = "top_d", "First N (gene set order)" = "first", "Random N" = "random"),
+                choices  = c("Top N by |Cohen's d| (absolute value)" = "top_d", "First N (gene set order)" = "first", "Random N" = "random"),
                 selected = "top_d", inline = TRUE)
             )
           ),
@@ -694,8 +774,13 @@ geneSetsUI <- function(id) {
                 shiny::selectInput(ns("pca_x_pc"), "X axis:", choices = paste0("PC", 1:10), selected = "PC1"),
                 shiny::selectInput(ns("pca_y_pc"), "Y axis:", choices = paste0("PC", 1:10), selected = "PC2")
               ),
-              shiny::numericInput(ns("pca_fontsize"), "Font size (pt):",
-                                  value = 10, min = 6, max = 20, step = 1)
+              shiny::div(
+                style = "display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;",
+                shiny::numericInput(ns("pca_fontsize"), "Font size (pt):",
+                                    value = 6, min = 4, max = 20, step = 1),
+                shiny::numericInput(ns("pca_pointsize"), "Point size:",
+                                    value = 4, min = 1, max = 10, step = 0.5)
+              )
             )
           ),
           shiny::actionButton(ns("run_pca"), "Plot Gene PCA",
@@ -742,7 +827,7 @@ geneSetsUI <- function(id) {
             shiny::tags$small(style = "color:#6c757d; display:block; margin-bottom:8px;",
               shiny::icon("circle-info"),
               " Top N by AUC ranks by ", shiny::tags$b("effective AUC"),
-              " = max(AUC, 1 − AUC) — captures discriminatory genes in both directions.")
+              " = max(AUC, 1 − AUC) - captures discriminatory genes in both directions.")
           ),
           # ── Separator ────────────────────────────────────────────────────────
           shiny::tags$hr(style = "margin:8px 0;"),
@@ -755,7 +840,7 @@ geneSetsUI <- function(id) {
             shiny::uiOutput(ns("roc_cond_class_ui"))
           ),
           shiny::checkboxInput(ns("roc_invert_auc"),
-            "Invert AUC < 0.5 genes (flip ROC direction)", value = TRUE),
+            "Invert AUC < 0.5 genes (flip ROC direction)", value = FALSE),
           shiny::tags$small(style = "color:#6c757d; display:block; margin:-4px 0 8px;",
             "When checked: genes with raw AUC < 0.5 are flipped so the reported",
             " AUC = 1 − raw. An AUC = 0 becomes 1.0 (perfect in reverse direction)."),
@@ -780,7 +865,7 @@ geneSetsUI <- function(id) {
         shiny::uiOutput(ns("rocauc_plot_ui"))
       ),
 
-      # ---- 7. Expression (violins + heatmap) — last tab ---------------------
+      # ---- 7. Expression (violins + heatmap) - last tab ---------------------
       bslib::nav_panel(
         .tab_title("Expression",
           "Displays expression levels of selected gene set genes across samples (violin plots and heatmap), annotated by a chosen metadata variable. Useful for inspecting individual gene behaviour and validating whether key genes show the expected pattern of change."),
@@ -810,7 +895,9 @@ geneSetsUI <- function(id) {
               style = "padding:8px 0 4px; display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:end;",
               shiny::uiOutput(ns("expr_color_var_ui")),
               shiny::numericInput(ns("expr_fontsize"), "Font size (pt):",
-                                  value = 10, min = 6, max = 20, step = 1)
+                                  value = 10, min = 6, max = 20, step = 1),
+              shiny::numericInput(ns("expr_pointsize"), "Point size:",
+                                  value = 2, min = 0.5, max = 8, step = 0.5)
             ),
             shiny::actionButton(ns("run_expression"), "Plot Violins",
                                 class = "btn-primary btn-sm")
@@ -830,14 +917,13 @@ geneSetsUI <- function(id) {
                 style = "display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:start; margin-bottom:6px;",
                 shiny::div(
                   shiny::checkboxInput(ns("hm_cluster_rows"), "Cluster genes",   value = TRUE),
-                  shiny::checkboxInput(ns("hm_cluster_cols"), "Cluster samples", value = TRUE)
+                  shiny::checkboxInput(ns("hm_cluster_cols"), "Cluster samples", value = TRUE),
+                  shiny::checkboxInput(ns("hm_show_gene_names"),   "Show gene names",   value = TRUE),
+                  shiny::checkboxInput(ns("hm_show_sample_names"), "Show sample names", value = FALSE)
                 ),
                 shiny::numericInput(ns("hm_fontsize"), "Font size (pt):",
                                     value = 10, min = 6, max = 20, step = 1)
               ),
-              shiny::checkboxInput(ns("hm_interactive"), "Interactive view (zoom/pan)", value = FALSE),
-              shiny::tags$small(style = "color:#aaa; font-size:0.78em; display:block; margin:-4px 0 8px;",
-                "Interactive is slower but lets you zoom into gene clusters and hover over samples."),
               shiny::actionButton(ns("run_heatmap"), "Plot Heatmap",
                                   class = "btn-primary btn-sm")
             )
@@ -857,7 +943,6 @@ geneSetsUI <- function(id) {
 
 #' @importFrom shiny moduleServer reactiveVal observeEvent req renderPlot
 #'   renderUI withProgress showNotification isolate outputOptions
-#' @importFrom plotly renderPlotly ggplotly
 #' @importFrom DT renderDT datatable
 #' @importFrom scales rescale squish
 #' @importFrom ComplexHeatmap draw
@@ -897,8 +982,8 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       sel  <- input$selected_gs
       expr <- get_expr()
       if (is.null(gs) || is.null(sel) || !sel %in% names(gs) || is.null(expr)) return(NULL)
-      gs_genes   <- .gs_genes(gs[[sel]])              # raw — preserve case
-      expr_genes <- rownames(expr)                     # raw — preserve case
+      gs_genes   <- .gs_genes(gs[[sel]])              # raw - preserve case
+      expr_genes <- rownames(expr)                     # raw - preserve case
       n_gs      <- length(gs_genes)
       n_overlap <- length(intersect(gs_genes, expr_genes))
       # Also try case-insensitive to distinguish "wrong case" from "truly absent"
@@ -1063,7 +1148,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         # Case mismatch → organism mismatch (mouse Title-case vs human ALL-CAPS)
         shiny::div(class = "alert alert-danger", style = style_base,
           shiny::icon("circle-xmark"), " ",
-          shiny::strong("Gene symbol case mismatch — likely organism mismatch."),
+          shiny::strong("Gene symbol case mismatch - likely organism mismatch."),
           sprintf(" 0 / %d gene(s) match exactly, but %d match after ignoring case.",
                   ov$n_gs, ov$n_overlap_ci),
           " Your gene set and expression matrix appear to use",
@@ -1076,7 +1161,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
           shiny::icon("triangle-exclamation"), " ",
           shiny::strong(sprintf("%d / %d genes (%s)", ov$n_overlap, ov$n_gs, pct_label)),
           " found in the expression matrix.",
-          " Check organism and gene ID type — results may be unreliable.")
+          " Check organism and gene ID type - results may be unreliable.")
 
       } else if (ov$pct < 60) {
         shiny::div(class = "alert alert-info", style = style_base,
@@ -1110,10 +1195,10 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         shiny::div(class = "alert alert-warning",
                    style = "font-size:0.82em; padding:5px 9px; margin-bottom:4px;",
                    shiny::icon("triangle-exclamation"), " ",
-                   shiny::strong(n), " genes — violin plots may be crowded.")
+                   shiny::strong(n), " genes - violin plots may be crowded.")
     })
 
-    # In-tab gene-count warning (Expression tab) — shown when > 20 genes selected
+    # In-tab gene-count warning (Expression tab) - shown when > 20 genes selected
     output$expr_gene_count_warn_ui <- shiny::renderUI({
       n <- length(input$expr_genes)
       if (n > 20)
@@ -1194,7 +1279,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         shiny::div(class = "alert alert-warning",
                    style = "font-size:0.82em; padding:5px 9px; margin-bottom:4px;",
                    shiny::icon("triangle-exclamation"), " ", shiny::strong(n_lev),
-                   " levels — plots may be hard to read.")
+                   " levels - plots may be hard to read.")
     })
 
     # ---- Per-tab: colour variable -------------------------------------------
@@ -1227,7 +1312,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
           style = "font-size:0.80em; padding:5px 8px; margin-top:4px;",
           shiny::icon("triangle-exclamation"), " ",
           shiny::strong(n_total), " genes in your signature(s).",
-          " Jaccard scores will be low by design — keep Min. Jaccard at 0 to see all pathways."
+          " Jaccard scores will be low by design - keep Min. Jaccard at 0 to see all pathways."
         )
       else NULL
     })
@@ -1246,7 +1331,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       }, once = TRUE)
     }, ignoreInit = FALSE)
 
-    # db_species radio — shown ONLY for Mus musculus because that is the only
+    # db_species radio - shown ONLY for Mus musculus because that is the only
     # species for which msigdbr ships a native database (db_species = "MM").
     # Every other non-human species uses ortholog mapping from the HS database.
     output$gs_db_species_ui <- shiny::renderUI({
@@ -1280,13 +1365,13 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         list(
           shiny::tagList(shiny::icon("circle-info", style = "color:#1d4ed8;"),
             " Searching the ", shiny::strong("human MSigDB (HS)"),
-            " — gene symbols matched as-is (case-insensitive).")
+            " - gene symbols matched as-is (case-insensitive).")
         )
       } else if (org == "Mus musculus" && identical(ds, "MM")) {
         list(
           shiny::tagList(shiny::icon("circle-info", style = "color:#15803d;"),
             " Searching the ", shiny::strong("mouse-native MSigDB (MM)"),
-            " — gene sets curated directly in mouse. Collections: MH, M2, M3, M5, M7, M8."),
+            " - gene sets curated directly in mouse. Collections: MH, M2, M3, M5, M7, M8."),
           NULL
         )
       } else if (org == "Mus musculus") {
@@ -1338,7 +1423,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       NULL
     })
 
-    # Dynamic collection picker — rebuilt whenever organism or db_species changes.
+    # Dynamic collection picker - rebuilt whenever organism or db_species changes.
     # Queries msigdbr_collections() for the real available collections so the list
     # is always correct regardless of species or msigdbr version.
     output$gs_collection_ui <- shiny::renderUI({
@@ -1495,7 +1580,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       if (is.null(organism) || !nzchar(organism)) organism <- "Homo sapiens"
       db_species   <- shiny::isolate(effective_db_species())
       # If collection picker is still rendering (NULL), derive the expected default
-      # rather than cancelling with req() — this was causing first-run failures.
+      # rather than cancelling with req() - this was causing first-run failures.
       collection <- shiny::isolate(input$gs_collection)
       if (is.null(collection) || !nzchar(collection)) {
         collection <- if (!is.null(db_species) && db_species == "MM") "MH" else "H"
@@ -1513,7 +1598,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       } else if ((is.null(db_species) || db_species != "MM") && grepl("^M[^a-z]", collection)) {
         collection <- "H"
         shiny::showNotification(
-          paste0("Collection reset to Hallmarks (H) — mouse-native codes (M-prefix) ",
+          paste0("Collection reset to Hallmarks (H) - mouse-native codes (M-prefix) ",
                  "are not valid for ", organism, "."),
           type = "warning", duration = 5)
       }
@@ -1593,11 +1678,14 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         stats::setNames(.pp_palette[seq_along(levs)], levs)
       } else NULL
 
-      n_levels  <- length(unique(as.character(meta[[group_var]])))
-      ncol_opt  <- max(1L, min(5L, as.integer(ceiling(12 / n_levels))))
-      n_genes   <- length(genes_plot)
-      max_lbl   <- max(nchar(unique(as.character(meta[[group_var]]))), na.rm = TRUE)
-      per_row_h <- 200L + ceiling(max_lbl * 4L)
+      n_levels   <- length(unique(as.character(meta[[group_var]])))
+      ncol_opt   <- max(1L, min(5L, as.integer(ceiling(12 / n_levels))))
+      n_genes    <- length(genes_plot)
+      max_lbl    <- max(nchar(unique(as.character(meta[[group_var]]))), na.rm = TRUE)
+      pointsize  <- shiny::isolate(input$expr_pointsize) %||% 2
+      # Taller per-row allowance - violin shapes + jittered points + angled
+      # axis labels need real vertical room to not look squished.
+      per_row_h <- 340L + ceiling(max_lbl * 5L)
 
       shiny::withProgress(message = "Generating violin plots...", value = 0.2, {
         result <- tryCatch({
@@ -1609,11 +1697,13 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
             ColorVariable    = color_var,
             ColorValues      = color_vals,
             ncol             = ncol_opt,
+            pointSize        = pointsize,
             plot             = FALSE)
           shiny::incProgress(0.8)
           list(violin = violin, gs_name = shiny::isolate(input$selected_gs),
                n_genes = n_genes, group_var = group_var,
-               ncol_opt = ncol_opt, color_var = color_var)
+               ncol_opt = ncol_opt, color_var = color_var,
+               n_levels = n_levels)
         }, error = function(e) {
           shiny::showNotification(paste("Violin plots failed:", conditionMessage(e)),
                                   type = "error", duration = 10); NULL
@@ -1621,7 +1711,8 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       })
       if (!is.null(result)) {
         n_rows  <- ceiling(n_genes / ncol_opt)
-        total_h <- min(20000L, max(350L, as.integer(n_rows * per_row_h + 80L)))
+        # +100 (not +80) leaves room for the shared legend now pinned to the top.
+        total_h <- min(20000L, max(420L, as.integer(n_rows * per_row_h + 100L)))
         expr_h(total_h)
       }
       expression_result(result)
@@ -1654,11 +1745,16 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         return()
       }
 
+      show_gene_names   <- shiny::isolate(input$hm_show_gene_names)
+      show_sample_names <- shiny::isolate(input$hm_show_sample_names)
+      if (is.null(show_gene_names))   show_gene_names   <- TRUE
+      if (is.null(show_sample_names)) show_sample_names <- FALSE
+
       shiny::withProgress(message = "Generating expression heatmap...", value = 0.3, {
         result <- tryCatch({
           font_sz <- shiny::isolate(input$hm_fontsize)
           if (is.null(font_sz) || !is.numeric(font_sz)) font_sz <- 10
-          hm <- ExpressionHeatmap(
+          hm <- .build_expr_heatmap(
             data              = expr_d,
             metadata          = meta,
             genes             = genes_plot,
@@ -1667,6 +1763,8 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
             colorlist         = list(low = "#4173B4", mid = "white", high = "#B44141"),
             cluster_rows      = cl_rows,
             cluster_columns   = cl_cols,
+            show_row_names    = show_gene_names,
+            show_column_names = show_sample_names,
             title             = character(0),
             titlesize         = font_sz + 2,
             fontsize          = font_sz
@@ -1720,7 +1818,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       cl_cols <- shiny::isolate(input$corr_cluster_cols); if (is.null(cl_cols)) cl_cols <- TRUE
       shiny::withProgress(message = "Computing correlations...", value = 0.3, {
         result <- tryCatch({
-          # Run CorrelationHeatmap to get the data (corrmat) — store the raw
+          # Run CorrelationHeatmap to get the data (corrmat) - store the raw
           # correlation matrices so font size can be applied at render time.
           res <- CorrelationHeatmap(
             data = expr_d, metadata = meta, genes = genes_plot,
@@ -1746,6 +1844,23 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       }
       corr_result(result)
     })
+
+    # CohenD_IndividualGenes() (exported package function, left untouched)
+    # reports Cohen's d as a magnitude only. The app-only helper below works
+    # out the direction (which side has higher expression) so the effect size
+    # plot/table can show signed values without modifying the core function.
+    .cohend_gene_signs <- function(expr_sub, meta_sub, cond_var, cond_class, genes) {
+      sample_ids <- as.character(meta_sub[[1]])
+      is_pos     <- as.character(meta_sub[[cond_var]]) %in% cond_class
+      pos_ids    <- sample_ids[is_pos]
+      neg_ids    <- sample_ids[!is_pos]
+      log2expr   <- log2(expr_sub[genes, , drop = FALSE])
+      pos_mean   <- rowMeans(log2expr[, colnames(log2expr) %in% pos_ids, drop = FALSE], na.rm = TRUE)
+      neg_mean   <- rowMeans(log2expr[, colnames(log2expr) %in% neg_ids, drop = FALSE], na.rm = TRUE)
+      s <- sign(pos_mean - neg_mean)
+      s[s == 0 | is.na(s)] <- 1
+      stats::setNames(s, genes)
+    }
 
     shiny::observeEvent(input$run_cohend, {
       expr_d <- get_expr(); meta <- get_meta()
@@ -1807,15 +1922,10 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         return()
       }
 
-      # N-based sub-selection for non-top_d modes
-      if (!isTRUE(gene_sel %in% c("top_d", "manual")) &&
-          !is.null(max_g) && max_g > 0 && length(genes_compute) > max_g) {
-        genes_compute <- if (isTRUE(gene_sel == "random"))
-          sample(genes_compute, min(max_g, length(genes_compute)))
-        else
-          genes_compute[seq_len(min(max_g, length(genes_compute)))]
-      }
-
+      # Effect size is always computed for every eligible gene in the set first;
+      # the plot-only subsetting (top |d|, random N, or first N) is applied
+      # afterwards, purely for display, so the full table below the plot can
+      # always show every gene regardless of how the plot itself is filtered.
       shiny::withProgress(message = "Computing effect size...", value = 0.3, {
         result <- tryCatch({
           res <- CohenD_IndividualGenes(
@@ -1824,23 +1934,42 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
             params = list(colors = .pp_palette[1], limits = NULL))
           shiny::incProgress(0.6)
 
-          # Post-filter for "top_d": keep only the N genes with largest |d|.
           d_df <- if (is.list(res) && is.data.frame(res$data)) res$data else NULL
-          if (!is.null(d_df) && "CohensD" %in% colnames(d_df)) {
-            d_valid <- d_df[!is.na(d_df$CohensD), , drop = FALSE]
-            if (isTRUE(gene_sel == "top_d") && !is.null(max_g) && max_g > 0 &&
-                nrow(d_valid) > max_g) {
-              top_genes <- d_valid$Gene[order(abs(d_valid$CohensD), decreasing = TRUE)][seq_len(max_g)]
-              res$data  <- d_valid[d_valid$Gene %in% top_genes, , drop = FALSE]
-            } else {
-              res$data <- d_valid
-            }
+          full_df <- if (!is.null(d_df) && "CohensD" %in% colnames(d_df))
+            d_df[!is.na(d_df$CohensD), , drop = FALSE]
+          else
+            data.frame(Gene = character(0), CohensD = numeric(0))
+          # "Group" is always "All" here (single one-vs-rest comparison, no
+          # group_var), so it carries no information and is dropped.
+          full_df$Group <- NULL
+          # Restore the sign (direction) of the effect, computed locally here
+          # in the app (the core function only reports magnitude).
+          if (nrow(full_df) > 0) {
+            gene_signs <- .cohend_gene_signs(expr_sub, meta_sub, cond_var, cond_class, full_df$Gene)
+            full_df$CohensD <- full_df$CohensD * gene_signs[full_df$Gene]
           }
+          # Rank by |Cohen's d| so the strongest effects (either direction)
+          # come first, but keep the real signed value in the data itself.
+          full_df <- full_df[order(abs(full_df$CohensD), decreasing = TRUE), , drop = FALSE]
+
+          # Subset for the plot only (mode == "manual" always uses the full set)
+          plot_df <- full_df
+          if (!isTRUE(gene_sel == "manual") && !is.null(max_g) && max_g > 0 &&
+              nrow(full_df) > max_g) {
+            plot_genes <- if (isTRUE(gene_sel == "top_d"))
+              full_df$Gene[seq_len(max_g)]
+            else if (isTRUE(gene_sel == "random"))
+              sample(full_df$Gene, max_g)
+            else
+              full_df$Gene[seq_len(max_g)]
+            plot_df <- full_df[full_df$Gene %in% plot_genes, , drop = FALSE]
+          }
+          res$data <- plot_df
 
           shiny::incProgress(0.4)
-          n_shown <- if (is.list(res) && is.data.frame(res$data)) nrow(res$data) else length(genes_compute)
-          list(res = res, n_genes = n_shown, cond_var = cond_var, cond_class = cond_class,
-               gene_sel = gene_sel)
+          list(res = res, full_data = full_df, n_genes = nrow(plot_df),
+               n_genes_total = nrow(full_df),
+               cond_var = cond_var, cond_class = cond_class, gene_sel = gene_sel)
         }, error = function(e) {
           shiny::showNotification(paste("Effect size failed:", conditionMessage(e)),
                                   type = "error", duration = 10); NULL
@@ -1850,7 +1979,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       cohend_result(result)
     })
 
-    # Helper that runs PCA — shared by both auto-run and the button observer
+    # Helper that runs PCA - shared by both auto-run and the button observer
     .run_pca_now <- function(genes_plot, color_var) {
       expr_d <- get_expr(); meta <- get_meta()
       if (is.null(expr_d) || is.null(meta) || length(genes_plot) == 0) return()
@@ -1972,6 +2101,13 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
             roc_params = list(ncol = roc_ncol))
           shiny::incProgress(0.7)
 
+          # Keep a full, unfiltered copy of every gene's AUC for the table below
+          # the plots, before any plot-only subsetting happens. "Group" is
+          # always "All" here (group_var = NULL above), so it carries no
+          # information and is dropped from the table.
+          full_auc <- res$auc_values
+          if (is.data.frame(full_auc)) full_auc$Group <- NULL
+
           # Post-filter for "top_auc": keep only genes with the highest effective AUC.
           # Always rank by pmax(AUC, 1 - AUC) so that genes with AUC near 0 are
           # treated as equally discriminatory as genes with AUC near 1, regardless
@@ -1991,7 +2127,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
             }
           }
 
-          list(res = res, n_genes = n_genes, roc_ncol = roc_ncol,
+          list(res = res, full_auc = full_auc, n_genes = n_genes, roc_ncol = roc_ncol,
                cond_var = cond_var, cond_class = cond_class,
                stable_colors = stable_colors)
         }, error = function(e) {
@@ -2029,21 +2165,22 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       res <- pairwise_result()
       if (is.null(res)) return(NULL)
       shiny::tagList(shiny::h5("Pairwise Gene Set Overlap", style = "margin:12px 0 4px;"),
-                     plotly::plotlyOutput(ns("pairwise_plot"), height = paste0(pw_h(), "px")))
+                     shiny::plotOutput(ns("pairwise_plot"), height = paste0(pw_h(), "px")))
     })
 
-    output$pairwise_plot <- plotly::renderPlotly({
+    output$pairwise_plot <- shiny::renderPlot({
       res  <- pairwise_result(); shiny::req(!is.null(res))
       font <- input$pw_fontsize
+      wrap_w <- input$pw_wraplabels
       metric <- shiny::isolate(input$pw_metric)
-      p <- if (metric == "odds_ratio" && !is.null(res$data))
-             .build_or_heatmap(res$data, font = font, title = "Pairwise Overlap (Odds Ratio)")
-           else if (!is.null(res$data))
-             .build_ji_heatmap(res$data, font = font, title = "Pairwise Overlap (Jaccard Index)")
-           else shiny::req(FALSE)
-      plotly::ggplotly(p, tooltip = "text") |>
-        plotly::layout(hoverlabel = list(bgcolor = "white"), height = pw_h())
-    })
+      if (metric == "odds_ratio" && !is.null(res$data))
+        .build_or_heatmap(res$data, font = font, title = "Pairwise Overlap (Odds Ratio)",
+                          wrap_width = wrap_w)
+      else if (!is.null(res$data))
+        .build_ji_heatmap(res$data, font = font, title = "Pairwise Overlap (Jaccard Index)",
+                          wrap_width = wrap_w)
+      else shiny::req(FALSE)
+    }, height = function() pw_h(), res = 150)
 
     # Table header rendered separately; DTOutput is STATIC in UI so binding
     # always exists in the DOM. outputOptions(suspendWhenHidden=FALSE) ensures
@@ -2060,7 +2197,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         shiny::div(
           style = "margin-bottom:6px; font-size:0.85em; color:#555;",
           shiny::icon("circle-info", style = "color:#0d6efd; margin-right:4px;"),
-          sprintf("Showing %d pairs — metric: %s. No threshold filtering applied.",
+          sprintf("Showing %d pairs - metric: %s. No threshold filtering applied.",
                   n_rows, metric_label)
         )
       )
@@ -2094,49 +2231,28 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
     output$similarity_plot_ui <- shiny::renderUI({
       res <- similarity_result()
       if (is.null(res)) return(NULL)
-      interactive <- isTRUE(input$sim_interactive)
       shiny::tagList(
         shiny::h5("Similarity Heatmap", style = "margin:12px 0 4px;"),
-        if (interactive)
-          plotly::plotlyOutput(ns("similarity_plot"), height = paste0(sim_h(), "px"))
-        else
-          shiny::plotOutput(ns("similarity_plot_static"), width = "100%", height = paste0(sim_h(), "px"))
+        shiny::plotOutput(ns("similarity_plot"), width = "100%", height = paste0(sim_h(), "px"))
       )
     })
 
-    output$similarity_plot <- plotly::renderPlotly({
-      shiny::req(isTRUE(input$sim_interactive))
+    output$similarity_plot <- shiny::renderPlot({
       res  <- similarity_result(); shiny::req(!is.null(res))
       font <- input$sim_fontsize
-      metric <- shiny::isolate(input$gs_metric)
-      org_label <- if (!is.null(res$organism)) res$organism else "Homo sapiens"
-      p <- if (metric == "odds_ratio" && !is.null(res$data))
-             .build_or_heatmap(res$data, font = font,
-               title = paste0("Similarity vs MSigDB (Odds Ratio) — ", org_label))
-           else if (!is.null(res$data))
-             .build_ji_heatmap(res$data, font = font,
-               title = paste0("Similarity vs MSigDB (Jaccard Index) — ", org_label))
-           else shiny::req(FALSE)
-      plotly::ggplotly(p, tooltip = "text") |>
-        plotly::layout(hoverlabel = list(bgcolor = "white"), height = sim_h())
-    })
-
-    output$similarity_plot_static <- shiny::renderPlot({
-      shiny::req(!isTRUE(input$sim_interactive))
-      res  <- similarity_result(); shiny::req(!is.null(res))
-      font <- input$sim_fontsize
+      wrap_w <- input$sim_wraplabels
       metric <- shiny::isolate(input$gs_metric)
       org_label <- if (!is.null(res$organism)) res$organism else "Homo sapiens"
       if (metric == "odds_ratio" && !is.null(res$data))
-        .build_or_heatmap(res$data, font = font,
-          title = paste0("Similarity vs MSigDB (Odds Ratio) — ", org_label))
+        .build_or_heatmap(res$data, font = font, wrap_width = wrap_w,
+          title = paste0("Similarity vs MSigDB (Odds Ratio), ", org_label))
       else if (!is.null(res$data))
-        .build_ji_heatmap(res$data, font = font,
-          title = paste0("Similarity vs MSigDB (Jaccard Index) — ", org_label))
+        .build_ji_heatmap(res$data, font = font, wrap_width = wrap_w,
+          title = paste0("Similarity vs MSigDB (Jaccard Index), ", org_label))
       else shiny::req(FALSE)
-    }, height = function() sim_h())
+    }, height = function() sim_h(), res = 150)
 
-    # Similarity table header — shows every active filter/threshold from the last run
+    # Similarity table header - shows every active filter/threshold from the last run
     output$similarity_table_hdr_ui <- shiny::renderUI({
       res <- similarity_result()
       if (is.null(res) || !is.data.frame(res$data) || nrow(res$data) == 0) return(NULL)
@@ -2197,13 +2313,13 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
           style = "margin-bottom:8px; font-size:0.85em;",
           shiny::icon("circle-info", style = "color:#0d6efd; margin-right:4px;"),
           shiny::tags$span(style = "color:#555; margin-right:6px;",
-            sprintf("%d pathway(s), %d row(s) — run with:", n_pathways, n_pairs)),
+            sprintf("%d pathway(s), %d row(s) - run with:", n_pathways, n_pairs)),
           do.call(shiny::tagList, tags)
         )
       )
     })
 
-    # Similarity table — wrapped in renderUI so the DT widget is fully destroyed
+    # Similarity table - wrapped in renderUI so the DT widget is fully destroyed
     # and recreated each time the result changes. This is the reliable pattern:
     # req() inside renderDT causes a "silent error" that leaves the old DT in
     # place; putting DTOutput inside renderUI forces a fresh DOM binding instead.
@@ -2266,7 +2382,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         shiny::div(
           class = "d-flex align-items-center justify-content-between",
           style = "margin:12px 0 4px;",
-          shiny::h5(paste("Per-gene Violin Plots –", res$gs_name), style = "margin:0;"),
+          shiny::h5(paste("Per-gene Violin Plots:", res$gs_name), style = "margin:0;"),
           shiny::downloadButton(ns("download_violin"), "",
             icon = shiny::icon("download"), class = "btn-sm btn-outline-secondary")
         ),
@@ -2289,7 +2405,8 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         axis.text.y = ggplot2::element_text(size = font),
         axis.title  = ggplot2::element_text(size = font + 1),
         strip.text  = ggplot2::element_text(size = font + 1, face = "bold"),
-        legend.text = ggplot2::element_text(size = font)
+        legend.text = ggplot2::element_text(size = font),
+        legend.position = "top"
       ))
     }
 
@@ -2326,24 +2443,19 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
     output$heatmap_plot_ui <- shiny::renderUI({
       res <- heatmap_result()
       if (is.null(res)) return(NULL)
-      interactive <- isTRUE(input$hm_interactive)
       shiny::tagList(
         shiny::div(
           class = "d-flex align-items-center justify-content-between",
           style = "margin: 12px 0 6px;",
-          shiny::h5(paste("Expression Heatmap —",
+          shiny::h5(paste("Expression Heatmap:",
                           if (nchar(res$gs_name) > 55)
                             paste0(substr(res$gs_name, 1, 52), "…")
                           else res$gs_name),
                     style = "margin:0;", title = res$gs_name),
-          if (!interactive)
-            shiny::downloadButton(ns("download_heatmap"), "Download",
-              icon = shiny::icon("download"), class = "btn-sm btn-outline-secondary")
+          shiny::downloadButton(ns("download_heatmap"), "Download",
+            icon = shiny::icon("download"), class = "btn-sm btn-outline-secondary")
         ),
-        if (interactive)
-          plotly::plotlyOutput(ns("heatmap_plotly"), height = paste0(hm_h(), "px"))
-        else
-          shiny::plotOutput(ns("heatmap_plot"), height = paste0(hm_h(), "px"))
+        shiny::plotOutput(ns("heatmap_plot"), height = paste0(hm_h(), "px"))
       )
     })
 
@@ -2356,171 +2468,6 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         annotation_legend_side = hm$annot_side %||% "top"
       )
     }, height = function() hm_h(), res = 150)
-
-    output$heatmap_plotly <- plotly::renderPlotly({
-      res <- heatmap_result(); shiny::req(!is.null(res), !is.null(res$heatmap))
-      mat <- res$heatmap$data
-      shiny::req(is.matrix(mat) || is.data.frame(mat))
-      mat <- as.matrix(mat)
-      cl_r <- isTRUE(res$cl_rows); cl_c <- isTRUE(res$cl_cols)
-      font_sz <- if (!is.null(input$hm_fontsize)) input$hm_fontsize else 10L
-
-      # Remove non-finite rows before clustering
-      finite_rows <- apply(mat, 1, function(r) all(is.finite(r)))
-      if (!all(finite_rows)) mat <- mat[finite_rows, , drop = FALSE]
-      shiny::req(nrow(mat) > 0)
-
-      # Annotation info stored at compute time
-      has_annot <- !is.null(res$group_var) && !is.null(res$annot_colors) &&
-                   !is.null(res$sample_groups) && length(res$annot_colors) > 0
-
-      # Cluster
-      hc_r <- hc_c <- NULL
-      if (cl_r && nrow(mat) > 1) { hc_r <- hclust(dist(mat));    mat <- mat[hc_r$order, , drop = FALSE] }
-      if (cl_c && ncol(mat) > 1) { hc_c <- hclust(dist(t(mat))); mat <- mat[, hc_c$order, drop = FALSE] }
-      nr <- nrow(mat); nc <- ncol(mat)
-      # Gene-name labels are placed on the RIGHT side of the heatmap panel (side="right" below),
-      # so the row dendrogram panel only needs to accommodate the tree lines, not the labels.
-      rdend_w <- if (!is.null(hc_r)) 0.12 else 0
-      cdend_h <- if (!is.null(hc_c)) 0.14 else 0
-      heat_h  <- 1 - cdend_h   # annotation is embedded inside the heatmap, not a separate panel
-
-      # Prepare annotation colorscale + codes (computed after column re-ordering)
-      ann_codes <- NULL; ann_cscale <- NULL; ann_text <- NULL
-      levs_ann  <- NULL; colors_ann <- NULL
-      if (has_annot) {
-        ann_vec    <- res$sample_groups[colnames(mat)]
-        ann_vec[is.na(ann_vec)] <- "Unknown"
-        levs_ann   <- names(res$annot_colors)
-        colors_ann <- unname(res$annot_colors)
-        n_l  <- length(levs_ann)
-        ann_codes  <- match(ann_vec, levs_ann); ann_codes[is.na(ann_codes)] <- 1L
-        # Solid discrete colorscale: two stops per level
-        ann_cscale <- do.call(c, lapply(seq_along(levs_ann), function(i)
-          list(list((i - 1) / n_l, colors_ann[i]), list(i / n_l, colors_ann[i]))))
-        ann_text   <- matrix(paste0(res$group_var, ": ", ann_vec), nrow = 1L)
-      }
-
-      # y-axis: gene rows at y = 1..nr; annotation row at y = 0 (visually above genes)
-      y_min      <- if (has_annot) -0.5 else 0.5
-      y_tickvals <- if (has_annot) c(0L, seq_len(nr)) else seq_len(nr)
-      y_ticktext <- if (has_annot) c("", rownames(mat)) else rownames(mat)
-
-      # Hover text for main heatmap
-      text_mat <- matrix(
-        paste0("Gene: ", rep(rownames(mat), times = nc),
-               "<br>Sample: ", rep(colnames(mat), each = nr),
-               "<br>Z-score: ", sprintf("%.2f", as.vector(mat))),
-        nrow = nr, ncol = nc)
-
-      # Main heatmap — genes at y = 1..nr
-      # height= set here (not in layout) to avoid the deprecation warning while
-      # still allowing the figure to scale with the number of genes.
-      p_heat <- plotly::plot_ly(
-        height = hm_h(),
-        z = mat, x = seq_len(nc), y = seq_len(nr),
-        type = "heatmap",
-        colorscale = list(c(0,"#4173B4"), c(0.5,"white"), c(1,"#B44141")),
-        zmin = -2, zmax = 2,
-        colorbar = list(title = "Z-score", titleside = "right"),
-        text = text_mat, hovertemplate = "%{text}<extra></extra>",
-        showscale = TRUE
-      ) |> plotly::layout(
-        xaxis = list(tickvals=seq_len(nc), ticktext=colnames(mat),
-                     tickfont=list(size=font_sz), title=""),
-        # side="right" moves gene labels to the right of the heatmap body,
-        # completely away from the row dendrogram panel on the left.
-        yaxis = list(tickvals=y_tickvals, ticktext=y_ticktext,
-                     tickfont=list(size=font_sz), title="", side="right",
-                     autorange=FALSE, range=c(nr + 0.5, y_min)))
-
-      # Overlay annotation as a second heatmap trace at y = 0
-      if (has_annot) {
-        p_heat <- p_heat |> plotly::add_trace(
-          z    = matrix(ann_codes, nrow = 1L), x = seq_len(nc), y = 0,
-          type = "heatmap", colorscale = ann_cscale,
-          zmin = 0.5, zmax = length(levs_ann) + 0.5,
-          showscale = FALSE, text = ann_text,
-          hovertemplate = "%{text}<extra></extra>",
-          inherit = FALSE)
-        # Invisible legend squares for each condition group
-        for (i in seq_along(levs_ann))
-          p_heat <- p_heat |> plotly::add_trace(
-            x=NA_real_, y=NA_real_, type="scatter", mode="markers",
-            marker=list(color=colors_ann[i], size=10, symbol="square"),
-            name=levs_ann[i], showlegend=TRUE, hoverinfo="none",
-            inherit=FALSE)
-      }
-
-      if (is.null(hc_r) && is.null(hc_c))
-        return(p_heat |> plotly::layout(margin=list(l=20, r=160, b=80),
-                                        showlegend=has_annot,
-                                        legend=list(orientation="v", x=1.18, y=0.5)))
-
-      # Dendrogram helpers
-      .seg_trace <- function(segs, swap_xy=FALSE) {
-        xs <- as.vector(rbind(segs$x0, segs$x1, NA_real_))
-        ys <- as.vector(rbind(segs$y0, segs$y1, NA_real_))
-        if (swap_xy) { tmp<-xs; xs<-ys; ys<-tmp }
-        plotly::plot_ly(x=xs, y=ys, type="scatter", mode="lines",
-                        color=I("grey40"), line=list(width=1),
-                        showlegend=FALSE, hoverinfo="skip")
-      }
-      empty_p <- plotly::plot_ly(x=0, y=0, type="scatter", mode="markers",
-        marker=list(color="rgba(0,0,0,0)", size=1), showlegend=FALSE, hoverinfo="none") |>
-        plotly::layout(
-          xaxis=list(showgrid=FALSE, zeroline=FALSE, showticklabels=FALSE, range=c(-1,1)),
-          yaxis=list(showgrid=FALSE, zeroline=FALSE, showticklabels=FALSE, range=c(-1,1)))
-
-      p_rdend <- NULL; p_cdend <- NULL
-      if (!is.null(hc_r))
-        # y-range must match heatmap exactly so gene leaves align correctly
-        # (extends to y_min to cover the annotation row at y = 0 when present)
-        p_rdend <- .seg_trace(.hclust_to_segments(hc_r), swap_xy=TRUE) |> plotly::layout(
-          xaxis=list(autorange="reversed", showgrid=FALSE, zeroline=FALSE, showticklabels=FALSE),
-          yaxis=list(range=c(nr + 0.5, y_min), showgrid=FALSE, zeroline=FALSE, showticklabels=FALSE))
-      if (!is.null(hc_c))
-        p_cdend <- .seg_trace(.hclust_to_segments(hc_c)) |> plotly::layout(
-          xaxis=list(range=c(0.5, nc + 0.5), showgrid=FALSE, zeroline=FALSE, showticklabels=FALSE),
-          yaxis=list(showgrid=FALSE, zeroline=FALSE, showticklabels=FALSE))
-
-      # Subplot grid: rows = [cdend?][heat], cols = [rdend?][heat]
-      # Annotation is now inside p_heat — max 2 rows × 2 cols
-      has_rdend <- !is.null(p_rdend); has_cdend <- !is.null(p_cdend)
-      row_heights <- c(if (has_cdend) cdend_h, heat_h)
-      col_widths  <- c(if (has_rdend) rdend_w, 1 - rdend_w)
-      n_rows <- length(row_heights)
-
-      plot_list <- list()
-      if (has_cdend) plot_list <- c(plot_list, if (has_rdend) list(empty_p, p_cdend) else list(p_cdend))
-      plot_list <- c(plot_list, if (has_rdend) list(p_rdend, p_heat) else list(p_heat))
-
-      sub_args <- list(nrows=n_rows, margin=0, shareX=FALSE, shareY=FALSE)
-      if (length(col_widths) > 1) sub_args$widths  <- col_widths
-      if (n_rows > 1)             sub_args$heights <- row_heights
-      fig <- do.call(plotly::subplot, c(plot_list, sub_args)) |>
-        plotly::layout(margin=list(r=160),
-                       showlegend=has_annot,
-                       legend=list(orientation="v", x=1.18, y=0.5))
-
-      # Link dendrogram axes to the heatmap axes so zoom/pan stays in sync.
-      # Axis numbering follows subplot plot_list order (1-based, left→right, top→bottom).
-      # Layout:
-      #   has_cdend & has_rdend → 2×2: [1=empty, 2=cdend | 3=rdend, 4=heat]
-      #   !has_cdend & has_rdend → 1×2: [1=rdend, 2=heat]
-      #   has_cdend & !has_rdend → 2×1: [1=cdend, 2=heat]  (nrows=2, 1 col)
-      # Use plotly::layout() for deep-merge so existing axis properties are preserved.
-      if (has_rdend && has_cdend) {
-        fig <- fig |>
-          plotly::layout(yaxis3 = list(matches = "y4"),
-                         xaxis2 = list(matches = "x4"))
-      } else if (has_rdend) {
-        fig <- fig |> plotly::layout(yaxis = list(matches = "y2"))
-      } else if (has_cdend) {
-        fig <- fig |> plotly::layout(xaxis = list(matches = "x2"))
-      }
-      fig
-    })
 
     output$download_heatmap <- shiny::downloadHandler(
       filename = function() paste0("expression_heatmap_", Sys.Date(), ".png"),
@@ -2554,26 +2501,21 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       if (n > 50)
         shiny::div(class = "alert alert-warning", style = "font-size:0.82em; padding:5px 9px; margin-bottom:4px;",
           shiny::icon("triangle-exclamation"), " ",
-          sprintf("%d genes selected. Correlation heatmaps with >50 genes can be hard to interpret — consider selecting a subset.", n))
+          sprintf("%d genes selected. Correlation heatmaps with >50 genes can be hard to interpret - consider selecting a subset.", n))
     })
 
     output$corr_plot_ui <- shiny::renderUI({
       res <- corr_result()
       if (is.null(res)) return(NULL)
-      interactive <- isTRUE(input$corr_interactive)
       shiny::tagList(
         shiny::div(
           class = "d-flex align-items-center justify-content-between",
           style = "margin: 12px 0 6px;",
-          shiny::span(shiny::strong("Pairwise Gene Correlation")),
-          if (!interactive)
-            shiny::downloadButton(ns("download_corr"), "Download",
-              icon = shiny::icon("download"), class = "btn-sm btn-outline-secondary")
+          shiny::h5("Pairwise Gene Correlation", style = "margin:0;"),
+          shiny::downloadButton(ns("download_corr"), "Download",
+            icon = shiny::icon("download"), class = "btn-sm btn-outline-secondary")
         ),
-        if (interactive)
-          plotly::plotlyOutput(ns("corr_plotly"), height = paste0(corr_h(), "px"))
-        else
-          shiny::plotOutput(ns("corr_plot"), height = paste0(corr_h(), "px"))
+        shiny::plotOutput(ns("corr_plot"), height = paste0(corr_h(), "px"))
       )
     })
 
@@ -2589,147 +2531,11 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         .build_corr_heatmap(res$corrmat, method = res$method,
                              font = font, show_row_names = show_row, show_col_names = show_col,
                              cluster_rows    = res$cluster_rows    %||% TRUE,
-                             cluster_columns = res$cluster_columns %||% TRUE),
+                             cluster_columns = res$cluster_columns %||% TRUE,
+                             titlesize = input$corr_titlesize %||% 13L),
         error = function(e) shiny::showNotification(
           paste("Correlation plot failed:", e$message), type = "warning", duration = 8))
     }, height = function() corr_h(), res = 150)
-
-    output$corr_plotly <- plotly::renderPlotly({
-      res <- corr_result(); shiny::req(!is.null(res), !is.null(res$corrmat))
-      cl_r <- res$cluster_rows    %||% TRUE
-      cl_c <- res$cluster_columns %||% TRUE
-      font_sz  <- if (!is.null(input$corr_fontsize))       input$corr_fontsize      else 10L
-      show_row <- if (!is.null(input$corr_show_row_names)) input$corr_show_row_names else TRUE
-      show_col <- if (!is.null(input$show_col_names))      input$show_col_names      else TRUE
-      method_lbl <- switch(res$method %||% "spearman",
-        spearman = "Spearman Corr.", pearson = "Pearson Corr.", kendall = "Kendall Corr.", "Correlation")
-
-      # Helper: build one plotly heatmap for a single correlation matrix (no dendrogram)
-      .make_one_corr <- function(mat_i, cond_title = NULL, show_y = TRUE, show_cbar = TRUE) {
-        if (cl_r && nrow(mat_i) > 1) {
-          hc_i <- hclust(dist(mat_i)); mat_i <- mat_i[hc_i$order, hc_i$order, drop = FALSE]
-        }
-        nr_i <- nrow(mat_i); nc_i <- ncol(mat_i)
-        txt_i <- matrix(
-          paste0(rep(rownames(mat_i), times=nc_i), " x ", rep(colnames(mat_i), each=nr_i),
-                 "<br>", method_lbl, ": ", sprintf("%.3f", as.vector(mat_i))),
-          nrow = nr_i, ncol = nc_i)
-        p <- plotly::plot_ly(
-          height = corr_h(),
-          z = mat_i, x = seq_len(nc_i), y = seq_len(nr_i), type = "heatmap",
-          colorscale = list(c(0,"#4173B4"), c(0.5,"white"), c(1,"#B44141")),
-          zmin = -1, zmax = 1,
-          colorbar = list(title = method_lbl), showscale = show_cbar,
-          text = txt_i, hovertemplate = "%{text}<extra></extra>"
-        ) |> plotly::layout(
-          xaxis = list(tickvals=seq_len(nc_i), ticktext=colnames(mat_i),
-                       tickfont=list(size=font_sz), title="", showticklabels=show_col),
-          yaxis = list(tickvals=seq_len(nr_i), ticktext=rownames(mat_i),
-                       tickfont=list(size=font_sz), title="",
-                       autorange="reversed", showticklabels=show_y))
-        if (!is.null(cond_title))
-          p <- p |> plotly::layout(
-            annotations = list(list(text=cond_title, x=0.5, y=1.04,
-              xref="paper", yref="paper", showarrow=FALSE,
-              font=list(size=font_sz+2, color="#333"))))
-        p
-      }
-
-      corrmat_data <- res$corrmat
-
-      # ---- Multiple conditions (separate.by was set) ----
-      if (is.list(corrmat_data) && !is.matrix(corrmat_data) && !is.data.frame(corrmat_data)) {
-        conds <- names(corrmat_data)
-        n_c   <- length(conds)
-        plots <- lapply(seq_along(conds), function(i)
-          .make_one_corr(as.matrix(corrmat_data[[i]]),
-                         cond_title = conds[i],
-                         show_y     = (i == 1),
-                         show_cbar  = (i == n_c)))
-        if (n_c == 1L) return(plots[[1]])
-        do.call(plotly::subplot, c(plots, list(
-          nrows=1L, margin=0.04, shareX=FALSE, shareY=TRUE
-        ))) |> plotly::layout(showlegend=FALSE)
-
-      # ---- Single condition ----
-      } else {
-        mat <- if (is.matrix(corrmat_data) || is.data.frame(corrmat_data))
-                 as.matrix(corrmat_data)
-               else return(NULL)
-
-        # For a symmetric matrix, row and col clustering are identical
-        hc_r_obj <- hc_c_obj <- NULL
-        if (cl_r && nrow(mat) > 1) {
-          hc_r_obj <- hclust(dist(mat)); mat <- mat[hc_r_obj$order, hc_r_obj$order, drop=FALSE]
-        } else if (cl_c && ncol(mat) > 1) {
-          hc_c_obj <- hclust(dist(t(mat))); mat <- mat[, hc_c_obj$order, drop=FALSE]
-        }
-        nr <- nrow(mat); nc <- ncol(mat)
-        hc_for_dend <- hc_r_obj %||% hc_c_obj
-        # Gene labels on the right (side="right") so the row dendrogram panel
-        # only needs to hold tree lines, not labels bleeding into it.
-        rdend_w <- if (!is.null(hc_for_dend)) 0.12 else 0
-        cdend_h <- if (!is.null(hc_for_dend)) 0.14 else 0
-
-        text_mat <- matrix(
-          paste0(rep(rownames(mat), times=nc), " x ", rep(colnames(mat), each=nr),
-                 "<br>", method_lbl, ": ", sprintf("%.3f", as.vector(mat))),
-          nrow = nr, ncol = nc)
-
-        p_heat <- plotly::plot_ly(
-          height = corr_h(),
-          z = mat, x = seq_len(nc), y = seq_len(nr), type = "heatmap",
-          colorscale = list(c(0,"#4173B4"), c(0.5,"white"), c(1,"#B44141")),
-          zmin = -1, zmax = 1,
-          colorbar = list(title = method_lbl),
-          text = text_mat, hovertemplate = "%{text}<extra></extra>", showscale = TRUE
-        ) |> plotly::layout(
-          xaxis = list(tickvals=seq_len(nc), ticktext=colnames(mat),
-                       tickfont=list(size=font_sz), title="", showticklabels=show_col),
-          yaxis = list(tickvals=seq_len(nr), ticktext=rownames(mat),
-                       tickfont=list(size=font_sz), title="", side="right",
-                       autorange="reversed", showticklabels=show_row))
-
-        if (is.null(hc_for_dend))
-          return(p_heat |> plotly::layout(margin=list(l=20, r=160, b=120)))
-
-        .seg_trace <- function(segs, swap_xy=FALSE) {
-          xs <- as.vector(rbind(segs$x0, segs$x1, NA_real_))
-          ys <- as.vector(rbind(segs$y0, segs$y1, NA_real_))
-          if (swap_xy) { tmp<-xs; xs<-ys; ys<-tmp }
-          plotly::plot_ly(x=xs, y=ys, type="scatter", mode="lines",
-                          color=I("grey40"), line=list(width=1),
-                          showlegend=FALSE, hoverinfo="skip")
-        }
-        empty_p <- plotly::plot_ly(x=0,y=0,type="scatter",mode="markers",
-          marker=list(color="rgba(0,0,0,0)",size=1),showlegend=FALSE,hoverinfo="none") |>
-          plotly::layout(
-            xaxis=list(showgrid=FALSE,zeroline=FALSE,showticklabels=FALSE,range=c(-1,1)),
-            yaxis=list(showgrid=FALSE,zeroline=FALSE,showticklabels=FALSE,range=c(-1,1)))
-
-        segs <- .hclust_to_segments(hc_for_dend)
-        p_rdend <- .seg_trace(segs, swap_xy=TRUE) |> plotly::layout(
-          xaxis=list(autorange="reversed",showgrid=FALSE,zeroline=FALSE,showticklabels=FALSE),
-          yaxis=list(range=c(nr+0.5,0.5),showgrid=FALSE,zeroline=FALSE,showticklabels=FALSE))
-        p_cdend <- .seg_trace(segs) |> plotly::layout(
-          xaxis=list(range=c(0.5,nc+0.5),showgrid=FALSE,zeroline=FALSE,showticklabels=FALSE),
-          yaxis=list(showgrid=FALSE,zeroline=FALSE,showticklabels=FALSE))
-
-        fig <- plotly::subplot(empty_p, p_cdend, p_rdend, p_heat,
-                        nrows=2L, margin=0,
-                        widths=c(rdend_w, 1-rdend_w),
-                        heights=c(cdend_h, 1-cdend_h),
-                        shareX=FALSE, shareY=FALSE) |>
-          plotly::layout(margin=list(r=160), showlegend=FALSE)
-
-        # Link dendrogram axes to heatmap axes for synchronised zoom/pan.
-        # 2×2 layout: 1=empty, 2=cdend, 3=rdend, 4=heat
-        # Use plotly::layout() deep-merge so existing axis properties are preserved.
-        fig |>
-          plotly::layout(yaxis3 = list(matches = "y4"),
-                         xaxis2 = list(matches = "x4"))
-      }
-    })
 
     output$download_corr <- shiny::downloadHandler(
       filename = function() paste0("correlation_heatmap_", Sys.Date(), ".png"),
@@ -2746,7 +2552,8 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         .build_corr_heatmap(res$corrmat, method = res$method,
                              font = font, show_row_names = show_row, show_col_names = show_col,
                              cluster_rows    = res$cluster_rows    %||% TRUE,
-                             cluster_columns = res$cluster_columns %||% TRUE)
+                             cluster_columns = res$cluster_columns %||% TRUE,
+                             titlesize = input$corr_titlesize %||% 13L)
         grDevices::dev.off()
       }
     )
@@ -2765,13 +2572,43 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
     output$cohend_plot_ui <- shiny::renderUI({
       res <- cohend_result()
       if (is.null(res)) return(NULL)
+      n_plot  <- res$n_genes %||% 0L
+      n_total <- res$n_genes_total %||% n_plot
       shiny::tagList(
-        shiny::h5(paste0("Effect Size (Cohen's d) per Gene — ", res$cond_class,
+        shiny::h5(paste0("Effect Size (Cohen's d) per Gene: ", res$cond_class,
                          " vs rest (", res$cond_var, ")"), style = "margin:12px 0 4px;"),
-        plotly::plotlyOutput(ns("cohend_plot"), height = paste0(cohend_h(), "px")))
+        shiny::plotOutput(ns("cohend_plot"), height = paste0(cohend_h(), "px")),
+        shiny::hr(),
+        shiny::h5("Effect Size for All Genes in the Set", style = "margin:12px 0 4px;"),
+        shiny::div(
+          class = "text-muted", style = "font-size:0.82em; margin-bottom:6px;",
+          shiny::icon("circle-info"),
+          if (n_total > n_plot)
+            sprintf(paste0(" Showing all %d genes in the set with their real (signed) Cohen's d.",
+                          " The plot above is filtered to the top %d gene(s) by |Cohen's d|",
+                          " (absolute value); this table is not filtered."),
+                    n_total, n_plot)
+          else
+            sprintf(" Showing all %d genes in the set (same as the plot above), with their real (signed) Cohen's d.", n_total)
+        ),
+        DT::DTOutput(ns("cohend_table"))
+      )
     })
 
-    output$cohend_plot <- plotly::renderPlotly({
+    output$cohend_table <- DT::renderDT({
+      res <- cohend_result(); shiny::req(!is.null(res), !is.null(res$full_data))
+      df <- res$full_data
+      shiny::req(is.data.frame(df), nrow(df) > 0)
+      df$CohensD <- round(df$CohensD, 4)
+      DT::datatable(
+        df, rownames = FALSE, filter = "top", extensions = "Buttons",
+        options = list(pageLength = 15, dom = "Bfrtip",
+                      buttons = c("csv", "excel"), scrollX = TRUE,
+                      order = list(list(1, "desc")))
+      )
+    })
+
+    output$cohend_plot <- shiny::renderPlot({
       res  <- cohend_result(); shiny::req(!is.null(res))
       font <- if (!is.null(input$cohend_fontsize)) input$cohend_fontsize else 10L
       df   <- if (is.list(res$res) && is.data.frame(res$res$data)) res$res$data else NULL
@@ -2780,25 +2617,16 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       df <- df[order(df$CohensD, decreasing = FALSE), , drop = FALSE]
       df$Gene <- factor(df$Gene, levels = df$Gene)
       col_vals <- stats::setNames(rep_len(.pp_palette, nrow(df)), as.character(df$Gene))
-      plotly::plot_ly(
-        data        = df,
-        x           = ~CohensD,
-        y           = ~Gene,
-        type        = "bar",
-        orientation = "h",
-        marker      = list(color = col_vals[as.character(df$Gene)]),
-        text        = ~paste0("Gene: ", Gene, "<br>Cohen's d: ", sprintf("%.3f", CohensD)),
-        hoverinfo   = "text"
-      ) |>
-        plotly::layout(
-          xaxis     = list(title = list(text = "Effect size (Cohen's d)", font = list(size = font + 1)),
-                           tickfont = list(size = font)),
-          yaxis     = list(title = "", tickfont = list(size = font), automargin = TRUE),
-          showlegend = FALSE,
-          margin    = list(l = 10),
-          height    = cohend_h()
-        )
-    })
+
+      ggplot2::ggplot(df, ggplot2::aes(x = .data$CohensD, y = .data$Gene, fill = .data$Gene)) +
+        ggplot2::geom_col() +
+        ggplot2::scale_fill_manual(values = col_vals, guide = "none") +
+        ggplot2::labs(x = "Effect size (Cohen's d)", y = "") +
+        ggplot2::theme_bw() +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(size = font),
+                       axis.text.y = ggplot2::element_text(size = font),
+                       axis.title.x = ggplot2::element_text(size = font + 1))
+    }, height = function() cohend_h(), res = 150)
 
     # ---- Gene PCA -----------------------------------------------------------
 
@@ -2824,7 +2652,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
           # Left: scree plot
           shiny::div(
             shiny::h5("Variance Explained", style = "margin:0 0 4px;"),
-            plotly::plotlyOutput(ns("pca_scree"), height = paste0(pca_h(), "px"))
+            shiny::plotOutput(ns("pca_scree"), height = paste0(pca_h(), "px"))
           ),
           # Right: scatter
           shiny::div(
@@ -2832,7 +2660,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
               shiny::uiOutput(ns("pca_scatter_title_ui"), inline = TRUE),
               style = "margin:0 0 4px;"
             ),
-            plotly::plotlyOutput(ns("pca_plot"), height = paste0(pca_h(), "px"))
+            shiny::plotOutput(ns("pca_plot"), height = paste0(pca_h(), "px"))
           )
         )
       )
@@ -2841,40 +2669,39 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
     output$pca_scatter_title_ui <- shiny::renderUI({
       x_pc <- input$pca_x_pc %||% "PC1"
       y_pc <- input$pca_y_pc %||% "PC2"
-      shiny::span(paste("Gene PCA —", x_pc, "vs", y_pc))
+      shiny::span(paste("Gene PCA:", x_pc, "vs", y_pc))
     })
 
-    output$pca_scree <- plotly::renderPlotly({
+    output$pca_scree <- shiny::renderPlot({
       res <- pca_result(); shiny::req(!is.null(res))
+      font    <- if (!is.null(input$pca_fontsize)) input$pca_fontsize else 6L
       x_pc    <- input$pca_x_pc %||% "PC1"
       y_pc    <- input$pca_y_pc %||% "PC2"
       var_exp <- res$var_exp
       n_show  <- min(length(var_exp), 10L)
       active_pcs <- c(x_pc, y_pc)
-      bar_colors <- ifelse(paste0("PC", seq_len(n_show)) %in% active_pcs,
-                           "#EBB43E", "#d1d5db")
+      pc_levels <- paste0("PC", seq_len(n_show))
       df_s <- data.frame(
-        PC  = factor(paste0("PC", seq_len(n_show)), levels = paste0("PC", seq_len(n_show))),
+        PC  = factor(pc_levels, levels = pc_levels),
         Var = var_exp[seq_len(n_show)]
       )
-      plotly::plot_ly(df_s) |>
-        plotly::add_bars(x = ~PC, y = ~Var, name = "Variance (%)",
-                         marker = list(color = bar_colors),
-                         hovertemplate = "%{x}: %{y:.1f}%<extra></extra>") |>
-        plotly::layout(
-          xaxis      = list(title = "PC", tickfont = list(size = 10)),
-          yaxis      = list(title = "Variance (%)"),
-          showlegend = FALSE,
-          height     = pca_h(),
-          margin     = list(t = 40, b = 60),
-          title      = list(text = "<span style='font-size:10px;color:grey'>Highlighted = active PCs</span>",
-                            x = 0.5, xanchor = "center")
-        )
-    })
+      df_s$Active <- df_s$PC %in% active_pcs
 
-    output$pca_plot <- plotly::renderPlotly({
+      ggplot2::ggplot(df_s, ggplot2::aes(x = .data$PC, y = .data$Var, fill = .data$Active)) +
+        ggplot2::geom_col() +
+        ggplot2::scale_fill_manual(values = c(`TRUE` = "#EBB43E", `FALSE` = "#d1d5db"), guide = "none") +
+        ggplot2::labs(x = "PC", y = "Variance (%)",
+                      title = "Highlighted = active PCs") +
+        ggplot2::theme_bw() +
+        ggplot2::theme(axis.text  = ggplot2::element_text(size = font),
+                       axis.title = ggplot2::element_text(size = font + 1),
+                       plot.title = ggplot2::element_text(hjust = 0.5, size = font + 1, color = "grey40"))
+    }, height = function() pca_h(), res = 150)
+
+    output$pca_plot <- shiny::renderPlot({
       res       <- pca_result(); shiny::req(!is.null(res))
-      font      <- if (!is.null(input$pca_fontsize)) input$pca_fontsize else 10L
+      font      <- if (!is.null(input$pca_fontsize)) input$pca_fontsize else 6L
+      ptsize    <- if (!is.null(input$pca_pointsize)) input$pca_pointsize else 4L
       pca_df    <- res$pca_df
       var_exp   <- res$var_exp
       color_var <- res$color_var
@@ -2887,9 +2714,6 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       x_lab <- sprintf("%s (%.1f%%)", x_pc, var_exp[x_idx])
       y_lab <- sprintf("%s (%.1f%%)", y_pc, var_exp[y_idx])
 
-      sample_lbl <- if ("Sample" %in% colnames(pca_df)) as.character(pca_df$Sample) else
-                      as.character(seq_len(nrow(pca_df)))
-
       pca_df$.x <- pca_df[[x_pc]]
       pca_df$.y <- pca_df[[y_pc]]
 
@@ -2897,22 +2721,17 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         levs       <- unique(as.character(pca_df[[color_var]]))
         color_vals <- stats::setNames(rep_len(.pp_palette, length(levs)), levs)
         pca_df[[color_var]] <- factor(pca_df[[color_var]], levels = levs)
-        hover_text <- paste0("Sample: ", sample_lbl,
-                             "<br>", color_var, ": ", as.character(pca_df[[color_var]]))
         p <- ggplot2::ggplot(pca_df,
-               ggplot2::aes(x = .data$.x, y = .data$.y,
-                            fill = .data[[color_var]], text = hover_text)) +
-          ggplot2::geom_point(size = 4, alpha = 0.8, shape = 21, color = "black") +
+               ggplot2::aes(x = .data$.x, y = .data$.y, fill = .data[[color_var]])) +
+          ggplot2::geom_point(size = ptsize, alpha = 0.8, shape = 21, color = "black") +
           ggplot2::scale_fill_manual(values = color_vals, name = color_var)
       } else {
-        p <- ggplot2::ggplot(pca_df,
-               ggplot2::aes(x = .data$.x, y = .data$.y,
-                            text = paste0("Sample: ", sample_lbl))) +
-          ggplot2::geom_point(size = 4, alpha = 0.8, shape = 21,
+        p <- ggplot2::ggplot(pca_df, ggplot2::aes(x = .data$.x, y = .data$.y)) +
+          ggplot2::geom_point(size = ptsize, alpha = 0.8, shape = 21,
                               color = "black", fill = .pp_palette[1])
       }
 
-      p <- p +
+      p +
         ggplot2::labs(x = x_lab, y = y_lab) +
         ggplot2::geom_vline(xintercept = 0, linetype = "dotted", color = "grey60") +
         ggplot2::geom_hline(yintercept = 0, linetype = "dotted", color = "grey60") +
@@ -2921,10 +2740,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
                        axis.title    = ggplot2::element_text(size = font + 1),
                        legend.text   = ggplot2::element_text(size = font),
                        legend.position = "bottom")
-
-      plotly::ggplotly(p, tooltip = "text") |>
-        plotly::layout(height = pca_h(), legend = list(orientation = "h"))
-    })
+    }, height = function() pca_h(), res = 150)
 
     # ---- ROC / AUC ----------------------------------------------------------
 
@@ -2945,7 +2761,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         shiny::div(
           class = "d-flex align-items-center justify-content-between",
           style = "margin: 12px 0 6px;",
-          shiny::h5(paste0("ROC Curves — ", res$cond_class, " vs rest (", res$cond_var, ")"),
+          shiny::h5(paste0("ROC Curves: ", res$cond_class, " vs rest (", res$cond_var, ")"),
                     style = "margin:0;"),
           shiny::downloadButton(ns("download_roc"), "Download",
             icon = shiny::icon("download"), class = "btn-sm btn-outline-secondary")
@@ -2982,7 +2798,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         ggplot2::geom_abline(linetype = "dashed", color = "grey70") +
         ggplot2::labs(x = "False Positive Rate (1 - Specificity)",
                       y = "True Positive Rate (Sensitivity)",
-                      title = paste0("ROC Curves — ", res$cond_class, " vs rest")) +
+                      title = paste0("ROC Curves - ", res$cond_class, " vs rest")) +
         ggplot2::theme_minimal() +
         ggplot2::theme(legend.position = "none",
                        strip.text  = ggplot2::element_text(size = font, face = "bold"),
@@ -3013,12 +2829,34 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
       res <- rocauc_result()
       if (is.null(res)) return(NULL)
       shiny::tagList(
-        shiny::h5(paste0("AUC per Gene — ", res$cond_class,
+        shiny::h5(paste0("AUC per Gene: ", res$cond_class,
                          " vs rest (", res$cond_var, ")"), style = "margin:20px 0 4px;"),
-        plotly::plotlyOutput(ns("rocauc_plot"), height = paste0(rocauc_h(), "px")))
+        shiny::plotOutput(ns("rocauc_plot"), height = paste0(rocauc_h(), "px")),
+        shiny::hr(),
+        shiny::h5("AUC for All Genes in the Set", style = "margin:12px 0 4px;"),
+        shiny::div(
+          class = "text-muted", style = "font-size:0.82em; margin-bottom:6px;",
+          shiny::icon("circle-info"),
+          " Shows every gene in the set, independent of any top-N/random filtering",
+          " applied to the plots above."
+        ),
+        DT::DTOutput(ns("rocauc_table"))
+      )
     })
 
-    output$rocauc_plot <- plotly::renderPlotly({
+    output$rocauc_table <- DT::renderDT({
+      res <- rocauc_result(); shiny::req(!is.null(res))
+      auc_df <- res$full_auc
+      shiny::req(is.data.frame(auc_df), nrow(auc_df) > 0)
+      auc_df$AUC <- round(auc_df$AUC, 4)
+      DT::datatable(
+        auc_df, rownames = FALSE, filter = "top", extensions = "Buttons",
+        options = list(pageLength = 15, dom = "Bfrtip",
+                      buttons = c("csv", "excel"), scrollX = TRUE)
+      )
+    })
+
+    output$rocauc_plot <- shiny::renderPlot({
       res  <- rocauc_result(); shiny::req(!is.null(res))
       font <- input$roc_fontsize
       raw  <- res$res
@@ -3027,16 +2865,13 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
 
       genes_ord   <- auc_df$Gene[order(auc_df$AUC)]
       auc_df$Gene <- factor(auc_df$Gene, levels = genes_ord)
-      # Reuse the stable colour map from compute time — same colours as ROC curves.
+      # Reuse the stable colour map from compute time, same colours as ROC curves.
       color_vals <- res$stable_colors
       if (is.null(color_vals))
         color_vals <- stats::setNames(rep_len(.pp_palette, length(genes_ord)), genes_ord)
-      auc_df$hover <- paste0(as.character(auc_df$Gene),
-                              "<br>AUC: ", sprintf("%.3f", auc_df$AUC))
 
-      p <- ggplot2::ggplot(auc_df,
-             ggplot2::aes(x = .data$AUC, y = .data$Gene,
-                          fill = .data$Gene, text = .data$hover)) +
+      ggplot2::ggplot(auc_df,
+             ggplot2::aes(x = .data$AUC, y = .data$Gene, fill = .data$Gene)) +
         ggplot2::geom_col() +
         ggplot2::scale_fill_manual(values = color_vals) +
         ggplot2::geom_vline(xintercept = 0.5, linetype = "dashed", color = "grey50",
@@ -3047,15 +2882,13 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
         ggplot2::coord_cartesian(
           xlim = c(if (isTRUE(input$roc_invert_auc)) 0.5 else -0.03, 1)) +
         ggplot2::labs(x = "AUC", y = "Gene",
-                      title = paste0("AUC per Gene — ", res$cond_class, " vs rest")) +
+                      title = paste0("AUC per gene: ", res$cond_class, " vs rest")) +
         ggplot2::theme_minimal() +
         ggplot2::theme(legend.position = "none",
                        axis.text  = ggplot2::element_text(size = font),
                        axis.title = ggplot2::element_text(size = font + 1),
                        plot.title = ggplot2::element_text(hjust = 0.5))
-
-      plotly::ggplotly(p, tooltip = "text") |> plotly::layout(height = rocauc_h())
-    })
+    }, height = function() rocauc_h(), res = 150)
 
   })
 }

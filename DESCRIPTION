@@ -58,7 +58,6 @@ Imports:
     base64enc,
     grDevices,
     jsonlite,
-    plotly,
     R.utils,
     readxl,
     Biobase,

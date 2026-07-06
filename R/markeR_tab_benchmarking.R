@@ -124,10 +124,19 @@ benchmarkingUI <- function(id) {
       shiny::div(
         style = "padding-bottom:6px;",
         shiny::h4("Benchmarking Mode", style = "font-weight:700; color:#1E497B; margin-bottom:4px;"),
-        shiny::p(
-          "Evaluate gene set discriminatory power using score distributions,",
-          " ROC/AUC curves, GSEA enrichment, and null-model FPR simulations.",
-          style = "color:#6c757d; font-size:0.85em;"
+        shiny::div(
+          style = "color:#6c757d; font-size:0.85em; line-height:1.5;",
+          shiny::tags$b("Score Analysis:"),
+          " computes per-sample gene set scores (log-median, ranking, ssGSEA) and",
+          " tests how well they separate groups of a chosen metadata variable, via",
+          " score distributions, ROC/AUC classification, a combined Cohen's d/f",
+          " summary across all three methods, and a null-distribution FPR check.",
+          shiny::tags$br(), shiny::tags$br(),
+          shiny::tags$b("Enrichment Analysis (GSEA):"),
+          " uses limma linear models to rank genes per contrast, then fgsea tests",
+          " whether each gene set is coordinately shifted towards the top or bottom",
+          " of that ranking, reporting a Normalised Enrichment Score (NES) per",
+          " gene set × contrast."
         ),
         shiny::hr()
       ),
@@ -265,9 +274,9 @@ benchmarkingUI <- function(id) {
                       placement = "right"
                     ),
                     shiny::numericInput(ns("score_titlesize"), "Title size (pt):",
-                                        value = 16, min = 8, max = 30, step = 1),
+                                        value = 8, min = 6, max = 30, step = 1),
                     shiny::numericInput(ns("score_labsize"), "Label size (pt):",
-                                        value = 12, min = 8, max = 26, step = 1)
+                                        value = 8, min = 6, max = 26, step = 1)
                   )
                 )
               ),
@@ -321,7 +330,21 @@ benchmarkingUI <- function(id) {
                       placement = "right"
                     ),
                     shiny::numericInput(ns("roc_titlesize"), "Title size (pt):",
-                                        value = 11, min = 6, max = 20, step = 1)
+                                        value = 8, min = 6, max = 20, step = 1),
+                    shiny::numericInput(ns("roc_labsize"), "Label size (pt):",
+                                        value = 8, min = 6, max = 20, step = 1)
+                  ),
+                  bslib::tooltip(
+                    shiny::checkboxInput(ns("roc_restore_direction"),
+                      "Ignore direction (fold AUC to >= 0.5)",
+                      value = FALSE),
+                    "Off by default: shows the ROC curves and AUC values exactly as computed,",
+                    " which preserves directionality - a curve can dip below the diagonal",
+                    " (AUC < 0.5), meaning the score runs opposite to the group comparison.",
+                    " When checked, direction is discarded: any AUC below 0.5 is displayed",
+                    " as 1 - AUC instead, so it only reflects separation strength, not direction",
+                    " (the curve itself is unchanged either way).",
+                    placement = "right"
                   )
                 )
               ),
@@ -363,6 +386,11 @@ benchmarkingUI <- function(id) {
                 shiny::div(
                   style = "padding:8px 0 4px;",
                   shiny::div(
+                    style = "font-size:0.78em; color:#888; margin-bottom:6px;",
+                    "All the font-size settings below apply instantly on change,",
+                    " no need to re-run."
+                  ),
+                  shiny::div(
                     style = "display:grid; grid-template-columns:1fr 1fr; gap:8px;",
                     bslib::tooltip(
                       shiny::numericInput(ns("all_width_title"), "Title wrap (chars):",
@@ -378,16 +406,36 @@ benchmarkingUI <- function(id) {
                       placement = "right"
                     ),
                     bslib::tooltip(
-                      shiny::numericInput(ns("all_heatmap_textsize"), "Heatmap cell text size:",
-                                          value = 3, min = 1, max = 8, step = 0.5),
+                      shiny::numericInput(ns("all_heatmap_textsize"), "Heatmap cell text size (mm):",
+                                          value = 2, min = 1, max = 8, step = 0.5),
                       "Font size of the Cohen's d/f and p-value labels drawn inside each",
-                      " heatmap cell.",
+                      " heatmap cell. In millimetres, not points, because that's the unit",
+                      " ggplot2's geom_text() uses (roughly pt ÷ 2.85).",
                       placement = "right"
                     ),
                     bslib::tooltip(
                       shiny::numericInput(ns("all_heatmap_titlesize"), "Heatmap title size (pt):",
-                                          value = 9, min = 4, max = 20, step = 1),
+                                          value = 8, min = 4, max = 20, step = 1),
                       "Font size of each gene set's panel title in the Cohen's d/f heatmap.",
+                      placement = "right"
+                    ),
+                    bslib::tooltip(
+                      shiny::numericInput(ns("all_heatmap_labsize"), "Heatmap axis label size (pt):",
+                                          value = 8, min = 4, max = 20, step = 1),
+                      "Font size of the contrast labels on the heatmap's axes.",
+                      " Defaults to the same size as the heatmap title above.",
+                      placement = "right"
+                    ),
+                    bslib::tooltip(
+                      shiny::numericInput(ns("all_volcano_titlesize"), "Volcano title size (pt):",
+                                          value = 8, min = 4, max = 20, step = 1),
+                      "Font size of each contrast's facet title in the Effect Size Volcano plot.",
+                      placement = "right"
+                    ),
+                    bslib::tooltip(
+                      shiny::numericInput(ns("all_volcano_labsize"), "Volcano label size (pt):",
+                                          value = 8, min = 4, max = 20, step = 1),
+                      "Font size of the axis/legend text in the Effect Size Volcano plot.",
                       placement = "right"
                     )
                   )
@@ -453,6 +501,24 @@ benchmarkingUI <- function(id) {
             ),
             shiny::uiOutput(ns("fpr_status_ui")),
             shiny::uiOutput(ns("fpr_plot_ui"))
+          ),
+
+          # -- E: Score Results Table -------------------------------------------
+          bslib::nav_panel(
+            "Score Results Table",
+            .bm_collapsible_settings(
+              shiny::tags$label("Scoring method(s):", style = "font-size:0.85em; font-weight:600;"),
+              shiny::radioButtons(ns("scores_table_method"), label = NULL,
+                choices  = c("Log-median" = "logmedian",
+                             "Ranking"    = "ranking",
+                             "ssGSEA"     = "ssGSEA",
+                             "All methods" = "all"),
+                selected = "all", inline = TRUE),
+              shiny::actionButton(ns("run_scores_table"), "Compute Score Results Table",
+                                  class = "btn-primary btn-sm", width = "100%")
+            ),
+            shiny::uiOutput(ns("scores_table_status_ui")),
+            shiny::uiOutput(ns("scores_table_ui"))
           )
         )
       ),
@@ -572,43 +638,6 @@ benchmarkingUI <- function(id) {
             )
           ),
 
-          # ---- Display options (collapsed) ------------------------------------
-          shiny::tags$details(
-            style = "margin-bottom:10px;",
-            shiny::tags$summary(
-              style = "cursor:pointer; font-size:0.85em; color:#555; user-select:none;",
-              shiny::icon("chevron-right", style = "font-size:0.7em;"),
-              " Display options"),
-            shiny::div(
-              style = "padding:8px 0 4px;",
-              shiny::div(
-                style = "display:grid; grid-template-columns:1fr 1fr; gap:8px;",
-                shiny::numericInput(ns("gsea_sig_threshold"), "Significance threshold (adjusted p-value):",
-                                    value = 0.05, min = 0.001, max = 0.5, step = 0.01),
-                shiny::numericInput(ns("gsea_point_size"), "Point size:",
-                                    value = 7, min = 1, max = 16, step = 1),
-                bslib::tooltip(
-                  shiny::numericInput(ns("gsea_title_size"), "Title size (pt):",
-                                      value = 10, min = 6, max = 20, step = 1),
-                  "Font size for plot titles and axis labels.",
-                  placement = "right"
-                ),
-                bslib::tooltip(
-                  shiny::numericInput(ns("gsea_width_title"), "Title wrap (chars):",
-                                      value = 32, min = 10, max = 60, step = 2),
-                  "Maximum characters per line in enrichment plot titles.",
-                  placement = "right"
-                ),
-                bslib::tooltip(
-                  shiny::numericInput(ns("gsea_width_legend"), "Legend wrap (chars):",
-                                      value = 32, min = 8, max = 60, step = 2),
-                  "Maximum characters per line in legend and lollipop labels.",
-                  placement = "right"
-                )
-              )
-            )
-          ),
-
           shiny::actionButton(ns("run_gsea"), "Run Enrichment Analysis (GSEA)",
                               class = "btn-primary btn-sm", width = "100%")
         ),
@@ -635,6 +664,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
     score_all_result  <- shiny::reactiveVal(NULL)
     gsea_result       <- shiny::reactiveVal(NULL)
     fpr_result        <- shiny::reactiveVal(NULL)
+    scores_table_result <- shiny::reactiveVal(NULL)
 
     # Dynamic plot heights
     score_h  <- shiny::reactiveVal(500L)
@@ -645,6 +675,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
     nes_h      <- shiny::reactiveVal(500L)
     enrich_h   <- shiny::reactiveVal(500L)
     gsea_vol_h <- shiny::reactiveVal(500L)
+    combined_h <- shiny::reactiveVal(650L)
     gsea_vol_w <- shiny::reactiveVal("100%")  # DEG volcano width (narrow when few contrasts)
     fpr_h    <- shiny::reactiveVal(500L)
 
@@ -844,7 +875,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
            cor_m = cor_m, cond_cohend = cond_cohend)
     }
 
-    # (score_filter_meta removed — contrast filtering is now display-only via
+    # (score_filter_meta removed - contrast filtering is now display-only via
     #  the FPR data filter and the ROC contrast dropdown. Observers no longer
     #  pre-filter metadata before passing to analysis functions.)
 
@@ -860,13 +891,13 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
 
     # Helper: build the score distribution figure directly from
     # CalculateScores() output, replicating the *exact* per-signature
-    # aesthetic of PlotScores_Categorical() / PlotScores_Numeric() — gene set
+    # aesthetic of PlotScores_Categorical() / PlotScores_Numeric() - gene set
     # name as a plot title (not a facet strip), angled x-axis labels, and
     # Cohen's d/f (+ p-value) reported as a plot *subtitle*, exactly as those
-    # exported functions do it — without modifying those functions. Each
+    # exported functions do it - without modifying those functions. Each
     # signature becomes its own ggplot, arranged with ggpubr::ggarrange()
     # (same as the package functions) and rendered as a static plot.
-    .build_score_dist_plotly <- function(expr, meta, gs, method, var_arg, is_cat,
+    .build_score_dist_plots <- function(expr, meta, gs, method, var_arg, is_cat,
                                          color_arg, compute_cohen, cond_cohend,
                                          pvalcalc, connect_g, cor_m, pointsize,
                                          wid_title, ncol = 3L, color_values = NULL,
@@ -1116,7 +1147,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       do_cohen <- shiny::isolate(input$compute_cohen) %||% TRUE
 
       # Build palette-matched ColorValues.
-      # PlotScores applies ColorValues as scale_color_manual — the names must
+      # PlotScores applies ColorValues as scale_color_manual - the names must
       # match whichever column is actually mapped to color:
       #  • ColorVariable set → name by ColorVariable levels
       #  • Variable categorical → name by Variable (grouping) levels
@@ -1128,10 +1159,19 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         stats::setNames(rep_len(.pp_palette, length(levs)), levs)
       } else NULL
 
+      # Violins get hard to read when a grouping variable has many levels
+      # crammed into a 3-column grid, so drop to 2 columns once there are
+      # more than 3 levels (numeric/no-grouping cases keep 3, since those are
+      # density/scatter plots without this problem).
+      n_levels <- if (isTRUE(p$is_cat) && !is.null(p$var_arg))
+        length(unique(stats::na.omit(meta[[p$var_arg]])))
+      else NA_integer_
+      ncol_use <- if (!is.na(n_levels) && n_levels > 3L) 2L else 3L
+
       shiny::withProgress(message = "Computing score distributions...", value = 0, {
         result <- tryCatch({
           shiny::incProgress(0.4, detail = paste("Scoring:", meth))
-          plot_res <- .build_score_dist_plotly(
+          plot_res <- .build_score_dist_plots(
             expr = expr, meta = meta, gs = gs,
             method = meth, var_arg = p$var_arg, is_cat = p$is_cat,
             color_arg = p$color_arg, compute_cohen = do_cohen,
@@ -1139,12 +1179,12 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
             connect_g = p$connect_g, cor_m = p$cor_m,
             pointsize = shiny::isolate(input$score_pointsize) %||% 4L,
             wid_title = shiny::isolate(input$score_width_title) %||% 32L,
-            titlesize = shiny::isolate(input$score_titlesize) %||% 16L,
-            labsize   = shiny::isolate(input$score_labsize)   %||% 12L,
-            ncol = 3L, color_values = score_color_vals
+            titlesize = shiny::isolate(input$score_titlesize) %||% 8L,
+            labsize   = shiny::isolate(input$score_labsize)   %||% 8L,
+            ncol = ncol_use, color_values = score_color_vals
           )
           shiny::incProgress(0.6, detail = "Done.")
-          list(plot_res = plot_res, n_gs = length(gs),
+          list(plot_res = plot_res, n_gs = length(gs), ncol_use = ncol_use,
                score_var = shiny::isolate(input$score_var),
                is_cat = p$is_cat, method = meth)
         }, error = function(e) {
@@ -1153,7 +1193,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         })
       })
       if (!is.null(result))
-        score_h(as.integer(min(5000L, 560L + ceiling(result$n_gs / 3L) * 480L)))
+        score_h(as.integer(min(5000L, 480L + ceiling(result$n_gs / result$ncol_use) * 380L)))
       score_dist_result(result)
     })
 
@@ -1162,12 +1202,32 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
     # contrasts filter and a fixed-column grid. Mirrors AUC_Scores() without
     # modifying the exported package function (and avoids recomputing the
     # ROC/AUC data a second time, since the caller already has it).
+
+    # pROC::roc() is called by ROCAUC_Scores_Calculate() (exported, untouched)
+    # with its default direction = "auto", which picks whichever direction
+    # gives AUC >= 0.5 - meaning the stored $ROC curve is ALREADY direction-
+    # corrected, and its AUC essentially never drops below 0.5 on its own.
+    # The manual `ifelse(auc < 0.5, 1 - auc, auc)` in that function is mostly
+    # a no-op because of this. To show genuinely "raw" curves/AUC that can
+    # dip below the diagonal, we rebuild the roc object here with a fixed
+    # direction ("<": higher score assumed to indicate the case group) using
+    # the same predictor/response pROC already stored - no core function
+    # changes and no recomputation of scores needed.
+    .raw_roc <- function(roc_obj) {
+      tryCatch(
+        pROC::roc(response = roc_obj$response, predictor = roc_obj$predictor,
+                  levels = roc_obj$levels, direction = "<", quiet = TRUE),
+        error = function(e) roc_obj
+      )
+    }
+
     .build_auc_heatmap <- function(auc_list, contrasts = NULL,
                                    ncol = NULL, nrow = NULL, limits = NULL,
-                                   widthTitle = 22, titlesize = 12,
+                                   widthTitle = 22, titlesize = 12, labsize = 12,
                                    ColorValues = c("#F9F4AE", "#B44141"),
-                                   title = NULL) {
+                                   title = NULL, restore_direction = FALSE) {
       heatmaps <- list()
+      max_row_lbl <- 0L
 
       for (signature_name in names(auc_list[[1]])) {
         auc_matrix <- matrix(nrow = length(auc_list[[1]][[signature_name]]),
@@ -1177,8 +1237,15 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
 
         for (method_name in names(auc_list)) {
           for (contrast_name in names(auc_list[[method_name]][[signature_name]])) {
-            auc_matrix[contrast_name, method_name] <-
-              auc_list[[method_name]][[signature_name]][[contrast_name]]$AUC
+            entry <- auc_list[[method_name]][[signature_name]][[contrast_name]]
+            # By default show the genuinely raw (fixed-direction) AUC via
+            # .raw_roc(); only when restore_direction is TRUE do we use the
+            # pROC "auto"-direction value ROCAUC_Scores_Calculate() stored
+            # in $AUC (always >= 0.5 by construction - see .raw_roc() above).
+            auc_matrix[contrast_name, method_name] <- if (restore_direction)
+              entry$AUC
+            else
+              as.numeric(pROC::auc(.raw_roc(entry$ROC)))
           }
         }
 
@@ -1194,16 +1261,35 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         long_data$label <- sprintf("%.2f", long_data$AUC)
 
         signature_title <- wrap_title(signature_name, widthTitle)
-        lims <- if (is.null(limits)) c(0.5, 1) else limits
+        # Raw (un-flipped) AUC can fall below 0.5, so the colour scale needs
+        # the full 0-1 range in that case; the restored-direction AUC is
+        # always >= 0.5, so a tighter 0.5-1 range shows more contrast.
+        lims <- if (is.null(limits)) (if (restore_direction) c(0.5, 1) else c(0, 1)) else limits
+        max_row_lbl <- max(max_row_lbl, nchar(as.character(long_data$Contrast)), na.rm = TRUE)
+
+        # A diverging scale centred on white: an AUC of 0 and an AUC of 1 both
+        # mean "strong separation" (just in opposite directions), so both
+        # ends use the same colour and the same visual weight. When direction
+        # is folded to >= 0.5 (restore_direction), only the white-to-red half
+        # is relevant since AUC can no longer go below 0.5.
+        hi_col   <- ColorValues[length(ColorValues)]
+        mid_col  <- "white"
+        fill_scale <- if (restore_direction)
+          ggplot2::scale_fill_gradient(low = mid_col, high = hi_col, limits = lims, name = "AUC")
+        else
+          ggplot2::scale_fill_gradient2(low = hi_col, mid = mid_col, high = hi_col,
+                                        midpoint = 0.5, limits = lims, name = "AUC")
 
         p <- ggplot2::ggplot(long_data, ggplot2::aes(x = .data$Method, y = .data$Contrast,
                                                      fill = .data$AUC)) +
           ggplot2::geom_tile() +
-          ggplot2::geom_text(ggplot2::aes(label = .data$label), color = "black", size = 3) +
-          ggplot2::scale_fill_gradientn(colors = ColorValues, limits = lims) +
+          ggplot2::geom_text(ggplot2::aes(label = .data$label), color = "black",
+                             size = labsize / 3) +
+          fill_scale +
           ggplot2::labs(title = signature_title, x = NULL, y = NULL, fill = "AUC") +
           ggplot2::theme_bw() +
-          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = labsize),
+                        axis.text.y = ggplot2::element_text(size = labsize),
                         plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize))
 
         heatmaps[[signature_name]] <- p
@@ -1223,13 +1309,17 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         col_idx <- (i - 1) %% ncol + 1
         heatmaps[[i]] <- heatmaps[[i]] +
           ggplot2::theme(
-            axis.text.y  = if (col_idx == 1) ggplot2::element_text() else ggplot2::element_blank(),
+            axis.text.y  = if (col_idx == 1) ggplot2::element_text(size = labsize) else ggplot2::element_blank(),
             axis.ticks.y = if (col_idx == 1) ggplot2::element_line() else ggplot2::element_blank(),
             plot.margin  = ggplot2::margin(4, 0, 0, 0)
           )
       }
 
-      widths <- c(1.5, rep(1, ncol - 1))
+      # The first column alone carries the row (contrast) labels, so it needs
+      # a wider share of the grid than the others - scaled to how long those
+      # labels actually are rather than a flat, often-insufficient guess.
+      first_col_w <- max(1.3, min(3.5, 1 + max_row_lbl * 0.05))
+      widths <- c(first_col_w, rep(1, ncol - 1))
       plt <- ggpubr::ggarrange(
         plotlist = heatmaps, ncol = ncol, nrow = nrow,
         common.legend = TRUE, legend = "right", align = "h", widths = widths
@@ -1268,7 +1358,8 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       shiny::withProgress(message = "Computing ROC curves and AUC...", value = 0, {
         result <- tryCatch({
           roc_wid_title <- shiny::isolate(input$roc_width_title) %||% 32L
-          roc_titlesize <- shiny::isolate(input$roc_titlesize)   %||% 11L
+          roc_titlesize <- shiny::isolate(input$roc_titlesize)   %||% 8L
+          roc_labsize   <- shiny::isolate(input$roc_labsize)     %||% 8L
 
           shiny::incProgress(0.4, detail = "ROC curves...")
           # Use the raw calculate function so we can build per-contrast plots reactively
@@ -1276,24 +1367,24 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
             data = expr, metadata = meta, gene_sets = gs,
             method = meth, variable = p$var_arg, mode = p$mode)
 
-          shiny::incProgress(0.4, detail = "AUC heatmap...")
-          auc_ncol   <- min(4L, length(gs))
-          auc_heat   <- .build_auc_heatmap(roc_raw, contrasts = sel_conts,
-                                           ncol = auc_ncol, titlesize = roc_titlesize)
-          auc_res    <- auc_heat$plt
-          shiny::incProgress(0.2, detail = "Done.")
+          shiny::incProgress(0.6, detail = "Done.")
+          auc_ncol <- min(4L, length(gs))
 
           # Extract contrast names from raw data (they're in [[method]][[sig]][[contrast]])
           roc_contrasts <- names(roc_raw[[1]][[1]])
 
+          # The AUC heatmap itself is built live inside the render function
+          # below (reading font-size and the "restore directionality" checkbox
+          # live), so toggling those doesn't require re-running this (the
+          # expensive part - ROC/AUC computation) again.
           list(roc_raw      = roc_raw,
                roc_contrasts = roc_contrasts,
-               auc_res       = auc_res,
                auc_ncol      = auc_ncol,
                n_gs          = length(gs),
                n_cont        = n_cont,
                roc_wid_title = roc_wid_title,
-               roc_titlesize = roc_titlesize)
+               roc_titlesize = roc_titlesize,
+               roc_labsize   = roc_labsize)
         }, error = function(e) {
           shiny::showNotification(paste("ROC/AUC failed:", conditionMessage(e)),
                                   type = "error", duration = 12); NULL
@@ -1329,7 +1420,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
     # cell label size) without modifying the exported package function.
     .build_cohen_heatmap <- function(cohenlist, ncol = NULL, nrow = NULL,
                                      limits = NULL, widthTitle = 22,
-                                     titlesize = 12, textsize = 3,
+                                     titlesize = 12, textsize = 3, labsize = 12,
                                      ColorValues = NULL, title = NULL) {
       cohentype <- if ("CohenD" %in% names(cohenlist[[1]])) "d"
                    else if ("CohenF" %in% names(cohenlist[[1]])) "f"
@@ -1369,7 +1460,8 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
           ggplot2::labs(title = signature_title, x = NULL, y = NULL,
                        fill = if (cohentype == "d") "|Cohen's d|" else "|Cohen's f|") +
           ggplot2::theme_bw() +
-          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = labsize),
+                        axis.text.y = ggplot2::element_text(size = labsize),
                         plot.title = ggplot2::element_text(hjust = 0.5, size = titlesize))
 
         heatmaps[[signature]] <- p
@@ -1389,7 +1481,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         col_idx <- (i - 1) %% ncol + 1
         heatmaps[[i]] <- heatmaps[[i]] +
           ggplot2::theme(
-            axis.text.y  = if (col_idx == 1) ggplot2::element_text() else ggplot2::element_blank(),
+            axis.text.y  = if (col_idx == 1) ggplot2::element_text(size = labsize) else ggplot2::element_blank(),
             axis.ticks.y = if (col_idx == 1) ggplot2::element_line() else ggplot2::element_blank(),
             plot.margin  = ggplot2::margin(4, 0, 0, 0)
           )
@@ -1411,7 +1503,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
     # (whose facet_wrap() ignores its own ncol/nrow arguments) without
     # modifying the exported package function.
     .build_cohen_volcano <- function(cohenlist, ncol = NULL, nrow = NULL,
-                                     titlesize = 12, ColorValues = NULL,
+                                     titlesize = 12, labsize = 12, ColorValues = NULL,
                                      title = NULL, widthlegend = 22,
                                      pointSize = 3, sig_threshold = 0.05,
                                      cohen_threshold = 0.5,
@@ -1471,8 +1563,12 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         ggplot2::theme_bw() +
         ggplot2::theme(
           legend.position  = "right",
+          axis.text        = ggplot2::element_text(size = labsize),
+          axis.title       = ggplot2::element_text(size = labsize + 1),
+          legend.text      = ggplot2::element_text(size = labsize),
+          legend.title     = ggplot2::element_text(size = labsize),
           strip.text       = ggplot2::element_text(size = titlesize, face = "bold"),
-          plot.title       = ggplot2::element_text(hjust = 0.5, face = "bold"),
+          plot.title       = ggplot2::element_text(hjust = 0.5, size = titlesize + 1, face = "bold"),
           strip.background = ggplot2::element_rect(fill = "white")
         ) +
         ggplot2::ggtitle(if (!is.null(title)) title else
@@ -1483,37 +1579,22 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
 
     # ---- Run: All Methods Summary ------------------------------------------
 
+    # Only the (expensive) Cohen's d/f computation lives in this observer -
+    # font/text sizes are read live inside the render functions below instead
+    # of being "baked in" here, so tweaking them doesn't require re-running
+    # the whole computation again.
     shiny::observeEvent(input$run_all_methods, {
       expr <- get_expr(); meta <- get_meta()
       gs   <- .active_gs(); shiny::req(expr, meta, gs, length(gs) > 0)
       p <- .score_shared_params()
 
-      # Read display params (used both in the heatmap/volcano and for color name matching)
-      all_wid_title  <- shiny::isolate(input$all_width_title)  %||% 32L
-      all_wid_legend <- shiny::isolate(input$all_width_legend) %||% 32L
-      all_textsize   <- shiny::isolate(input$all_heatmap_textsize) %||% 3
-      all_titlesize  <- shiny::isolate(input$all_heatmap_titlesize) %||% 9
-
       # Only the currently selected contrasts (from the "Contrasts to show"
       # picker above) are included in the heatmap and volcano.
       sel_conts <- shiny::isolate(input$score_selected_groups)
 
-      # ColorValues must be a named list:
-      #   [[1]]/"heatmap" → 2-colour gradient
-      #   [[2]]/"volcano" → named per-signature vector for Volcano_Cohen
-      # Volcano_Cohen wraps signature names with wrap_title(width=widthlegend)
-      # before building the data frame, so our color names must use the same
-      # wrapping to avoid mismatches that produce grey points.
-      gs_names    <- names(gs)
-      gs_wrapped  <- vapply(gs_names, wrap_title, character(1L), width = all_wid_legend)
-      gs_colors   <- list(
-        heatmap = c("#F9F4AE", "#B44141"),   # diverging gradient (default)
-        volcano = stats::setNames(rep_len(.pp_palette, length(gs_names)), gs_wrapped)
-      )
-
       shiny::withProgress(message = "Running all scoring methods...", value = 0, {
         result <- tryCatch({
-          shiny::incProgress(0.4, detail = "Computing Cohen's d/f across all methods...")
+          shiny::incProgress(0.6, detail = "Computing Cohen's d/f across all methods...")
 
           cohentype <- if (p$is_cat) "d" else "f"
           cohenlist_full <- if (cohentype == "f") {
@@ -1526,31 +1607,18 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
           cohenlist <- .filter_cohenlist_contrasts(cohenlist_full, sel_conts)
           n_cont    <- ncol(cohenlist[[1]][[1]])
 
-          shiny::incProgress(0.3, detail = "Building heatmap...")
-          heat_res <- .build_cohen_heatmap(
-            cohenlist   = cohenlist,
-            widthTitle  = all_wid_title,
-            textsize    = all_textsize,
-            titlesize   = all_titlesize,
-            ColorValues = gs_colors
-          )
+          # Grid layout (ncol/nrow) only depends on the number of gene sets,
+          # not on any font/display setting, so it's safe to compute once here.
+          num_sigs  <- length(cohenlist)
+          heat_ncol <- min(3L, num_sigs)
+          heat_nrow <- ceiling(num_sigs / heat_ncol)
+          shiny::incProgress(0.4, detail = "Done.")
 
-          shiny::incProgress(0.2, detail = "Building volcano...")
-          vol_plt <- .build_cohen_volcano(
-            cohenlist       = cohenlist,
-            ColorValues     = gs_colors,
-            widthlegend     = all_wid_legend,
-            pointSize       = 4,
-            sig_threshold   = shiny::isolate(input$sig_threshold)   %||% 0.05,
-            cohen_threshold = shiny::isolate(input$cohen_threshold) %||% 0.5,
-            ncol            = min(2L, n_cont)
-          )
-          shiny::incProgress(0.1, detail = "Done.")
-
-          list(plot_res  = list(heatmap = heat_res$plt, volcano = vol_plt),
+          list(cohenlist  = cohenlist,
+               gs_names   = names(gs),
                n_gs       = length(gs),
                n_cont     = n_cont,
-               heat_ncol  = heat_res$ncol, heat_nrow = heat_res$nrow,
+               heat_ncol  = heat_ncol, heat_nrow = heat_nrow,
                cohentype  = cohentype)
         }, error = function(e) {
           shiny::showNotification(paste("All methods failed:", conditionMessage(e)),
@@ -1662,8 +1730,17 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         # and axis text).
         nes_h(as.integer(min(10000L, max(400L,
           result$n_cont * (result$n_sets * 34L + 180L)))))
-        enrich_h(as.integer(min(6000L, max(400L, result$n_sets * result$n_cont * 220L))))
-        gsea_vol_h(as.integer(min(5000L, max(400L, result$n_cont * 350L))))
+        enrich_ncol_est <- min(2L, max(1L, result$n_sets * result$n_cont))
+        enrich_nrow_est <- ceiling((result$n_sets * result$n_cont) / enrich_ncol_est)
+        enrich_h(as.integer(min(14000L, max(460L, enrich_nrow_est * 400L + 60L))))
+        gsea_vol_h(as.integer(min(10000L, max(460L, result$n_sets * 470L + 70L))))
+        # The legend now sits at the bottom (wrapped to a few rows, capped
+        # regardless of gene set count - see .build_combined_gsea_gg()), so
+        # height mainly needs a generous, fairly fixed base for the two
+        # side-by-side scatter panels themselves plus that bottom legend
+        # block, rather than scaling with the number of gene sets.
+        combined_h(as.integer(min(3000L, max(650L,
+          650L + max(0L, result$n_cont - 6L) * 12L))))
       }
       gsea_result(result)
     })
@@ -1722,7 +1799,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
             ggplot2::geom_text(
               data = all_max,
               ggplot2::aes(x = .data$method, y = .data$y, label = .data$label),
-              size = 3, inherit.aes = FALSE) +
+              size = labsize / 3, inherit.aes = FALSE) +
             ggplot2::geom_segment(
               data = q_data,
               ggplot2::aes(x = .data$xmin, xend = .data$xmax, y = .data$q_high, yend = .data$q_high),
@@ -1732,9 +1809,12 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
                          y = ylab, x = "Method", color = "") +
             ggplot2::theme_classic() +
             ggplot2::theme(
-              plot.title    = ggplot2::element_text(hjust = 0.5, size = titlesize),
-              plot.subtitle = ggplot2::element_text(hjust = 0.5, size = titlesize - 1.5),
-              axis.text     = ggplot2::element_text(size = labsize)) +
+              plot.title      = ggplot2::element_text(hjust = 0.5, size = titlesize),
+              plot.subtitle   = ggplot2::element_text(hjust = 0.5, size = titlesize - 1.5),
+              axis.text       = ggplot2::element_text(size = labsize),
+              axis.title      = ggplot2::element_text(size = labsize),
+              legend.text     = ggplot2::element_text(size = labsize),
+              legend.title    = ggplot2::element_text(size = labsize)) +
             ggplot2::scale_color_manual(values = color_values)
 
           plot_list[[paste(sig, ct, sep = " | ")]] <- p
@@ -1960,7 +2040,8 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
 
     # ---- Helper: build ROC plot for one contrast from raw data ----------------
     .build_roc_contrast_plot <- function(roc_raw, sel_contrast,
-                                         titlesize = 11L, wid_title = 32L) {
+                                         titlesize = 11L, labsize = 11L, wid_title = 32L,
+                                         restore_direction = FALSE) {
       roc_colors <- c(logmedian = "#3E5587", ssGSEA = "#B65285", ranking = "#B68C52")
       method_names <- names(roc_raw)
       sig_names    <- names(roc_raw[[1]])
@@ -1971,12 +2052,20 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         for (meth_name in method_names) {
           roc_data <- roc_raw[[meth_name]][[sig]][[sel_contrast]]
           if (is.null(roc_data)) next
+          # By default use .raw_roc() (fixed direction, can dip below the
+          # diagonal / AUC < 0.5). When restore_direction is TRUE, use the
+          # pROC "auto"-direction curve ROCAUC_Scores_Calculate() computed
+          # (always >= 0.5 by construction), matching its stored $AUC.
+          curve <- if (restore_direction) roc_data$ROC else .raw_roc(roc_data$ROC)
           combined_df <- rbind(combined_df, data.frame(
-            FPR    = rev(1 - roc_data$ROC$specificities),
-            TPR    = rev(roc_data$ROC$sensitivities),
+            FPR    = rev(1 - curve$specificities),
+            TPR    = rev(curve$sensitivities),
             Method = meth_name
           ))
-          auc_values[[meth_name]] <- roc_data$AUC
+          auc_values[[meth_name]] <- if (restore_direction)
+            roc_data$AUC
+          else
+            as.numeric(pROC::auc(curve))
         }
         if (nrow(combined_df) == 0L) return(NULL)
 
@@ -2003,7 +2092,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
                          label = paste0("AUC ", .data$Method, " = ",
                                         round(.data$AUC, 2)),
                          color = .data$Method),
-            size = 3, vjust = 0, hjust = 1, inherit.aes = FALSE, fill = "white") +
+            size = labsize / 3, vjust = 0, hjust = 1, inherit.aes = FALSE, fill = "white") +
           ggplot2::labs(
             title    = wrap_title(sig, wid_title),
             subtitle = wrap_title(sel_contrast, wid_title),
@@ -2011,6 +2100,8 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
           ggplot2::theme_classic() +
           ggplot2::theme(
             legend.position = "none",
+            axis.text     = ggplot2::element_text(size = labsize),
+            axis.title    = ggplot2::element_text(size = labsize + 1),
             plot.title    = ggplot2::element_text(hjust = 0.5, size = titlesize),
             plot.subtitle = ggplot2::element_text(hjust = 0.5, size = titlesize - 1.5))
         p
@@ -2048,7 +2139,9 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
           shiny::icon("circle-info"),
           " Each panel shows the ROC curve for one gene set.",
           " Dashed diagonal = chance (AUC = 0.5). Curves above the diagonal indicate discriminatory power.",
-          " The displayed AUC is 1 minus raw AUC when < 0.5, restoring directionality.",
+          " By default the AUC shown matches the curve exactly, preserving directionality,",
+          " even if it dips below 0.5. Tick \"Ignore direction\" in Display options above",
+          " to instead show 1 - AUC whenever AUC < 0.5.",
           " The AUC heatmap below shows only the contrasts selected above (\"Contrasts to show\")."
         ),
         shiny::div(
@@ -2068,7 +2161,10 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       tryCatch({
         p <- .build_roc_contrast_plot(
           res$roc_raw, sel_ct,
-          titlesize = res$roc_titlesize, wid_title = res$roc_wid_title)
+          titlesize = input$roc_titlesize %||% res$roc_titlesize,
+          labsize   = input$roc_labsize   %||% res$roc_labsize,
+          wid_title = res$roc_wid_title,
+          restore_direction = isTRUE(input$roc_restore_direction))
         if (!is.null(p)) print(p)
       }, error = function(e)
         shiny::showNotification(paste("ROC plot error:", e$message),
@@ -2081,8 +2177,10 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         res <- score_roc_result(); shiny::req(!is.null(res), !is.null(res$roc_raw))
         sel_ct <- shiny::isolate(input$roc_sel_contrast) %||% res$roc_contrasts[1]
         p    <- .build_roc_contrast_plot(res$roc_raw, sel_ct,
-                                          titlesize   = res$roc_titlesize,
-                                          wid_title   = res$roc_wid_title)
+                                          titlesize   = input$roc_titlesize %||% res$roc_titlesize,
+                                          labsize     = input$roc_labsize   %||% res$roc_labsize,
+                                          wid_title   = res$roc_wid_title,
+                                          restore_direction = isTRUE(input$roc_restore_direction))
         h_in <- roc_h() / 96
         ggplot2::ggsave(file, plot = p,
                         width = 14, height = max(5, h_in),
@@ -2091,7 +2189,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
     )
 
     output$score_auc_ui <- shiny::renderUI({
-      shiny::req(!is.null(score_roc_result()), !is.null(score_roc_result()$auc_res))
+      shiny::req(!is.null(score_roc_result()), !is.null(score_roc_result()$roc_raw))
       bslib::card(
         full_screen = TRUE,
         .bm_card_header("AUC Heatmap (contrasts × methods)", "dl_auc", ns),
@@ -2100,26 +2198,43 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
           shiny::icon("circle-info"),
           " Numbers are ", shiny::tags$b("AUC values"),
           " (Area Under the ROC Curve). AUC = 0.5: no better than chance.",
-          " AUC = 1.0: perfect separation. AUC < 0.5: reversed direction (still informative)."
+          " AUC = 1.0: perfect separation. AUC < 0.5: reversed direction (still informative -",
+          " tick \"Ignore direction\" above to instead fold it to 1 - AUC, hiding which way it points)."
         ),
         shiny::plotOutput(ns("score_auc_plot"), height = paste0(auc_h(), "px"))
       )
     })
 
+    # Built live from the raw ROC/AUC data, reading font-size and the "restore
+    # directionality" checkbox directly from input$, so toggling either is
+    # instant and never requires re-running the (expensive) ROC/AUC computation.
     output$score_auc_plot <- shiny::renderPlot({
-      res <- score_roc_result(); shiny::req(!is.null(res), !is.null(res$auc_res))
-      tryCatch(print(res$auc_res),
-               error = function(e)
-                 shiny::showNotification(paste("AUC plot error:", e$message),
-                                         type = "warning", duration = 8))
+      res <- score_roc_result(); shiny::req(!is.null(res), !is.null(res$roc_raw))
+      tryCatch({
+        auc_heat <- .build_auc_heatmap(
+          res$roc_raw, contrasts = input$score_selected_groups,
+          ncol = res$auc_ncol,
+          titlesize = input$roc_titlesize %||% res$roc_titlesize,
+          labsize   = input$roc_labsize   %||% res$roc_labsize,
+          restore_direction = isTRUE(input$roc_restore_direction))
+        print(auc_heat$plt)
+      }, error = function(e)
+        shiny::showNotification(paste("AUC plot error:", e$message),
+                                type = "warning", duration = 8))
     }, height = function() auc_h(), res = 150)
 
     output$dl_auc <- shiny::downloadHandler(
       filename = function() paste0("auc_heatmap_", Sys.Date(), ".png"),
       content  = function(file) {
-        res <- score_roc_result(); shiny::req(!is.null(res), !is.null(res$auc_res))
+        res <- score_roc_result(); shiny::req(!is.null(res), !is.null(res$roc_raw))
+        auc_heat <- .build_auc_heatmap(
+          res$roc_raw, contrasts = input$score_selected_groups,
+          ncol = res$auc_ncol,
+          titlesize = input$roc_titlesize %||% res$roc_titlesize,
+          labsize   = input$roc_labsize   %||% res$roc_labsize,
+          restore_direction = isTRUE(input$roc_restore_direction))
         h_in <- auc_h() / 96
-        ggplot2::ggsave(file, plot = res$auc_res,
+        ggplot2::ggsave(file, plot = auc_heat$plt,
                         width = 10, height = max(4, h_in),
                         dpi = 150, units = "in")
       }
@@ -2161,120 +2276,63 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       )
     })
 
+    # ColorValues must be a named list:
+    #   [[1]]/"heatmap" → 2-colour gradient
+    #   [[2]]/"volcano" → named per-signature vector for Volcano_Cohen
+    # Volcano_Cohen wraps signature names with wrap_title(width=widthlegend)
+    # before building the data frame, so our color names must use the same
+    # wrapping to avoid mismatches that produce grey points. Cheap to rebuild
+    # on every render (no stats involved), so it can read the live legend-wrap
+    # width input directly.
+    .build_all_gs_colors <- function(gs_names, wid_legend) {
+      gs_wrapped <- vapply(gs_names, wrap_title, character(1L), width = wid_legend)
+      list(
+        heatmap = c("#F9F4AE", "#B44141"),
+        volcano = stats::setNames(rep_len(.pp_palette, length(gs_names)), gs_wrapped)
+      )
+    }
+
     output$score_all_heatmap <- shiny::renderPlot({
-      res <- score_all_result(); shiny::req(!is.null(res), !is.null(res$plot_res$heatmap))
-      tryCatch(print(res$plot_res$heatmap),
-               error = function(e)
-                 shiny::showNotification(paste("Heatmap error:", e$message),
-                                         type = "warning", duration = 8))
+      res <- score_all_result(); shiny::req(!is.null(res), !is.null(res$cohenlist))
+      gs_colors <- .build_all_gs_colors(res$gs_names, input$all_width_legend %||% 32L)
+      tryCatch(
+        print(.build_cohen_heatmap(
+          cohenlist   = res$cohenlist,
+          ncol        = res$heat_ncol, nrow = res$heat_nrow,
+          widthTitle  = input$all_width_title  %||% 32L,
+          textsize    = input$all_heatmap_textsize %||% 2,
+          titlesize   = input$all_heatmap_titlesize %||% 8,
+          labsize     = input$all_heatmap_labsize   %||% input$all_heatmap_titlesize %||% 8,
+          ColorValues = gs_colors
+        )$plt),
+        error = function(e)
+          shiny::showNotification(paste("Heatmap error:", e$message),
+                                  type = "warning", duration = 8))
     }, height = function() all_h(), res = 150)
 
     output$dl_all_heatmap <- shiny::downloadHandler(
       filename = function() paste0("cohen_heatmap_", Sys.Date(), ".png"),
       content  = function(file) {
-        res <- score_all_result(); shiny::req(!is.null(res), !is.null(res$plot_res$heatmap))
+        res <- score_all_result(); shiny::req(!is.null(res), !is.null(res$cohenlist))
+        gs_colors <- .build_all_gs_colors(res$gs_names, input$all_width_legend %||% 32L)
+        heat_plt <- .build_cohen_heatmap(
+          cohenlist   = res$cohenlist,
+          ncol        = res$heat_ncol, nrow = res$heat_nrow,
+          widthTitle  = input$all_width_title  %||% 32L,
+          textsize    = input$all_heatmap_textsize %||% 2,
+          titlesize   = input$all_heatmap_titlesize %||% 8,
+          labsize     = input$all_heatmap_labsize   %||% input$all_heatmap_titlesize %||% 8,
+          ColorValues = gs_colors
+        )$plt
         h_in <- all_h() / 96
-        ggplot2::ggsave(file, plot = res$plot_res$heatmap,
+        ggplot2::ggsave(file, plot = heat_plt,
                         width = 12, height = max(4, h_in),
                         dpi = 150, units = "in")
       }
     )
 
-    # Helper: clean ggplotly legend for Volcano_Cohen plots.
-    # ggplotly names combined-aesthetic traces as "(A,B)"; this renames them,
-    # deduplicates within each aesthetic, and groups into Method / Signature sections.
-    # Each group header ("Method" / "Signature") is only shown once, above its
-    # first entry — otherwise plotly repeats the header above every entry.
-    .clean_volcano_plotly <- function(plt) {
-      methods_known       <- c("logmedian", "ranking", "ssGSEA")
-      seen_methods        <- character(0)
-      seen_sigs           <- character(0)
-      sig_header_shown    <- FALSE
-      method_header_shown <- FALSE
-
-      plt$x$data <- lapply(plt$x$data, function(trace) {
-        nm <- if (is.null(trace$name)) "" else trace$name
-        # ggplotly names combined traces "(A,B)"
-        if (grepl("^\\(.*,.*\\)$", nm)) {
-          inner   <- sub("^\\((.*)\\)$", "\\1", nm)
-          comma_p <- regexpr(",", inner, fixed = TRUE)[1]
-          part_a  <- trimws(substr(inner, 1L, comma_p - 1L))
-
-          # Thin point outline for cleaner look
-          if (!is.null(trace$marker)) {
-            trace$marker$line <- list(width = 0.5,
-              color = if (!is.null(trace$marker$line$color))
-                        trace$marker$line$color
-                      else "rgba(0,0,0,0.35)")
-          }
-
-          if (part_a %in% methods_known) {
-            # Shape / method trace
-            trace$name        <- part_a
-            trace$legendgroup <- "Method"
-            # Show the "Method" header only on the very first method trace
-            if (!method_header_shown) {
-              trace$legendgrouptitle <- list(text = "<b>Method</b>")
-              method_header_shown    <<- TRUE
-            } else {
-              trace$legendgrouptitle <- list(text = "")
-            }
-            if (part_a %in% seen_methods) {
-              trace$showlegend <- FALSE
-            } else {
-              seen_methods <<- c(seen_methods, part_a)
-              trace$showlegend <- TRUE
-            }
-          } else {
-            # Colour / signature trace — all in one group so header shows once
-            trace$name        <- part_a
-            trace$legendgroup <- "Signatures"
-            # Show the "Signature" header only on the very first sig trace
-            if (!sig_header_shown) {
-              trace$legendgrouptitle <- list(text = "<b>Signature</b>")
-              sig_header_shown <<- TRUE
-            } else {
-              trace$legendgrouptitle <- list(text = "")
-            }
-            if (part_a %in% seen_sigs) {
-              trace$showlegend <- FALSE
-            } else {
-              seen_sigs <<- c(seen_sigs, part_a)
-              trace$showlegend <- TRUE
-            }
-          }
-        }
-        trace
-      })
-
-      # Remove ggtitle (renders oddly in faceted ggplotly) and tidy legend
-      plt |>
-        plotly::layout(
-          title  = list(text = ""),
-          legend = list(
-            tracegroupgap = 14,
-            font          = list(size = 11),
-            itemsizing    = "constant",
-            orientation   = "v"
-          )
-        )
-    }
-
-    # ---- GSEA combined-volcano legend cleanup --------------------------------
-    # plotCombinedGSEA maps colour=pathway, shape=contrast.
-    # ggplotly creates traces named "(pathway,contrast)" — one per combination.
-    # Sometimes pathway_val is a numeric index ("1","2"…) instead of the name;
-    # we resolve those using known_pathways.
-    #
-    # Strategy:
-    #   Pass 1: resolve pathway names; assign all real traces to "Gene Set" group;
-    #           deduplicate by pathway; thin point outline.
-    #   Pass 2: add one dummy trace per contrast (fixed plotly symbol by position)
-    #           so the "Contrast" shape legend is always correct and complete.
-    .GSEA_PLOTLY_SYMBOLS <- c("square", "circle", "diamond", "triangle-up",
-                               "cross", "star", "hexagram", "pentagon")
-
-    # Tableau-10 + extra colours — enough for up to 20 gene sets
+    # Tableau-10 + extra colours, shared by the static combined GSEA volcano
+    # below (kept as a named constant since it's reused there).
     .GSEA_COLOR_PALETTE <- c(
       "#4E79A7","#F28E2B","#E15759","#76B7B2","#59A14F",
       "#EDC948","#B07AA1","#FF9DA7","#9C755F","#BAB0AC",
@@ -2282,103 +2340,9 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       "#8C564B","#E377C2","#7F7F7F","#BCBD22","#17BECF"
     )
 
-    .clean_gsea_volcano_plotly <- function(plt, known_pathways, known_contrasts) {
-      seen_pathways  <- character(0)
-      pathway_colors <- character(0)   # named: pathway_val -> hex color
-      pathways_sorted <- sort(known_pathways)
-
-      # ── Pass 0: remove Layer 1 black background dots ───────────────────────────
-      # plotCombinedGSEA uses TWO geom_point layers:
-      #   Layer 1: geom_point(colour="black", size=PointSize)  -- large black "outline"
-      #   Layer 2: geom_point(aes(colour=pathway), size=PointSize-2.5) -- coloured
-      # ggplotly names Layer 2 as "(pathway, contrast)" and Layer 1 only by contrast.
-      # Filtering keeps coloured data traces and non-marker traces (hlines, vlines).
-      is_data_tr <- function(tr)
-        grepl("^\\(.*,.*\\)$", if (is.null(tr$name)) "" else tr$name)
-      is_line_tr <- function(tr)
-        grepl("^lines", if (is.null(tr$mode)) "" else tr$mode)
-      plt$x$data <- Filter(function(tr) is_data_tr(tr) || is_line_tr(tr),
-                           plt$x$data)
-
-      n_real <- length(plt$x$data)
-
-      # ── Pass 1: resolve names, assign palette colors, set Gene set group ───────
-      plt$x$data <- lapply(plt$x$data, function(trace) {
-        nm <- if (is.null(trace$name)) "" else trace$name
-
-        if (grepl("^\\(.*,.*\\)$", nm)) {
-          inner  <- sub("^\\((.*)\\)$", "\\1", nm)
-          part_a <- trimws(sub(",.*$", "", inner))
-          part_b <- trimws(sub("^[^,]*,", "", inner))
-
-          if (part_a %in% known_contrasts) {
-            pathway_val <- part_b
-          } else {
-            pathway_val <- part_a
-          }
-
-          if (grepl("^\\d+$", trimws(pathway_val))) {
-            idx <- as.integer(trimws(pathway_val))
-            if (idx >= 1L && idx <= length(pathways_sorted))
-              pathway_val <- pathways_sorted[idx]
-          }
-
-          if (!(pathway_val %in% names(pathway_colors))) {
-            ci <- (length(pathway_colors) %% length(.GSEA_COLOR_PALETTE)) + 1L
-            pathway_colors[[pathway_val]] <<- .GSEA_COLOR_PALETTE[ci]
-          }
-          pal_col <- pathway_colors[[pathway_val]]
-
-          if (is.null(trace$marker)) trace$marker <- list()
-          trace$marker$color <- pal_col
-
-          trace$name             <- pathway_val
-          trace$legendgroup      <- "Gene set"
-          trace$legendgrouptitle <- list(text = "Gene set")
-          trace$showlegend       <- !(pathway_val %in% seen_pathways)
-          seen_pathways          <<- unique(c(seen_pathways, pathway_val))
-        }
-        trace
-      })
-
-      # ── Pass 2: dummy contrast traces in "Contrast" legend section ─────────────
-      for (i in seq_along(known_contrasts)) {
-        cv  <- known_contrasts[i]
-        sym <- .GSEA_PLOTLY_SYMBOLS[((i - 1L) %% length(.GSEA_PLOTLY_SYMBOLS)) + 1L]
-        plt <- plotly::add_trace(plt,
-          x = 0, y = 0, type = "scatter", mode = "markers",
-          visible = "legendonly",
-          marker  = list(symbol = sym, size = 10,
-                         color  = "rgba(70,70,70,0.9)",
-                         line   = list(width = 0.5, color = "black")),
-          name             = cv,
-          legendgroup      = "Contrast",
-          legendgrouptitle = list(text = "Contrast"),
-          showlegend       = TRUE,
-          hoverinfo        = "none",
-          inherit          = FALSE
-        )
-      }
-
-      # ── Pass 3: black outlines on coloured data traces ─────────────────────────
-      if (n_real > 0L)
-        plt <- plotly::style(plt,
-          marker.line.width = 1.4,
-          marker.line.color = "black",
-          traces = seq_len(n_real)
-        )
-
-      plt |>
-        plotly::layout(
-          title  = list(text = ""),
-          legend = list(tracegroupgap = 14, font = list(size = 11),
-                        itemsizing = "constant")
-        )
-    }
-
     output$score_all_volcano_ui <- shiny::renderUI({
       res <- score_all_result()
-      shiny::req(!is.null(res), !is.null(res$plot_res$volcano))
+      shiny::req(!is.null(res), !is.null(res$cohenlist))
       p_test <- if (identical(res$cohentype, "f"))
         "a linear model F-test (score ~ variable)."
       else
@@ -2387,7 +2351,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         full_screen = TRUE,
         bslib::card_header(
           class = "d-flex align-items-center justify-content-between",
-          "Effect Size Volcano (hover to identify gene sets)",
+          "Effect Size Volcano",
           shiny::downloadButton(ns("dl_all_volcano"), "",
             icon  = shiny::icon("download"),
             class = "btn-sm btn-outline-secondary py-0 px-2",
@@ -2399,33 +2363,41 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
           " X-axis: |Cohen's d| (effect size). Y-axis: −log₁₀(adjusted p-value), from ", p_test,
           " Shape = scoring method. Colour = gene set. One facet per selected contrast",
           " (up to 2 columns, additional rows added as needed).",
-          " Hover any point to see gene set, contrast, method and exact values.",
-          " Dashed lines mark the significance / effect size thresholds above."
+          " Dashed lines mark the significance and effect size thresholds above."
         ),
-        plotly::plotlyOutput(ns("score_all_volcano"), height = paste0(all_vol_h(), "px"))
+        shiny::plotOutput(ns("score_all_volcano"), height = paste0(all_vol_h(), "px"))
       )
     })
 
-    output$score_all_volcano <- plotly::renderPlotly({
-      res <- score_all_result(); shiny::req(!is.null(res), !is.null(res$plot_res$volcano))
-      p_vol <- res$plot_res$volcano
-      tryCatch({
-        plt <- plotly::ggplotly(p_vol,
-                                tooltip = c("x", "y", "colour", "shape"))
-        .clean_volcano_plotly(plt)
-      },
-      error = function(e) {
-        shiny::showNotification(paste("Volcano error:", e$message),
-                                type = "warning", duration = 8)
-        plotly::plotly_empty()
-      })
-    })
+    .build_all_volcano_live <- function(res) {
+      gs_colors <- .build_all_gs_colors(res$gs_names, input$all_width_legend %||% 32L)
+      vol_ncol  <- min(2L, res$n_cont)
+      .build_cohen_volcano(
+        cohenlist       = res$cohenlist,
+        ColorValues     = gs_colors,
+        widthlegend     = input$all_width_legend %||% 32L,
+        pointSize       = 4,
+        titlesize       = input$all_volcano_titlesize %||% 8,
+        labsize         = input$all_volcano_labsize    %||% 8,
+        sig_threshold   = input$sig_threshold   %||% 0.05,
+        cohen_threshold = input$cohen_threshold %||% 0.5,
+        ncol            = vol_ncol
+      )
+    }
+
+    output$score_all_volcano <- shiny::renderPlot({
+      res <- score_all_result(); shiny::req(!is.null(res), !is.null(res$cohenlist))
+      tryCatch(print(.build_all_volcano_live(res)),
+               error = function(e)
+                 shiny::showNotification(paste("Volcano error:", e$message),
+                                         type = "warning", duration = 8))
+    }, height = function() all_vol_h(), res = 150)
 
     output$dl_all_volcano <- shiny::downloadHandler(
       filename = function() paste0("effect_volcano_", Sys.Date(), ".png"),
       content  = function(file) {
-        res <- score_all_result(); shiny::req(!is.null(res), !is.null(res$plot_res$volcano))
-        ggplot2::ggsave(file, plot = res$plot_res$volcano,
+        res <- score_all_result(); shiny::req(!is.null(res), !is.null(res$cohenlist))
+        ggplot2::ggsave(file, plot = .build_all_volcano_live(res),
                         width = 14, height = 7, dpi = 150, units = "in")
       }
     )
@@ -2456,7 +2428,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
               " Points are coloured by gene set membership when gene sets are provided.",
               " Thresholds mark significance and fold-change cutoffs."
             ),
-            # Inline colour key — only relevant when gene set highlighting is on
+            # Inline colour key - only relevant when gene set highlighting is on
             if (!is.null(res$gene_sets) && length(res$gene_sets) > 0L) shiny::div(
               style = "font-size:0.8em; padding:2px 6px 8px; display:flex; gap:14px; flex-wrap:wrap;",
               shiny::tags$span(shiny::tags$b(style="color:#B7B7B7;", "■"), " Background"),
@@ -2511,7 +2483,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
           )
         ),
 
-        # 1. Combined Volcano (interactive)
+        # 1. Combined Volcano
         bslib::nav_panel("Combined Volcano",
           bslib::card(
             full_screen = TRUE,
@@ -2519,7 +2491,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
             shiny::div(
               class = "text-muted", style = "font-size:0.78em; padding:4px 6px 8px;",
               shiny::icon("circle-info"),
-              " Each point is one gene set x contrast. Colour = gene set; shape = contrast. Hover for details.",
+              " Each point is one gene set x contrast. Colour = gene set; shape = contrast.",
               shiny::tags$br(),
               shiny::tags$b("Altered panel (B-statistic):"),
               " gene sets without specified direction, ranked by probability of differential expression.",
@@ -2533,7 +2505,34 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
               shiny::tags$br(),
               " y-axis: −log₁₀(adjusted p-value); dashed line marks the significance threshold."
             ),
-            plotly::plotlyOutput(ns("gsea_combined_plot"), height = "520px")
+            shiny::tags$details(
+              style = "margin-bottom:10px;",
+              shiny::tags$summary(
+                style = "cursor:pointer; font-size:0.85em; color:#555; user-select:none;",
+                shiny::icon("chevron-right", style = "font-size:0.7em;"),
+                " Display options"),
+              shiny::div(
+                style = "padding:8px 0 4px; display:grid; grid-template-columns:1fr 1fr; gap:8px;",
+                shiny::numericInput(ns("combined_pointsize"), "Point size:",
+                                    value = 3, min = 1, max = 16, step = 1),
+                shiny::numericInput(ns("combined_sig_threshold"),
+                                    "Significance threshold (adjusted p-value):",
+                                    value = 0.05, min = 0.001, max = 0.5, step = 0.01),
+                bslib::tooltip(
+                  shiny::numericInput(ns("combined_width_legend"), "Legend wrap (chars):",
+                                      value = 32, min = 8, max = 60, step = 2),
+                  "Maximum characters per line in the gene set legend.",
+                  placement = "right"
+                ),
+                bslib::tooltip(
+                  shiny::numericInput(ns("combined_labsize"), "Label size (pt):",
+                                      value = 8, min = 6, max = 20, step = 1),
+                  "Font size of axis text, axis titles, legend text, and panel strip labels.",
+                  placement = "right"
+                )
+              )
+            ),
+            shiny::plotOutput(ns("gsea_combined_plot"), height = paste0(combined_h(), "px"))
           )
         ),
 
@@ -2564,6 +2563,33 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
               " adjusted p-value (red = significant, white = not significant).",
               shiny::tags$b(" Dashed line:"), " significance threshold. One panel per contrast."
             ),
+            shiny::tags$details(
+              style = "margin-bottom:10px;",
+              shiny::tags$summary(
+                style = "cursor:pointer; font-size:0.85em; color:#555; user-select:none;",
+                shiny::icon("chevron-right", style = "font-size:0.7em;"),
+                " Display options"),
+              shiny::div(
+                style = "padding:8px 0 4px; display:grid; grid-template-columns:1fr 1fr; gap:8px;",
+                shiny::numericInput(ns("nes_titlesize"), "Title size (pt):",
+                                    value = 8, min = 6, max = 20, step = 1),
+                bslib::tooltip(
+                  shiny::numericInput(ns("nes_labsize"), "Label size (pt):",
+                                      value = 8, min = 6, max = 20, step = 1),
+                  "Font size of axis text, axis titles, legend text, and gene set (y-axis) labels.",
+                  placement = "right"
+                ),
+                shiny::numericInput(ns("nes_sig_threshold"),
+                                    "Significance threshold (adjusted p-value):",
+                                    value = 0.05, min = 0.001, max = 0.5, step = 0.01),
+                bslib::tooltip(
+                  shiny::numericInput(ns("nes_width_legend"), "Gene set label wrap (chars):",
+                                      value = 32, min = 8, max = 60, step = 2),
+                  "Maximum characters per line for gene set names on the y-axis.",
+                  placement = "right"
+                )
+              )
+            ),
             shiny::plotOutput(ns("nes_lollipop"), height = paste0(nes_h(), "px"))
           )
         ),
@@ -2589,6 +2615,30 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
               " uses the B-statistic (genes ranked by strength of differential evidence,",
               " regardless of direction; positive NES = gene set concentrated among",
               " the most strongly altered genes)."
+            ),
+            shiny::tags$details(
+              style = "margin-bottom:10px;",
+              shiny::tags$summary(
+                style = "cursor:pointer; font-size:0.85em; color:#555; user-select:none;",
+                shiny::icon("chevron-right", style = "font-size:0.7em;"),
+                " Display options"),
+              shiny::div(
+                style = "padding:8px 0 4px; display:grid; grid-template-columns:1fr 1fr; gap:8px;",
+                shiny::numericInput(ns("enrich_titlesize"), "Title size (pt):",
+                                    value = 9, min = 6, max = 20, step = 1),
+                bslib::tooltip(
+                  shiny::numericInput(ns("enrich_labsize"), "Label size (pt):",
+                                      value = 9, min = 6, max = 20, step = 1),
+                  "Font size of axis text and axis titles on each enrichment panel.",
+                  placement = "right"
+                ),
+                bslib::tooltip(
+                  shiny::numericInput(ns("enrich_width_title"), "Title wrap (chars):",
+                                      value = 38, min = 10, max = 60, step = 2),
+                  "Maximum characters per line in each enrichment panel's title.",
+                  placement = "right"
+                )
+              )
             ),
             shiny::plotOutput(ns("gsea_enrich_plot"), height = paste0(enrich_h(), "px"))
           )
@@ -2628,7 +2678,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
     # Helper: build one DEG volcano ggplot per contrast.
     #
     # Highlight mode drives BOTH which points are coloured as "of interest"
-    # AND which genes are eligible for text labels — the two were previously
+    # AND which genes are eligible for text labels - the two were previously
     # decoupled (labels for "Gene set members" mode used to fall back to
     # plotVolcano()'s own top-N-by-logFC labelling across *all* genes,
     # ignoring gene set membership entirely; "Significant genes" mode never
@@ -2775,7 +2825,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       n_gs   <- if (hl_mode == "gene_sets" && !is.null(res$gene_sets))
         length(res$gene_sets) else 1L
       n_rows_vol <- n_gs; n_cols_vol <- n_cont
-      gsea_vol_h(as.integer(min(10000L, max(550L, n_rows_vol * 550L + 80L))))
+      gsea_vol_h(as.integer(min(10000L, max(460L, n_rows_vol * 470L + 70L))))
       gsea_vol_w(if (n_cols_vol >= 3L) "100%"
                  else paste0(min(100L, n_cols_vol * 50L), "%"))
 
@@ -2817,18 +2867,51 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
 
     # ---- GSEA: Enrichment Plots ---------------------------------------------
 
+    # App-only wrapper: plotGSEAenrichment() (exported, untouched) only lets
+    # us control `titlesize` (title + subtitle), not axis text/title size. We
+    # call it with grid = FALSE to get the per (gene set x contrast) ggplot
+    # list, extend each panel's theme with a configurable label size, then
+    # arrange the grid ourselves (mirroring the exported function's own
+    # nrow/ncol auto-layout logic when neither is supplied).
+    .build_gsea_enrich_grid <- function(gsea_res, DEGs, gene_sets, titlesize,
+                                        widthTitle, labsize, ncol = NULL, nrow = NULL) {
+      plot_list <- plotGSEAenrichment(
+        GSEA_results = gsea_res, DEGList = DEGs, gene_sets = gene_sets,
+        titlesize = titlesize, widthTitle = widthTitle, grid = FALSE)
+      plot_list <- lapply(plot_list, function(p)
+        p + ggplot2::theme(
+          axis.text  = ggplot2::element_text(size = labsize),
+          axis.title = ggplot2::element_text(size = labsize + 1)
+        ))
+      n <- length(plot_list)
+      if (n == 0L) return(NULL)
+      if (n == 1L) return(plot_list[[1]])
+      if (is.null(ncol) && is.null(nrow)) {
+        ncol <- ceiling(sqrt(n)); nrow <- ceiling(n / ncol)
+      } else if (is.null(ncol)) ncol <- ceiling(n / nrow)
+      else if (is.null(nrow)) nrow <- ceiling(n / ncol)
+      ggpubr::ggarrange(plotlist = plot_list, ncol = ncol, nrow = nrow, align = "hv")
+    }
+
     output$gsea_enrich_plot <- shiny::renderPlot({
       res <- gsea_result(); shiny::req(!is.null(res))
-      font_s  <- input$gsea_title_size  %||% 10L
-      w_title <- input$gsea_width_title %||% 32L
-      n_plots <- length(res$gsea_res) * length(res$gene_sets)
-      enrich_h(as.integer(min(6000L, max(400L, n_plots * 220L))))
+      font_s  <- input$enrich_titlesize   %||% 9L
+      lab_s   <- input$enrich_labsize     %||% 9L
+      w_title <- input$enrich_width_title %||% 38L
+      # Panels are one per (gene set x contrast) pair, flattened into a grid
+      # capped at 2 columns; height scales with the number of rows that
+      # produces. Each panel needs real vertical room (title, subtitle,
+      # running-score curve, and the gene-set rug at the bottom), so the
+      # per-row allowance is generous - too little and every panel becomes
+      # illegibly squished.
+      n_total  <- length(res$gsea_res) * length(res$gene_sets)
+      ncol_enr <- min(2L, max(1L, n_total))
+      nrow_enr <- ceiling(n_total / ncol_enr)
+      enrich_h(as.integer(min(14000L, max(460L, nrow_enr * 400L + 60L))))
       tryCatch(
-        print(plotGSEAenrichment(
-          GSEA_results = res$gsea_res, DEGList = res$DEGs,
-          gene_sets = res$gene_sets, titlesize = font_s, widthTitle = w_title,
-          grid = TRUE,
-          nrow = length(res$gene_sets), ncol = length(res$gsea_res))),
+        print(.build_gsea_enrich_grid(
+          res$gsea_res, res$DEGs, res$gene_sets, font_s, w_title, lab_s,
+          nrow = nrow_enr, ncol = ncol_enr)),
         error = function(e)
           shiny::showNotification(paste("Enrichment plot error:", e$message),
                                   type = "warning", duration = 8))
@@ -2836,37 +2919,58 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
 
     # ---- GSEA: NES Lollipop -------------------------------------------------
 
+    # App-only wrapper: same idea as above - plotNESlollipop() (exported,
+    # untouched) only exposes `titlesize`, not axis/legend text size.
+    .build_nes_lollipop_grid <- function(gsea_res, sig_thr, titlesize, widthlabels,
+                                         labsize, ncol = NULL, nrow = NULL) {
+      plot_list <- plotNESlollipop(
+        GSEA_results = gsea_res, sig_threshold = sig_thr,
+        titlesize = titlesize, widthlabels = widthlabels, grid = FALSE)
+      plot_list <- lapply(plot_list, function(p)
+        p + ggplot2::theme(
+          axis.text    = ggplot2::element_text(size = labsize),
+          axis.title   = ggplot2::element_text(size = labsize + 1),
+          legend.text  = ggplot2::element_text(size = labsize),
+          legend.title = ggplot2::element_text(size = labsize),
+          strip.text   = ggplot2::element_text(size = labsize)
+        ))
+      n <- length(plot_list)
+      if (n == 0L) return(NULL)
+      if (n == 1L) return(plot_list[[1]])
+      if (is.null(ncol) && is.null(nrow)) {
+        ncol <- ceiling(sqrt(n)); nrow <- ceiling(n / ncol)
+      } else if (is.null(ncol)) ncol <- ceiling(n / nrow)
+      else if (is.null(nrow)) nrow <- ceiling(n / ncol)
+      ggpubr::ggarrange(plotlist = plot_list, ncol = ncol, nrow = nrow, align = "hv",
+                        common.legend = TRUE, legend = "right")
+    }
+
     output$nes_lollipop <- shiny::renderPlot({
       res <- gsea_result(); shiny::req(!is.null(res))
-      sig_thr  <- input$gsea_sig_threshold %||% 0.05
-      font_s   <- input$gsea_title_size    %||% 10L
-      w_labels <- input$gsea_width_legend  %||% 32L
+      sig_thr  <- input$nes_sig_threshold  %||% 0.05
+      font_s   <- input$nes_titlesize      %||% 8L
+      lab_s    <- input$nes_labsize        %||% 8L
+      w_labels <- input$nes_width_legend   %||% 32L
       tryCatch(
-        print(plotNESlollipop(
-          GSEA_results = res$gsea_res, sig_threshold = sig_thr,
-          titlesize = font_s, widthlabels = w_labels, grid = TRUE, ncol = 1L)),
+        print(.build_nes_lollipop_grid(
+          res$gsea_res, sig_thr, font_s, w_labels, lab_s, ncol = 1L)),
         error = function(e)
           shiny::showNotification(paste("Lollipop error:", e$message),
                                   type = "warning", duration = 8))
     }, height = function() nes_h(), res = 150)
 
-    # ---- GSEA: Combined Volcano (interactive) --------------------------------
+    # ---- GSEA: Combined Volcano ----------------------------------------------
 
-    # Build a clean single-layer ggplot for the combined GSEA volcano.
-    # Avoids plotCombinedGSEA's two geom_point layers (which ggplotly renders
-    # as two overlapping traces of different sizes, making fake outlines).
-    .build_combined_gsea_gg <- function(gsea_res, sig_thr, pt_size, w_legend) {
+    # Build the combined GSEA volcano as a single static ggplot: one point per
+    # gene set x contrast, coloured by gene set and shaped by contrast, with
+    # both shown as proper legends.
+    .build_combined_gsea_gg <- function(gsea_res, sig_thr, pt_size, w_legend, labsize = 8) {
       combined_data <- do.call(rbind, lapply(names(gsea_res), function(cn) {
         df <- gsea_res[[cn]]; df$contrast <- cn; df
       }))
       combined_data$logpadj <- -log10(combined_data$padj)
       combined_data$pathway_w <- vapply(combined_data$pathway,
         function(x) wrap_title(x, w_legend), character(1))
-      combined_data$tip <- paste0(
-        "Pathway: ",  combined_data$pathway,
-        "<br>NES: ",  round(combined_data$NES, 4),
-        "<br>Adj. p-value: ", signif(combined_data$padj, 3),
-        "<br>Contrast: ", combined_data$contrast)
 
       n_paths <- length(unique(combined_data$pathway_w))
       pal <- grDevices::colorRampPalette(
@@ -2879,17 +2983,30 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       ggplot2::ggplot(combined_data,
           ggplot2::aes(x = NES, y = logpadj,
                        colour = factor(pathway_w),
-                       shape  = contrast,
-                       text   = tip)) +
+                       shape  = contrast)) +
+        # A slightly larger black point drawn first, then the coloured point on
+        # top, gives every point a thin black outline (the plotting shapes used
+        # here, 15+, are solid/non-fillable so this "shadow" trick stands in
+        # for a real stroke colour).
+        ggplot2::geom_point(size = pt_size + 1, color = "black", show.legend = FALSE) +
         ggplot2::geom_point(size = pt_size) +
         ggplot2::geom_hline(yintercept = -log10(sig_thr),
                             linetype = "dashed", color = "black", linewidth = 0.5) +
         ggplot2::geom_vline(xintercept = 0,
                             linetype = "dashed", color = "black", linewidth = 0.5) +
-        # name = NULL: plotly would render scale titles as phantom legend items,
-        # duplicating the legendgrouptitle entries added by .clean_gsea_volcano_plotly
-        ggplot2::scale_colour_manual(values = pal, name = NULL) +
-        ggplot2::scale_shape_manual(values = shapes, name = NULL) +
+        ggplot2::scale_colour_manual(values = pal, name = "Gene set") +
+        ggplot2::scale_shape_manual(values = shapes, name = "Contrast") +
+        # With a facet_grid of two side-by-side panels, a right-hand legend
+        # column has very little horizontal room - a "Gene set" legend with
+        # many entries stacked in a single narrow column can end up taller
+        # than the plot device itself, clipping its own title. Moving the
+        # legend to the bottom lets it wrap across the plot's full width
+        # instead, and stacking the two legends (colour, then shape) with
+        # explicit spacing between them keeps them from crowding each other.
+        ggplot2::guides(
+          colour = ggplot2::guide_legend(title.position = "top", nrow = 3, order = 1),
+          shape  = ggplot2::guide_legend(title.position = "top", nrow = 1, order = 2)
+        ) +
         ggplot2::labs(x = "Normalized Enrichment Score (NES)",
                       y = "-log10(adj. p-value)") +
         ggplot2::theme_bw() +
@@ -2898,24 +3015,30 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
             stat_used = c("t" = "Enriched/Depleted", "B" = "Altered")),
           scales = "free", switch = "y") +
         ggplot2::theme(strip.background = ggplot2::element_rect(fill = "white"),
-                       legend.position  = "right")
+                       legend.position  = "bottom",
+                       legend.box       = "vertical",
+                       legend.spacing.y = ggplot2::unit(8, "pt"),
+                       legend.margin    = ggplot2::margin(t = 4, b = 2),
+                       plot.margin   = ggplot2::margin(t = 8, r = 14, b = 8, l = 8),
+                       axis.text     = ggplot2::element_text(size = labsize),
+                       axis.title    = ggplot2::element_text(size = labsize + 1),
+                       legend.text   = ggplot2::element_text(size = labsize),
+                       legend.title  = ggplot2::element_text(size = labsize, hjust = 0),
+                       strip.text    = ggplot2::element_text(size = labsize + 1, face = "bold"))
     }
 
-    output$gsea_combined_plot <- plotly::renderPlotly({
+    output$gsea_combined_plot <- shiny::renderPlot({
       res <- gsea_result(); shiny::req(!is.null(res), !is.null(res$gsea_res))
-      sig_thr  <- input$gsea_sig_threshold %||% 0.05
-      pt_size  <- input$gsea_point_size    %||% 7L
-      w_legend <- input$gsea_width_legend  %||% 32L
-      tryCatch({
-        gg <- .build_combined_gsea_gg(res$gsea_res, sig_thr, pt_size, w_legend)
-        known_pathways  <- unique(do.call(c, lapply(res$gsea_res, `[[`, "pathway")))
-        known_contrasts <- names(res$gsea_res)
-        plotly::ggplotly(gg, tooltip = "text") |>
-          .clean_gsea_volcano_plotly(known_pathways, known_contrasts)
-      }, error = function(e)
-        shiny::showNotification(paste("Combined GSEA error:", e$message),
-                                type = "warning", duration = 8))
-    })
+      sig_thr  <- input$combined_sig_threshold %||% 0.05
+      pt_size  <- input$combined_pointsize     %||% 3L
+      w_legend <- input$combined_width_legend  %||% 32L
+      lab_s    <- input$combined_labsize       %||% 8L
+      tryCatch(
+        print(.build_combined_gsea_gg(res$gsea_res, sig_thr, pt_size, w_legend, lab_s)),
+        error = function(e)
+          shiny::showNotification(paste("Combined GSEA error:", e$message),
+                                  type = "warning", duration = 8))
+    }, height = function() combined_h(), res = 150)
 
     # ---- GSEA: Download handlers --------------------------------------------
 
@@ -2923,15 +3046,17 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       filename = function() paste0("gsea_enrichment_", Sys.Date(), ".png"),
       content  = function(file) {
         res <- gsea_result(); shiny::req(!is.null(res))
-        font_s  <- input$gsea_title_size  %||% 10L
-        w_title <- input$gsea_width_title %||% 32L
+        font_s  <- input$enrich_titlesize   %||% 9L
+        lab_s   <- input$enrich_labsize     %||% 9L
+        w_title <- input$enrich_width_title %||% 38L
+        n_total  <- length(res$gsea_res) * length(res$gene_sets)
+        ncol_enr <- min(2L, max(1L, n_total))
+        nrow_enr <- ceiling(n_total / ncol_enr)
         h_in    <- enrich_h() / 96
         ggplot2::ggsave(file,
-          plot = plotGSEAenrichment(
-            GSEA_results = res$gsea_res, DEGList = res$DEGs,
-            gene_sets = res$gene_sets, titlesize = font_s, widthTitle = w_title,
-            grid = TRUE,
-            nrow = length(res$gene_sets), ncol = length(res$gsea_res)),
+          plot = .build_gsea_enrich_grid(
+            res$gsea_res, res$DEGs, res$gene_sets, font_s, w_title, lab_s,
+            nrow = nrow_enr, ncol = ncol_enr),
           width = 14, height = max(5, h_in), dpi = 150, units = "in")
       }
     )
@@ -2940,14 +3065,14 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       filename = function() paste0("nes_lollipop_", Sys.Date(), ".png"),
       content  = function(file) {
         res <- gsea_result(); shiny::req(!is.null(res))
-        sig_thr  <- input$gsea_sig_threshold %||% 0.05
-        font_s   <- input$gsea_title_size    %||% 10L
-        w_labels <- input$gsea_width_legend  %||% 32L
+        sig_thr  <- input$nes_sig_threshold %||% 0.05
+        font_s   <- input$nes_titlesize     %||% 8L
+        lab_s    <- input$nes_labsize       %||% 8L
+        w_labels <- input$nes_width_legend  %||% 32L
         h_in <- nes_h() / 96
         ggplot2::ggsave(file,
-          plot = plotNESlollipop(res$gsea_res, sig_threshold = sig_thr,
-                                  titlesize = font_s, widthlabels = w_labels,
-                                  grid = TRUE, ncol = 1L),
+          plot = .build_nes_lollipop_grid(res$gsea_res, sig_thr, font_s, w_labels,
+                                          lab_s, ncol = 1L),
           width = 12, height = max(4, h_in), dpi = 150, units = "in")
       }
     )
@@ -2956,12 +3081,14 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       filename = function() paste0("gsea_combined_", Sys.Date(), ".png"),
       content  = function(file) {
         res <- gsea_result(); shiny::req(!is.null(res), !is.null(res$gsea_res))
-        sig_thr  <- input$gsea_sig_threshold %||% 0.05
-        pt_size  <- input$gsea_point_size    %||% 7L
-        w_legend <- input$gsea_width_legend  %||% 32L
+        sig_thr  <- input$combined_sig_threshold %||% 0.05
+        pt_size  <- input$combined_pointsize     %||% 3L
+        w_legend <- input$combined_width_legend  %||% 32L
+        lab_s    <- input$combined_labsize       %||% 8L
+        h_in <- combined_h() / 96
         ggplot2::ggsave(file,
-          plot = .build_combined_gsea_gg(res$gsea_res, sig_thr, pt_size, w_legend),
-          width = 12, height = 6, dpi = 150, units = "in")
+          plot = .build_combined_gsea_gg(res$gsea_res, sig_thr, pt_size, w_legend, lab_s),
+          width = 12, height = max(5, h_in), dpi = 150, units = "in")
       }
     )
 
@@ -2990,6 +3117,13 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
                                    function(x) paste(x, collapse = ", "), character(1))
         df
       }))
+      # fgsea() results are data.tables, and rbind() of data.tables returns a
+      # data.table too. Coerce to a plain data.frame before column-selecting
+      # below: a data.table's `[` treats a logical vector as a ROW filter
+      # (matched against nrow), not a column selector like data.frame's `[`
+      # does, which throws "i evaluates to a logical vector length <ncol> but
+      # there are <nrow> rows" the moment ncol != nrow.
+      combined <- as.data.frame(combined)
       combined[sapply(combined, is.numeric)] <-
         lapply(combined[sapply(combined, is.numeric)], round, 4)
       DT::datatable(combined, rownames = FALSE, filter = "top",
@@ -3085,6 +3219,98 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         ggplot2::ggsave(file, plot = p,
                         width = 12, height = max(4, h_in),
                         dpi = 150, units = "in")
+      }
+    )
+
+    # ---- Run + Render: Score Results Table ---------------------------------
+
+    shiny::observeEvent(input$run_scores_table, {
+      expr <- get_expr(); meta <- get_meta()
+      gs   <- .active_gs(); shiny::req(expr, meta, gs, length(gs) > 0)
+      meth <- shiny::isolate(input$scores_table_method) %||% "all"
+
+      shiny::withProgress(message = "Computing score results table...", value = 0.3, {
+        result <- tryCatch({
+          scores_list <- CalculateScores(data = expr, metadata = meta,
+                                         gene_sets = gs, method = meth)
+          shiny::incProgress(0.6)
+
+          # Normalise to a nested list of method -> signature -> data.frame,
+          # regardless of whether one method or "all" were requested, then
+          # flatten into a single long table (one row per sample x gene set
+          # x method) with a Method / GeneSet column prepended.
+          by_method <- if (identical(meth, "all")) scores_list
+                       else stats::setNames(list(scores_list), meth)
+
+          long_df <- data.frame()
+          for (m in names(by_method)) {
+            for (sig in names(by_method[[m]])) {
+              df <- by_method[[m]][[sig]]
+              if (!is.data.frame(df) || nrow(df) == 0) next
+              df$Method  <- m
+              df$GeneSet <- sig
+              long_df <- rbind(long_df, df)
+            }
+          }
+          shiny::req(nrow(long_df) > 0)
+          front <- c("Method", "GeneSet", "sample", "score")
+          front <- front[front %in% colnames(long_df)]
+          long_df <- long_df[, c(front, setdiff(colnames(long_df), front)), drop = FALSE]
+          shiny::incProgress(0.1)
+          long_df
+        }, error = function(e) {
+          shiny::showNotification(paste("Score results table failed:", conditionMessage(e)),
+                                  type = "error", duration = 12); NULL
+        })
+      })
+      scores_table_result(result)
+    })
+
+    output$scores_table_status_ui <- shiny::renderUI({
+      if (is.null(scores_table_result()))
+        shiny::div(class = "alert alert-info", style = "margin:10px 0;",
+                   shiny::icon("circle-info"),
+                   " Choose method(s) above, then click",
+                   shiny::strong(" Compute Score Results Table"), ".")
+    })
+
+    output$scores_table_ui <- shiny::renderUI({
+      res <- scores_table_result(); shiny::req(!is.null(res))
+      bslib::card(
+        full_screen = TRUE,
+        shiny::div(
+          class = "d-flex align-items-center justify-content-between",
+          style = "margin: 4px 0 6px;",
+          shiny::h5("Score Results", style = "margin:0;"),
+          shiny::downloadButton(ns("dl_scores_table"), "Download",
+            icon = shiny::icon("download"), class = "btn-sm btn-outline-secondary")
+        ),
+        shiny::div(
+          class = "text-muted", style = "font-size:0.78em; padding:0 6px 8px;",
+          shiny::icon("circle-info"),
+          " One row per sample x gene set x scoring method, with all sample metadata included.",
+          " Use the column filters below the header to narrow down results."
+        ),
+        DT::DTOutput(ns("scores_table"))
+      )
+    })
+
+    output$scores_table <- DT::renderDT({
+      res <- scores_table_result(); shiny::req(!is.null(res), is.data.frame(res))
+      df <- res
+      if ("score" %in% colnames(df)) df$score <- round(df$score, 4)
+      DT::datatable(
+        df, rownames = FALSE, filter = "top", extensions = "Buttons",
+        options = list(pageLength = 15, dom = "Bfrtip",
+                      buttons = c("csv", "excel"), scrollX = TRUE)
+      )
+    })
+
+    output$dl_scores_table <- shiny::downloadHandler(
+      filename = function() paste0("score_results_table_", Sys.Date(), ".csv"),
+      content  = function(file) {
+        res <- scores_table_result(); shiny::req(!is.null(res), is.data.frame(res))
+        utils::write.csv(res, file, row.names = FALSE)
       }
     )
 

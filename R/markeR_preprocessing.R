@@ -24,7 +24,6 @@
 #' @importFrom stats prcomp model.matrix reformulate setNames median quantile var sd
 #' @importFrom utils write.csv head tail download.file
 #' @importFrom jsonlite toJSON
-#' @importFrom plotly ggplotly plotly_build plotlyOutput renderPlotly
 # Note: AnnotationDbi is optional (Suggests); accessed via :: with requireNamespace guard
 
 `%||%` <- function(a, b) {
@@ -283,14 +282,13 @@
   }), colnames(mat))
 }
 
-# Shared colour palette — used in both ggplot2 (Shiny) and Plotly (HTML report)
+# Shared colour palette, used for both the live Shiny plots and the static HTML report
 .pp_palette <- c(
   "#E63946", "#457B9D", "#2A9D8F", "#F4A261", "#6A4C93",
   "#1D8348", "#C77DFF", "#F72585", "#4CC9F0", "#F9C74F",
   "#90BE6D", "#577590", "#7B2D8B", "#F94144", "#43AA8B",
   "#FF6B6B", "#118AB2", "#06D6A0", "#FFD166", "#EF476F"
 )
-.pp_report_palette <- jsonlite::toJSON(.pp_palette, auto_unbox = FALSE)
 
 # Align metadata to a vector of sample names → named list of character vectors per column
 .pp_align_meta <- function(samples, meta, meta_cols) {
@@ -304,159 +302,110 @@
   stats::setNames(out, meta_cols)
 }
 
-# Interactive Plotly boxplot div with colour-by dropdown (uses pre-computed box stats)
+# Render a ggplot to an inline base64 <img> tag for the standalone HTML report.
+.report_plot_to_img <- function(p, w = 900, h = 420, res = 130) {
+  if (is.null(p)) return("<p style='color:#9ca3af;font-size:0.85em;'>(plot not available)</p>")
+  tmp <- tempfile(fileext = ".png")
+  on.exit(tryCatch(unlink(tmp), error = function(e) NULL), add = TRUE)
+  tryCatch({
+    grDevices::png(tmp, width = w, height = h, res = res, bg = "white")
+    print(p)
+    grDevices::dev.off()
+    uri <- base64enc::dataURI(file = tmp, mime = "image/png")
+    paste0("<img src='", uri, "' style='max-width:100%;border:1px solid #e5e7eb;border-radius:6px;margin-top:8px;'>")
+  }, error = function(e) {
+    tryCatch(grDevices::dev.off(), error = function(e2) NULL)
+    paste0("<p style='color:#ef4444;font-size:0.85em;'>Plot error: ", e$message, "</p>")
+  })
+}
+
+# Static boxplot div for the standalone HTML report: one box per sample,
+# coloured by `initial_color` (a metadata column), built directly from
+# pre-computed box statistics (quartiles/fences) rather than raw data.
 .report_box_div <- function(box_stats, meta, meta_cols, initial_color, div_id,
                              title = "", height = "460px", y_label = "log₂(count + 1)") {
   samples <- names(box_stats)
   if (length(samples) == 0L) return("<p style='color:#9ca3af;'>No data</p>")
-  meta_aln <- .pp_align_meta(samples, meta, meta_cols)
-  meta_aln[["_sample_"]] <- samples
-  all_cols <- c("_sample_", meta_cols)
-  opts <- paste(sapply(all_cols, function(col) {
-    lbl <- if (col == "_sample_") "Sample" else col
-    sel <- if (identical(col, initial_color %||% "_sample_")) " selected" else ""
-    sprintf('<option value="%s"%s>%s</option>', col, sel, lbl)
-  }), collapse = "\n      ")
-  paste0(
-    '<div style="margin-bottom:8px;">',
-    '<label style="font-size:0.84em;font-weight:600;margin-right:6px;">Colour by:</label>',
-    '<select id="', div_id, '_sel" onchange="boxRC_', div_id, '(this.value)"',
-    ' style="font-size:0.84em;padding:2px 8px;border-radius:4px;border:1px solid #d1d5db;">',
-    opts, '</select></div>',
-    '<div id="', div_id, '" style="width:100%;height:', height, ';"></div>',
-    '<script>(function(){',
-    'var S=', jsonlite::toJSON(samples, auto_unbox=FALSE), ',',
-    'BS=', jsonlite::toJSON(box_stats, auto_unbox=TRUE), ',',
-    'M=', jsonlite::toJSON(meta_aln, auto_unbox=FALSE), ',',
-    'pal=', .pp_report_palette, ';',
-    'var initCol=', jsonlite::toJSON(initial_color %||% "_sample_", auto_unbox=TRUE), ';',
-    'var ttl=', jsonlite::toJSON(title, auto_unbox=TRUE), ';',
-    # One trace per sample, each with a single colour derived from its group.
-    # legendgroup+showlegend:first gives one legend entry per group, no boxmode needed.
-    'function tr(col){',
-    '  var vals=M[col]||S.map(function(_,i){return "S"+(i+1);});',
-    '  var uniq=[...new Set(vals)].sort();',
-    '  var cm={}; uniq.forEach(function(g,i){cm[g]=pal[i%pal.length];});',
-    '  var seen={};',
-    '  return S.map(function(s,i){',
-    '    var g=vals[i],st=BS[s]||{q1:0,median:0,q3:0,lf:0,uf:0};',
-    '    var first=!seen[g]; seen[g]=true;',
-    '    return{type:"box",name:g,x:[s],',
-    '      q1:[st.q1],median:[st.median],q3:[st.q3],',
-    '      lowerfence:[st.lf],upperfence:[st.uf],',
-    '      marker:{color:cm[g],opacity:0.85},boxpoints:false,',
-    '      legendgroup:g,showlegend:first};',
-    '  });',
-    '}',
-    'var lay={title:{text:ttl,font:{size:13}},',
-    '  xaxis:{tickangle:-45,tickfont:{size:9},automargin:true},',
-    '  yaxis:{title:', jsonlite::toJSON(y_label, auto_unbox=TRUE), ',titlefont:{size:11}},',
-    '  showlegend:true,legend:{orientation:"h",y:-0.25,font:{size:11}},',
-    '  margin:{l:55,r:10,t:ttl?40:20,b:80},',
-    '  plot_bgcolor:"white",paper_bgcolor:"white"};',
-    'function __init(){',
-    '  Plotly.newPlot("', div_id, '",tr(initCol),lay,{responsive:true,displayModeBar:true});',
-    '  window["boxRC_', div_id, '"]=function(col){Plotly.react("', div_id, '",tr(col),lay);};',
-    '}',
-    'if(typeof Plotly!=="undefined"){__init();}',
-    'else{window.addEventListener("load",__init);}',
-    '})();</script>'
+  meta_aln  <- .pp_align_meta(samples, meta, meta_cols)
+  group_col <- initial_color %||% "_sample_"
+  groups    <- if (group_col %in% names(meta_aln)) as.character(meta_aln[[group_col]]) else samples
+
+  df <- data.frame(
+    Sample = factor(samples, levels = samples),
+    Group  = groups,
+    q1     = vapply(box_stats, function(s) s$q1,     numeric(1)),
+    median = vapply(box_stats, function(s) s$median, numeric(1)),
+    q3     = vapply(box_stats, function(s) s$q3,     numeric(1)),
+    lower  = vapply(box_stats, function(s) s$lf,      numeric(1)),
+    upper  = vapply(box_stats, function(s) s$uf,      numeric(1))
   )
+  pal <- stats::setNames(rep_len(.pp_palette, length(unique(df$Group))), sort(unique(df$Group)))
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$Sample, fill = .data$Group)) +
+    ggplot2::geom_boxplot(
+      ggplot2::aes(ymin = .data$lower, lower = .data$q1, middle = .data$median,
+                  upper = .data$q3, ymax = .data$upper),
+      stat = "identity", width = 0.7) +
+    ggplot2::scale_fill_manual(values = pal, name = group_col) +
+    ggplot2::labs(title = title, x = "", y = y_label) +
+    ggplot2::theme_bw() +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 8),
+                   plot.title = ggplot2::element_text(hjust = 0.5, size = 12),
+                   legend.position = "bottom")
+
+  h_px <- suppressWarnings(as.integer(sub("px", "", height)))
+  if (is.na(h_px)) h_px <- 460L
+  .report_plot_to_img(p, w = max(700L, length(samples) * 25L), h = h_px)
 }
 
-# Interactive PCA scatter div with colour-by dropdown
-# Convert a ggplot to an interactive Plotly div for the HTML report.
-# Falls back to a static PNG if plotly is not available or conversion fails.
-.report_ggplotly_div <- function(gg, div_id, height = "420px") {
+# Convert a ggplot to an inline base64 image for the standalone HTML report.
+.report_gg_img_div <- function(gg, div_id, height = "420px") {
   if (is.null(gg)) return("<p style='color:#9ca3af;font-size:0.85em;'>(not available)</p>")
-  if (!requireNamespace("plotly", quietly = TRUE))
-    return(plot_to_img(gg))
-  tryCatch({
-    pl      <- plotly::ggplotly(gg, tooltip = "text")
-    built   <- plotly::plotly_build(pl)$x
-    pl_data <- jsonlite::toJSON(built$data,   auto_unbox = TRUE, null = "null")
-    pl_lay  <- jsonlite::toJSON(built$layout, auto_unbox = TRUE, null = "null")
-    paste0(
-      '<div id="', div_id, '" style="width:100%;height:', height, ';"></div>',
-      '<script>(function(){',
-      'var d=', pl_data, ',l=', pl_lay, ';',
-      'function __init(){Plotly.newPlot("', div_id, '",d,l,{responsive:true,displayModeBar:true});}',
-      'if(typeof Plotly!=="undefined"){__init();}',
-      'else{window.addEventListener("load",__init);}',
-      '})();</script>'
-    )
-  }, error = function(e) plot_to_img(gg))
+  h_px <- suppressWarnings(as.integer(sub("px", "", height)))
+  if (is.na(h_px)) h_px <- 420L
+  .report_plot_to_img(gg, h = h_px)
 }
 
+# Static PCA scatter div for the standalone HTML report, coloured by a single
+# fixed metadata column (`initial_color`).
 .report_pca_div <- function(pca_df, ev, meta, meta_cols, initial_color, pc_x, pc_y,
                              div_id, height = "620px") {
   if (is.null(pca_df) || nrow(pca_df) == 0L)
     return("<p style='color:#9ca3af;'>PCA not available</p>")
   samples <- rownames(pca_df)
-  x_vals  <- round(pca_df[[pc_x]], 4)
-  y_vals  <- round(pca_df[[pc_y]], 4)
   pc_x_i  <- as.integer(sub("PC", "", pc_x))
   pc_y_i  <- as.integer(sub("PC", "", pc_y))
   pct_x   <- if (!is.null(ev) && pc_x_i <= length(ev)) round(100 * ev[pc_x_i] / sum(ev), 1) else 0
   pct_y   <- if (!is.null(ev) && pc_y_i <= length(ev)) round(100 * ev[pc_y_i] / sum(ev), 1) else 0
-  meta_aln <- .pp_align_meta(samples, meta, meta_cols)
-  meta_aln[["_sample_"]] <- samples
-  all_cols <- c("_sample_", meta_cols)
-  opts <- paste(sapply(all_cols, function(col) {
-    lbl <- if (col == "_sample_") "Sample" else col
-    sel <- if (identical(col, initial_color %||% "_sample_")) " selected" else ""
-    sprintf('<option value="%s"%s>%s</option>', col, sel, lbl)
-  }), collapse = "\n      ")
   xlbl <- paste0(pc_x, ": ", pct_x, "%")
   ylbl <- paste0(pc_y, ": ", pct_y, "%")
-  paste0(
-    '<div style="margin-bottom:8px;">',
-    '<label style="font-size:0.84em;font-weight:600;margin-right:6px;">Colour by:</label>',
-    '<select id="', div_id, '_sel" onchange="pcaRC_', div_id, '(this.value)"',
-    ' style="font-size:0.84em;padding:2px 8px;border-radius:4px;border:1px solid #d1d5db;">',
-    opts, '</select></div>',
-    '<div id="', div_id, '" style="width:100%;height:', height, ';"></div>',
-    '<script>(function(){',
-    'var S=', jsonlite::toJSON(samples, auto_unbox=FALSE), ',',
-    'X=', jsonlite::toJSON(x_vals, auto_unbox=FALSE), ',',
-    'Y=', jsonlite::toJSON(y_vals, auto_unbox=FALSE), ',',
-    'M=', jsonlite::toJSON(meta_aln, auto_unbox=FALSE), ',',
-    'pal=', .pp_report_palette, ';',
-    'var initCol=', jsonlite::toJSON(initial_color %||% "_sample_", auto_unbox=TRUE), ';',
-    'var xlbl=', jsonlite::toJSON(xlbl, auto_unbox=TRUE), ',',
-    'ylbl=', jsonlite::toJSON(ylbl, auto_unbox=TRUE), ';',
-    'function tr(col){',
-    '  var vals=M[col]||S.map(function(_,i){return "S"+(i+1);});',
-    '  var uniq=[...new Set(vals)].sort();',
-    '  var cm={}; uniq.forEach(function(g,i){cm[g]=pal[i%pal.length];});',
-    '  var base=[{type:"scatter",mode:"markers",x:X,y:Y,text:S,',
-    '    hovertemplate:"%{text}<br>"+xlbl+": %{x:.2f}<br>"+ylbl+": %{y:.2f}<extra></extra>",',
-    '    marker:{size:10,opacity:0.85,color:vals.map(function(v){return cm[v];}),',
-    '            line:{width:0.5,color:"rgba(255,255,255,0.7)"}},showlegend:false}];',
-    '  return base.concat(uniq.map(function(g,i){',
-    '    return{type:"scatter",mode:"markers",name:g,x:[null],y:[null],',
-    '           marker:{size:10,color:pal[i%pal.length]},showlegend:true};',
-    '  }));',
-    '}',
-    'var lay={xaxis:{title:xlbl,zeroline:true,zerolinecolor:"#e5e7eb"},',
-    '  yaxis:{title:ylbl,zeroline:true,zerolinecolor:"#e5e7eb"},',
-    '  legend:{orientation:"h",y:-0.2},margin:{l:60,r:10,t:20,b:80},',
-    '  plot_bgcolor:"white",paper_bgcolor:"white"};',
-    'function __init(){',
-    '  Plotly.newPlot("', div_id, '",tr(initCol),lay,{responsive:true,displayModeBar:true});',
-    '  window["pcaRC_', div_id, '"]=function(col){Plotly.react("', div_id, '",tr(col),lay);};',
-    '}',
-    'if(typeof Plotly!=="undefined"){__init();}',
-    'else{window.addEventListener("load",__init);}',
-    '})();</script>'
-  )
+
+  meta_aln  <- .pp_align_meta(samples, meta, meta_cols)
+  group_col <- initial_color %||% "_sample_"
+  groups    <- if (group_col %in% names(meta_aln)) as.character(meta_aln[[group_col]]) else samples
+
+  df <- data.frame(x = pca_df[[pc_x]], y = pca_df[[pc_y]], Group = groups)
+  pal <- stats::setNames(rep_len(.pp_palette, length(unique(df$Group))), sort(unique(df$Group)))
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$x, y = .data$y, fill = .data$Group)) +
+    ggplot2::geom_point(size = 3, alpha = 0.85, shape = 21, color = "white") +
+    ggplot2::scale_fill_manual(values = pal, name = group_col) +
+    ggplot2::geom_vline(xintercept = 0, linetype = "dotted", color = "grey70") +
+    ggplot2::geom_hline(yintercept = 0, linetype = "dotted", color = "grey70") +
+    ggplot2::labs(x = xlbl, y = ylbl) +
+    ggplot2::theme_bw() +
+    ggplot2::theme(legend.position = "bottom")
+
+  h_px <- suppressWarnings(as.integer(sub("px", "", height)))
+  if (is.na(h_px)) h_px <- 620L
+  .report_plot_to_img(p, w = 700L, h = h_px)
 }
 
 # ── Gene ID detection ──────────────────────────────────────────────────────────
 
 # Map of species key → list(label, pkg, biomart_dataset, ensembl_prefix)
-# pkg:             org.*.eg.db fallback (optional — needs separate install)
-# biomart_dataset: Ensembl BioMart dataset name (primary — needs only biomaRt)
+# pkg:             org.*.eg.db fallback (optional - needs separate install)
+# biomart_dataset: Ensembl BioMart dataset name (primary - needs only biomaRt)
 # ensembl_prefix:  regex to auto-detect species from gene IDs
 .pp_species_map <- list(
   human       = list(label="Human (Homo sapiens)",         pkg="org.Hs.eg.db",   biomart_dataset="hsapiens_gene_ensembl",      ensembl_prefix="^ENSG[0-9]"),
@@ -478,7 +427,7 @@
   rabbit      = list(label="Rabbit (Oryctolagus cuniculus)",pkg=NULL,            biomart_dataset="ocuniculus_gene_ensembl",    ensembl_prefix="^ENSOCUG[0-9]")
 )
 
-# Convert gene IDs to symbols via biomaRt (queries Ensembl API — no per-species install needed)
+# Convert gene IDs to symbols via biomaRt (queries Ensembl API - no per-species install needed)
 .pp_convert_biomart <- function(ids_clean, keytype, biomart_dataset) {
   if (!requireNamespace("biomaRt", quietly = TRUE)) return(NULL)
   bm_filter <- switch(keytype,
@@ -626,19 +575,17 @@
 .pp_expand_btn <- function(btn_id, label = "⤢ Expand / Download") {
   shiny::div(style = "display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:4px;",
     shiny::tags$small(style = "color:#9ca3af;font-style:italic;",
-      "Full-size interactive view & download →"),
+      "Full-size view & download"),
     shiny::actionButton(btn_id, label, class = "btn-outline-primary btn-sm",
       style = "font-size:0.78em;padding:2px 10px;"))
 }
 
-# ── Plot modal (uses plotly for interactive/resizable) ─────────────────────────
+# ── Plot modal (full-size static view) ──────────────────────────────────────────
 
 .pp_plot_modal <- function(plot_ns_id, dl_btn_id) {
-  use_plotly <- requireNamespace("plotly", quietly = TRUE)
   shiny::modalDialog(
     size = "xl", easyClose = TRUE,
-    if (use_plotly) plotly::plotlyOutput(plot_ns_id, height = "72vh")
-    else            shiny::plotOutput(plot_ns_id,   height = "72vh"),
+    shiny::plotOutput(plot_ns_id, height = "72vh"),
     footer = shiny::tagList(
       shiny::downloadButton(dl_btn_id, "⬇ Download PNG"),
       shiny::modalButton("Close")
@@ -789,7 +736,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
                     "Gene ID conversion will not work. ",
                     "Recommended: BiocManager::install('biomaRt')"))
       } else if (!has_biomart) {
-        glog(paste0("[INFO] biomaRt not installed — gene ID conversion will use local ",
+        glog(paste0("[INFO] biomaRt not installed - gene ID conversion will use local ",
                     "org.*.eg.db packages only. For full species support install: ",
                     "BiocManager::install('biomaRt')"))
       }
@@ -862,7 +809,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         rv$downloads_available <- FALSE; rv$gene_id_dismissed <- FALSE; rv$gene_id_map <- NULL
         rv$s1_summary <- ""; rv$s2_summary <- ""; rv$s3_summary <- ""
         .finalized_fp(NULL)
-        # (no notification — silent reset to avoid noise during normal data-tab usage)
+        # (no notification - silent reset to avoid noise during normal data-tab usage)
       }
       rv$data_s0 <- d0; rv$data_s1 <- d0; rv$meta_s <- m
       rv$data_s0_orig  <- d0  # keep an unmodified copy for full reset
@@ -944,7 +891,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
                 paste0("Querying Ensembl BioMart for ", sp_info$label %||% species, "…"),
                 style = "margin-top:18px; color:#333;"),
               shiny::tags$p(
-                "Mapping gene IDs to symbols via Ensembl — this may take 15–30 s.",
+                "Mapping gene IDs to symbols via Ensembl - this may take 15–30 s.",
                 style = "color:#777; font-size:0.9em; margin-top:6px;")
             )
           ))
@@ -1084,7 +1031,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       n_before <- nrow(rv$data_s0)
       n_drop   <- sum(mp$status == "not found")
       if (length(keep_ids) == 0L) {
-        shiny::showNotification("No mapped genes to keep — aborting remove.", type="error"); return()
+        shiny::showNotification("No mapped genes to keep - aborting remove.", type="error"); return()
       }
       rv$data_s0 <- rv$data_s0[rownames(rv$data_s0) %in% keep_ids, , drop=FALSE]
       rv$data_s1 <- rv$data_s1[rownames(rv$data_s1) %in% keep_ids, , drop=FALSE]
@@ -1119,25 +1066,12 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
     })
 
     # =========================================================================
-    # MODAL PLOT - plotly if available, otherwise static
+    # MODAL PLOT - full-size static view
     # =========================================================================
 
-    output$modal_plot_render <- (
-      if (requireNamespace("plotly", quietly = TRUE))
-        plotly::renderPlotly
-      else
-        shiny::renderPlot
-    )({
+    output$modal_plot_render <- shiny::renderPlot({
       shiny::req(modal_plot())
-      if (requireNamespace("plotly", quietly = TRUE)) {
-        p <- modal_plot()
-        # If plot has a 'text' aesthetic use it as the tooltip (sample name hover)
-        has_text <- tryCatch("text" %in% names(p$mapping), error = function(e) FALSE)
-        if (has_text) plotly::ggplotly(p, tooltip = c("text", "x", "y"))
-        else plotly::ggplotly(p)
-      } else {
-        modal_plot()
-      }
+      modal_plot()
     })
 
     output$dl_plot_png <- shiny::downloadHandler(
@@ -1402,7 +1336,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         display_mode <- if (identical(samp_choice, "all")) "all" else s3d
 
         # All available sample names across both matrices (consistent set for all plots)
-        # Use data_s2 column order as canonical — matches .s3_samps() in the app
+        # Use data_s2 column order as canonical - matches .s3_samps() in the app
         # so random/extreme sample selection is identical between UI and report.
         all_samp_names <- if (!is.null(rv$data_s2)) colnames(rv$data_s2)
                           else if (!is.null(rv$norm_linear)) colnames(rv$norm_linear)
@@ -1427,7 +1361,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           c(avail[ord[seq_len(nb)]],
             avail[ord[seq(length(avail) - nt + 1L, length(avail))]])
         } else {
-          NULL  # "all" — no subsetting
+          NULL  # "all" - no subsetting
         }
 
         # Helper to subset a matrix to the chosen sample names (consistent set)
@@ -1497,10 +1431,10 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         }
 
         # ── Step plots ────────────────────────────────────────────────────────
-        # Step 1: interactive Plotly (falls back to static PNG)
-        s1a_div <- .report_ggplotly_div(
+        # Step 1: static PNG plots
+        s1a_div <- .report_gg_img_div(
           if (!is.null(rv$s1_plot_a)) rv$s1_plot_a$plot else NULL, "s1a")
-        s1b_div <- .report_ggplotly_div(
+        s1b_div <- .report_gg_img_div(
           if (!is.null(rv$s1_plot_b)) rv$s1_plot_b$plot else NULL, "s1b")
 
         # Step 2: before/after density plots (static PNG)
@@ -1555,7 +1489,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           error = function(e) plot_to_img(rv$report_s3_after, h=420)
         )
 
-        # Step 4: interactive PCA with colour-by dropdown
+        # Step 4: PCA scatter, coloured by the selected metadata column
         pc_x  <- if (!is.null(rid)) rid$pc_x else "PC1"
         pc_y  <- if (!is.null(rid)) rid$pc_y else "PC2"
         s4c   <- if (!is.null(rid)) rid$s4_pca_color else NULL
@@ -1617,14 +1551,14 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
               if (n_kept_orig > 0)
                 kv("Kept with original ID",
                    paste0(format(n_kept_orig, big.mark = ","),
-                          " — kept in data using original identifiers")) else "",
+                          " - kept in data using original identifiers")) else "",
               if (n_notfnd > 0)
                 kv("Not found (unresolved)",
                    paste0(format(n_notfnd, big.mark = ","),
-                          " — no symbol found; kept in data with cleaned ID")) else "",
+                          ": no symbol found; kept in data with cleaned ID")) else "",
               if (n_removed > 0)
                 kv("Removed from data", format(n_removed, big.mark = ",")) else
-                kv("Removed from data", "0 — all genes retained"),
+                kv("Removed from data", "0, all genes retained"),
               "</div>",
               map_tbl
             )
@@ -1635,7 +1569,6 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         head_block <- paste0(
           "<meta charset='UTF-8'>",
           "<title>markeR Preprocessing Report</title>",
-          "<script src='https://cdn.plot.ly/plotly-2.30.0.min.js'></script>",
           "<link rel='stylesheet' href='https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css'>",
           "<style>",
           "body{font-family:system-ui,sans-serif;max-width:1200px;margin:30px auto;color:#1f2937;padding:0 24px;}",
@@ -1709,13 +1642,13 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
                 "</tbody></table>",
                 if (length(rv$meta_type_log) > 0L)
                   paste0("<p style='margin-top:6px;font-size:0.82em;color:#6b7280;'>",
-                         length(rv$meta_type_log), " type change(s) applied — see session log for details.</p>")
+                         length(rv$meta_type_log), " type change(s) applied - see session log for details.</p>")
                 else "",
                 "</div></div>")
             } else ""
           },
 
-          # Gene ID conversion (before summary — it's the first step)
+          # Gene ID conversion (before summary - it's the first step)
           "<h2>Gene ID Conversion</h2>",
           geneid_block,
 
@@ -1758,7 +1691,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           "</div>",
           "</div>",
 
-          # Step 3 — interactive boxplots
+          # Step 3 - interactive boxplots
           "<div class='step-section'>",
           "<div class='step-header'><span class='step-num'>3</span><span class='step-title'>Normalisation (", s$norm_method, ")</span></div>",
           if (nchar(rv$s3_summary) > 0)
@@ -1772,7 +1705,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           "</div>",
           "</div>",
 
-          # Step 4 — interactive PCA
+          # Step 4 - interactive PCA
           "<div class='step-section'>",
           "<div class='step-header'><span class='step-num'>4</span><span class='step-title'>PCA & Batch Correction</span></div>",
           if (isTRUE(s$bc_applied))
@@ -1868,7 +1801,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
                         "Integer"   = "integer",   "Factor"  = "factor",
                         "Logical"   = "logical")
 
-      # Type selectors — use native <select> (selectize=FALSE) to avoid
+      # Type selectors - use native <select> (selectize=FALSE) to avoid
       # dropdown clipping inside grid containers.
       # Defaults are always from the ORIGINAL snapshot.
       selectors <- lapply(cols, function(col) {
@@ -1893,13 +1826,13 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           shiny::tags$div(
             style = "display:flex; align-items:center;",
             shiny::tags$span(class = "pp-num pp-num-active", "0"),
-            shiny::tags$strong("Step 0 — Verify Metadata Column Types"),
+            shiny::tags$strong("Step 0 - Verify Metadata Column Types"),
             bslib::tooltip(
               shiny::icon("circle-question",
                 style = "color:#aaa; cursor:help; margin-left:8px; font-size:0.85em;"),
               "Change a column type and the preview updates immediately.",
               " Conversions that would introduce NAs are highlighted in red and blocked.",
-              " Changes always apply on the original import — not on each other.",
+              " Changes always apply on the original import - not on each other.",
               placement = "right"
             )
           )
@@ -2120,7 +2053,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           if (!is.null(d)) paste0(col, ": ", d$from, " → ", d$to)
           else col
         }, character(1L))
-        glog_msg <- paste0("Step 0 — type changes: ", paste(per_col, collapse = "; "))
+        glog_msg <- paste0("Step 0 - type changes: ", paste(per_col, collapse = "; "))
         glog(glog_msg)
         rv$meta_type_log <- c(rv$meta_type_log, glog_msg)
         shiny::showNotification(
@@ -2135,7 +2068,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
 
       if (length(changed) == 0L && length(failed) == 0L)
         shiny::showNotification(
-          "All selected types already match — nothing changed.",
+          "All selected types already match - nothing changed.",
           type = "default", duration = 4)
 
       # Mark step 0 as confirmed regardless
@@ -2326,7 +2259,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
                 shiny::HTML("Select <em>Unique genes vs reads sampled</em><br>above for a second plot."))))),
         .pp_remove_section_ui(ns("s1_remove_picker"),ns("s1_remove_btn")),
         shiny::div(style="margin-top:10px;",
-          shiny::textAreaInput(ns("s1_notes"), "\U0001f4dd Step notes (optional — included in report):",
+          shiny::textAreaInput(ns("s1_notes"), "\U0001f4dd Step notes (optional - included in report):",
             value = shiny::isolate(rv$note_s1), rows = 2,
             placeholder = "e.g. Removed outlier samples based on low library complexity.",
             width = "100%")),
@@ -2467,7 +2400,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
                   shiny::tags$b(style="font-size:0.85em;","Genes passing filter"),
                   shiny::plotOutput(ns("plot_s2_after"),height="250px"))))),
           shiny::div(style="margin-top:10px;",
-            shiny::textAreaInput(ns("s2_notes"), "\U0001f4dd Step notes (optional — included in report):",
+            shiny::textAreaInput(ns("s2_notes"), "\U0001f4dd Step notes (optional - included in report):",
               value = shiny::isolate(rv$note_s2), rows = 2,
               placeholder = "e.g. Threshold chosen to remove genes with near-zero counts across all samples.",
               width = "100%")),
@@ -2662,7 +2595,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         ),
         .pp_remove_section_ui(ns("s3_remove_picker"),ns("s3_remove_btn")),
         shiny::div(style="margin-top:10px;",
-          shiny::textAreaInput(ns("s3_notes"), "\U0001f4dd Step notes (optional — included in report):",
+          shiny::textAreaInput(ns("s3_notes"), "\U0001f4dd Step notes (optional - included in report):",
             value = shiny::isolate(rv$note_s3), rows = 2,
             placeholder = "e.g. TMM selected; VST requires integer counts.",
             width = "100%")),
@@ -2689,7 +2622,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           } else {
             # DESeq2 requires non-negative raw integer counts
             if (any(d < 0)) {
-              msg <- "DESeq2/VST requires non-negative counts. Data contains negative values — it may be log-transformed or pre-normalised. Use TMM instead, or supply raw counts."
+              msg <- "DESeq2/VST requires non-negative counts. Data contains negative values - it may be log-transformed or pre-normalised. Use TMM instead, or supply raw counts."
               shiny::showNotification(msg, type = "error", duration = NULL)
               glog(paste0("[DESeq2 ERROR] ", msg))
               return(NULL)
@@ -2697,7 +2630,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
             # Warn if data looks pre-normalised (many fractional values or very low max)
             frac_pct <- mean(abs(d - round(d)) > 0.01) * 100
             if (frac_pct > 30) {
-              msg <- paste0("DESeq2 WARNING: ", round(frac_pct), "% of values are non-integer. DESeq2 expects raw integer read counts. Values rounded — results may be unreliable if data is pre-normalised (TPM, FPKM, CPM). Consider using TMM instead.")
+              msg <- paste0("DESeq2 WARNING: ", round(frac_pct), "% of values are non-integer. DESeq2 expects raw integer read counts. Values rounded - results may be unreliable if data is pre-normalised (TPM, FPKM, CPM). Consider using TMM instead.")
               shiny::showNotification(shiny::HTML(paste0("<b>DESeq2 warning:</b> ", msg)),
                 type = "warning", duration = 15)
               glog(msg)
@@ -2855,13 +2788,13 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       if (!rv$s4_run)
         return(shiny::div(class = "pp-run-btn",
           .pp_slow_warn(paste0("⏳ PCA decomposes the full normalised matrix (", n_g, " genes × ", n_s,
-            " samples). This runs once — changing colour or PCs only redraws.")),
+            " samples). This runs once - changing colour or PCs only redraws.")),
           shiny::div(style = "margin: 10px 0 8px 0;",
             shiny::tags$p(style = "font-size:0.82em;font-weight:600;margin-bottom:4px;", "PCA options:"),
-            shiny::checkboxInput(ns("s4_pca_center"), "Center genes (subtract mean per gene — recommended)",
+            shiny::checkboxInput(ns("s4_pca_center"), "Center genes (subtract mean per gene - recommended)",
               value = shiny::isolate(input$s4_pca_center) %||% TRUE),
             shiny::checkboxInput(ns("s4_pca_scale"),
-              "Scale genes (divide by SD — equalises variance; use with caution for RNA-seq)",
+              "Scale genes (divide by SD - equalises variance; use with caution for RNA-seq)",
               value = shiny::isolate(input$s4_pca_scale) %||% FALSE)
           ),
           shiny::actionButton(ns("s4_run_btn"), "\U0001f4ca Compute PCA", class = "btn-primary btn-sm")))
@@ -2922,7 +2855,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
                 if (n_pcs_avail >= 2L) "PC2" else "PC1", width = "100%"))
         ),
         shiny::tags$p(style = "font-size:0.75em;color:#9ca3af;margin:0 0 6px 0;",
-          "Colour/PC changes redraw instantly — no re-PCA."),
+          "Colour/PC changes redraw instantly - no re-PCA."),
         shiny::plotOutput(ns("pca_before"), height = "320px"),
         .pp_expand_btn(ns("expand_pca_before")),
         shiny::tags$p(style = "font-size:0.8em;font-weight:600;color:#6b7280;
@@ -2989,7 +2922,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           shiny::column(6, col2)
         ),
         shiny::hr(style = "margin:10px 0;"),
-        shiny::textAreaInput(ns("s4_notes"), "\U0001f4dd Step notes (optional — included in report):",
+        shiny::textAreaInput(ns("s4_notes"), "\U0001f4dd Step notes (optional - included in report):",
           value = shiny::isolate(rv$note_s4), rows = 2,
           placeholder = "e.g. Batch corrected for sequencing run; retained condition effect.",
           width = "100%"),
@@ -3070,7 +3003,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         })
     })
 
-    # PCA OPTIONS PANEL — separate renderUI so checkbox changes react without
+    # PCA OPTIONS PANEL - separate renderUI so checkbox changes react without
     # re-rendering the whole step-4 layout (plots, BC section, etc.)
     output$s4_pca_top_ui <- shiny::renderUI({
       if (!rv$s4_run) return(NULL)   # pre-run panel handles options itself
@@ -3091,7 +3024,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
             if (pca_stale)
               shiny::div(
                 shiny::tags$span(style = "font-size:0.8em;color:#b45309;font-weight:600;margin-right:4px;",
-                  "⚠ Settings changed —"),
+                  "⚠ Settings changed:"),
                 shiny::actionButton(ns("s4_reset_pca"), "↺ Reset & Recompute",
                   class = "btn-warning btn-sm", style = "padding:3px 10px;font-size:0.8em;"))
             else
@@ -3107,7 +3040,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       )
     })
 
-    # RESET PCA — clears results so the user can change options and re-run
+    # RESET PCA - clears results so the user can change options and re-run
     shiny::observeEvent(input$s4_reset_pca, {
       rv$s4_run           <- FALSE
       rv$s4_bc_run        <- FALSE

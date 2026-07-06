@@ -4,7 +4,7 @@
 # Explores associations between all (selected) metadata variables and the gene
 # set signal, using either scoring or GSEA methods.
 #
-# Primary functions (NOT modified here — only their returned objects are laid
+# Primary functions (NOT modified here - only their returned objects are laid
 # out and sized):
 #   VariableAssociation()        – umbrella wrapper (Score or GSEA path)
 #   Score_VariableAssociation()  – score path. Returns, per call:
@@ -62,31 +62,6 @@ if (!exists("%||%", mode = "function"))
 .disc_h_gsea <- function(n_rows)
   as.integer(min(4000L, max(320L, 150L + n_rows * 32L)))
 
-# GSEA_VariableAssociation() pools every tested variable's contrasts into one
-# flat data frame (with a single multiple-testing correction applied across
-# all of them together) and returns a "Contrast" column, but does not keep a
-# "Variable" column alongside it. To label which variable each contrast came
-# from — without re-running GSEA per variable (which would change the p-value
-# correction scope) — we regenerate the same contrast labels the core
-# function would have produced for each variable, using the same exported
-# generate_all_contrasts() helper and the same preprocessing it applies, and
-# match them back. This is read-only bookkeeping; it does not touch the
-# statistics returned by the core function.
-.disc_gsea_variable_lookup <- function(vars, meta, mode) {
-  lookup <- character(0)
-  for (v in vars) {
-    type <- identify_variable_type(meta, v)[v]
-    if (identical(type, "Numeric")) {
-      lookup[v] <- v
-    } else {
-      uniquevals <- gsub(" ", "", unique(meta[[v]]))
-      conts <- generate_all_contrasts(uniquevals, mode = mode)
-      lookup[conts] <- v
-    }
-  }
-  lookup
-}
-
 .disc_h_summary <- function(n_vars)
   as.integer(min(2200L, max(420L, 260L + n_vars * 48L)))
 
@@ -94,7 +69,7 @@ discoveryUI <- function(id) {
   ns <- shiny::NS(id)
 
   bslib::layout_sidebar(
-    # fillable = FALSE at this top level (not just on the nav_panels below) —
+    # fillable = FALSE at this top level (not just on the nav_panels below):
     # otherwise the main content area still participates in bslib's flexbox
     # "fill" chain and constrains card height to the viewport, which is what
     # was forcing scrollbars inside individual plot cards instead of letting
@@ -110,8 +85,17 @@ discoveryUI <- function(id) {
         shiny::p(
           "Systematically test all metadata variables for association with",
           " the gene set signal.",
-          " Use for hypothesis generation once a robust gene set has been established.",
           style = "color:#6c757d; font-size:0.85em;"
+        ),
+        shiny::div(
+          class = "alert alert-warning", style = "font-size:0.82em; padding:8px 10px; margin-bottom:0;",
+          shiny::icon("circle-exclamation"),
+          " Discovery Mode is for ", shiny::tags$b("hypothesis generation"),
+          ": it quickly screens many variables so you can spot promising",
+          " candidates. If something here looks interesting, take it to the",
+          shiny::tags$b(" Benchmarking"), " tab for a closer, more rigorous",
+          " look. And however it holds up there, it should still be",
+          " confirmed in an independent dataset before you rely on it."
         ),
         shiny::hr()
       ),
@@ -121,6 +105,7 @@ discoveryUI <- function(id) {
 
       # ---- Metadata variables to test ---------------------------------------
       shiny::uiOutput(ns("disc_vars_ui")),
+      shiny::uiOutput(ns("disc_vars_warn_ui")),
 
       shiny::hr(),
 
@@ -152,7 +137,7 @@ discoveryUI <- function(id) {
           shiny::icon("circle-info"),
           " Runs ", shiny::strong("all four methods"),
           " (log2-median, ranking, ssGSEA, GSEA) automatically for the",
-          " variables and gene set selected above — no method choice needed here."
+          " variables and gene set selected above - no method choice needed here."
         )
       ),
 
@@ -182,9 +167,9 @@ discoveryUI <- function(id) {
             shiny::numericInput(ns("disc_wraplabels"), "Contrast wrap (chars):",
                                 value = 32, min = 8, max = 60, step = 2),
             shiny::numericInput(ns("disc_titlesize"), "Title size (pt):",
-                                value = 14, min = 8, max = 26, step = 1),
+                                value = 8, min = 6, max = 26, step = 1),
             shiny::numericInput(ns("disc_labsize"), "Label size (pt):",
-                                value = 11, min = 8, max = 22, step = 1)
+                                value = 8, min = 6, max = 22, step = 1)
           )
         )
       ),
@@ -206,7 +191,7 @@ discoveryUI <- function(id) {
         ),
         shiny::tags$p(
           style = "color:#888; font-size:0.78em; margin:6px 0 0;",
-          "Slower than a single method — GSEA is run once per variable."
+          "Slower than a single method - GSEA is run once per variable."
         )
       )
     ),
@@ -245,10 +230,6 @@ discoveryUI <- function(id) {
               bslib::card_header("Variable Association Results"),
               shiny::uiOutput(ns("disc_table_status_ui")),
               DT::DTOutput(ns("disc_table"))
-            ),
-            bslib::card(
-              bslib::card_header("Statistical Insights"),
-              shiny::uiOutput(ns("disc_insights_ui"))
             )
           )
         )
@@ -273,13 +254,24 @@ discoveryUI <- function(id) {
             style = "padding-top:10px;",
             bslib::card(
               full_screen = TRUE,
-              bslib::card_header("Score methods — Cohen's f"),
+              bslib::card_header("Score methods - Cohen's f"),
               DT::DTOutput(ns("disc_summary_table_score"))
             ),
             bslib::card(
               full_screen = TRUE,
-              bslib::card_header("GSEA — significant contrasts per variable"),
+              bslib::card_header("GSEA - significant contrasts per variable"),
               DT::DTOutput(ns("disc_summary_table_gsea"))
+            ),
+            bslib::card(
+              full_screen = TRUE,
+              bslib::card_header("GSEA - contrast-level detail"),
+              shiny::div(
+                class = "text-muted", style = "font-size:0.78em; padding:0 6px 6px;",
+                shiny::icon("circle-info"),
+                " Every individual contrast that was considered for each variable,",
+                " with its gene set, NES, and adjusted p-value."
+              ),
+              DT::DTOutput(ns("disc_summary_table_gsea_detail"))
             )
           )
         )
@@ -324,7 +316,7 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
     # (a constant column has no variance for lm()/cor.test() to work with),
     # so those are excluded from the choices entirely rather than just left
     # unselected. Variables with many levels (> 6) are still offered and
-    # selected, but flagged — contrasts/lollipops get unwieldy and slow with
+    # selected, but flagged - contrasts/lollipops get unwieldy and slow with
     # a lot of levels, especially in "All combinations" contrast mode.
     output$disc_vars_ui <- shiny::renderUI({
       meta <- get_meta()
@@ -337,12 +329,12 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
 
       usable   <- cols[level_counts > 1]
       excluded <- setdiff(cols, usable)
-      highlvl  <- usable[level_counts[usable] > 6]
 
       shiny::tagList(
         shinyWidgets::pickerInput(
           ns("disc_vars"), "Metadata variables to test:",
-          choices  = usable, selected = usable, multiple = TRUE,
+          # Nothing pre-selected - the user chooses which variables to test.
+          choices  = usable, selected = character(0), multiple = TRUE,
           options  = shinyWidgets::pickerOptions(
             actionsBox = TRUE, liveSearch = TRUE,
             selectedTextFormat = "count > 3"
@@ -355,18 +347,34 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
             sprintf(" Excluded (only 1 level, no variance to test): %s.",
                     paste(excluded, collapse = ", "))
           )
-        },
-        if (length(highlvl) > 0) {
-          shiny::tags$p(
-            style = "color:#b45309; font-size:0.78em; margin:2px 0 0;",
-            shiny::icon("triangle-exclamation"),
-            sprintf(" %s %s more than 6 levels — contrasts/plots may get large",
-                    paste(highlvl, collapse = ", "),
-                    if (length(highlvl) > 1) "have" else "has"),
-            " and slow, especially in \"All combinations\" mode."
-          )
         }
       )
+    })
+
+    # Separate output (depends on the live selection, not just the metadata)
+    # so the "too many levels" warning only calls out variables the user has
+    # actually selected to test, not every eligible variable.
+    output$disc_vars_warn_ui <- shiny::renderUI({
+      meta <- get_meta()
+      shiny::req(!is.null(meta))
+      sel <- input$disc_vars
+      shiny::req(!is.null(sel), length(sel) > 0)
+
+      level_counts <- vapply(sel, function(cl) {
+        length(unique(stats::na.omit(meta[[cl]])))
+      }, integer(1))
+      highlvl <- sel[level_counts > 6]
+
+      if (length(highlvl) > 0) {
+        shiny::tags$p(
+          style = "color:#b45309; font-size:0.78em; margin:2px 0 0;",
+          shiny::icon("triangle-exclamation"),
+          sprintf(" %s %s more than 6 levels - contrasts/plots may get large",
+                  paste(highlvl, collapse = ", "),
+                  if (length(highlvl) > 1) "have" else "has"),
+          " and slow, especially in \"All combinations\" mode."
+        )
+      }
     })
 
     # ── Shared settings reader ---------------------------------------------
@@ -379,8 +387,8 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
         padj_m    = shiny::isolate(input$disc_padj)       %||% "BH",
         pointsize = shiny::isolate(input$disc_pointsize)  %||% 4,
         wraplab   = shiny::isolate(input$disc_wraplabels) %||% 32,
-        titlesize = shiny::isolate(input$disc_titlesize)  %||% 14,
-        labsize   = shiny::isolate(input$disc_labsize)    %||% 11
+        titlesize = shiny::isolate(input$disc_titlesize)  %||% 8,
+        labsize   = shiny::isolate(input$disc_labsize)    %||% 8
       )
     }
 
@@ -394,6 +402,12 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
         strip.text    = ggplot2::element_text(size = labsize + 1, face = "bold"),
         legend.text   = ggplot2::element_text(size = labsize),
         legend.title  = ggplot2::element_text(size = labsize),
+        # Shrink the legend keys (the coloured rectangles/points themselves)
+        # along with the text - with many levels, the default (fixed, larger)
+        # key size is what makes the legend overlap/get cropped even after
+        # the text itself is made smaller.
+        legend.key.size    = ggplot2::unit(max(0.28, labsize / 20), "cm"),
+        legend.spacing.y   = ggplot2::unit(1, "pt"),
         plot.title    = ggplot2::element_text(size = titlesize),
         plot.subtitle = ggplot2::element_text(size = titlesize - 2)
       )
@@ -627,9 +641,9 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
           # categorical variable tested pairwise has 3). Rather than picking
           # one arbitrary "strongest" contrast, summarise as: how many of
           # that variable's contrasts were significant, out of how many were
-          # tested — comparable across variables and doesn't hide behind a
+          # tested - comparable across variables and doesn't hide behind a
           # single potentially-unrepresentative NES value.
-          gsea_rows <- lapply(s$vars, function(v) {
+          gsea_pairs <- lapply(s$vars, function(v) {
             shiny::incProgress(0.55 / length(s$vars), detail = paste("GSEA:", v))
             tryCatch({
               res_g <- GSEA_VariableAssociation(
@@ -637,11 +651,26 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
                 mode = s$mode, sig_threshold = s$sig_thr,
                 p.adjust.method = s$padj_m, printplt = FALSE
               )
-              d <- res_g$data
+              # GSEA_VariableAssociation()$data is (or is derived from) a
+              # data.table (fgsea's own output type). A data.table's `[`
+              # treats a single unnamed argument as a row-filter *expression*
+              # evaluated in its own scope, not a column-selecting vector like
+              # a data.frame's `[` does - so d[, detail_cols, drop = FALSE]
+              # below would try to find a literal column called "detail_cols"
+              # instead of using the variable's value. Coerce to a plain
+              # data.frame first to get ordinary `[` semantics.
+              d <- as.data.frame(res_g$data)
               n_total <- nrow(d)
               n_sig   <- sum(d$padj < s$sig_thr, na.rm = TRUE)
-              data.frame(Variable = v, n_sig = n_sig, n_total = n_total,
-                        frac_sig = n_sig / n_total, stringsAsFactors = FALSE)
+              summary_row <- data.frame(Variable = v, n_sig = n_sig, n_total = n_total,
+                                        frac_sig = n_sig / n_total, stringsAsFactors = FALSE)
+              # Keep the underlying per-contrast values too (contrast tested,
+              # its NES, and its adjusted p-value), not just the aggregate
+              # fraction-significant summary above.
+              detail_cols <- intersect(c("Contrast", "pathway", "NES", "padj", "stat_used"),
+                                       colnames(d))
+              detail_row <- cbind(Variable = v, d[, detail_cols, drop = FALSE])
+              list(summary = summary_row, detail = detail_row)
             }, error = function(e) {
               shiny::showNotification(
                 paste0("GSEA summary skipped for '", v, "': ", conditionMessage(e)),
@@ -649,10 +678,12 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
               NULL
             })
           })
-          gsea_df <- do.call(rbind, gsea_rows)
+          gsea_pairs <- Filter(Negate(is.null), gsea_pairs)
+          gsea_df        <- do.call(rbind, lapply(gsea_pairs, `[[`, "summary"))
+          gsea_detail_df <- do.call(rbind, lapply(gsea_pairs, `[[`, "detail"))
 
-          list(score_df = score_df, gsea_df = gsea_df, vars = s$vars,
-              gs_name = s$gs, sig_thr = s$sig_thr,
+          list(score_df = score_df, gsea_df = gsea_df, gsea_detail_df = gsea_detail_df,
+              vars = s$vars, gs_name = s$gs, sig_thr = s$sig_thr,
               labsize = s$labsize, titlesize = s$titlesize)
 
         }, error = function(e) {
@@ -677,7 +708,11 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
       }
     })
 
-    .build_disc_summary_plot <- function(res) {
+    # labsize/titlesize are taken as explicit arguments (read live from
+    # input$ by the callers below) rather than from `res`, so changing the
+    # Display-option font sliders re-styles this plot instantly without
+    # re-running the (expensive) per-method scoring/GSEA computation.
+    .build_disc_summary_plot <- function(res, labsize = 8, titlesize = 8) {
       vars_order <- rev(res$vars)
 
       score_df <- res$score_df
@@ -692,15 +727,17 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
           ggplot2::aes(label = ifelse(.data$PValue < res$sig_thr,
                                       sprintf("%.2f*", .data$Effect),
                                       sprintf("%.2f", .data$Effect))),
-          size = res$labsize / 3, color = "black") +
+          size = labsize / 3, color = "black") +
         ggplot2::scale_fill_distiller(palette = "BuGn", direction = 1,
                                       name = "Cohen's f") +
         ggplot2::labs(x = NULL, y = NULL) +
         ggplot2::theme_bw() +
         ggplot2::theme(
-          axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = res$labsize),
-          axis.text.y = ggplot2::element_text(size = res$labsize),
+          axis.text.x  = ggplot2::element_text(angle = 45, hjust = 1, size = labsize),
+          axis.text.y  = ggplot2::element_text(size = labsize),
           legend.position = "bottom",
+          legend.text  = ggplot2::element_text(size = labsize),
+          legend.title = ggplot2::element_text(size = labsize),
           panel.grid = ggplot2::element_blank())
 
       p_gsea <- NULL
@@ -717,17 +754,19 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
           ggplot2::geom_tile(color = "white", linewidth = 0.6) +
           ggplot2::geom_text(
             ggplot2::aes(label = sprintf("%d/%d", .data$n_sig, .data$n_total)),
-            size = res$labsize / 3, color = "black") +
+            size = labsize / 3, color = "black") +
           ggplot2::scale_fill_distiller(palette = "RdPu", direction = 1,
                                         limits = c(0, 1),
                                         name = "Fraction of\ncontrasts significant") +
           ggplot2::labs(x = NULL, y = NULL) +
           ggplot2::theme_bw() +
           ggplot2::theme(
-            axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = res$labsize),
-            axis.text.y = ggplot2::element_blank(),
+            axis.text.x  = ggplot2::element_text(angle = 45, hjust = 1, size = labsize),
+            axis.text.y  = ggplot2::element_blank(),
             axis.ticks.y = ggplot2::element_blank(),
             legend.position = "bottom",
+            legend.text  = ggplot2::element_text(size = labsize),
+            legend.title = ggplot2::element_text(size = labsize),
             panel.grid = ggplot2::element_blank())
       }
 
@@ -738,8 +777,8 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
       }
       ggpubr::annotate_figure(combined,
         top = grid::textGrob(
-          paste0("Method summary — ", res$gs_name, "  (* = adjusted p-value < ", res$sig_thr, ")"),
-          gp = grid::gpar(cex = 1.1, fontsize = res$titlesize)))
+          paste0("Method summary - ", res$gs_name, "  (* = adjusted p-value < ", res$sig_thr, ")"),
+          gp = grid::gpar(cex = 1.1, fontsize = titlesize)))
     }
 
     output$disc_summary_card_ui <- shiny::renderUI({
@@ -752,7 +791,7 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
           shiny::icon("circle-info"),
           " Left block: Cohen's f from each score-based method (* = adjusted",
           " p-value below threshold). Right column: fraction of that",
-          " variable's GSEA contrasts that were significant — e.g. a 3-level",
+          " variable's GSEA contrasts that were significant - e.g. a 3-level",
           " categorical variable tested pairwise has 3 contrasts; \"2/3\"",
           " means 2 of them passed the significance threshold."
         ),
@@ -762,7 +801,9 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
 
     output$disc_summary_plot <- shiny::renderPlot({
       res <- summary_result(); shiny::req(!is.null(res))
-      tryCatch(print(.build_disc_summary_plot(res)),
+      lab_s   <- input$disc_labsize   %||% 8
+      title_s <- input$disc_titlesize %||% 8
+      tryCatch(print(.build_disc_summary_plot(res, lab_s, title_s)),
                error = function(e)
                  shiny::showNotification(paste("Summary plot error:", e$message),
                                          type = "warning", duration = 8))
@@ -772,7 +813,9 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
       filename = function() paste0("discovery_method_summary_", Sys.Date(), ".png"),
       content  = function(file) {
         res <- summary_result(); shiny::req(!is.null(res))
-        ggplot2::ggsave(file, plot = .build_disc_summary_plot(res),
+        lab_s   <- input$disc_labsize   %||% 8
+        title_s <- input$disc_titlesize %||% 8
+        ggplot2::ggsave(file, plot = .build_disc_summary_plot(res, lab_s, title_s),
                         width = 10, height = max(4, sum_h() / 96), dpi = 150, units = "in")
       }
     )
@@ -792,6 +835,16 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
       df$frac_sig <- round(df$frac_sig, 3)
       DT::datatable(df, rownames = FALSE, filter = "top",
                     options = list(pageLength = 10, scrollX = TRUE))
+    })
+
+    output$disc_summary_table_gsea_detail <- DT::renderDT({
+      res <- summary_result(); shiny::req(!is.null(res), !is.null(res$gsea_detail_df))
+      df <- res$gsea_detail_df
+      if ("NES" %in% colnames(df))  df$NES  <- round(df$NES, 4)
+      if ("padj" %in% colnames(df)) df$padj <- round(df$padj, 4)
+      DT::datatable(df, rownames = FALSE, filter = "top", extensions = "Buttons",
+                    options = list(pageLength = 15, dom = "Bfrtip",
+                                  buttons = c("csv", "excel"), scrollX = TRUE))
     })
 
     # ── Renders: Results table ---------------------------------------------------
@@ -861,98 +914,11 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
       dt
     })
 
-    # ── Insights -------------------------------------------------------------
-    output$disc_insights_ui <- shiny::renderUI({
-
-      res_wrap <- discovery_result()
-
-      if (is.null(res_wrap)) {
-        return(shiny::p("Run Discovery to generate insights.",
-                        style = "color:#6c757d;"))
-      }
-
-      res     <- res_wrap$result
-      method  <- res_wrap$method
-      vars    <- res_wrap$vars
-      gs_name <- res_wrap$gs_name
-      sig_thr <- res_wrap$sig_thr
-
-      items <- list(
-        shiny::h5("Discovery Analysis", style = "color:#1E497B;"),
-        shiny::p(
-          "Gene set: ", shiny::strong(gs_name), "  |  ",
-          "Method: ", shiny::strong(method), "  |  ",
-          shiny::strong(length(vars)), " variables tested."
-        )
-      )
-
-      sig_summary <- tryCatch({
-        df <- if (method == "GSEA") res$data else res$Overall
-        pval_col <- intersect(c("P_Value", "padj"), colnames(df))[1]
-
-        if (!is.na(pval_col)) {
-          # For GSEA, tag each contrast row with the variable it came from
-          # (see .disc_gsea_variable_lookup — read-only bookkeeping, doesn't
-          # affect the p-values/statistics themselves).
-          if (method == "GSEA") {
-            lookup <- .disc_gsea_variable_lookup(vars, get_meta(), res_wrap$mode %||% "simple")
-            df$Variable <- unname(lookup[as.character(df$Contrast)])
-          }
-
-          n_total <- nrow(df)
-          n_sig   <- sum(df[[pval_col]] < sig_thr, na.rm = TRUE)
-          top <- df[!is.na(df[[pval_col]]) & df[[pval_col]] < sig_thr, ]
-          top <- top[order(top[[pval_col]]), ]
-
-          unit <- if (method == "GSEA") "contrast(s)" else "variable(s)"
-
-          list(
-            shiny::p(
-              shiny::strong(n_sig), " of ", n_total, " ", unit,
-              " tested showed significant association (adjusted p-value < ", sig_thr, ")."
-            ),
-            if (nrow(top) > 0) {
-              var_col <- intersect(c("Variable", "Contrast"), colnames(top))[1]
-              shiny::div(
-                style = "max-height:320px; overflow-y:auto; padding-right:6px;",
-                shiny::tags$ul(
-                  style = "margin-bottom:0;",
-                  lapply(seq_len(nrow(top)), function(i) {
-                    shiny::tags$li(
-                      if (method == "GSEA" && !is.null(top$Variable) && !is.na(top$Variable[i]))
-                        sprintf("%s: %s  (p = %.3e)", top$Variable[i],
-                                top[[var_col]][i], top[[pval_col]][i])
-                      else if (!is.na(var_col))
-                        sprintf("%s  (p = %.3e)", top[[var_col]][i], top[[pval_col]][i])
-                      else
-                        sprintf("Row %d  (p = %.3e)", i, top[[pval_col]][i])
-                    )
-                  })
-                )
-              )
-            }
-          )
-        }
-      }, error = function(e) NULL)
-
-      if (!is.null(sig_summary)) items <- c(items, sig_summary)
-
-      items <- c(items, list(
-        shiny::hr(),
-        shiny::p(
-          style = "color:#6c757d; font-size:0.9em;",
-          shiny::icon("circle-exclamation"),
-          " Discovery Mode is for ", shiny::strong("hypothesis generation"),
-          ": it quickly screens many variables so you can spot promising",
-          " candidates. If something here looks interesting, take it to the",
-          shiny::strong(" Benchmarking"), " tab for a closer, more rigorous",
-          " look. And however it holds up there, it should still be",
-          " confirmed in an independent dataset before you rely on it."
-        )
-      ))
-
-      do.call(shiny::tagList, items)
-    })
+    # Note: the "Statistical Insights" card (gene set/method/variable summary,
+    # significant-hits list, and the hypothesis-generation disclaimer) was
+    # removed as a separate section - the disclaimer now lives as a prominent
+    # alert at the top of the sidebar instead, since it's important enough to
+    # see before running anything.
 
   })
 }

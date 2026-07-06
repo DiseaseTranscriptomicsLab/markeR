@@ -1,7 +1,7 @@
-#' @importFrom bslib bs_theme nav_panel page_navbar sidebar layout_sidebar accordion accordion_panel navset_card_tab card card_header
+#' @importFrom bslib bs_theme nav_panel page_navbar sidebar layout_sidebar accordion accordion_panel navset_card_tab card card_header nav_spacer nav_item
 #' @import shiny
 #' @import GEOquery
-#' @import DT
+#' @importFrom DT DTOutput renderDT datatable
 #' @importFrom readxl read_xls read_xlsx
 #' @importFrom R.utils gunzip
 #' @importFrom data.table fread
@@ -36,7 +36,7 @@ ui <- bslib::page_navbar(
     #   target = "_blank",
     #   style = "font-size: 0.85em; color: #949494; text-decoration: none;"
     # )
-    shiny::a("dev",
+    shiny::a("Web App v0.99",
              style = "font-size: 0.7em; color: #949494; text-decoration: none;")
   ),
   
@@ -101,7 +101,26 @@ ui <- bslib::page_navbar(
         )
       )
     ),
-    
+
+    shiny::tags$div(
+      style = paste(
+        "max-width: 1000px; margin: 0 auto 20px; padding: 14px 18px;",
+        "background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px;",
+        "font-size: 0.9em; color:#495057; text-align:center;"
+      ),
+      shiny::icon("dna", style = "color:#306F1D; margin-right:6px;"),
+      "This app was built with the ",
+      shiny::tags$b("markeR"), " Bioconductor package ",
+      shiny::a(shiny::tags$b("v1.2"),
+        href = "https://github.com/DiseaseTranscriptomicsLab/markeR/releases/tag/v1.2",
+        target = "_blank", rel = "noopener noreferrer"),
+      ". For more on the methodology behind it, see ",
+      shiny::a("our paper",
+        href = "https://doi.org/10.1093/nargab/lqag057",
+        target = "_blank", rel = "noopener noreferrer"),
+      "."
+    ),
+
     shiny::tags$div(
       style = "
       display: flex;
@@ -172,8 +191,15 @@ ui <- bslib::page_navbar(
         )
       )
     ),
+
     shiny::hr(),
-    shiny::uiOutput("data_log_ui_about")
+    shiny::uiOutput("data_log_ui_about"),
+
+    shiny::div(
+      style = "text-align:right; color:#adb5bd; font-size:0.72em; margin:6px 4px 0;",
+      "markeR's Bioconductor package was converted into this Shiny web app",
+      " with the help of Claude Sonnet 5 (Anthropic)."
+    )
 
   ),
 
@@ -428,7 +454,7 @@ ui <- bslib::page_navbar(
         bslib::card(
           bslib::card_header("Data Preview"),
 
-          # Proceed / mismatch banner — always visible at the top of the card
+          # Proceed / mismatch banner - always visible at the top of the card
           shiny::uiOutput("data_proceed_btn"),
 
           shiny::div(style = "overflow-y: auto; max-height: 900px;",  # <-- scrollable container
@@ -475,10 +501,22 @@ ui <- bslib::page_navbar(
   bslib::nav_panel(
     "Discovery Mode",
     discoveryUI("discovery")
+  ),
+
+  bslib::nav_spacer(),
+
+  ##### REPORT BUG (right-aligned navbar link) #####
+  bslib::nav_item(
+    shiny::tags$a(
+      shiny::icon("bug"), " Report bug",
+      href = "https://github.com/DiseaseTranscriptomicsLab/markeR/issues",
+      target = "_blank", rel = "noopener noreferrer",
+      class = "nav-link"
+    )
   )
-  
-  
-  
+
+
+
 )
 
 # Then wrap whole page with head() + global fixed-bottom log bar
@@ -566,18 +604,20 @@ ui <- tagList(
       }
     "))
   ),
-  # Every plotly/DT output in this app is built dynamically inside
-  # shiny::renderUI() (only appearing after the user clicks a "Run" button),
-  # and none exist in the app's static UI otherwise. With no plotly/DT widget
-  # present in the very first page load, the browser can end up never being
-  # told to load plotly.js / DataTables' JS at all, so the first widget
-  # rendered later fails with "Can't find variable: Plotly" (or the DT
-  # equivalent) even though the R package itself is installed correctly.
-  # These hidden, always-present outputs force both dependencies into the
-  # initial HTML regardless of which tab loads first.
+  # DT outputs in this app are built dynamically inside shiny::renderUI()
+  # (only appearing after the user clicks a "Run" button), and none exist in
+  # the app's static UI otherwise. With no DT widget present in the very
+  # first page load, the browser can end up never being told to load
+  # DataTables' JS at all. This hidden, always-present output forces that
+  # dependency into the initial HTML regardless of which tab loads first.
+  # NOTE: deliberately NOT `visibility:hidden` / zero-size - some widget
+  # libraries treat invisible/zero-area elements as "not really on screen"
+  # and skip or defer full initialization, which would silently defeat the
+  # whole point of this block. Positioning it off-screen (but still a real,
+  # normally-sized, "visible" element as far as layout/rendering is
+  # concerned) keeps it out of the way without triggering that shortcut.
   shiny::div(
-    style = "position:absolute; width:1px; height:1px; overflow:hidden; visibility:hidden;",
-    plotly::plotlyOutput("markeR_dep_plotly", height = "1px"),
+    style = "position:absolute; top:0; left:-9999px; width:300px; height:200px; overflow:hidden;",
     DT::DTOutput("markeR_dep_dt")
   ),
   ui,
@@ -622,7 +662,7 @@ ui <- tagList(
       return null;
     }
 
-    // Floating tooltip helper — appended to <body> so it is never clipped by overflow:hidden
+    // Floating tooltip helper - appended to <body> so it is never clipped by overflow:hidden
     (function() {
       var _tip = null;
       function _showTip(text, rect) {
@@ -698,11 +738,8 @@ server <- function(input, output, session) {
 
   #bs_themer()
 
-  # Minimal, invisible renders matching the hidden plotly/DT outputs declared
-  # in the static UI above — see the comment there for why these exist.
-  output$markeR_dep_plotly <- plotly::renderPlotly({
-    plotly::plotly_empty(type = "scatter", mode = "markers")
-  })
+  # Minimal, invisible render matching the hidden DT output declared in the
+  # static UI above; see the comment there for why it exists.
   output$markeR_dep_dt <- DT::renderDT({
     DT::datatable(data.frame(x = numeric(0)))
   })
@@ -807,7 +844,7 @@ server <- function(input, output, session) {
 
   # Mirror exactly the sample_mismatch_banner logic.
   # Tabs are locked ONLY when both expr and meta are loaded AND sample names/counts mismatch.
-  # If either is missing, tabs are unlocked (user is still configuring — don't block navigation).
+  # If either is missing, tabs are unlocked (user is still configuring - don't block navigation).
   .tab_lock_state <- function(expr, meta) {
     # No expression data → always lock (includes failed / pending downloads)
     if (is.null(expr))
@@ -870,7 +907,7 @@ server <- function(input, output, session) {
       pp_state   # same "fix your data first" message
     } else if (finalized == 0L) {
       list(locked = TRUE,
-           tip = paste0("Complete preprocessing first — click ",
+           tip = paste0("Complete preprocessing first - click ",
                         "’Finalize’ or ‘Use Data As-Is’ in the Preprocessing tab."))
     } else {
       list(locked = FALSE, tip = NULL)
@@ -925,7 +962,7 @@ server <- function(input, output, session) {
           style = "background:#f0fdf4;border:1px solid #bbf7d0;border-radius:5px;padding:8px 12px;font-size:0.88em;color:#166534;margin-top:8px;",
           shiny::icon("circle-check", style="margin-right:4px;"),
           shiny::tags$strong("Note:"), " Uploading your own files and importing from GEO ",
-          "still work normally — only the example data requires an internet connection. ",
+          "still work normally - only the example data requires an internet connection. ",
           "Click ", shiny::tags$strong("Close"), " to proceed with another data source."
         )
       ),
@@ -1052,7 +1089,7 @@ server <- function(input, output, session) {
 
     if (ext == "rds") {
       obj <- readRDS(path)
-      # Already the right type — return as-is for parse_geneset_object to handle
+      # Already the right type - return as-is for parse_geneset_object to handle
       return(obj)
     }
 
@@ -1216,7 +1253,7 @@ server <- function(input, output, session) {
   # R's utils::download.file() default timeout is only 60 seconds, which is
   # comfortably enough on the app's server (fast, close connection to
   # Zenodo) but can cut off the larger example files (the raw counts file is
-  # ~70MB) partway through on a slower local connection — producing a
+  # ~70MB) partway through on a slower local connection - producing a
   # truncated download and a "Timeout was reached" warning rather than a
   # clean failure. Temporarily raising it just for the download call (and
   # restoring it on exit) avoids that without changing timeout behaviour
@@ -2770,7 +2807,7 @@ server <- function(input, output, session) {
     expr <- tryCatch(expr_data(), error = function(x) NULL)
     meta <- tryCatch(meta_data(), error = function(x) NULL)
 
-    # Nothing loaded yet — show nothing
+    # Nothing loaded yet - show nothing
     if (is.null(expr)) return(NULL)
 
     n_g <- nrow(expr); n_s <- ncol(expr)
@@ -2789,7 +2826,7 @@ server <- function(input, output, session) {
       } else if (!is.null(meta)) {
         m_ids <- as.character(meta[[ colnames(meta)[1] ]])
         n_miss <- length(setdiff(e_nms, m_ids))
-        paste0(n_expr, " samples in both, but names differ — ",
+        paste0(n_expr, " samples in both, but names differ - ",
                n_miss, " expression column", if (n_miss != 1) "s" else "",
                " not found in metadata.")
       } else {
@@ -2803,7 +2840,7 @@ server <- function(input, output, session) {
         shiny::tags$div(
           style = "display:flex;align-items:center;gap:7px;",
           shiny::tags$span(style = "font-size:1em;", "⚠️"),
-          shiny::tags$strong(style = "font-size:0.9em;", "Sample mismatch — "),
+          shiny::tags$strong(style = "font-size:0.9em;", "Sample mismatch - "),
           shiny::tags$span(style = "font-size:0.87em;", msg)
         ),
         shiny::tags$div(
@@ -2849,7 +2886,7 @@ server <- function(input, output, session) {
       if (n == 0L) "📋 Session log"
       else paste0("📋 Session log (", n,
                    if (n == 1L) " action" else " actions",
-                   " — click to expand)")
+                   " - click to expand)")
     )
   })
 
@@ -3224,10 +3261,10 @@ server <- function(input, output, session) {
 #'
 #' @export
 markeRapp <- function(...){
-  
+
   # Register a URL path "/logo" that points to your package's inst/figures folder
   shiny::addResourcePath(
-    "logo", 
+    "logo",
     system.file("figures", package = "markeR")
   )
   
