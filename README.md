@@ -38,7 +38,8 @@ analyses and figures. You can browse it
 
 ## Table of Contents
 
-- [Installation](#installation)  
+- [Installation](#installation)
+- [Shiny App](#shiny-app)
 - [Tutorials](#tutorials)  
 - [Requirements](#requirements)
 - [Common Workflow](#common-workflow)
@@ -74,6 +75,47 @@ Or install the latest development release of `markeR` from
 ``` r
 # install.packages("devtools")
 devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
+```
+
+## Shiny App
+
+`markeR` ships with an interactive Shiny app that wraps **Benchmarking
+Mode** and **Discovery Mode** in a point-and-click interface, no coding
+required.
+
+### Run locally from R
+
+``` r
+library(markeR)
+markeRapp()
+```
+
+This launches the app in your default web browser. Any additional
+arguments are forwarded to `shiny::runApp()`, so you can also run it
+as a standalone server (e.g. inside a Docker container):
+
+``` r
+markeRapp(host = "0.0.0.0", port = 3838, launch.browser = FALSE)
+```
+
+### Run with Docker
+
+A ready-to-use Docker image is published on Docker Hub as
+[`diseasetranscriptomicslab/marker`](https://hub.docker.com/r/diseasetranscriptomicslab/marker):
+
+``` bash
+docker pull diseasetranscriptomicslab/marker
+docker run -p 3838:3838 diseasetranscriptomicslab/marker
+```
+
+Then open <http://localhost:3838> in your browser. Alternatively,
+build the image yourself from the repository's `Dockerfile`:
+
+``` bash
+git clone https://github.com/DiseaseTranscriptomicsLab/markeR.git
+cd markeR
+docker build -t markeR .
+docker run -p 3838:3838 markeR
 ```
 
 ## Tutorials
