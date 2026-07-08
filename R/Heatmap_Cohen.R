@@ -33,6 +33,7 @@
 #' @param ColorValues A character vector specifying the colors for the gradient
 #'   fill in the heatmaps. Default is \code{c("#F9F4AE", "#B44141")}.
 #' @param title Title for the grid of plots.
+#' 
 #' @return A list with two elements:
 #' \describe{
 #'   \item{plt}{A combined heatmap arranged in a grid using \code{ggpubr::ggarrange}.}
@@ -55,14 +56,13 @@
 #' @seealso \code{\link{CohenD_allConditions}},
 #'   \code{\link{CohenF_allConditions}}
 #'
-#' @importFrom ggplot2 ggplot geom_tile geom_text labs scale_fill_gradientn
-#'   theme_minimal element_text element_blank element_line margin
+#' @import ggplot2 
 #' @importFrom ggpubr ggarrange
 #'
 #' @keywords internal
 Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL,
                           widthTitle = 22, titlesize = 12, ColorValues = NULL,
-                          title=NULL ) {
+                          title=NULL) {
 
   cohentype <- ifelse("CohenD" %in% names(cohenlist[[1]]), "d",
                       ifelse("CohenF" %in% names(cohenlist[[1]]), "f", NULL))
@@ -112,9 +112,9 @@ Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL,
     limits <- if (is.null(limits)) c(0 , max(long_data$Cohen, na.rm = TRUE)) else limits
 
     # Create heatmap using ggplot2
-    p <- ggplot2::ggplot(long_data, ggplot2::aes(x = Var2, y = Var1, fill = Cohen)) +
+    p <- ggplot2::ggplot(long_data, ggplot2::aes(x = .data$Var2, y = .data$Var1, fill = .data$Cohen)) +
       ggplot2::geom_tile() +
-      ggplot2::geom_text(aes(label = label), color = "black", size = 3) +
+      ggplot2::geom_text(aes(label = .data$label), color = "black", size = 3) +
       ggplot2::scale_fill_gradientn(colors = ColorValues, limits = limits) +
       ggplot2::labs(title = signature_title, x = NULL, y = NULL, fill =
                       ifelse(cohentype=="d", "|Cohen\'s d|", "|Cohen\'s f|")) +
@@ -202,7 +202,12 @@ Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL,
 #' groups.
 #' - `"extensive"`: All possible groupwise contrasts, ensuring balance in the
 #' number of terms on each side.
-#'
+#' @param p.adjust.method Character string specifying the method to use for
+#'   multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+#'   default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+#'   \code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+#'   Passed to \code{\link[stats]{p.adjust}}. 
+#'   
 #' @return A named list where each element corresponds to a gene signature. Each
 #'   signature element is a list with three components:
 #' \describe{
@@ -228,7 +233,7 @@ Heatmap_Cohen <- function(cohenlist, nrow = NULL, ncol = NULL, limits = NULL,
 #'
 #' @keywords internal
 CohenD_allConditions <- function(data, metadata, gene_sets, variable,
-                                 mode = c("simple","medium","extensive")) {
+                                 mode = c("simple","medium","extensive"), p.adjust.method = "BH") {
   data <- as.data.frame(data) # Ensure data is a data frame
   # Step 1: Check if variable exists in metadata
   if (!variable %in% colnames(metadata)) {
@@ -266,8 +271,8 @@ CohenD_allConditions <- function(data, metadata, gene_sets, variable,
                                        quantitative_var = "score", mode=mode)
 
       # Convert to named vectors (column names = comparisons)
-      cohen_d_results[[method]] <- setNames(cohen_results$CohenD, cohen_results$contrast)
-      p_value_results[[method]] <- setNames(cohen_results$PValue, cohen_results$contrast)
+      cohen_d_results[[method]] <- stats::setNames(cohen_results$CohenD, cohen_results$contrast)
+      p_value_results[[method]] <- stats::setNames(cohen_results$PValue, cohen_results$contrast)
     }
 
     # Convert lists to data frames
@@ -293,8 +298,8 @@ CohenD_allConditions <- function(data, metadata, gene_sets, variable,
     }
   }
 
-  # Step 2: Apply BH correction within each method
-  all_padj <- lapply(all_pvalues, function(pvals) p.adjust(pvals, method = "BH"))
+  # Step 2: Apply  correction within each method
+  all_padj <- lapply(all_pvalues, function(pvals) stats::p.adjust(pvals, method = p.adjust.method))
 
   # Step 3: Store corrected p-values back into result_list
   index_tracker <- list()  # Track index position for each method
@@ -345,8 +350,8 @@ cohen_d <- function(x, y) {
   if(n1 < 2 || n2 < 2) return(NA)
   m1 <- mean(x)
   m2 <- mean(y)
-  s1 <- sd(x)
-  s2 <- sd(y)
+  s1 <- stats::sd(x)
+  s2 <- stats::sd(y)
   pooled_sd <- sqrt(((n1 - 1) * s1^2 + (n2 - 1) * s2^2) / (n1 + n2 - 2))
   if (pooled_sd == 0) return(NA)
   d <- (m1 - m2) / pooled_sd
@@ -403,9 +408,7 @@ compute_cohen_d <- function(dfScore, variable, quantitative_var="score",
     dfScore_subset <- create_contrast_column(dfScore, variable, pair)
     group1 <- levels(dfScore_subset$cohentest)[1]
     group2 <- levels(dfScore_subset$cohentest)[2]
-
-    # group1 <- unique(dfScore_subset$cohentest)[1]
-    # group2 <- unique(dfScore_subset$cohentest)[2]
+ 
 
     x <- dfScore_subset[dfScore_subset[["cohentest"]] == group1,
                         quantitative_var, drop = TRUE]
@@ -498,6 +501,12 @@ flatten_results <- function(nested_list) {
 #'   downregulated).
 #' @param variable A string specifying the categorical variable in
 #'   \code{metadata} used to model the gene signature scores.
+#' @param p.adjust.method Character string specifying the method to use for
+#'   multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+#'   default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+#'   \code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+#'   Passed to \code{\link[stats]{p.adjust}}. 
+#'   
 #' @return A named list where each element corresponds to a gene signature. Each
 #'   signature element is a list with three components:
 #' \describe{
@@ -511,7 +520,7 @@ flatten_results <- function(nested_list) {
 #' }
 #'
 #' @keywords internal
-CohenF_allConditions <- function(data, metadata, gene_sets, variable ) {
+CohenF_allConditions <- function(data, metadata, gene_sets, variable, p.adjust.method = "BH" ) {
   data <- as.data.frame(data) # Ensure data is a data frame
   # Step 1: Check if variable exists in metadata
   if (!variable %in% colnames(metadata)) {
@@ -555,8 +564,8 @@ CohenF_allConditions <- function(data, metadata, gene_sets, variable ) {
       results_var <- compute_cohens_f_pval(model, type)
 
       # Convert to named vectors (column names = comparisons)
-      cohen_f_results[[method]] <- setNames(results_var["Cohen_f"], variable)
-      p_value_results[[method]] <- setNames(results_var["P_Value"], variable)
+      cohen_f_results[[method]] <- stats::setNames(results_var["Cohen_f"], variable)
+      p_value_results[[method]] <- stats::setNames(results_var["P_Value"], variable)
     }
 
     # Convert lists to data frames
@@ -582,8 +591,8 @@ CohenF_allConditions <- function(data, metadata, gene_sets, variable ) {
     }
   }
 
-  # Step 2: Apply BH correction within each method
-  all_padj <- lapply(all_pvalues, function(pvals) p.adjust(pvals, method = "BH"))
+  # Step 2: Apply   correction within each method
+  all_padj <- lapply(all_pvalues, function(pvals) stats::p.adjust(pvals, method = p.adjust.method))
 
   # Step 3: Store corrected p-values back into result_list
   index_tracker <- list()  # Track index position for each method

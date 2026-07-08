@@ -10,7 +10,7 @@ FPR_Simulation(
   original_signatures,
   Variable,
   gene_list = NULL,
-  number_of_sims = 10,
+  number_of_sims = 100,
   title = NULL,
   widthTitle = 30,
   titlesize = 12,
@@ -19,7 +19,8 @@ FPR_Simulation(
   mode = c("none", "simple", "medium", "extensive"),
   ColorValues = NULL,
   ncol = NULL,
-  nrow = NULL
+  nrow = NULL,
+  p.adjust.method = "BH"
 )
 }
 \arguments{
@@ -77,6 +78,12 @@ grid layout. If \code{NULL}, layout is auto-calculated.}
 
 \item{nrow}{Integer. Number of rows for arranging signature plots in a grid
 layout. If \code{NULL}, layout is auto-calculated.}
+
+\item{p.adjust.method}{Character string specifying the method to use for
+multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+\code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+Passed to \code{\link[stats]{p.adjust}}.}
 }
 \value{
 Invisibly returns a list containing:

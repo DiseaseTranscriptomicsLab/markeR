@@ -1,3 +1,4 @@
+utils::globalVariables(c( "cohen", "method", "contrast" ))
 #' FPR Simulation Plot
 #'
 #' This function simulates false positive rates (FPR) by generating simulated
@@ -43,7 +44,11 @@
 #'   grid layout. If `NULL`, layout is auto-calculated.
 #' @param nrow Integer. Number of rows for arranging signature plots in a grid
 #'   layout. If `NULL`, layout is auto-calculated.
-#'
+#' @param p.adjust.method Character string specifying the method to use for
+#'   multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+#'   default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+#'   \code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+#'   Passed to \code{\link[stats]{p.adjust}}. 
 #'
 #' @return Invisibly returns a list containing:
 #'   \describe{
@@ -103,14 +108,14 @@
 #' )
 #'
 #' @import ggplot2
-#' @import ggpubr
+#' @importFrom ggpubr ggarrange annotate_figure
 #' @export
 #'
 FPR_Simulation <- function(data, metadata, original_signatures, Variable,
-                           gene_list = NULL, number_of_sims=10, title=NULL,
+                           gene_list = NULL, number_of_sims=100, title=NULL,
                            widthTitle = 30, titlesize = 12,  pointSize = 2,
                            labsize = 10,mode = c( "none","simple","medium","extensive"),
-                           ColorValues=NULL, ncol=NULL, nrow=NULL) {
+                           ColorValues=NULL, ncol=NULL, nrow=NULL, p.adjust.method="BH") {
   data <- as.data.frame(data) # Ensure data is a data frame
   if (is.null(gene_list)) gene_list <- row.names(data)
 
@@ -127,7 +132,7 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
       results <- suppressMessages(CohenF_allConditions(data = data,
                                                        metadata = metadata,
                                                        gene_sets = original_signatures,
-                                                       variable = Variable ))
+                                                       variable = Variable, p.adjust.method = p.adjust.method ))
       cohentype <- "f"
 
     } else {
@@ -137,7 +142,7 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
         results <- suppressMessages(CohenF_allConditions(data = data,
                                                          metadata = metadata,
                                                          gene_sets = original_signatures,
-                                                         variable = Variable ))
+                                                         variable = Variable, p.adjust.method = p.adjust.method ))
         cohentype <- "f"
 
       } else {
@@ -145,7 +150,7 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
         results <- suppressMessages(CohenD_allConditions(data = data,
                                                          metadata = metadata,
                                                          gene_sets = original_signatures,
-                                                         variable = Variable, mode = mode))
+                                                         variable = Variable, mode = mode, p.adjust.method = p.adjust.method))
         cohentype <- "d"
 
       }
@@ -204,7 +209,8 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
 
     # Generate simulated signatures based on the current signature
     simulatedsigs <- list()
-    for (sim in 1:number_of_sims) {
+#    for (sim in 1:number_of_sims) {
+    for (sim in seq_len(number_of_sims)) {
       cur_model_sig <- cur_sig  # copy the current signature
       cur_model_sig$Gene <- sample(gene_list, nrow(cur_sig))  # simulate by sampling genes
       simulatedsigs[[paste0("sim", sim)]] <- cur_model_sig
@@ -217,14 +223,14 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
         metadata = metadata,
         gene_sets = simulatedsigs,
         variable = Variable,
-        mode = mode
+        mode = mode, p.adjust.method = p.adjust.method
       ))
     } else {
       results2 <- suppressMessages(CohenF_allConditions(
         data = data,
         metadata = metadata,
         gene_sets = simulatedsigs,
-        variable = Variable
+        variable = Variable, p.adjust.method = p.adjust.method
       ))
     }
 
@@ -239,7 +245,7 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
       } else if (cohentype=="f"){
         cohen_mat <- sig_data$CohenF
       } else {
-        stop("Error: results2 format not valid.")
+        stop("Error: results format not valid.")
       }
 
       padj_mat <- sig_data$padj
@@ -272,35 +278,7 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
 
     # needed to define the quantile dashed lines
     final_df$method <- factor(final_df$method, levels = methods)
-
-    #
-    # # Restructure simulation results into a list (one data frame per method)
-    # restructured <- lapply(methods, function(m) {
-    #   data.frame(
-    #     CohensD = sapply(results2, function(sim) sim$CohenD[m, 1]),
-    #     Pval    = sapply(results2, function(sim) sim$PValue[m, 1])
-    #   )
-    # })
-    # names(restructured) <- methods
-
-    # Combine simulation data into one long-format data frame
-    # sim_data <- do.call(rbind, lapply(methods, function(m) {
-    #   df <- restructured[[m]]
-    #   df$Method <- m
-    #   df$Shape <- ifelse(df$Pval < 0.05, "Significant", "Not Significant")
-    #   df
-    # }))
-    # # Set Method as a factor to control order in the plot
-    # sim_data$Method <- factor(sim_data$Method, levels = methods)
-
-    # Compute only the 95th percentile (top 5% threshold) for each method
-    # q_data <- do.call(rbind, lapply(methods, function(m) {
-    #   cd_vals <- final_df_simulated$cohen[final_df_simulated$method == m]
-    #   data.frame(
-    #     Method = m,
-    #     q_high = as.numeric(quantile(cd_vals, 0.95, na.rm = TRUE))
-    #   )
-    # }))
+ 
 
     # Calculate FPR for each Original observation
     final_df$FPR <- NA
@@ -322,7 +300,7 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
       for (mt in methods) {
         subset_df <- final_df[final_df$method == mt & final_df$contrast == ct, ]
         if (nrow(subset_df) == 0) next
-        q95 <- quantile(subset_df$cohen, 0.95, na.rm = TRUE)
+        q95 <- stats::quantile(subset_df$cohen, 0.95, na.rm = TRUE)
         xpos <- which(methods == mt)
         q_data <- rbind(q_data, data.frame(
           method = mt, contrast = ct, q_high = q95,
@@ -334,8 +312,9 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
 
     # Ensuring the label is always on top
     # Compute max cohen per method + contrast across both Simulated and Original
-    all_max <- aggregate(cohen ~ method + contrast, data = final_df, FUN = max)
+     all_max <- stats::aggregate(cohen ~ method + contrast, data = final_df, FUN = max)
 
+    
     # Extract FPR values from Original rows
     original_df <- final_df[final_df$type == "Original", ]
 
@@ -359,19 +338,19 @@ FPR_Simulation <- function(data, metadata, original_signatures, Variable,
     # Build the plot for the current signature
     p <- ggplot2::ggplot() +
       geom_jitter(data = final_df[final_df$type == "Simulated",],
-                  aes(y = cohen, x = method, color = type),
+                  aes(y = .data$cohen, x = .data$method, color = .data$type),
                   width = 0.3, height = 0,size = pointSize, alpha = 0.5) +
-      geom_violin(data = final_df, aes(y = cohen, x = method),
+      geom_violin(data = final_df, aes(y = .data$cohen, x = .data$method),
                   fill = "#F0F0F0", color = "black", alpha = 0.5) +
       geom_jitter(data = final_df[final_df$type == "Original",],
                   aes(y = cohen, x = method, color = type),
                   width = 0.3, height = 0, size = pointSize, alpha = 1) +
       geom_text(data = all_max,
-                aes(x = method, y = y, label = label),
+                aes(x = .data$method, y = .data$y, label = .data$label),
                 size = 3,
                 inherit.aes = FALSE) +
       geom_segment(data = q_data,
-                   aes(x = xmin, xend = xmax, y = q_high, yend = q_high),
+                   aes(x = .data$xmin, xend = .data$xmax, y = .data$q_high, yend = .data$q_high),
                    linetype = "dashed", color = "red", inherit.aes = FALSE) +
       labs(title = wrap_title(sig, widthTitle),
            y = ifelse(cohentype == "d", "|Cohen's d|", "|Cohen's f|"),

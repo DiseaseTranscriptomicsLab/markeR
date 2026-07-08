@@ -1,0 +1,9 @@
+# install packages for markeR_to_python script:
+#   pip install -r requirements.txt
+
+rpy2>=3.6
+pandas
+numpy
+# optional (for notebook inline display)
+ipython
+jupyter

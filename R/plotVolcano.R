@@ -262,7 +262,7 @@ plotVolcano <- function(DEResultsList, genes = NULL, N = NULL,
 
           # Add to plot
           p <- p + ggplot2::geom_point(data = plot_data,
-                                       aes(color = Direction),
+                                       aes(color = .data$Direction),
                                        size = pointSize,
                                        alpha = 0.8) +
             ggplot2::scale_color_manual(values = c(
@@ -281,7 +281,11 @@ plotVolcano <- function(DEResultsList, genes = NULL, N = NULL,
       ## Annotate top N genes if requested
       if (!is.null(N)) {
         genes_stat <- fit[order(fit[, x], decreasing = TRUE), ]
-        annotationgenes <- row.names(genes_stat)[c(1:N, (nrow(genes_stat) - N + 1):nrow(genes_stat))]
+        # annotationgenes <- row.names(genes_stat)[c(1:N, (nrow(genes_stat) - N + 1):nrow(genes_stat))]
+        annotationgenes <- row.names(genes_stat)[
+          c(seq_len(N), seq_len(N) + nrow(genes_stat) - N)
+        ]
+        
         p <- p +
           ggplot2::geom_point(data = fit[annotationgenes, ],
                               color = highlightcolor, size = pointSize) +

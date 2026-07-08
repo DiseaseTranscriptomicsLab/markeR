@@ -9,7 +9,8 @@ runGSEA(
   gene_sets,
   stat = NULL,
   ContrastCorrection = FALSE,
-  nPermSimple = 10000
+  nPermSimple = 10000,
+  p.adjust.method = "BH"
 )
 }
 \arguments{
@@ -48,6 +49,12 @@ the function only corrects for the number of gene sets.}
 
 \item{nPermSimple}{Number of permutations in the simple fgsea implementation
 for preliminary estimation of P-values. Parameter from fgsea.}
+
+\item{p.adjust.method}{Character string specifying the method to use for
+multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+\code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+Passed to \code{\link[stats]{p.adjust}}.}
 }
 \value{
 A named list where each element corresponds to a contrast. Each

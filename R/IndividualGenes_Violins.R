@@ -149,7 +149,7 @@ IndividualGenes_Violins <- function(data, metadata=NULL, genes,GroupingVariable,
   plt <- plt + ggplot2::geom_violin(alpha=0.4)
 
   # Add median summary crossbar.
-  plt <- plt + ggplot2::stat_summary(fun = median, fun.min = median, fun.max = median,
+  plt <- plt + ggplot2::stat_summary(fun = stats::median, fun.min = stats::median, fun.max = stats::median,
                                  geom = "crossbar", width = 0.25,
                                  position = ggplot2::position_dodge(width = 0.13))
 

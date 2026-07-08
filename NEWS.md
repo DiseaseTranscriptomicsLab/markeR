@@ -1,3 +1,80 @@
+# markeR 1.3.1 (8 Jul 2026)
+
+## Minor Changes
+- Updated the citation to the markeR paper published in NAR Genomics and Bioinformatics.
+- Updated the contact email address.
+- Fixed `runGSEA` function.
+
+# markeR 1.2 (29 Apr, 2026) 
+
+- Bioconductor Release 3.23
+
+# markeR 1.1.2 (12 Mar, 2026) 
+
+## Minor Changes
+- Moved Python bridge scripts from `inst/python/` to a top-level `python/` 
+  directory, as these are supplementary scripts not part of the R package itself.
+- Added `requirements.txt` to the `python/` directory listing all needed 
+  Python dependencies (`rpy2`, `pandas`, `numpy`, and optionally 
+  `ipython` and `jupyter`) for easier environment setup. 
+- Removed redundant code snippets from the Python bridge scripts.
+
+# markeR 1.1.1 (11 Mar, 2026) 
+ 
+  - Added `p.adjust.method` parameter across all functions performing or
+  depending on multiple testing correction, allowing users to specify
+  any correction method supported by `stats::p.adjust()`, beyond the default 
+  Benjamini-Hochberg FDR.
+- Added Python bridge scripts in `inst/python/` for users who wish to call
+  markeR from a Python environment via `rpy2`. Includes a tutorial workflow
+  script and a generic command-line wrapper capable of invoking any exported
+  markeR function. See `inst/python/README.md` for installation and usage.
+
+# markeR 1.0.0 (31 Oct, 2025)
+
+- Official Bioconductor Release.
+
+# markeR 0.99.5 (17 Sep, 2025)
+
+- Minor fix in `.onAttach()` to avoid errors when checking `ggplot2` version and ensure the startup warning works correctly.
+
+# markeR 0.99.4 (17 Sep, 2025)
+
+## General
+- Addressed feedback from the Bioconductor review process with updates to documentation and vignette style.  
+
+## Documentation and vignette
+- Updated vignette style to **Bioconductor’s BiocStyle** with automatic table of contents.  
+- Improved vignette content with small corrections.
+- Revised dataset documentation by adding explicit `usage: data(object)` entries.  
+
+## Functions
+- Updated `geneset_similarity()` color handling: replaced the single `color_values` parameter with three new parameters — `color`, `neutral_color`, and `cold_color`, for more interpretable visualization.  
+
+# markeR 0.99.3 (21 Aug, 2025)
+
+## Package size and structure
+- Reduced package size below the 5 MB limit by converting long vignettes into `pkgdown` articles and keeping only a shorter vignette in the package.
+- Moved `inst/Paper` to a dedicated `paper` branch for better repository organization.
+- Removed unnecessary `LICENSE` file (already declared in `DESCRIPTION`).
+
+## Documentation
+- Added a concise main vignette (`markeR`) with installation, introduction, and a basic workflow.
+- Converted three longer vignettes into `pkgdown` articles (linked at the end of the main vignette).
+- Added runnable examples for `VariableAssociation`. 
+
+## NAMESPACE and dependencies
+- Replaced broad imports with `importFrom()` for most packages (except `ggplot2`, retained as full import).
+- Removed unused `patchwork` import.
+- Added missing imports from `stats` and `grDevices` to resolve `R CMD check` notes.
+
+## Code quality
+- Replaced all `sapply()` calls with `vapply()`.
+- Replaced `1:...` usage with `seq_len()` or `seq_along()`.
+- Standardized assignment to `<-` instead of `=`.
+- Fixed some redundant `stop()`/`warning()` conditions to provide clearer input validation.
+- Addressed “no visible binding” notes by using `.data$` or `utils::globalVariables()`.
+
 # markeR 0.99.2 (23 Jul, 2025)
 
 * Minor fixes in documentation

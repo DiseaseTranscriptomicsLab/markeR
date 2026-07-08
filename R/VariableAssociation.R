@@ -31,34 +31,29 @@ identify_variable_type <- function(df, cols = NULL) {
   if (is.null(cols)) return("Unknown")
 
   if (!is.null(cols)) df <- df[, cols, drop = FALSE]
-
-  variable_types <- sapply(names(df), function(col_name) {
-
+ 
+  
+  variable_types <- vapply(names(df), function(col_name) {
     col <- df[[col_name]]
     unique_vals <- length(unique(col))
-
+    
     if (is.numeric(col) | is.integer(col)) {
- #     if (unique_vals > 10) {
-        return("Numeric")
-      # } else if (unique_vals == 2) {
-      #   return("Categorical Bin")
-      # } else {
-      #   return("Categorical Multi")
-      # }
+      return("Numeric")
     } else if (is.character(col) || is.factor(col)) {
       if (unique_vals == 2) {
         return("Categorical Bin")
       } else if (unique_vals > 10) {
-        warning(paste0("Warning: Number of unique values in '", col_name, "'
-                       is too high (>10). Consider removing this variable
-                       from the analysis."))
+        warning(paste0("Warning: Number of unique values in '", col_name,
+                       "' is too high (>10). Consider removing this variable ",
+                       "from the analysis."))
         return("Categorical Multi")
       } else {
         return("Categorical Multi")
       }
     }
     return("Unknown")
-  }, USE.NAMES = TRUE)
+  }, FUN.VALUE = character(1), USE.NAMES = TRUE)
+  
 
   return(variable_types)
 }
@@ -101,7 +96,12 @@ identify_variable_type <- function(df, cols = NULL) {
 #' @param categorical_multi The statistical test for multi-level categorical
 #' variables.
 #'   Options: `"anova"` (default) or `"kruskal-wallis"`.
-#'
+#' @param p.adjust.method Character string specifying the method to use for
+#'   multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+#'   default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+#'   \code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+#'   Passed to \code{\link[stats]{p.adjust}}. 
+#'   
 #' @return A named list (one entry per variable being analysed) where each
 #' element is a data frame with:
 #'   - **Metric**: The test statistic (correlation coefficient, t-statistic,
@@ -135,7 +135,7 @@ identify_variable_type <- function(df, cols = NULL) {
 compute_stat_tests <- function(df, target_var, cols = NULL,
                                numeric = "pearson",
                                categorical_bin = "t.test",
-                               categorical_multi = "anova") {
+                               categorical_multi = "anova", p.adjust.method="BH") {
 
   # Ensure only one method is selected per variable type
   if (length(numeric) > 1 | length(categorical_bin) > 1 |
@@ -194,7 +194,7 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
         test_df <- rbind(test_df, tukey_df)
 
       } else if (categorical_multi == "kruskal-wallis") {
-        test_result <- kruskal.test(df[[target_var]] ~ df[[var]])
+        test_result <- stats::kruskal.test(df[[target_var]] ~ df[[var]])
         test_df <- data.frame(metric = test_result$statistic,
                               p_value = test_result$p.value)
         row.names(test_df) <- "Kruskal-Wallis"
@@ -207,7 +207,7 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
     # scientific notation
     test_df$metric <- formatC(test_df$metric, format = "e", digits = 2)
     # correct for multiple testing per variable
-    test_df$p_value <- p.adjust(test_df$p_value, method = "BH")
+    test_df$p_value <- stats::p.adjust(test_df$p_value,  method = p.adjust.method)
     test_df$p_value <- formatC(test_df$p_value, format = "e", digits = 3)
 
 
@@ -240,7 +240,6 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
 #'   - `"ranking"`
 #'   - `"GSEA"`
 #'
-#' @section Shared Arguments (All Methods):
 #' @param data A data frame with gene expression data (genes as rows,
 #' samples as columns).
 #' @param metadata A data frame containing sample metadata; the first column
@@ -273,7 +272,12 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
 #' (`"B"` or `"t"`). Auto-detected if `NULL`.
 #' @param ignore_NAs (GSEA only) Logical. If `TRUE`, rows with NA metadata are
 #' removed. Default: `FALSE`.
-#'
+#' @param p.adjust.method Character string specifying the method to use for
+#'   multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+#'   default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+#'   \code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+#'   Passed to \code{\link[stats]{p.adjust}}. 
+#'   
 #' @return A list with method-specific results and ggplot2-based visualizations:
 #'
 #' **For score-based methods (`logmedian`, `ssGSEA`, `ranking`):**
@@ -297,6 +301,49 @@ compute_stat_tests <- function(df, target_var, cols = NULL,
 #' scores (NES), adjusted p-values, and contrasts.
 #' - `plot`: A ggplot2 lollipop plot of GSEA enrichment across contrasts.
 #'
+#' @examples
+#' # Simulate gene expression data (genes as rows, samples as columns)
+#' set.seed(42)
+#' expr <- as.data.frame(matrix(rnorm(500), nrow = 50, ncol = 10))
+#' rownames(expr) <- paste0("Gene", 1:50)
+#' colnames(expr) <- paste0("Sample", 1:10)
+#'
+#' # Simulate metadata (categorical and continuous)
+#' metadata <- data.frame(
+#'   sampleID = paste0("Sample", 1:10),
+#'   Group = rep(c("A", "B"), each = 5),
+#'   Age = sample(20:60, 10),
+#'   row.names = colnames(expr)
+#' )
+#'
+#' # Define a toy gene set: one gene set only for discovery mode!
+#' gene_set <- list(
+#'   Signature1 = paste0("Gene", 1:10)
+#' )
+#'
+#' # Score-based association (e.g., logmedian)
+#' res_score <- VariableAssociation(
+#'   method = "logmedian",
+#'   data = expr,
+#'   metadata = metadata,
+#'   cols = c("Group", "Age"),
+#'   gene_set = gene_set
+#' )
+#' print(res_score$Overall)
+#' print(res_score$plot)
+#'
+#' # GSEA-based association (if GSEA_VariableAssociation is available)
+#' # res_gsea <- VariableAssociation(
+#' #   method = "GSEA",
+#' #   data = expr,
+#' #   metadata = metadata,
+#' #   cols = "Group",
+#' #   gene_set = gene_set
+#' # )
+#' # print(res_gsea$data)
+#' print(res_score$plot)
+#'
+#'
 #' @export
 VariableAssociation <- function(method = c("ssGSEA", "logmedian",
                                            "ranking", "GSEA"),
@@ -318,7 +365,8 @@ VariableAssociation <- function(method = c("ssGSEA", "logmedian",
                                 discrete_colors = NULL,
                                 continuous_color = "#8C6D03",
                                 color_palette = "Set2",
-                                printplt = TRUE) {
+                                printplt = TRUE, 
+                                p.adjust.method = "BH") {
   method <- match.arg(method)
   mode <- match.arg(mode)
   data <- as.data.frame(data) # Ensure data is a data frame
@@ -338,7 +386,8 @@ VariableAssociation <- function(method = c("ssGSEA", "logmedian",
       labsize = labsize,
       titlesize = titlesize,
       pointSize = pointSize,
-      ignore_NAs = ignore_NAs
+      ignore_NAs = ignore_NAs,
+      p.adjust.method = p.adjust.method
     )
 
   } else if (method %in% c("ssGSEA", "logmedian", "ranking")) {
@@ -360,7 +409,8 @@ VariableAssociation <- function(method = c("ssGSEA", "logmedian",
       discrete_colors = discrete_colors,
       continuous_color = continuous_color,
       color_palette = color_palette,
-      printplt = printplt
+      printplt = printplt,
+      p.adjust.method = p.adjust.method
     )
   }
 

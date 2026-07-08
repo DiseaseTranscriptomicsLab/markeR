@@ -28,7 +28,13 @@
 #'   number of contrasts tested per signature and provides more stringent
 #'   control of false discovery rate across multiple comparisons. If `FALSE`,
 #'   the function only corrects for the number of gene sets.
-#'
+#'   
+#' @param p.adjust.method Character string specifying the method to use for
+#'   multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+#'   default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+#'   \code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+#'   Passed to \code{\link[stats]{p.adjust}}. 
+#'   
 #' @param nPermSimple Number of permutations in the simple fgsea implementation
 #'   for preliminary estimation of P-values. Parameter from fgsea.
 #'
@@ -57,7 +63,7 @@
 #'
 #' @importFrom fgsea fgsea
 #' @export
-runGSEA <- function(DEGList, gene_sets, stat = NULL, ContrastCorrection=FALSE, nPermSimple=10000) {
+runGSEA <- function(DEGList, gene_sets, stat = NULL, ContrastCorrection=FALSE, nPermSimple=10000, p.adjust.method="BH") {
 
   # Initialize storage for results across contrasts
   results_by_contrast <- list()
@@ -80,7 +86,7 @@ runGSEA <- function(DEGList, gene_sets, stat = NULL, ContrastCorrection=FALSE, n
       }
 
       # Create the ranking vector for GSEA
-      ranks <- setNames(deg_df[[current_stat]], rownames(deg_df))
+      ranks <- stats::setNames(deg_df[[current_stat]], rownames(deg_df))
 
       if (current_stat=="t") {
 
@@ -150,20 +156,26 @@ runGSEA <- function(DEGList, gene_sets, stat = NULL, ContrastCorrection=FALSE, n
     combined_df <- do.call(rbind, Map(cbind, results_by_contrast, df_name = names(results_by_contrast)))
 
     # Step 2: Adjust p-values across all data
-    combined_df$padj <- p.adjust(combined_df$pval, method = "BH")
+    combined_df$padj <- stats::p.adjust(combined_df$pval,  method = p.adjust.method)
 
     # Step 3: Split back into the original list structure
     list_of_dfs <- split(combined_df, combined_df$df_name)
 
     # Step 4: Remove the helper column
-    list_of_dfs <- lapply(list_of_dfs, function(df) df[, !names(df) %in% "df_name"])
+    #list_of_dfs <- lapply(list_of_dfs, function(df) df[, !names(df) %in% "df_name"])
+    
+    list_of_dfs <- lapply(list_of_dfs, function(df) {
+      df$df_name <- NULL
+      df
+    })
+    
     results_by_contrast <- list_of_dfs[names(results_by_contrast)]
 
   } else {
 
     # Step 1: Adjust p-values for each data frame individually
     results_by_contrast <- lapply(results_by_contrast, function(df) {
-      df$padj <- p.adjust(df$pval, method = "BH")  # Adjust p-values per data frame
+      df$padj <- stats::p.adjust(df$pval,  method = p.adjust.method)  # Adjust p-values per data frame
       return(df)
     })
 

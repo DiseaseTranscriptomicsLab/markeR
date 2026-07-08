@@ -1,3 +1,5 @@
+utils::globalVariables(c("score"))
+
 #' Plot gene signature scores using various methods.
 #'
 #' Computes and visualizes gene signature scores using one or more methods,
@@ -112,7 +114,12 @@
 #' @param cor Correlation method for numeric variables. One of `"pearson"`
 #'   (default), `"spearman"`, or `"kendall"`. Only applies when the variable is
 #'   numeric and `method != "all"`.
-#'
+#' @param p.adjust.method Character string specifying the method to use for
+#'   multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+#'   default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+#'   \code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+#'   Passed to \code{\link[stats]{p.adjust}}. Only if `method == "all"`.
+#'   
 #' @return Depending on `method`:
 #'
 #'   If `method = "all"`, returns a list with `heatmap` and `volcano` ggplot objects.
@@ -239,7 +246,8 @@ PlotScores <- function(data, metadata, gene_sets,
                        cond_cohend = NULL, pvalcalc = FALSE,
                        mode = c("simple","medium","extensive"),
                        widthlegend=22, sig_threshold=0.05, cohen_threshold=0.5,
-                       colorPalette="Set3", cor=c("pearson","spearman","kendall")) {
+                       colorPalette="Set3", cor=c("pearson","spearman","kendall"),
+                       p.adjust.method="BH") {
   data <- as.data.frame(data) # Ensure data is a data frame
   method <- match.arg(method)
   mode <- match.arg(mode)
@@ -252,13 +260,13 @@ PlotScores <- function(data, metadata, gene_sets,
     if (type =="Numeric"){
 
       cohenlist <- CohenF_allConditions(data = data, metadata = metadata,
-                                        gene_sets = gene_sets, variable = Variable )
+                                        gene_sets = gene_sets, variable = Variable, p.adjust.method = p.adjust.method )
 
     } else {
 
       cohenlist <- CohenD_allConditions(data = data, metadata = metadata,
                                         gene_sets = gene_sets, variable = Variable,
-                                        mode = mode)
+                                        mode = mode, p.adjust.method = p.adjust.method )
 
     }
 
@@ -499,11 +507,11 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 
       ColorValues <- if (is.null(ColorValues)) "#ECBD78" else ColorValues
 
-      p <- ggplot2::ggplot(df, ggplot2::aes(x = score)) +
+      p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$score)) +
         ggplot2::geom_density(fill = ColorValues, alpha = 0.5) +
         ggplot2::labs(title = "Density Plot of Score", x = xlab, y = "Density") +
         # add points below density
-        ggplot2::geom_rug(ggplot2::aes(x = score), color=ColorValues, sides = "b",
+        ggplot2::geom_rug(ggplot2::aes(x = .data$score), color=ColorValues, sides = "b",
                           alpha = 0.8, size = .5, length = grid::unit(0.035, "npc"))
 
       # Customize the plot appearance.
@@ -596,7 +604,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
     p <- p + ggplot2::geom_violin(alpha = 0.5, scale = "width")
 
     # Add median summary crossbar.
-    p <- p + ggplot2::stat_summary(fun = median, fun.min = median, fun.max = median,
+    p <- p + ggplot2::stat_summary(fun = stats::median, fun.min = stats::median, fun.max = stats::median,
                                    geom = "crossbar", width = 0.25,
                                    position = ggplot2::position_dodge(width = 0.13))
 
@@ -624,7 +632,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 
           line1 <- wrap_title(paste0("Cohen's d = ",
                                      format(signif(cohen_d_results, digits=3),
-                                            scientific = TRUE)),
+                                            scientific = FALSE)),
                               width = widthTitle)
           line2 <- wrap_title(paste0("p = ", format(signif(p_val, digits=3),
                                                     scientific = TRUE)),
@@ -634,7 +642,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
         } else {
           subtitle <- wrap_title(paste0("Cohen's d = ",
                                         format(signif(cohen_d_results, digits=3),
-                                               scientific = TRUE)),
+                                               scientific = FALSE)),
                                  width = widthTitle)
         }
 
@@ -663,7 +671,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 
             line1 <- wrap_title(paste0("Cohen's d = ",
                                        format(signif(cohen_d_results, digits = 3),
-                                              scientific = TRUE)),
+                                              scientific = FALSE)),
                                 width = widthTitle)
             line2 <- wrap_title(paste0("p = ",
                                        format(signif(p_val, digits = 3), scientific = TRUE)),
@@ -672,7 +680,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
           } else {
             subtitle <- wrap_title(paste0("Cohen's d = ",
                                           format(signif(cohen_d_results, digits = 3),
-                                                 scientific = TRUE)),
+                                                 scientific = FALSE)),
                                    width = widthTitle)
           }
 
@@ -693,7 +701,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
 
             line1 <- wrap_title(paste0("Cohen's f = ",
                                        format(signif(results_var["Cohen_f"], digits = 3),
-                                              scientific = TRUE)), width = widthTitle)
+                                              scientific = FALSE)), width = widthTitle)
             line2 <- wrap_title(paste0("p = ",
                                        format(signif(results_var["P_Value"], digits = 3),
                                               scientific = TRUE)), width = widthTitle)
@@ -701,7 +709,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
           } else {
             subtitle <- wrap_title(paste0("Cohen's f = ",
                                           format(signif(results_var["Cohen_f"], digits = 3),
-                                                 scientific = TRUE)), width = widthTitle)
+                                                 scientific = FALSE)), width = widthTitle)
           }
 
         }
@@ -718,7 +726,7 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
     if (ConnectGroups && !is.null(ColorVariable)) {
       p <- p + ggplot2::stat_summary(ggplot2::aes_string(group = ColorVariable,
                                                          color = ColorVariable),
-                                     fun.y = median, geom = "line", size = 1.5,
+                                     fun.y = stats::median, geom = "line", size = 1.5,
                                      alpha = 0.75,
                                      show.legend = FALSE)
     }
@@ -784,16 +792,16 @@ PlotScores_Categorical <- function(data, metadata, gene_sets,
   if (!is.null(title)) title <- wrap_title(title, width = widthTitle)
 
   # Create label for y axis based on method.
-  if (method == "ssGSEA") {
-    ylab <- "ssGSEA Enrichment Score"
-  } else if (method == "logmedian") {
-    ylab <- "Normalised Signature Score"
-  } else if (method == "ranking") {
-    ylab <- "Signature Genes' Ranking"
-  }
+  # if (method == "ssGSEA") {
+  #   ylab <- "ssGSEA Enrichment Score"
+  # } else if (method == "logmedian") {
+  #   ylab <- "Normalised Signature Score"
+  # } else if (method == "ranking") {
+  #   ylab <- "Signature Genes' Ranking"
+  # }
 
   combined_plot <- ggpubr::annotate_figure(combined_plot,
-                                           left = grid::textGrob(ylab,
+                                           left = grid::textGrob(paste0("Gene Set's Score (", method, ")"),
                                                                  rot = 90, vjust = 1,
                                                                  gp = grid::gpar(cex = 1.3,
                                                                                  fontsize = labsize)),
@@ -1023,7 +1031,7 @@ PlotScores_Numeric <- function(data,
       if (pvalcalc) {
         line1 <- wrap_title(paste0("Cohen's f = ",
                                    format(signif(results_var["Cohen_f"], digits=3),
-                                          scientific = TRUE)), width = widthTitle)
+                                          scientific = FALSE)), width = widthTitle)
         line2 <- wrap_title(paste0("p = ",
                                    format(signif(results_var["P_Value"], digits=3),
                                           scientific = TRUE)), width = widthTitle)
@@ -1032,7 +1040,7 @@ PlotScores_Numeric <- function(data,
       } else {
         subtitle <- wrap_title(paste0("Cohen's f = ",
                                       format(signif(results_var["Cohen_f"],
-                                                    digits=3), scientific = TRUE)),
+                                                    digits=3), scientific = FALSE)),
                                width = widthTitle)
       }
 
@@ -1091,16 +1099,16 @@ PlotScores_Numeric <- function(data,
   if (!is.null(title)) title <- wrap_title(title, width = widthTitle)
 
   # Create label for y axis based on method.
-  if (method == "ssGSEA") {
-    ylab <- "ssGSEA Enrichment Score"
-  } else if (method == "logmedian") {
-    ylab <- "Normalised Signature Score"
-  } else if (method == "ranking") {
-    ylab <- "Signature Genes' Ranking"
-  }
+  # if (method == "ssGSEA") {
+  #   ylab <- "ssGSEA Enrichment Score"
+  # } else if (method == "logmedian") {
+  #   ylab <- "Normalised Signature Score"
+  # } else if (method == "ranking") {
+  #   ylab <- "Signature Genes' Ranking"
+  # }
 
   combined_plot <- ggpubr::annotate_figure(combined_plot,
-                                           left = grid::textGrob(ylab,
+                                           left = grid::textGrob(paste0("Gene Set's Score (", method, ")"),
                                                                  rot = 90,
                                                                  vjust = 1,
                                                                  gp = grid::gpar(cex = 1.3,

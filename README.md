@@ -5,32 +5,34 @@
 
 <!-- badges: start -->
 
-![](https://img.shields.io/badge/status-development-yellowgreen)
+<!--![](https://img.shields.io/badge/status-development-yellowgreen)-->
+
 [![Pkgdown](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://diseasetranscriptomicslab.github.io/markeR/)
-[![Minimal R
-Version](https://img.shields.io/badge/min%20R-4.4.0-blue.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/Rminversion.yaml)
+![Minimal R
+Version](https://img.shields.io/badge/min%20R-4.5.0-blue.svg)
 [![codecov](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR/graph/badge.svg?token=7T1I4JCJG6)](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR)
 <!-- [![R-CMD-check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml)-->
 <!-- [![Bioconductor Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml) -->
 
 <!-- badges: end -->
 
-**markeR** provides a suite of methods for using gene sets (signatures)
-to quantify and evaluate the extent to which a given gene signature
-marks a specific phenotype from gene expression data. The package
-implements various scoring, enrichment and classification approaches,
-along with tools to compute performance metrics and visualize results.
+**`markeR`** is an R package that provides a modular and extensible
+framework for the systematic evaluation of gene sets as phenotypic
+markers using transcriptomic data. The package is designed to support
+both quantitative analyses and visual exploration of gene set behaviour
+across experimental and clinical phenotypes.
 
-> **To cite markeR please use:**
+> **To cite `markeR` please use:**
 >
-> Martins-Silva R, Kaizeler A, Barbosa-Morais N (2025). *markeR: an R
-> Toolkit for Evaluating Gene Sets as Phenotypic Markers*. Gulbenkian
-> Institute for Molecular Medicine, Faculdade de Medicina, Universidade
-> de Lisboa, Lisbon, Portugal. R package version 0.99.2,
-> <https://github.com/DiseaseTranscriptomicsLab/markeR>.
+> Martins-Silva R, Kaizeler A, Barbosa-Morais NL (2026). “Exploring
+> molecular signatures of senescence with markeR, an R Toolkit for
+> evaluating gene sets as phenotypic markers.” NAR Genomics and
+> Bioinformatics, 8(2), lqag057. <doi:10.1093/nargab/lqag057>
 
-`inst/Paper/` — Contains all scripts and materials used in the original
-markeR paper to reproduce analyses and figures.
+The folder `inst/Paper/` is in the **paper** branch and contains all
+scripts and materials used in the original `markeR` paper to reproduce
+analyses and figures. You can browse it
+[here](https://github.com/DiseaseTranscriptomicsLab/markeR/tree/paper/inst/Paper).
 
 ![](man/figures/Workflow.png)
 
@@ -51,12 +53,23 @@ markeR paper to reproduce analyses and figures.
     (Optional)](#5-individual-gene-exploration-optional)  
   - [6. Compare with Reference Gene Sets
     (Optional)](#6-compare-with-reference-gene-sets-optional)  
+- [Python Bridge](#python-bridge)
 - [Contact](#contact)
 
 ## Installation
 
-The latest development release of markeR from
-[GitHub](https://github.com/) can be installed with:
+Install the latest release from Bioconductor:
+
+``` r
+# Install from Bioconductor
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("markeR")
+library(markeR)
+```
+
+Or install the latest development release of `markeR` from
+[GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
@@ -67,37 +80,24 @@ devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
 
 The following tutorials are available:
 
+- [Introduction to
+  markeR](https://diseasetranscriptomicslab.github.io/markeR/articles/markeR.html)
 - [Benchmarking
-  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_BenchmarkingMode.html)
+  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Article_BenchmarkingMode.html)
 - [Discovery
-  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_DiscoveryMode.html)
+  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Article_DiscoveryMode.html)
 - [Signature
-  Similarity](https://diseasetranscriptomicslab.github.io/markeR/articles/Tutorial_GeneSetSimilarity.html)
+  Similarity](https://diseasetranscriptomicslab.github.io/markeR/articles/Article_GeneSetSimilarity.html)
 
 ## Requirements
 
-This package is officially supported on (based on a GitHub Actions
-workflow that tests against multiple `R` versions):
-
-- `R` `4.4.x`
-- `R` `4.5.x`
-
-However, due to `Bioconductor` submission requirements, `R` version
-`4.5.0` will be listed as required upon package installation in future
-releases.
-
-⚠️ Compatibility with older R versions depends on the specific versions
-of dependencies installed. Older versions of `R` (including `R` `3.5.x`,
-`3.6.x`, `4.0.x`, `4.1.x`, `4.2.x`, and `4.3.x`) may work, but are not
-officially supported due to upstream dependency constraints. In some
-cases, installing older versions of dependencies (e.g., via `renv`,
-`CRAN` snapshots, or `checkpoint`) can restore compatibility.
+This package is officially supported on `R > 4.5.0`. ⚠️ Older versions
+of `R` may work, but are not officially supported due to upstream
+dependency constraints. In some cases, installing older versions of
+dependencies (e.g., via `renv`, `CRAN` snapshots, or `checkpoint`) can
+restore compatibility.
 
 ## Common Workflow
-
-`markeR` provides a modular pipeline to quantify transcriptomic
-signatures and assess their association with phenotypic or clinical
-variables. The typical workflow includes the following steps:
 
 ### 1. Input Requirements
 
@@ -128,9 +128,15 @@ gene_sets
 ```
 
 - **Expression Data Frame**:  
-  A filtered and normalised gene expression data frame (genes ×
-  samples). Row names must be gene identifiers, and column names must
-  match the sample IDs in the metadata.
+  A filtered and normalised, non log-transformed, gene expression matrix
+  (genes × samples). Row names must be gene identifiers; column names
+  must match sample IDs in the metadata.
+
+  **Warning:** If you are using microarray data or outputs from common
+  RNA-seq pipelines (*e.g.*, edgeR), note that the expression values may
+  already be log2-normalised. The input to `markeR` must necessarily be
+  **non-log-transformed**. If your data are log2-transformed, you can
+  revert them by applying `2^data`.
 
 ``` r
 head(expr_df)
@@ -144,9 +150,9 @@ head(expr_df)
 ```
 
 - **Sample Metadata**:  
-  A data frame with annotations for each sample, with the sample ID in
-  the first column. The row names must match the column names of the
-  expression matrix.
+  A data frame with samples as rows and annotations as columns. The
+  first column should contain sample IDs matching the expression matrix
+  column names.
 
 ``` r
 metadata
@@ -160,109 +166,133 @@ metadata
 
 ### 2. Select Mode of Analysis
 
-- **Discovery Mode**: Explore how a single, well-characterised gene set
-  relates to a specific variable of interest. Suitable for hypothesis
-  generation or signature projection.
+`markeR` provides two modes of operation:
 
-- **Benchmarking Mode**: Evaluate one or more gene sets against multiple
-  metadata variables using a standardised scoring and effect size
-  framework. This mode provides comprehensive visualisations and
-  comparisons across methods.
+- **Benchmarking**: evaluates gene sets’ performance in marking a
+  metadata variable, *i.e.*, a phenotype, returning comparative
+  visualisations across scoring and enrichment methods.
+
+- **Discovery**: examines the relationship between a gene set and one or
+  more variables of interest, suitable for exploratory or
+  hypothesis-generating analyses.
 
 ### 3. Choose a Quantification Approach
 
-`markeR` supports two complementary strategies for quantifying the
-association between gene sets and phenotypes:
+Two complementary strategies are implemented for quantifying
+associations between gene sets and phenotypes:
 
 #### 3.1 Score-Based Approach
 
-This strategy generates a **single numeric score per sample**,
-reflecting the activity of a gene set. It enables flexible downstream
-analyses, including comparisons across phenotypic groups.
+A score summarising the collective expression of a gene set therein is
+assigned **to each sample**. Scores can be visualised using built-in
+functions, or used directly in downstream analyses (*e.g.*, comparisons
+between phenotypic groups of samples, correlations with numerical
+phenotypes).
 
-Three scoring methods are available:
+Available methods:
 
-- **Log2-median**: Calculates the median log2 expression of the genes in
-  the set. Sensitive to absolute shifts in expression.
+- **Log2-median**: mean of the across-sample normalised log2
+  median-centred expression levels of the genes in the set; for
+  bidirectional gene sets, the sample score is the partial score for the
+  subset of putatively upregulated genes minus that of the downregulated
+  subset.
 
-- **Ranking**: Ranks all genes within each sample and averages the ranks
-  of gene set members. Captures relative ordering rather than magnitude.
+- **Ranking**: mean expression rank of gene set members in each sample;
+  for bidirectional gene sets, the sample score is the partial score for
+  the subset of putatively upregulated genes minus that of the
+  downregulated subset, and normalised by the number of genes in the
+  set.
 
-- **ssGSEA**: Computes a single-sample gene set enrichment score using
-  the ssGSEA algorithm. Reflects the coordinated up- or down-regulation
-  of the set in each sample.
+- **ssGSEA**: single-sample gene set enrichment score using ssGSEA; for
+  bidirectional gene sets, the sample score is the partial score for the
+  subset of putatively upregulated genes minus that of the downregulated
+  subset.
 
-These methods vary in assumptions and sensitivity. Robust gene sets are
-expected to perform consistently across all three.
+Gene sets that are robust phenotypic markers are expected to yield
+consistently high scores across methods.
 
 #### 3.2 Enrichment-Based Approach
 
-This approach uses a classical **gene set enrichment analysis (GSEA)**
-framework to evaluate whether the gene set is significantly
-overrepresented at the top or bottom of a ranked list of genes (e.g.,
-ranked by fold change or correlation with phenotype).
-
-- **GSEA**: Computes a Normalised Enrichment Score (NES) for each
-  contrast or variable of interest, adjusting for gene set size and
-  multiple testing.
-
-Use this approach when interested in collective behaviour of gene sets
-in relation to ranked differential signals.
+Enrichment-based methods implement **Gene Set Enrichment Analysis
+(GSEA)**. Genes are ranked according to differential expression
+statistics, and a Normalised Enrichment Score (NES) per variable of
+interest is computed, accompanied by a p-value adjusted for multiple
+hypothesis testing.
 
 ### 4. Visualisation and Evaluation
 
 In **Benchmarking Mode**, `markeR` offers a range of visual summaries:
 
-- Violin or scatter plots showing score distributions by phenotype
-- Volcano plots and heatmaps based on effect sizes (Cohen’s *d* or *f*)
-- ROC curves and AUC values
-- Null distribution testing using random gene sets matched for size and
-  directionality
+- Violin plots of score distributions by categorical phenotype;
+- Scatter plots of association between scores and numerical phenotypes;
+- Volcano plots and heatmaps of scores or differential gene set
+  expression based on effect sizes (Cohen’s *d* or *f*);
+- ROC curves and respective AUC values of gene sets’ phenotypic
+  classification performance;
+- Violin plots of effect size distributions (Cohen’s *d*) for pairwise
+  group differences in scores, for original and simulated gene sets;
+- Plots summarising NES alongside adjusted p-values (*e.g.*, lollipop
+  plots);
+- GSEA plots showing running enrichment scores across ranked gene lists.
 
 In **Discovery Mode**, the output focuses on a single gene set:
 
-- Score distributions by phenotype
-- Pairwise contrasts (Cohen’s *d*) and overall effect sizes (Cohen’s
-  *f*)
-- Enrichment score summaries (NES) with adjusted p-values (e.g.,
-  lollipop plots)
+- Score distributions stratified by variable;
+- Effect sizes for pairwise and multiple-group differences (Cohen’s *d*
+  and *f*, respectively);
+- Cross-variable summaries of NES and adjusted p-values (*e.g.*,
+  lollipop plots).
 
-Benchmarking mode offers the most comprehensive set of features and
-allows users to seamlessly move from discovery to benchmarking mode once
+The Benchmarking Mode offers the most comprehensive set of features.
+Users are allowed to seamlessly move from Discovery to Benchmarking once
 a variable of interest has been identified and further testing is
-required. The main difference from Discovery mode is that Benchmarking
-is designed to evaluate multiple gene sets simultaneously, whereas
-Discovery mode focuses on quantifying a single, robust gene set.
+required. Benchmarking is designed to evaluate multiple gene sets
+simultaneously, whereas Discovery focuses on the performance of a single
+gene set.
 
-### 5. Individual Gene Exploration (Optional)
+### 5. Individual Gene Exploration
 
 To better understand the contribution of individual genes within a gene
-set and identify whether specific genes drive the overall signal,
-`markeR` offers a suite of gene-level exploratory analyses, including:
+set, and identify whether specific genes drive the set’s collective
+signal, `markeR` provides `VisualiseIndividualGenes.` Available options
+include:
 
-- Expression heatmaps of genes across samples and groups
-- Violin plots showing expression distributions of individual genes
-- Correlation heatmaps to reveal co-expression patterns among genes in
-  the set
-- ROC curves and AUC values for individual genes to evaluate their
-  discriminatory power
-- Effect size calculations (Cohen’s *d*) per gene to quantify
-  differential expression
-- Principal Component Analysis (PCA) on gene set genes to assess
-  variance explained and sample clustering
+- Expression heatmaps of genes across samples or groups of samples;
+- Violin plots showing cross-sample expression distributions of
+  individual genes;
+- Heatmaps of pairwise cross-sample expression correlation between genes
+  in the set;
+- ROC curves and AUC values to evaluate single genes’ performance as
+  phenotypic markers;
+- Effect size estimation (Cohen’s *d*) of expression differences between
+  groups of samples;
+- Principal Component Analysis (PCA) of expression of genes in the set,
+  to evaluate which genes dominate collective variance and how samples
+  separate according to the gene set’s expression.
 
-### 6. Compare with Reference Gene Sets (Optional)
+### 6. Compare with Reference Gene Sets
 
-`markeR` allows comparison of user-defined gene sets to reference sets
-(e.g., from MSigDB) using:
+`markeR` also supports comparison of user-defined gene sets against
+reference collections (e.g., MSigDB). Two complementary similarity
+metrics are implemented:
 
-- **Jaccard Index**: Measures gene overlap relative to union size.
+- **Jaccard Index**: the ratio of the number of genes in common over the
+  total number of genes in the two sets.
 
-- **Log Odds Ratio (logOR)**: Computes enrichment using a user-defined
-  gene universe and Fisher’s exact test.
+- **Log Odds Ratio (logOR)** from Fisher’s exact test of association
+  between gene sets, given a specified gene universe.
 
 Filters can be applied based on similarity thresholds (e.g., minimum
-Jaccard, OR, or p-value).
+Jaccard, OR, or Fisher’s test p-value).
+
+## Python Bridge
+
+For users who prefer Python, a lightweight bridge is available in
+`python/` that allows calling any `markeR` function from a Python
+environment via [`rpy2`](https://rpy2.github.io/). It includes a
+tutorial workflow script and a generic command-line wrapper. See
+[`python/README.md`](inst/python/README.md) for installation
+instructions and usage examples.
 
 ## Contact
 

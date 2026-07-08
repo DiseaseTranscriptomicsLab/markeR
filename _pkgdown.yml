@@ -11,7 +11,7 @@ badges: true
 home:
   sidebar:
       structure: [links, license, community, citation, authors, dev]
-
+  
 reference:
   - title: "Package Help Page"
     contents:

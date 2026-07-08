@@ -57,55 +57,17 @@
 #'   removed before analysis, leading to a loss of data to be fitted in the
 #'   model.
 #' @param printplt Boolean specifying if plot is to be printed. Default: `TRUE`.
-#'
+#' @param p.adjust.method Character string specifying the method to use for
+#'   multiple testing correction. Must be one of \code{"BH"} (Benjamini-Hochberg,
+#'   default), \code{"holm"}, \code{"hommel"}, \code{"bonferroni"},
+#'   \code{"BY"} (Benjamini-Yekutieli), \code{"fdr"}, or \code{"none"}.
+#'   Passed to \code{\link[stats]{p.adjust}}. 
+#'   
 #' @return A list with two elements:
 #'   - `data`: A data frame containing the GSEA results, including normalized
 #'   enrichment scores (NES), adjusted p-values, and contrasts.
 #'   - `plot`: A ggplot2 object visualizing the GSEA results as a lollipop plot.
-#'
-#'
-#' @examples
-#' # Simulate gene expression data (genes as rows, samples as columns)
-#' set.seed(42)
-#' expr <- as.data.frame(matrix(rnorm(500), nrow = 50, ncol = 10))
-#' rownames(expr) <- paste0("Gene", 1:50)
-#' colnames(expr) <- paste0("Sample", 1:10)
-#'
-#' # Simulate metadata (categorical and continuous)
-#' metadata <- data.frame(
-#'   sampleID = paste0("Sample", 1:10),
-#'   Group = rep(c("A", "B"), each = 5),
-#'   Age = sample(20:60, 10),
-#'   row.names = colnames(expr)
-#' )
-#'
-#' # Define a toy gene set: one gene set only for discovery mode!
-#' gene_set <- list(
-#'   Signature1 = paste0("Gene", 1:10)
-#' )
-#'
-#' # Score-based association (e.g., logmedian)
-#' res_score <- VariableAssociation(
-#'   method = "logmedian",
-#'   data = expr,
-#'   metadata = metadata,
-#'   cols = c("Group", "Age"),
-#'   gene_set = gene_set
-#' )
-#' print(res_score$Overall)
-#' print(res_score$plot)
-#'
-#' # GSEA-based association (if GSEA_VariableAssociation is available)
-#' # res_gsea <- VariableAssociation(
-#' #   method = "GSEA",
-#' #   data = expr,
-#' #   metadata = metadata,
-#' #   cols = "Group",
-#' #   gene_set = gene_set
-#' # )
-#' # print(res_gsea$data)
-#' print(res_score$plot)
-#'
+#' 
 #' @keywords internal
 GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL,
                                      mode=c("simple","medium","extensive"),
@@ -113,7 +75,8 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL,
                                      signif_color = "red", saturation_value=NULL,
                                      sig_threshold = 0.05, widthlabels=18,
                                      labsize=10, titlesize=14, pointSize=5,
-                                     ignore_NAs = FALSE, printplt =TRUE) {
+                                     ignore_NAs = FALSE, printplt =TRUE,
+                                     p.adjust.method = "BH") {
   data <- as.data.frame(data) # Ensure data is a data frame
   mode <- match.arg(mode)
   metadata <- metadata[, cols %in% colnames(metadata), drop = FALSE]
@@ -139,7 +102,7 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL,
     if (variable_types[var] == "Numeric") {
 
       # Use a model matrix for continuous variables
-      design <- model.matrix(as.formula(paste("~1+", var)), data = metadata)
+      design <- stats::model.matrix(as.formula(paste("~1+", var)), data = metadata)
 
       DEGs_var <- calculateDE(data = data, metadata = metadata,
                               modelmat =  design, contrasts = c(var),
@@ -172,15 +135,19 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL,
   combined_results$Contrast <- cont_vec
 
   # correct adjusted p value to correct for multiple testing for the contrasts?
-  combined_results$padj <- p.adjust(combined_results$padj, method = "BH")
+  combined_results$padj <- stats::p.adjust(combined_results$padj, method = p.adjust.method)
 
 
   combined_results_toreturn <- combined_results
 
 
   # Ensure contrast ordering
-  combined_results$Contrast <- sapply(combined_results$Contrast,
-                                      function(x) wrap_title(x, widthlabels))
+  # combined_results$Contrast <- sapply(combined_results$Contrast,
+  #                                     function(x) wrap_title(x, widthlabels))
+  combined_results$Contrast <- vapply(combined_results$Contrast,
+                                      function(x) wrap_title(x, widthlabels),
+                                      FUN.VALUE = character(1))
+  
   combined_results$Contrast <- factor(combined_results$Contrast,
                                       levels = combined_results$Contrast[order(combined_results$NES)])
 
@@ -196,17 +163,17 @@ GSEA_VariableAssociation <- function(data, metadata, cols, stat=NULL,
   }
 
 
-  plot <- ggplot2::ggplot(combined_results, ggplot2::aes(x = NES, y = Contrast,
-                                                         fill = -log10(padj))) +
+  plot <- ggplot2::ggplot(combined_results, ggplot2::aes(x = .data$NES, y = .data$Contrast,
+                                                         fill = -log10(.data$padj))) +
     ggplot2::geom_segment(ggplot2::aes(
-      yend = Contrast,
+      yend = .data$Contrast,
       xend = 0,
-      linetype = ifelse(stat_used == "B" & NES < 0, "dashed", "solid"),
-      color = ifelse(stat_used == "B" & NES < 0, "grey", "black")
+      linetype = ifelse(.data$stat_used == "B" & .data$NES < 0, "dashed", "solid"),
+      color = ifelse(.data$stat_used == "B" & .data$NES < 0, "grey", "black")
     ), size = .5) +
     ggplot2::geom_point(ggplot2::aes(
       stroke = 1.2,
-      color = ifelse(stat_used == "B" & NES < 0, "grey", "black")
+      color = ifelse(.data$stat_used == "B" & .data$NES < 0, "grey", "black")
     ), shape = 21, size = pointSize) +
      ggplot2::scale_fill_gradient2(low = nonsignif_color,
                                   mid = nonsignif_color,
@@ -309,7 +276,8 @@ generate_all_contrasts <- function(levels, mode = "simple") {
 
   # 3. Groupwise comparisons (extensive mode)
   group_contrasts <- c()
-  for (i in 1:(n-1)) {
+ # for (i in 1:(n-1)) {
+  for (i in seq_len(max(0, n - 1))) {
     left_groups <- combn(levels, i, simplify = FALSE)  # Subsets for the first group
     for (left in left_groups) {
       right <- setdiff(levels, left)  # Remaining elements for the second group
