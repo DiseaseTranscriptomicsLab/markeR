@@ -1453,7 +1453,7 @@ PlotScores(data = counts_example,
 ``` r
 
 sessionInfo()
-#> R version 4.6.0 (2026-04-24)
+#> R version 4.6.1 (2026-06-24)
 #> Platform: x86_64-pc-linux-gnu
 #> Running under: Ubuntu 24.04.4 LTS
 #> 
@@ -1474,44 +1474,44 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] markeR_1.2
+#> [1] markeR_1.3.1
 #> 
 #> loaded via a namespace (and not attached):
-#>   [1] pROC_1.19.0.1         gridExtra_2.3         rlang_1.2.0          
+#>   [1] pROC_1.19.0.1         gridExtra_2.3.1       rlang_1.3.0          
 #>   [4] magrittr_2.0.5        clue_0.3-68           GetoptLong_1.1.1     
 #>   [7] msigdbr_26.1.0        otel_0.2.0            matrixStats_1.5.0    
-#>  [10] compiler_4.6.0        mgcv_1.9-4            png_0.1-9            
+#>  [10] compiler_4.6.1        mgcv_1.9-4            png_0.1-9            
 #>  [13] systemfonts_1.3.2     vctrs_0.7.3           reshape2_1.4.5       
 #>  [16] stringr_1.6.0         pkgconfig_2.0.3       shape_1.4.6.1        
 #>  [19] crayon_1.5.3          fastmap_1.2.0         magick_2.9.1         
-#>  [22] backports_1.5.1       labeling_0.4.3        effectsize_1.0.2     
+#>  [22] backports_1.5.1       labeling_0.4.3        effectsize_1.0.3     
 #>  [25] rmarkdown_2.31        ragg_1.5.2            purrr_1.2.2          
-#>  [28] xfun_0.57             cachem_1.1.0          jsonlite_2.0.0       
-#>  [31] BiocParallel_1.46.0   broom_1.0.12          parallel_4.6.0       
+#>  [28] xfun_0.59             cachem_1.1.0          jsonlite_2.0.0       
+#>  [31] BiocParallel_1.46.0   broom_1.0.13          parallel_4.6.1       
 #>  [34] cluster_2.1.8.2       R6_2.6.1              stringi_1.8.7        
-#>  [37] bslib_0.10.0          RColorBrewer_1.1-3    limma_3.68.2         
-#>  [40] car_3.1-5             jquerylib_0.1.4       Rcpp_1.1.1-1.1       
+#>  [37] bslib_0.11.0          RColorBrewer_1.1-3    limma_3.68.4         
+#>  [40] car_3.1-5             jquerylib_0.1.4       Rcpp_1.1.2           
 #>  [43] assertthat_0.2.1      iterators_1.0.14      knitr_1.51           
-#>  [46] parameters_0.28.3     IRanges_2.46.0        splines_4.6.0        
+#>  [46] parameters_0.29.2     IRanges_2.46.0        splines_4.6.1        
 #>  [49] Matrix_1.7-5          tidyselect_1.2.1      abind_1.4-8          
 #>  [52] yaml_2.3.12           doParallel_1.0.17     codetools_0.2-20     
 #>  [55] curl_7.1.0            plyr_1.8.9            lattice_0.22-9       
-#>  [58] tibble_3.3.1          withr_3.0.2           bayestestR_0.17.0    
+#>  [58] tibble_3.3.1          withr_3.0.3           bayestestR_0.18.1    
 #>  [61] S7_0.2.2              evaluate_1.0.5        desc_1.4.3           
-#>  [64] circlize_0.4.18       pillar_1.11.1         ggpubr_0.6.3         
-#>  [67] carData_3.0-6         foreach_1.5.2         stats4_4.6.0         
-#>  [70] insight_1.5.0         generics_0.1.4        S4Vectors_0.50.0     
+#>  [64] circlize_0.4.18       pillar_1.11.1         ggpubr_1.0.0         
+#>  [67] carData_3.0-6         foreach_1.5.2         stats4_4.6.1         
+#>  [70] insight_1.5.2         generics_0.1.4        S4Vectors_0.50.1     
 #>  [73] ggplot2_4.0.3         scales_1.4.0          glue_1.8.1           
-#>  [76] tools_4.6.0           data.table_1.18.4     fgsea_1.38.0         
+#>  [76] tools_4.6.1           data.table_1.18.4     fgsea_1.38.0         
 #>  [79] locfit_1.5-9.12       ggsignif_0.6.4        babelgene_22.9       
 #>  [82] fs_2.1.0              fastmatch_1.1-8       cowplot_1.2.0        
-#>  [85] grid_4.6.0            tidyr_1.3.2           datawizard_1.3.1     
-#>  [88] edgeR_4.10.0          colorspace_2.1-2      nlme_3.1-169         
+#>  [85] grid_4.6.1            tidyr_1.3.2           datawizard_1.3.1     
+#>  [88] edgeR_4.10.1          colorspace_2.1-2      nlme_3.1-169         
 #>  [91] Formula_1.2-5         cli_3.6.6             textshaping_1.0.5    
 #>  [94] ComplexHeatmap_2.28.0 dplyr_1.2.1           gtable_0.3.6         
-#>  [97] ggh4x_0.3.1           rstatix_0.7.3         sass_0.4.10          
-#> [100] digest_0.6.39         BiocGenerics_0.58.0   ggrepel_0.9.8        
+#>  [97] ggh4x_0.3.1           rstatix_1.0.0         sass_0.4.10          
+#> [100] digest_0.6.39         BiocGenerics_0.58.1   ggrepel_0.9.8        
 #> [103] rjson_0.2.23          htmlwidgets_1.6.4     farver_2.1.2         
-#> [106] htmltools_0.5.9       pkgdown_2.2.0         lifecycle_1.0.5      
-#> [109] GlobalOptions_0.1.4   statmod_1.5.1
+#> [106] htmltools_0.5.9       pkgdown_2.2.1         lifecycle_1.0.5      
+#> [109] GlobalOptions_0.1.4   statmod_1.5.2
 ```
