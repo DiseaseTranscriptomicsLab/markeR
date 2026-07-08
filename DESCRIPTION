@@ -1,10 +1,10 @@
 Package: markeR
 Title: An R Toolkit for Evaluating Gene Signatures as Phenotypic Markers
-Version: 1.2
+Version: 1.3.1
 Authors@R: 
     c(
       person("Rita", "Martins-Silva", 
-             email = "rita.silva@medicina.ulisboa.pt", 
+             email = "rita.silva@gimm.pt", 
              role = c("aut", "cre"),
              comment = c(ORCID = "0000-0002-1067-7993")), 
             person("Alexandre", "Kaizeler",  
@@ -66,7 +66,8 @@ Config/testthat/edition: 3
 Depends: 
     R (>= 4.5.0)
 URL: https://diseasetranscriptomicslab.github.io/markeR/,
-     https://github.com/DiseaseTranscriptomicsLab/markeR
+     https://github.com/DiseaseTranscriptomicsLab/markeR,
+     https://doi.org/10.1093/nargab/lqag057 
 BugReports: https://github.com/DiseaseTranscriptomicsLab/markeR/issues
 VignetteBuilder: knitr
 Config/Needs/website: rmarkdown

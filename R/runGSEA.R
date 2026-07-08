@@ -162,7 +162,13 @@ runGSEA <- function(DEGList, gene_sets, stat = NULL, ContrastCorrection=FALSE, n
     list_of_dfs <- split(combined_df, combined_df$df_name)
 
     # Step 4: Remove the helper column
-    list_of_dfs <- lapply(list_of_dfs, function(df) df[, !names(df) %in% "df_name"])
+    #list_of_dfs <- lapply(list_of_dfs, function(df) df[, !names(df) %in% "df_name"])
+    
+    list_of_dfs <- lapply(list_of_dfs, function(df) {
+      df$df_name <- NULL
+      df
+    })
+    
     results_by_contrast <- list_of_dfs[names(results_by_contrast)]
 
   } else {
