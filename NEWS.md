@@ -1,8 +1,9 @@
-# markeR 1.3.1 (15 Jun 2026)
+# markeR 1.3.1 (8 Jul 2026)
 
 ## Minor Changes
 - Updated the citation to the markeR paper published in NAR Genomics and Bioinformatics.
 - Updated the contact email address.
+- Fixed `runGSEA` function.
 
 # markeR 1.2 (29 Apr, 2026) 
 
