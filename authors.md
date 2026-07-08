@@ -14,7 +14,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/DiseaseTranscriptomicsLab/markeR/blob/v1.3.1/inst/CITATION)
+[`inst/CITATION`](https://github.com/DiseaseTranscriptomicsLab/markeR/blob/default/inst/CITATION)
 
 Martins-Silva R, Kaizeler A, Barbosa-Morais NL (2026). "Exploring
 molecular signatures of senescence with markeR, an R Toolkit for
