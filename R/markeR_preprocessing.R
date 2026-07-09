@@ -1196,10 +1196,15 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         lapply(seq_along(step_info), function(i) {
           x      <- step_info[[i]]
           is_last <- i == n_steps
-          # Step 0 uses its own done flag; steps 1-4 use rv$step
+          # Step 0 uses its own done flag; steps 1-4 use rv$step. Step 1 is
+          # additionally gated on s0_done, since rv$step already starts at 1L
+          # before Step 0 has been confirmed/skipped.
           if (x$n == 0L) {
             is_done <- s0_done
             is_act  <- has_meta && !s0_done
+          } else if (x$n == 1L) {
+            is_done <- s0_done && x$n < step
+            is_act  <- s0_done && x$n == step
           } else {
             is_done <- x$n < step
             is_act  <- x$n == step
@@ -2170,6 +2175,13 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
             shiny::tags$span(class="pp-num pp-num-active","1"),
             shiny::tags$strong("Step 1 - Sample Complexity QC (Optional)"))),
           shiny::div(style="padding:14px;", shiny::helpText("Load expression data first (Import tab)."))))
+      if (!isTRUE(rv$s0_done))
+        return(shiny::div(class="pp-locked",
+          bslib::card(class="pp-step-card",
+            bslib::card_header(shiny::tags$div(style="display:flex;align-items:center;",
+              shiny::tags$span(class="pp-num pp-num-locked","1"),
+              shiny::tags$strong("Step 1 - Sample Complexity QC (Optional)"))),
+            shiny::div(style="padding:14px;color:#9ca3af;","Complete Step 0 (or skip it) to unlock."))))
       if (rv$step > 1L && rv$active_step != 1L)
         return(.pp_done_card(1,"Sample Complexity QC",rv$s1_summary,ns("back_to_s1"),
           plot_ui=shiny::plotOutput(ns("plot_s1a"),height="360px"),
