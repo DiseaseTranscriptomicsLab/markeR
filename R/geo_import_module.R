@@ -586,7 +586,14 @@ extract_geo_metadata <- function(obj) {
 
   tokenize <- function(x) {
     toks <- unlist(strsplit(as.character(x), "[^a-zA-Z0-9]+"))
-    tolower(toks[nchar(toks) >= 2L])
+    toks <- tolower(toks)
+    # Keep tokens of length >= 2 (e.g. "doxo", "control") AND purely numeric
+    # tokens of any length. Numeric tokens are frequently the ONLY thing that
+    # distinguishes replicates (e.g. "doxo_1" vs "doxo_2") - dropping single
+    # digits here would make every replicate of a condition score identically
+    # against each other, causing ties in the matcher below.
+    keep <- nchar(toks) >= 2L | grepl("^[0-9]+$", toks)
+    toks[keep]
   }
 
   tok_expr <- lapply(expr_cols,               tokenize)
@@ -606,12 +613,39 @@ extract_geo_metadata <- function(obj) {
     }
   }
 
+  # Greedy one-to-one assignment, highest-scoring pairs first. A plain
+  # per-row which.max() (the previous approach) lets two different
+  # expression columns both claim the SAME metadata row when their scores
+  # tie - which silently duplicates that row's values (e.g. "title") across
+  # two distinct samples instead of reporting a failed/partial match. Once a
+  # metadata row is claimed here, no other expression column may take it.
+  idx      <- rep(NA_integer_, n_e)
+  accepted <- rep(FALSE, n_e)
   best_scores <- apply(score_mat, 1L, max)
-  best_idx    <- apply(score_mat, 1L, which.max)
-  accepted    <- best_scores >= min_score
+
+  pairs <- which(score_mat >= min_score, arr.ind = TRUE)
+  if (nrow(pairs) > 0L) {
+    ord   <- order(score_mat[pairs], decreasing = TRUE)
+    pairs <- pairs[ord, , drop = FALSE]
+    used_m <- logical(n_m)
+    for (k in seq_len(nrow(pairs))) {
+      i <- pairs[k, 1L]; j <- pairs[k, 2L]
+      if (!is.na(idx[i]) || used_m[j]) next
+      idx[i] <- j; used_m[j] <- TRUE; accepted[i] <- TRUE
+    }
+  }
+  # Any expression column left without a unique match (score below
+  # min_score, or its best partner(s) were already claimed by a
+  # higher-scoring pair) still gets its single best-scoring row as a
+  # fallback so downstream code always has an index to work with, but stays
+  # flagged as NOT accepted so callers can treat it as an unmatched sample.
+  unmatched <- which(is.na(idx))
+  for (i in unmatched) {
+    idx[i] <- if (any(score_mat[i, ] > 0)) which.max(score_mat[i, ]) else 1L
+  }
 
   list(
-    idx       = best_idx,
+    idx       = idx,
     scores    = best_scores,
     accepted  = accepted,
     n_matched = sum(accepted)

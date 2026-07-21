@@ -294,6 +294,14 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
     discovery_result <- shiny::reactiveVal(NULL)
     summary_result    <- shiny::reactiveVal(NULL)
 
+    # Clear any previously computed plots/results when the underlying
+    # expression data or metadata actually changes (e.g. new file loaded, or
+    # preprocessing re-finalised) - stale results from the old dataset should
+    # not linger on screen.
+    shiny::observeEvent(list(get_expr(), get_meta()), {
+      discovery_result(NULL); summary_result(NULL)
+    }, ignoreInit = TRUE)
+
     ov_h   <- shiny::reactiveVal(300L)
     dist_h <- shiny::reactiveVal(400L)
     cont_h <- shiny::reactiveVal(350L)

@@ -250,7 +250,8 @@ dataUI <- function() {
                 "Source:",
                 choices = c(
                   "Use Example Gene Sets" = "example",
-                  "Upload Gene Sets"      = "upload"
+                  "Upload Gene Sets"      = "upload",
+                  "Paste Gene Set(s)"     = "paste"
                 )
               ),
               
@@ -297,6 +298,39 @@ dataUI <- function() {
                     "you can select more than one file at once - each file becomes its own gene set, all collected into the same list."
                   )
                 )
+              ),
+
+              shiny::conditionalPanel(
+                "input.geneset_source == 'paste'",
+                shiny::helpText(
+                  shiny::tags$strong("Paste gene sets directly - no file needed:"),
+                  shiny::tags$ul(
+                    shiny::tags$li("Give the set a name, then paste one gene per line into the box."),
+                    shiny::tags$li(
+                      "For a ", shiny::strong("directional"), " gene set, add the expected ",
+                      "direction after a semicolon on ", shiny::strong("every"), " line, e.g."
+                    ),
+                    shiny::tags$li(style = "list-style:none;margin-left:-4px;",
+                      shiny::tags$code("TP53;up"), shiny::tags$br(), shiny::tags$code("MKI67;down"),
+                      " (", shiny::tags$code("+1"), "/", shiny::tags$code("-1"), " also work)."
+                    ),
+                    shiny::tags$li(
+                      "For an ", shiny::strong("undirected"), " gene set, just list genes with no ",
+                      "semicolon at all - e.g. ", shiny::tags$code("ACTB")
+                    ),
+                    shiny::tags$li(shiny::strong("A single gene set can't mix the two:"),
+                      " either every line has a direction, or none of them do."),
+                    shiny::tags$li("Add more boxes below for additional gene sets - each is collected into the same list.")
+                  )
+                ),
+                shiny::uiOutput("paste_gs_boxes"),
+                shiny::div(style = "display:flex;gap:8px;margin:8px 0;",
+                  shiny::actionButton("add_paste_gs_box", shiny::tagList(shiny::icon("plus"), " Add another gene set"),
+                    class = "btn-sm btn-outline-secondary"),
+                  shiny::actionButton("apply_paste_gs", shiny::tagList(shiny::icon("check"), " Use these gene sets"),
+                    class = "btn-sm btn-primary")
+                ),
+                shiny::uiOutput("paste_gs_status")
               )
             )
           )
@@ -1643,6 +1677,113 @@ dataServer <- function(input, output, session) {
   })
 
   observeEvent(input$retry_gs_example, { .dl_gs_example() }, ignoreInit = TRUE)
+
+  ##### GENE SETS - paste (text box) input #####
+
+  # One gene per line; "gene;direction" for directional sets (direction is
+  # optional per line and accepts up/down/+1/-1/pos/neg). Reuses
+  # parse_geneset_object() so pasted sets go through the exact same
+  # validation as uploaded files.
+  .parse_pasted_geneset_lines <- function(txt) {
+    if (is.null(txt) || !nzchar(trimws(txt))) return(NULL)
+    lines <- trimws(strsplit(txt, "\n")[[1]])
+    lines <- lines[nzchar(lines)]
+    if (length(lines) == 0L) return(NULL)
+
+    .dir_to_num <- function(x) {
+      xl <- tolower(trimws(x))
+      if (!nzchar(xl)) return(NA_character_)
+      if (xl %in% c("up", "+", "+1", "1", "pos", "positive")) return("1")
+      if (xl %in% c("down", "-", "-1", "neg", "negative")) return("-1")
+      x  # leave as-is (e.g. already numeric-ish) for as.numeric() downstream
+    }
+
+    parts   <- strsplit(lines, ";", fixed = TRUE)
+    genes   <- vapply(parts, function(p) trimws(p[1]), character(1))
+    has_dir <- vapply(parts, length, integer(1)) >= 2L
+    keep    <- nzchar(genes)
+    if (!any(keep)) return(NULL)
+    genes   <- genes[keep]; has_dir <- has_dir[keep]; parts <- parts[keep]
+
+    if (!any(has_dir)) return(genes)  # plain undirected gene set
+
+    # A gene set is either fully directional or fully undirected - never a
+    # mix, since downstream directional methods need a direction for every
+    # gene. Flag it rather than silently treating the direction-less lines
+    # as NA.
+    if (!all(has_dir)) {
+      missing_genes <- genes[!has_dir]
+      stop("has both directional and non-directional lines - add a direction to ",
+           if (length(missing_genes) <= 5L) paste(missing_genes, collapse = ", ")
+           else paste0(paste(missing_genes[1:5], collapse = ", "), ", … (",
+                       length(missing_genes), " genes missing a direction)"),
+           ", or remove directions from all lines to make it undirected.")
+    }
+
+    dirs <- vapply(parts, function(p) .dir_to_num(p[2]), character(1))
+    data.frame(gene = genes, direction = dirs, stringsAsFactors = FALSE)
+  }
+
+  paste_gs_n <- shiny::reactiveVal(1L)
+  observeEvent(input$add_paste_gs_box, { paste_gs_n(paste_gs_n() + 1L) })
+
+  output$paste_gs_boxes <- shiny::renderUI({
+    n <- paste_gs_n()
+    shiny::tagList(lapply(seq_len(n), function(i) {
+      shiny::div(style = "border:1px solid #e5e7eb;border-radius:6px;padding:8px 10px;margin-bottom:8px;",
+        shiny::textInput(paste0("paste_gs_name_", i), "Gene set name:",
+          value = shiny::isolate(input[[paste0("paste_gs_name_", i)]]) %||% "",
+          placeholder = "e.g. MyUpregulatedSet", width = "100%"),
+        shiny::textAreaInput(paste0("paste_gs_genes_", i), "Genes (one per line):",
+          value = shiny::isolate(input[[paste0("paste_gs_genes_", i)]]) %||% "",
+          rows = 6, placeholder = "Directional:\nTP53;up\nMKI67;down\n\nor undirected:\nACTB\nGAPDH",
+          width = "100%")
+      )
+    }))
+  })
+
+  observeEvent(input$apply_paste_gs, {
+    n <- paste_gs_n()
+    compiled <- list()
+    problems <- character(0)
+    for (i in seq_len(n)) {
+      nm  <- trimws(input[[paste0("paste_gs_name_", i)]] %||% "")
+      txt <- input[[paste0("paste_gs_genes_", i)]] %||% ""
+      if (!nzchar(nm) && !nzchar(trimws(txt))) next  # skip fully empty boxes
+      if (!nzchar(nm)) { problems <- c(problems, paste0("Gene set #", i, " needs a name.")); next }
+      had_parse_error <- FALSE
+      obj <- tryCatch(
+        .parse_pasted_geneset_lines(txt),
+        error = function(e) {
+          had_parse_error <<- TRUE
+          problems <<- c(problems, paste0("'", nm, "' ", conditionMessage(e)))
+          NULL
+        }
+      )
+      if (is.null(obj)) {
+        if (!had_parse_error) problems <- c(problems, paste0("'", nm, "' has no genes."))
+        next
+      }
+      parsed <- tryCatch(
+        parse_geneset_object(obj, clean_name(nm)),
+        error = function(e) {
+          problems <<- c(problems, paste0("'", nm, "': ", conditionMessage(e)))
+          NULL
+        }
+      )
+      if (!is.null(parsed)) compiled <- c(compiled, parsed)
+    }
+    if (length(problems) > 0L)
+      shiny::showNotification(paste(problems, collapse = "\n"), type = "error", duration = 10)
+    if (length(compiled) == 0L) return()
+    gene_sets(compiled)
+    log_step(paste0("Gene sets loaded: ", length(compiled), " pasted set(s) parsed."))
+    output$paste_gs_status <- shiny::renderUI({
+      shiny::tags$small(style = "color:#28a745;display:block;margin-top:4px;",
+        shiny::icon("circle-check"),
+        sprintf(" %d gene set(s) loaded: %s", length(compiled), paste(names(compiled), collapse = ", ")))
+    })
+  })
 
 
 

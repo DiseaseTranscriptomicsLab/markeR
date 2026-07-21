@@ -47,7 +47,7 @@ ui <- bslib::page_navbar(
     #   target = "_blank",
     #   style = "font-size: 0.85em; color: #949494; text-decoration: none;"
     # )
-    shiny::a("Web App 0.99.4",
+    shiny::a("Web App 0.99.5",
              style = "font-size: 0.7em; color: #949494; text-decoration: none;")
   ),
   
@@ -255,6 +255,17 @@ ui <- bslib::page_navbar(
   ),
 
   bslib::nav_spacer(),
+
+  ##### TUTORIAL (right-aligned navbar link) #####
+  bslib::nav_item(
+    shiny::tags$a(
+      shiny::icon("circle-info"), " Tutorial",
+      href = "tutorial/Tutorial_markeRShinyWebApp_shinyv0_99_5.pdf",
+      target = "_blank", rel = "noopener noreferrer",
+      class = "nav-link",
+      title = "Open the markeR user tutorial (PDF)"
+    )
+  ),
 
   ##### REPORT BUG (right-aligned navbar link) #####
   bslib::nav_item(
@@ -535,10 +546,15 @@ server <- function(input, output, session) {
   )
 
   # When the user finalises preprocessing, push the processed data back into
-  # the app's main expr_data reactive so downstream tabs pick it up.
+  # the app's main expr_data/meta_data reactives so downstream tabs pick it up.
+  # Metadata must be pushed back too (not just expr): if samples were removed
+  # during preprocessing, meta_data() otherwise keeps its original, larger row
+  # count forever - Data tab and downstream tabs would then see fewer
+  # expression columns than metadata rows.
   shiny::observeEvent(pp_module$finalized(), {
     shiny::req(pp_module$finalized() > 0L, pp_module$final_data())
     expr_data(pp_module$final_data())
+    if (!is.null(pp_module$final_meta())) meta_data(pp_module$final_meta())
     expr_quality_warn(NULL)   # clear any earlier quality warning
   }, ignoreInit = TRUE)
 
@@ -641,10 +657,20 @@ markeRapp <- function(...){
   
   # Workflow schematic
   shiny::addResourcePath(
-    "methods", 
+    "methods",
     system.file("shiny/www", package = "markeR")   # points to inst/shiny/www/
   )
-  
+
+  # User tutorial (PDF), served the same way as the workflow schematic above -
+  # a separate alias so the URL is self-explanatory (/tutorial/...) even
+  # though it currently resolves to the same inst/shiny/www/ folder. Works
+  # identically when deployed on a web server, since addResourcePath() (not a
+  # local file:// link) is what's linked to in the navbar below.
+  shiny::addResourcePath(
+    "tutorial",
+    system.file("shiny/www", package = "markeR")
+  )
+
   options(shiny.maxRequestSize = 1000 * 1024^2)
   
   app <- shiny::shinyApp(ui, server)

@@ -962,6 +962,18 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
     pca_result        <- shiny::reactiveVal(NULL)
     rocauc_result     <- shiny::reactiveVal(NULL)
 
+    # Clear any previously computed plots/results when the underlying
+    # expression data or metadata actually changes (e.g. new file loaded, or
+    # preprocessing re-finalised) - stale results from the old dataset should
+    # not linger on screen. (user_gs_parsed is a user-supplied reference gene
+    # set for the Similarity tab, independent of the loaded dataset, so it is
+    # deliberately left untouched here.)
+    shiny::observeEvent(list(get_expr(), get_meta()), {
+      pairwise_result(NULL); similarity_result(NULL); expression_result(NULL)
+      heatmap_result(NULL); corr_result(NULL); cohend_result(NULL)
+      pca_result(NULL); rocauc_result(NULL)
+    }, ignoreInit = TRUE)
+
     # ---- Per-plot reactive heights ------------------------------------------
     pw_h         <- shiny::reactiveVal(400L)
     sim_h        <- shiny::reactiveVal(500L)

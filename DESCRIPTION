@@ -62,7 +62,8 @@ Imports:
     readxl,
     Biobase,
     shinyWidgets,
-    data.table
+    data.table,
+    highcharter
 Suggests:
     devtools,
     markdown,

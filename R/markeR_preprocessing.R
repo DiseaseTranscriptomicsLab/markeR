@@ -137,7 +137,7 @@
 # samps_plot: if provided, bypasses selection logic (ensures before/after use same samples)
 .pp_make_boxplot <- function(log_d, all_s, display, n_box, color_by, meta, title_str,
                               samps_plot = NULL, hide_xlabels = FALSE,
-                              y_label = "log₂(count + 1)") {
+                              y_label = "log2(count + 1)") {
   if (is.null(samps_plot)) {
     samps_plot <- switch(display,
       random  = { set.seed(42L + n_box); sample(all_s, min(n_box, length(all_s))) },
@@ -243,6 +243,103 @@
     ggplot2::ggtitle(title) + ggplot2::labs(colour = color_by)
 }
 
+# ── Interactive (highcharter) equivalents - used only in the live app, so
+# hovering shows the sample ID directly. The static ggplot builders above are
+# kept as-is for the expand-modal/PNG download and the standalone report,
+# neither of which need JS interactivity. ──────────────────────────────────
+
+# One line series per sample. Used for both the library-complexity plot and
+# the read-sampling plot - they share the same shape (x, y, one line per
+# Sample) and only differ in which columns/labels apply.
+.pp_hc_multiline <- function(df, x_col, y_col, x_lab, y_lab, group_col = "Sample", title = "",
+                              max_points_per_series = 400L) {
+  if (is.null(df) || nrow(df) == 0L) return(NULL)
+  d <- data.frame(x_val = df[[x_col]], y_val = df[[y_col]], grp = df[[group_col]])
+  # Thin very long per-sample series (e.g. the complexity plot has one point
+  # per gene - tens of thousands for a typical RNA-seq matrix) to a fixed cap
+  # per line before handing off to highcharter. These are smooth, roughly
+  # monotonic curves, so evenly-spaced subsampling preserves their shape;
+  # without this, the browser can hang or the session can time out trying to
+  # serialise/render hundreds of thousands of interactive points.
+  d <- do.call(rbind, lapply(split(d, d$grp), function(sub) {
+    n <- nrow(sub)
+    if (n <= max_points_per_series) return(sub)
+    idx <- sort(unique(round(seq(1, n, length.out = max_points_per_series))))
+    sub[idx, , drop = FALSE]
+  }))
+  grps <- sort(unique(d$grp))
+  pal  <- rep_len(.pp_palette, length(grps))
+  highcharter::hchart(d, "line", highcharter::hcaes(x = x_val, y = y_val, group = grp)) |>
+    highcharter::hc_colors(pal) |>
+    highcharter::hc_xAxis(title = list(text = x_lab)) |>
+    highcharter::hc_yAxis(title = list(text = y_lab)) |>
+    highcharter::hc_title(text = title) |>
+    highcharter::hc_legend(enabled = FALSE) |>
+    highcharter::hc_tooltip(headerFormat = "", pointFormat = "<b>{series.name}</b><br/>{point.x:.2f}, {point.y:.2f}") |>
+    highcharter::hc_plotOptions(series = list(marker = list(enabled = FALSE),
+                                               states = list(hover = list(lineWidthPlus = 2)))) |>
+    highcharter::hc_chart(zoomType = "xy") |>
+    highcharter::hc_exporting(enabled = FALSE)
+}
+
+# One point per sample, coloured by a metadata column, tooltip shows the
+# sample ID plus its group and PC coordinates. Mirrors .pp_pca_from_df()'s
+# data prep so the two stay visually consistent.
+.pp_hc_pca <- function(pca_df, ev, meta, color_by = NULL, title = "",
+                        pc_x = "PC1", pc_y = "PC2") {
+  if (is.null(pca_df) || nrow(pca_df) == 0L) return(NULL)
+  df <- pca_df
+  cols_avail <- colnames(df)
+  if (!pc_x %in% cols_avail) pc_x <- cols_avail[1]
+  if (!pc_y %in% cols_avail) pc_y <- cols_avail[min(2L, length(cols_avail))]
+  pc_x_i <- as.integer(sub("PC", "", pc_x))
+  pc_y_i <- as.integer(sub("PC", "", pc_y))
+  pc1pct <- if (pc_x_i <= length(ev)) round(100 * ev[pc_x_i] / sum(ev), 1) else 0
+  pc2pct <- if (pc_y_i <= length(ev)) round(100 * ev[pc_y_i] / sum(ev), 1) else 0
+
+  if (!is.null(meta) && !is.null(color_by) && color_by %in% colnames(meta)) {
+    id_col   <- if ("SampleID" %in% colnames(meta)) "SampleID" else colnames(meta)[1]
+    meta_ids <- as.character(meta[[id_col]])
+    idx      <- match(rownames(df), meta_ids)
+    df$ColorVar <- as.character(meta[[color_by]])[idx]
+  } else {
+    df$ColorVar <- rownames(df); color_by <- "Sample"
+  }
+  df$ColorVar[is.na(df$ColorVar)] <- "NA"
+  df$x_coord   <- df[[pc_x]]
+  df$y_coord   <- df[[pc_y]]
+  df$SampleLbl <- rownames(df)
+
+  # Same 6%-of-range axis padding .pp_pca_from_df() (the static ggplot
+  # version) uses via coord_cartesian() - without it, Highcharts scales
+  # tightly to the data and points can sit flush against the plot edges,
+  # making the whole scatter look cramped/squished.
+  xl <- range(df$x_coord, na.rm = TRUE); px <- diff(xl) * 0.06
+  yl <- range(df$y_coord, na.rm = TRUE); py <- diff(yl) * 0.06
+  if (px == 0) px <- 1; if (py == 0) py <- 1
+
+  grps <- sort(unique(df$ColorVar))
+  pal  <- rep_len(.pp_palette, length(grps))
+
+  highcharter::hchart(df, "scatter",
+      highcharter::hcaes(x = x_coord, y = y_coord, group = ColorVar, name = SampleLbl),
+      marker = list(radius = 5, symbol = "circle"), opacity = 0.85) |>
+    highcharter::hc_colors(pal) |>
+    highcharter::hc_xAxis(title = list(text = paste0(pc_x, ": ", pc1pct, "%")),
+      min = xl[1] - px, max = xl[2] + px,
+      plotLines = list(list(value = 0, dashStyle = "Dot", color = "#9ca3af", width = 1))) |>
+    highcharter::hc_yAxis(title = list(text = paste0(pc_y, ": ", pc2pct, "%")),
+      min = yl[1] - py, max = yl[2] + py,
+      plotLines = list(list(value = 0, dashStyle = "Dot", color = "#9ca3af", width = 1))) |>
+    highcharter::hc_title(text = title) |>
+    highcharter::hc_legend(enabled = TRUE, title = list(text = color_by)) |>
+    highcharter::hc_tooltip(headerFormat = "", pointFormat = paste0(
+      "<b>{point.name}</b><br/>", .html_esc(color_by), ": {series.name}<br/>",
+      pc_x, ": {point.x:.2f}<br/>", pc_y, ": {point.y:.2f}")) |>
+    highcharter::hc_chart(zoomType = "xy") |>
+    highcharter::hc_exporting(enabled = FALSE)
+}
+
 .pp_scree_plot <- function(ev, n_show = 10L, pc_x = "PC1", pc_y = "PC2") {
   n   <- min(n_show, length(ev))
   pct <- round(100 * ev[1:n] / sum(ev), 1)
@@ -323,7 +420,7 @@
 # coloured by `initial_color` (a metadata column), built directly from
 # pre-computed box statistics (quartiles/fences) rather than raw data.
 .report_box_div <- function(box_stats, meta, meta_cols, initial_color, div_id,
-                             title = "", height = "460px", y_label = "log₂(count + 1)") {
+                             title = "", height = "460px", y_label = "log2(count + 1)") {
   samples <- names(box_stats)
   if (length(samples) == 0L) return("<p style='color:#9ca3af;'>No data</p>")
   meta_aln  <- .pp_align_meta(samples, meta, meta_cols)
@@ -547,18 +644,47 @@
 
 # ── Remove suspicious samples section ─────────────────────────────────────────
 
-.pp_remove_section_ui <- function(picker_id, btn_id) {
-  shiny::tags$details(
-    style = "margin-top:12px;border:1px dashed #d1d5db;border-radius:6px;padding:8px 12px;",
-    shiny::tags$summary(
-      style = "cursor:pointer;font-size:0.84em;color:#6b7280;user-select:none;",
-      "⚠️ Remove suspicious samples (optional)"
-    ),
-    shiny::div(style = "margin-top:8px;",
-      shiny::uiOutput(picker_id),
-      shiny::actionButton(btn_id, "Remove selected & update data",
-                           class = "btn-sm btn-outline-danger", style = "margin-top:6px;")
-    )
+.pp_remove_section_ui <- function(picker_id, btn_id, warning_text = NULL,
+                                   note_id = NULL, note_value = "",
+                                   evidence_id = NULL, evidence_choices = NULL,
+                                   already_used = FALSE) {
+  controls <- shiny::tagList(
+    shiny::uiOutput(picker_id),
+    if (!is.null(evidence_id) && length(evidence_choices) > 0L)
+      shiny::div(style = "margin-top:8px;",
+        shiny::tags$b(style = "font-size:0.82em;",
+          "Attach supporting plot(s) as evidence in the report (optional):"),
+        shiny::checkboxGroupInput(evidence_id, label = NULL,
+          choices = evidence_choices, selected = character(0))),
+    if (!is.null(note_id))
+      shiny::textAreaInput(note_id, "Reason for removal (optional - included in report):",
+        value = note_value, rows = 2,
+        placeholder = "e.g. Outlier on PCA, separated from replicates of the same group.",
+        width = "100%"),
+    shiny::actionButton(btn_id, "Remove selected & update data",
+                         class = "btn-sm btn-outline-danger", style = "margin-top:8px;")
+  )
+  shiny::div(
+    style = "margin-top:14px;border:1px solid #f1aeb5;background:#fff5f5;
+      border-radius:6px;padding:10px 14px;",
+    shiny::tags$strong(style = "font-size:0.88em;color:#b02a37;",
+      "⚠️ Remove suspicious samples (only if needed)"),
+    if (!is.null(warning_text))
+      shiny::tags$p(style = "font-size:0.8em;color:#6b7280;margin:4px 0 8px;",
+        warning_text),
+    # After at least one removal has already happened here, collapse the
+    # picker/checklist/note/button behind a toggle instead of showing them
+    # open again by default - seeing the same (now-empty) controls a second
+    # time reads as leftover state from the previous removal rather than a
+    # fresh action.
+    if (already_used)
+      shiny::tags$details(
+        shiny::tags$summary(
+          style = "cursor:pointer;font-size:0.82em;font-weight:600;color:#b02a37;user-select:none;",
+          "Remove more samples…"),
+        shiny::div(style = "margin-top:8px;", controls))
+    else
+      controls
   )
 }
 
@@ -588,6 +714,22 @@
     shiny::plotOutput(plot_ns_id, height = "72vh"),
     footer = shiny::tagList(
       shiny::downloadButton(dl_btn_id, "⬇ Download PNG"),
+      shiny::modalButton("Close")
+    )
+  )
+}
+
+# ── Plot modal (full-size interactive highchart view) ───────────────────────────
+# Separate from .pp_plot_modal() above (which is shared by ~10 static-ggplot
+# expand buttons) so those flows are left untouched. Use for the Step 1
+# complexity plots only, where the interactive highchart itself provides
+# hover/zoom and its own built-in export menu (enabled here on the modal copy).
+
+.pp_hc_modal <- function(hc_ns_id) {
+  shiny::modalDialog(
+    size = "xl", easyClose = TRUE,
+    highcharter::highchartOutput(hc_ns_id, height = "72vh"),
+    footer = shiny::tagList(
       shiny::modalButton("Close")
     )
   )
@@ -704,9 +846,9 @@ preprocessingUI <- function(id) {
         shiny::div(style = "min-height: 60px; flex-shrink: 0;")
       ),
       shiny::div(class = "pp-main-scroll", style = "padding:10px;",
-        shiny::uiOutput(ns("pp_step0_card")),
         shiny::uiOutput(ns("gene_id_banner")),
         shiny::uiOutput(ns("gene_id_map_ui")),
+        shiny::uiOutput(ns("pp_step0_card")),
         shiny::uiOutput(ns("step1_card")),
         shiny::uiOutput(ns("step2_card")),
         shiny::uiOutput(ns("step3_card")),
@@ -743,6 +885,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
     })
 
     modal_plot        <- shiny::reactiveVal(NULL)
+    modal_hc          <- shiny::reactiveVal(NULL)  # for interactive highchart modal (Step 1 complexity)
     .data_fingerprint <- shiny::reactiveVal(NULL)  # tracks identity of loaded data
     .finalized_fp     <- shiny::reactiveVal(NULL)   # fingerprint at finalization (fed-back output)
 
@@ -777,7 +920,10 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       report_interactive_data = NULL,
       meta_type_log = character(0),  # tracks Step 0 column type changes for report
       s0_done       = FALSE,         # Step 0 confirmed (apply or skip)
-      meta_s0_orig  = NULL           # immutable snapshot of metadata at load time for Step 0
+      meta_s0_orig  = NULL,          # immutable snapshot of metadata at load time for Step 0
+      removed_samples_log = list(),  # accumulates {step, ids, note} for every removal, for the report
+      s4_remove_gen = 0L             # bumped after each removal so the note/evidence inputs get a
+                                      # fresh widget ID next time - guarantees no stale leftover text
     )
 
     shiny::observe({
@@ -808,6 +954,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         rv$s4_bc_result <- NULL; rv$pp_summary <- NULL; rv$finalized <- 0L
         rv$downloads_available <- FALSE; rv$gene_id_dismissed <- FALSE; rv$gene_id_map <- NULL
         rv$s1_summary <- ""; rv$s2_summary <- ""; rv$s3_summary <- ""
+        rv$removed_samples_log <- list()
         .finalized_fp(NULL)
         # (no notification - silent reset to avoid noise during normal data-tab usage)
       }
@@ -826,7 +973,11 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
     output$gene_id_banner <- shiny::renderUI({
       shiny::req(rv$data_s0)
       id_type <- rv$gene_id_type
-      if (id_type == "symbol" || rv$gene_id_dismissed) return(NULL)
+      # Hide once preprocessing has been finalised (any path, including
+      # "Skip - use data as-is") or explicitly dismissed. Converting IDs after
+      # finalisation wouldn't propagate to rv$final_data/downstream tabs, so
+      # the option is only offered again after a full "Reset all".
+      if (id_type == "symbol" || rv$gene_id_dismissed || (rv$finalized %||% 0L) > 0L) return(NULL)
       type_label <- if (grepl("^ensembl_", id_type)) {
         sp <- sub("^ensembl_", "", id_type)
         lbl <- .pp_species_map[[sp]]$label %||% sp
@@ -850,6 +1001,10 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           shiny::tags$br(),
           shiny::tags$span(style = "color:#6b7280;font-size:0.9em;",
             "Version numbers (e.g. .2 in ENSG00000141736.2) will be stripped automatically.")),
+        shiny::tags$p(style = "font-size:0.82em;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:6px 10px;margin-bottom:8px;",
+          "⚠️ Conversion currently supports gene-level IDs only (e.g. Ensembl gene, RefSeq, Entrez). ",
+          "Transcript-level IDs (e.g. ENST…, ENSMUST…) will not be recognised or converted correctly - ",
+          "if your IDs are transcripts, keep the original IDs and handle the mapping to genes yourself beforehand."),
         shiny::selectInput(ns("gene_id_species"), "Species:",
           choices = sp_choices, selected = default_species, width = "300px"),
         shiny::div(style = "display:flex;gap:8px;margin-top:8px;",
@@ -935,34 +1090,59 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         }
 
         shiny::incProgress(0.5, "Updating gene identifiers…")
-        new_ids <- ifelse(is.na(symbols) | symbols == "", ids_clean, as.character(symbols))
-        dups <- duplicated(new_ids)
-        if (any(dups)) {
-          for (dv in unique(new_ids[dups])) {
-            idx <- which(new_ids == dv); new_ids[idx] <- paste0(dv, "_dup", seq_along(idx))
-          }
-        }
-        shiny::incProgress(0.5, "Updating gene identifiers…")
+        new_ids     <- ifelse(is.na(symbols) | symbols == "", ids_clean, as.character(symbols))
         mapped_flag <- !is.na(symbols) & symbols != ""
         n_mapped    <- sum(mapped_flag)
         n_dropped   <- sum(is.na(symbols) | symbols == "")
-        # Store mapping table for display
+
+        # Multiple original IDs that map to the same symbol (e.g. two Ensembl
+        # IDs for the same gene) are collapsed into a single row by SUMMING
+        # their counts, rather than kept as separate "_dup" rows. Two rows
+        # for the same gene symbol would otherwise both enter downstream
+        # sums/means under that symbol, effectively double-counting the gene
+        # in any gene-set score. Summing assumes rv$data_s0/rv$data_s1 are
+        # still raw, linear-scale counts at this point - gene ID conversion
+        # runs before Step 3 normalisation, so this holds for the app's
+        # expected input.
+        dup_target    <- new_ids[duplicated(new_ids)]
+        merged_flag   <- new_ids %in% dup_target
+        n_merged_ids  <- length(unique(dup_target))  # distinct symbols affected
+        n_merged_rows <- sum(merged_flag)             # original rows folded together
+
+        shiny::incProgress(0.2, "Merging duplicate gene symbols…")
+        .sum_rows_by_id <- function(df, ids) {
+          mat <- as.matrix(df); storage.mode(mat) <- "double"
+          as.data.frame(rowsum(mat, group = ids, reorder = FALSE))
+        }
+        rv$data_s0 <- .sum_rows_by_id(rv$data_s0, new_ids)
+        rv$data_s1 <- .sum_rows_by_id(rv$data_s1, new_ids)
+
+        # Store mapping table for display - one row per ORIGINAL identifier,
+        # even though merged symbols now share a single (summed) row in the
+        # data itself.
         rv$gene_id_map <- data.frame(
           original_id = gene_ids,
           cleaned_id  = ids_clean,
           symbol      = ifelse(is.na(symbols), "(not found)", as.character(symbols)),
-          new_id      = new_ids,   # actual rowname used after conversion
+          new_id      = new_ids,   # actual rowname used after conversion/merging
           status      = ifelse(mapped_flag, "mapped", "not found"),
+          merged      = merged_flag,  # TRUE if this ID's counts were summed with other ID(s)
           stringsAsFactors = FALSE
         )
-        rownames(rv$data_s0) <- new_ids; rownames(rv$data_s1) <- new_ids
         rv$gene_id_dismissed <- TRUE
         glog(paste0("Gene ID Conversion: ", n_mapped, "/", length(gene_ids),
                      " IDs mapped from ", id_type, " to gene symbols (", species, "). ",
-                     n_dropped, " not found."))
+                     n_dropped, " not found.",
+                     if (n_merged_ids > 0)
+                       paste0(" ", n_merged_rows, " ID(s) merged (summed) into ",
+                              n_merged_ids, " gene symbol(s) mapped by more than one ID.")
+                     else ""))
         shiny::showNotification(
           shiny::HTML(paste0("✅ ", format(n_mapped, big.mark=","), " IDs converted; ",
-            n_dropped, " not found (kept as original ID).")),
+            n_dropped, " not found (kept as original ID)",
+            if (n_merged_ids > 0)
+              paste0("; ", n_merged_rows, " IDs merged into ", n_merged_ids, " shared gene symbol(s) (counts summed).")
+            else ".")),
           type = "default", duration = 8)
         shiny::incProgress(0.1, "Done.")
       })
@@ -975,11 +1155,13 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       n_notfound <- sum(mp$status == "not found")
       n_removed  <- sum(mp$status == "removed")
       n_kept_orig <- sum(mp$status == "kept (original ID)")
+      n_merged    <- if (!is.null(mp$merged)) sum(mp$merged) else 0L
       # Summary line: show what happened
       summary_parts <- paste0(format(n_mapped, big.mark=","), " mapped")
       if (n_notfound > 0)  summary_parts <- paste0(summary_parts, ", ", n_notfound, " not found")
       if (n_removed > 0)   summary_parts <- paste0(summary_parts, ", ", n_removed, " removed")
       if (n_kept_orig > 0) summary_parts <- paste0(summary_parts, ", ", n_kept_orig, " kept with original ID")
+      if (n_merged > 0)    summary_parts <- paste0(summary_parts, ", ", n_merged, " merged (summed) into a shared gene symbol")
       shiny::div(style="margin-bottom:12px;",
         shiny::div(
           style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;margin-bottom:8px;",
@@ -1051,8 +1233,11 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       mp <- rv$gene_id_map
       all_statuses <- c("mapped", "not found", "kept (original ID)", "removed")
       mp$status <- factor(mp$status, levels = all_statuses)
+      if (!is.null(mp$merged)) mp$merged <- ifelse(mp$merged, "Yes", "No")
       DT::datatable(mp,
-        colnames = c("Original ID","Cleaned ID","Symbol","New ID","Status"),
+        colnames = if (!is.null(mp$merged))
+          c("Original ID","Cleaned ID","Symbol","New ID","Status","Merged")
+        else c("Original ID","Cleaned ID","Symbol","New ID","Status"),
         options  = list(scrollX=TRUE, pageLength=15, dom="ftipr"),
         class    = "compact stripe hover",
         rownames = FALSE,
@@ -1082,16 +1267,21 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       }
     )
 
+    output$modal_hc_render <- highcharter::renderHighchart({
+      shiny::req(modal_hc())
+      modal_hc()
+    })
+
     # ── Expand button handlers ─────────────────────────────────────────────────
     shiny::observeEvent(input$expand_s1a, {
-      shiny::req(rv$s1_plot_a)
-      modal_plot(rv$s1_plot_a$plot)
-      shiny::showModal(.pp_plot_modal(ns("modal_plot_render"), ns("dl_plot_png")))
+      shiny::req(rv$s1_plot_a$hc)
+      modal_hc(highcharter::hc_exporting(rv$s1_plot_a$hc, enabled = TRUE))
+      shiny::showModal(.pp_hc_modal(ns("modal_hc_render")))
     })
     shiny::observeEvent(input$expand_s1b, {
-      shiny::req(rv$s1_plot_b)
-      modal_plot(rv$s1_plot_b$plot)
-      shiny::showModal(.pp_plot_modal(ns("modal_plot_render"), ns("dl_plot_png")))
+      shiny::req(rv$s1_plot_b$hc)
+      modal_hc(highcharter::hc_exporting(rv$s1_plot_b$hc, enabled = TRUE))
+      shiny::showModal(.pp_hc_modal(ns("modal_hc_render")))
     })
     shiny::observeEvent(input$expand_s2_all, {
       shiny::req(rv$data_s1)
@@ -1103,7 +1293,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         ggplot2::theme_bw() +
         ggplot2::theme(panel.grid.minor=ggplot2::element_blank(), panel.border=ggplot2::element_blank(),
                        axis.line=ggplot2::element_line(colour="black")) +
-        ggplot2::xlab("Mean log₂(count + 1)") + ggplot2::ylab("Density") +
+        ggplot2::xlab("Mean log2(count + 1)") + ggplot2::ylab("Density") +
         ggplot2::ggtitle("All genes - expression density"))
       shiny::showModal(.pp_plot_modal(ns("modal_plot_render"), ns("dl_plot_png")))
     })
@@ -1117,7 +1307,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         ggplot2::theme_bw() +
         ggplot2::theme(panel.grid.minor=ggplot2::element_blank(), panel.border=ggplot2::element_blank(),
                        axis.line=ggplot2::element_line(colour="black")) +
-        ggplot2::xlab("Mean log₂(count + 1)") + ggplot2::ylab("Density") +
+        ggplot2::xlab("Mean log2(count + 1)") + ggplot2::ylab("Density") +
         ggplot2::ggtitle(paste0("Retained genes (thr ≥ ", round(thr,2), ")")))
       shiny::showModal(.pp_plot_modal(ns("modal_plot_render"), ns("dl_plot_png")))
     })
@@ -1141,7 +1331,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       samps      <- shiny::isolate(.s3_samps())
       method     <- rv$s3_method_used %||% "TMM"
       y_lbl      <- if (grepl("DESeq2", method, ignore.case = TRUE)) "VST"
-                    else "log₂(CPM + 1)"
+                    else "log2(CPM + 1)"
       modal_plot(.pp_make_boxplot(log_d, all_s, NULL, NULL, col_by, rv$meta_s,
                                    "After normalisation",
                                    samps_plot = samps,
@@ -1476,12 +1666,12 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         } else rv$meta_s
         norm_method_rep <- s$norm_method %||% "TMM"
         after_ylabel <- if (grepl("DESeq2", norm_method_rep, ignore.case = TRUE)) "VST"
-                        else "log₂(CPM + 1)"
+                        else "log2(CPM + 1)"
         s3_before_div <- tryCatch(
           if (!is.null(d_s2_plot))
             .report_box_div(.pp_box_stats_report(log2(as.matrix(d_s2_plot) + 1)),
                             mt_plot, mcols, s3c, "s3bef", "Before normalisation",
-                            y_label = "log₂(count + 1)")
+                            y_label = "log2(count + 1)")
           else plot_to_img(rv$report_s3_before, h=420),
           error = function(e) plot_to_img(rv$report_s3_before, h=420)
         )
@@ -1541,11 +1731,16 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
             n_notfnd     <- sum(gmap$status == "not found")
             n_kept_orig  <- sum(gmap$status == "kept (original ID)")
             n_removed    <- sum(gmap$status == "removed")
+            n_merged     <- if (!is.null(gmap$merged)) sum(gmap$merged) else 0L
             id_type      <- .html_esc(rv$gene_id_type %||% "symbol")
             pct          <- if (n_total > 0) round(100 * n_mapped / n_total, 1) else 0
             # Build a compact mapping table (show original, new, status columns)
-            tbl_df <- gmap[, c("original_id", "new_id", "symbol", "status"), drop = FALSE]
-            colnames(tbl_df) <- c("Original ID", "Converted ID", "Gene Symbol", "Status")
+            has_merged <- !is.null(gmap$merged)
+            tbl_cols <- c("original_id", "new_id", "symbol", "status", if (has_merged) "merged")
+            tbl_df <- gmap[, tbl_cols, drop = FALSE]
+            if (has_merged) tbl_df$merged <- ifelse(tbl_df$merged, "Yes", "No")
+            colnames(tbl_df) <- c("Original ID", "Converted ID", "Gene Symbol", "Status",
+                                   if (has_merged) "Merged")
             map_tbl <- make_dt(tbl_df, "tbl_geneid",
                                caption = paste0("Gene ID mapping (", n_total, " genes)"))
             paste0(
@@ -1553,6 +1748,10 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
               kv("Conversion type", id_type),
               kv("Total genes",     format(n_total, big.mark = ",")),
               kv("Mapped to symbol", paste0(format(n_mapped, big.mark = ","), " (", pct, "%)")),
+              if (n_merged > 0)
+                kv("Merged (summed) into a shared symbol",
+                   paste0(format(n_merged, big.mark = ","),
+                          " IDs collapsed into fewer rows by summing counts for the same gene symbol")) else "",
               if (n_kept_orig > 0)
                 kv("Kept with original ID",
                    paste0(format(n_kept_orig, big.mark = ","),
@@ -1597,6 +1796,15 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           ".img-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}",
           "@media(max-width:700px){.img-row{grid-template-columns:1fr;}}",
           "table.dataTable thead th{background:#f3f4f6!important;color:#374151;}",
+          ".meta-type-table{border-collapse:collapse;font-size:0.88em;width:100%;max-width:480px;",
+          "  border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;}",
+          ".meta-type-table th{text-align:left;background:#f9fafb;color:#374151;",
+          "  padding:7px 12px;border-bottom:1px solid #e5e7eb;}",
+          ".meta-type-table td{padding:6px 12px;border-bottom:1px solid #f1f3f5;}",
+          ".meta-type-table tr:last-child td{border-bottom:none;}",
+          ".meta-type-table tr:nth-child(even) td{background:#fafbfc;}",
+          ".type-badge{display:inline-block;padding:2px 9px;border-radius:10px;",
+          "  font-size:0.82em;font-weight:600;}",
           "footer{margin-top:48px;color:#9ca3af;font-size:0.8em;border-top:1px solid #e5e7eb;padding-top:14px;}",
           "</style>"
         )
@@ -1617,6 +1825,10 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           "<p style='color:#6b7280;font-size:0.86em;'>Generated: ",
           format(Sys.time(), "%Y-%m-%d %H:%M"), "</p>",
 
+          # Gene ID conversion (now the very first step, run before Step 0)
+          "<h2>Gene ID Conversion</h2>",
+          geneid_block,
+
           # Step 0: metadata column types table
           {
             meta_rep <- rv$meta_s
@@ -1628,34 +1840,36 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
                 else if (is.factor(x)) "factor"
                 else "character"
               }
+              .type_badge_rep <- function(t) {
+                pal <- list(character = c("#f3f4f6", "#374151"),
+                            factor    = c("#ede9fe", "#6d28d9"),
+                            numeric   = c("#dbeafe", "#1d4ed8"),
+                            integer   = c("#d1fae5", "#065f46"),
+                            logical   = c("#fef3c7", "#92400e"))
+                col <- pal[[t]] %||% c("#f3f4f6", "#374151")
+                paste0("<span class='type-badge' style='background:", col[1], ";color:", col[2],
+                       ";'>", t, "</span>")
+              }
               rep_cols  <- colnames(meta_rep)[-1]
               rep_rows  <- vapply(rep_cols, function(cn)
                 paste0("<tr><td>", .html_esc(cn), "</td><td>",
-                       .html_esc(.detect_type_rep(meta_rep[[cn]])), "</td></tr>"),
+                       .type_badge_rep(.detect_type_rep(meta_rep[[cn]])), "</td></tr>"),
                 character(1L))
               paste0(
                 "<div class='step-section'>",
                 "<div class='step-header'><span class='step-num'>0</span>",
                 "<span class='step-title'>Metadata Column Types</span></div>",
-                "<div class='step-summary'>",
-                "<table style='border-collapse:collapse;font-size:0.88em;width:100%;max-width:400px;'>",
-                "<thead><tr>",
-                "<th style='text-align:left;border-bottom:2px solid #dee2e6;padding:4px 10px;'>Column</th>",
-                "<th style='text-align:left;border-bottom:2px solid #dee2e6;padding:4px 10px;'>Type</th>",
-                "</tr></thead><tbody>",
+                "<table class='meta-type-table'>",
+                "<thead><tr><th>Column</th><th>Type</th></tr></thead><tbody>",
                 paste(rep_rows, collapse = ""),
                 "</tbody></table>",
                 if (length(rv$meta_type_log) > 0L)
-                  paste0("<p style='margin-top:6px;font-size:0.82em;color:#6b7280;'>",
+                  paste0("<p style='margin-top:8px;font-size:0.82em;color:#6b7280;'>",
                          length(rv$meta_type_log), " type change(s) applied - see session log for details.</p>")
                 else "",
-                "</div></div>")
+                "</div>")
             } else ""
           },
-
-          # Gene ID conversion (before summary - it's the first step)
-          "<h2>Gene ID Conversion</h2>",
-          geneid_block,
 
           # Summary
           "<h2>Summary</h2>",
@@ -1717,13 +1931,61 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
             paste0("<div class='step-summary'>", bc_txt, "</div>") else "",
           if (nchar(trimws(rv$note_s4 %||% "")) > 0L)
             paste0("<div class='step-note'>\U0001f4dd ", .html_esc(rv$note_s4), "</div>") else "",
-          samp_note,
+          # NB: no samp_note here (unlike Step 3) - PCA is always computed on
+          # every sample, so a "plots show N samples (subset)" note would be
+          # misleading; that subsampling note only applies to the Step 3
+          # normalisation boxplots.
           "<div class='img-row'>",
           "<div><h3>", if (isTRUE(s$bc_applied)) "Before batch correction" else "PCA", "</h3>", s4_before_div, "</div>",
           if (!is.null(s4_after_div))
             paste0("<div><h3>After batch correction</h3>", s4_after_div, "</div>") else "",
           "</div>",
           "</div>",
+
+          # Removed samples - explicit IDs, reason and any supporting plots the
+          # user chose to attach, one block per removal event. Placed at the
+          # end (with the other plots) rather than the compact Summary section
+          # so IDs/evidence are legible instead of squeezed into a small stat.
+          {
+            log_rm <- rv$removed_samples_log
+            if (!is.null(log_rm) && length(log_rm) > 0L) {
+              blocks <- vapply(seq_along(log_rm), function(i) {
+                ev <- log_rm[[i]]
+                ids_html <- paste(vapply(ev$ids, .html_esc, character(1L)), collapse = ", ")
+                ev_html  <- if (!is.null(ev$evidence) && length(ev$evidence) > 0L) {
+                  parts <- vapply(names(ev$evidence), function(nm)
+                    paste0("<h4 style='margin:10px 0 4px;font-size:0.95em;'>", .html_esc(nm), "</h4>",
+                           ev$evidence[[nm]]),
+                    character(1L))
+                  paste(parts, collapse = "")
+                } else ""
+                heading <- if (length(log_rm) > 1L) paste0("Removal ", i) else "Removed samples"
+                paste0(
+                  "<div style='margin-bottom:20px;padding-bottom:16px;",
+                  if (i < length(log_rm)) "border-bottom:1px solid #f1aeb5;" else "", "'>",
+                  "<p style='margin:0 0 4px;font-size:1em;'><b>", .html_esc(heading),
+                  "</b> - ", length(ev$ids), " sample(s) removed:</p>",
+                  "<p style='margin:0 0 6px;font-family:monospace;font-size:0.92em;color:#374151;'>",
+                  ids_html, "</p>",
+                  if (nchar(trimws(ev$note %||% "")) > 0L)
+                    paste0("<p style='margin:0 0 4px;font-size:0.92em;color:#374151;'>",
+                           "\U0001f4dd <b>Reason:</b> ", .html_esc(ev$note), "</p>")
+                  else "",
+                  ev_html,
+                  "</div>")
+              }, character(1L))
+              # Faded red box, echoing the same warning colour used for the
+              # remove-samples control in the app itself, so this section is
+              # immediately recognisable rather than blending into the rest
+              # of the report.
+              paste0(
+                "<div class='step-section' style='background:#fff5f5;border:1px solid #f1aeb5;'>",
+                "<div class='step-header'><span class='step-title' style='color:#b02a37;'>",
+                "⚠️ Removed Samples</span></div>",
+                paste(blocks, collapse = ""),
+                "</div>")
+            } else ""
+          },
 
           # Data tables
           "<h2>Expression Data</h2>", expr_tbl,
@@ -2101,6 +2363,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       rv$s0_done    <- TRUE   # confirm Step 0 as-is so card collapses to green
       rv$downloads_available <- TRUE
       rv$step <- 5L; rv$active_step <- 5L
+      rv$gene_id_dismissed <- TRUE   # data is locked in as final now; hide gene-ID banner
       rv$finalized <- rv$finalized + 1L      # triggers parent app to pick up final_data
       glog(paste0("Preprocessing skipped - using imported data as-is (",
         format(n_g,big.mark=","), " genes × ", n_s, " samples)."))
@@ -2143,6 +2406,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       rv$meta_type_log <- character(0)
       rv$s0_done       <- FALSE
       rv$meta_s0_orig  <- m   # re-snapshot from freshly restored meta
+      rv$removed_samples_log <- list()
       .finalized_fp(NULL)
       glog("Preprocessing reset to initial state (all steps cleared).")
     })
@@ -2184,7 +2448,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
             shiny::div(style="padding:14px;color:#9ca3af;","Complete Step 0 (or skip it) to unlock."))))
       if (rv$step > 1L && rv$active_step != 1L)
         return(.pp_done_card(1,"Sample Complexity QC",rv$s1_summary,ns("back_to_s1"),
-          plot_ui=shiny::plotOutput(ns("plot_s1a"),height="360px"),
+          plot_ui=highcharter::highchartOutput(ns("plot_s1a"),height="360px"),
           note=rv$note_s1))
       controls <- shiny::fluidRow(
         shiny::column(6,
@@ -2252,9 +2516,8 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         shiny::fluidRow(
           shiny::column(6,
             if (!is.null(rv$s1_plot_a))
-              shiny::tagList(shiny::plotOutput(ns("plot_s1a"),height="360px"),
-                             .pp_expand_btn(ns("expand_s1a"),
-                               "⤢ Expand (hover to see sample name)"))
+              shiny::tagList(highcharter::highchartOutput(ns("plot_s1a"),height="360px"),
+                             .pp_expand_btn(ns("expand_s1a")))
             else
               shiny::div(style="height:360px;display:flex;align-items:center;justify-content:center;color:#9ca3af;",
                 "Click 'Show Complexity Plot' above.")),
@@ -2263,17 +2526,15 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
               shiny::tagList(
                 shiny::actionButton(ns("run_sampling"),"▶ Run sampling plot",
                   class="btn-sm btn-outline-secondary",style="margin-bottom:6px;"),
-                shiny::plotOutput(ns("plot_s1b"),height="360px"),
-                if (!is.null(rv$s1_plot_b)) .pp_expand_btn(ns("expand_s1b"),
-                  "⤢ Expand (hover to see sample name)"))),
+                highcharter::highchartOutput(ns("plot_s1b"),height="360px"),
+                if (!is.null(rv$s1_plot_b)) .pp_expand_btn(ns("expand_s1b")))),
             shiny::conditionalPanel(sprintf("input['%s'] != 'sampling'",ns("s1_plot_type")),
               shiny::div(style="display:flex;align-items:center;justify-content:center;height:360px;color:#9ca3af;font-size:0.88em;text-align:center;",
                 shiny::HTML("Select <em>Unique genes vs reads sampled</em><br>above for a second plot."))))),
-        .pp_remove_section_ui(ns("s1_remove_picker"),ns("s1_remove_btn")),
         shiny::div(style="margin-top:10px;",
           shiny::textAreaInput(ns("s1_notes"), "\U0001f4dd Step notes (optional - included in report):",
             value = shiny::isolate(rv$note_s1), rows = 2,
-            placeholder = "e.g. Removed outlier samples based on low library complexity.",
+            placeholder = "e.g. One sample shows lower library complexity - kept for now, revisit after PCA.",
             width = "100%")),
         shiny::div(class="pp-proceed-btn",
           shiny::actionButton(ns("proceed_s1"),"Proceed to Gene Filtering →",class="btn-warning btn-sm")))
@@ -2284,16 +2545,23 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       shiny::selectInput(ns("s1_specific_samples"),label="Samples to show:",
         choices=colnames(e),selected=colnames(e),multiple=TRUE,selectize=TRUE,width="100%")
     })
-    output$s1_remove_picker <- shiny::renderUI({
-      e <- rv$data_s1; shiny::req(e, rv$s1_run)
-      .pp_native_picker(ns("s1_remove_samples"), colnames(e))
+    # Interactive (highcharter) in the live app - hover shows the sample ID.
+    # The chart itself is already built (and thinned to a sane point count)
+    # inside the s1_run_btn/run_sampling observers above, within the same
+    # progress bar the user sees for the underlying computation - so there's
+    # no silent gap here, just returning the pre-built object. The ggplot
+    # objects (rv$s1_plot_a$plot / rv$s1_plot_b$plot) are untouched and still
+    # used for the expand-modal/PNG download and the standalone report.
+    output$plot_s1a <- highcharter::renderHighchart({
+      shiny::req(rv$s1_run, !is.null(rv$s1_plot_a))
+      shiny::validate(shiny::need(!is.null(rv$s1_plot_a$hc), "Plot could not be built."))
+      rv$s1_plot_a$hc
     })
-    output$plot_s1a <- shiny::renderPlot({
-      shiny::req(rv$s1_run, !is.null(rv$s1_plot_a)); rv$s1_plot_a$plot
-    })
-    output$plot_s1b <- shiny::renderPlot({
+    output$plot_s1b <- highcharter::renderHighchart({
       shiny::req(rv$s1_run); res <- rv$s1_plot_b
-      shiny::validate(shiny::need(!is.null(res),"Click '▶ Run sampling plot' to generate.")); res$plot
+      shiny::validate(shiny::need(!is.null(res),"Click '▶ Run sampling plot' to generate."))
+      shiny::validate(shiny::need(!is.null(res$hc), "Plot could not be built."))
+      res$hc
     })
 
     shiny::observeEvent(input$s1_run_btn, {
@@ -2301,9 +2569,30 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       samps <- shiny::isolate(.s1_plot_samples_calc()); pct <- shiny::isolate(isTRUE(input$s1_pct))
       shiny::withProgress(message=paste0("\U0001f4ca Computing complexity - ",length(samps)," sample(s)…"),value=0,{
         res <- tryCatch(.pp_complexity_byexprgenes(rv$data_s0,samps,pct,
-          progress_fn=function(frac,msg) shiny::incProgress(frac*0.9,msg)),
+          progress_fn=function(frac,msg) shiny::incProgress(frac*0.85,msg)),
           error=function(e){shiny::showNotification(e$message,type="error");NULL})
-        shiny::incProgress(0.1,"Rendering plot…"); rv$s1_plot_a <- res; rv$s1_run <- TRUE
+        # Build the interactive chart HERE (inside the same progress bar the
+        # user already sees) rather than lazily in renderHighchart, so there
+        # is no silent gap after the progress bar closes. This plot has one
+        # point per gene per sample - potentially tens of thousands of points
+        # - so it's thinned to a fixed max per sample line before handing it
+        # to highcharter; otherwise the browser can hang or the session can
+        # time out trying to serialise/render it.
+        if (!is.null(res)) {
+          shiny::incProgress(0.1,"Building interactive plot…")
+          df <- res$data_to_plot
+          res$hc <- tryCatch(
+            if ("Pct" %in% names(df)) {
+              .pp_hc_multiline(df, "GeneIndex", "Pct", "Gene index (desc.)",
+                                "Cumulative reads (%)", title = "Library complexity")
+            } else {
+              df$LogReads <- log10(df$CumulativeReads + 1)
+              .pp_hc_multiline(df, "GeneIndex", "LogReads", "Gene index (desc.)",
+                                "Cumulative reads (log10)", title = "Library complexity")
+            },
+            error = function(e) NULL)
+        }
+        shiny::incProgress(0.05,"Rendering plot…"); rv$s1_plot_a <- res; rv$s1_run <- TRUE
       })
     })
     shiny::observeEvent(input$run_sampling, {
@@ -2315,18 +2604,21 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       pct <- shiny::isolate(isTRUE(input$s1_pct))
       shiny::withProgress(message=paste0("⏳ Sampling reads - ",length(samps)," sample(s)…"),value=0,{
         res <- tryCatch(.pp_complexity_samplingreads(rv$data_s0,ng,ni,sr,samps,pct,
-          progress_fn=function(frac,msg) shiny::incProgress(frac*0.9,msg)),
+          progress_fn=function(frac,msg) shiny::incProgress(frac*0.85,msg)),
           error=function(e){shiny::showNotification(e$message,type="error",duration=10);NULL})
-        shiny::incProgress(0.1,"Rendering…"); rv$s1_plot_b <- res
+        if (!is.null(res)) {
+          shiny::incProgress(0.1,"Building interactive plot…")
+          res$hc <- tryCatch(
+            if (pct)
+              .pp_hc_multiline(res$data_to_plot, "PercentageReads", "NumberUniqueGenesDetected",
+                                "Fraction of reads", "Unique genes detected", title = "Read sampling")
+            else
+              .pp_hc_multiline(res$data_to_plot, "NumberReads", "NumberUniqueGenesDetected",
+                                "Number of reads", "Unique genes detected", title = "Read sampling"),
+            error = function(e) NULL)
+        }
+        shiny::incProgress(0.05,"Rendering…"); rv$s1_plot_b <- res
       })
-    })
-    shiny::observeEvent(input$s1_remove_btn, {
-      to_rm <- input$s1_remove_samples; shiny::req(length(to_rm)>=1L,rv$data_s1)
-      keep <- setdiff(colnames(rv$data_s1),to_rm)
-      if (length(keep)<2L){shiny::showNotification("Cannot remove: fewer than 2 samples would remain.",type="error");return()}
-      rv$data_s1 <- rv$data_s1[,keep,drop=FALSE]; .align_meta(keep)
-      glog(paste0("Sample QC: removed ",length(to_rm)," sample(s): [",paste(to_rm,collapse=", "),"]."))
-      shiny::showNotification(paste0(length(to_rm)," sample(s) removed. Re-run to refresh."),type="warning",duration=5)
     })
     # Reset step 1 - clear plots and allow user to re-run with different settings
     shiny::observeEvent(input$s1_reset_btn, {
@@ -2344,7 +2636,10 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       rv$s1_summary <- paste0(n_s," samples",if(removed>0L) paste0(" (",removed," removed)") else "")
       glog(paste0("Sample Complexity QC: ",n_s," sample(s) passed",
         if(removed>0L) paste0(", ",removed," removed") else "","."))
-      rv$step <- 2L; rv$active_step <- 2L; rv$s2_run <- TRUE; rv$s2_thr <- 1.0
+      # rv$s2_thr is intentionally left as-is here - it should persist across
+      # revisits to Step 1→2 (e.g. after removing a sample and redoing the
+      # pipeline) rather than silently reverting to the 1.0 default each time.
+      rv$step <- 2L; rv$active_step <- 2L; rv$s2_run <- TRUE
     }
     shiny::observeEvent(input$back_to_s1, {
       rv$active_step <- 1L; rv$step <- 1L; rv$s1_run <- FALSE
@@ -2445,7 +2740,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         ggplot2::theme_bw() +
         ggplot2::theme(panel.grid.minor=ggplot2::element_blank(),panel.border=ggplot2::element_blank(),
           axis.line=ggplot2::element_line(colour="black")) +
-        ggplot2::xlab("Mean log₂(count + 1)") + ggplot2::ylab("Density") +
+        ggplot2::xlab("Mean log2(count + 1)") + ggplot2::ylab("Density") +
         ggplot2::ggtitle(title_txt)
     })
     output$plot_s2_after <- shiny::renderPlot({
@@ -2460,7 +2755,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         ggplot2::theme_bw() +
         ggplot2::theme(panel.grid.minor=ggplot2::element_blank(),panel.border=ggplot2::element_blank(),
           axis.line=ggplot2::element_line(colour="black")) +
-        ggplot2::xlab("Mean log₂(count + 1)") + ggplot2::ylab("Density") +
+        ggplot2::xlab("Mean log2(count + 1)") + ggplot2::ylab("Density") +
         ggplot2::ggtitle(paste0("Retained genes (thr ≥ ",round(thr,2),")"))
     })
     shiny::observeEvent(input$proceed_s2, {
@@ -2605,7 +2900,6 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
             shiny::plotOutput(ns("plot_s3_after"),height="300px"),
             .pp_expand_btn(ns("expand_s3_after")))
         ),
-        .pp_remove_section_ui(ns("s3_remove_picker"),ns("s3_remove_btn")),
         shiny::div(style="margin-top:10px;",
           shiny::textAreaInput(ns("s3_notes"), "\U0001f4dd Step notes (optional - included in report):",
             value = shiny::isolate(rv$note_s3), rows = 2,
@@ -2708,14 +3002,14 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
                         as.integer(input$s3_n_box %||% 20L),
                         color_by, rv$meta_s, "Before normalisation",
                         samps_plot = samps, hide_xlabels = hide_xlabs,
-                        y_label = "log₂(count + 1)")
+                        y_label = "log2(count + 1)")
     })
     output$plot_s3_after <- shiny::renderPlot({
       shiny::req(rv$s3_norm_done, rv$norm_linear)
       samps       <- .s3_samps()
       method      <- rv$s3_method_used %||% "TMM"
       y_lbl       <- if (grepl("DESeq2", method, ignore.case = TRUE)) "VST"
-                     else "log₂(CPM + 1)"
+                     else "log2(CPM + 1)"
       log_d       <- log2(as.matrix(rv$norm_linear) + 1)
       color_by    <- input$s3_color_by
       hide_xlabs  <- isTRUE(input$s3_hide_xlabels)
@@ -2727,20 +3021,6 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
                         y_label = y_lbl)
     })
 
-    output$s3_remove_picker <- shiny::renderUI({
-      e <- rv$data_s2; shiny::req(e, rv$s3_run)
-      .pp_native_picker(ns("s3_remove_samples"), colnames(e))
-    })
-    shiny::observeEvent(input$s3_remove_btn, {
-      to_rm <- input$s3_remove_samples; shiny::req(length(to_rm)>=1L,rv$data_s2)
-      keep <- setdiff(colnames(rv$data_s2),to_rm)
-      if (length(keep)<2L){shiny::showNotification("Cannot remove: fewer than 2 samples would remain.",type="error");return()}
-      rv$data_s2 <- rv$data_s2[,keep,drop=FALSE]
-      if (!is.null(rv$data_s1)) rv$data_s1 <- rv$data_s1[,keep,drop=FALSE]
-      .align_meta(keep)
-      glog(paste0("Normalisation step: removed ",length(to_rm)," sample(s): [",paste(to_rm,collapse=", "),"]."))
-      shiny::showNotification(paste0(length(to_rm)," sample(s) removed. Re-run to refresh."),type="warning",duration=5)
-    })
     shiny::observeEvent(input$proceed_s3, {
       shiny::req(rv$step>=3L, rv$norm_linear, rv$data_s3)
       rv$note_s3 <- shiny::isolate(input$s3_notes) %||% ""
@@ -2749,7 +3029,10 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       rv$s3_summary <- paste0(method," - ",format(nrow(rv$data_s3),big.mark=","),
         " genes × ",ncol(rv$data_s3)," samples")
       glog(paste0("Normalisation: ",method," applied - ",format(nrow(rv$data_s3),big.mark=","),
-        " genes × ",ncol(rv$data_s3)," samples. Final data will be in non-log (CPM) scale."))
+        " genes × ",ncol(rv$data_s3)," samples. Final data will be non-log, ",
+        if (grepl("DESeq2", method, ignore.case = TRUE))
+          "DESeq2 VST back-transformed to linear scale."
+        else "CPM (TMM-normalised)."))
       rv$step <- 4L; rv$active_step <- 4L; rv$s4_run <- FALSE; rv$s4_bc_run <- FALSE
     })
     shiny::observeEvent(input$back_to_s3, {
@@ -2780,8 +3063,8 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           if (!is.null(rv$pp_summary)) rv$pp_summary$bc_label else "done",
           ns("back_to_s4"),
           plot_ui=shiny::fluidRow(
-            shiny::column(6, shiny::plotOutput(ns("pca_before"),height="380px")),
-            shiny::column(6, if (rv$s4_bc_run) shiny::plotOutput(ns("pca_after"),height="380px"))),
+            shiny::column(6, highcharter::highchartOutput(ns("pca_before"),height="540px")),
+            shiny::column(6, if (rv$s4_bc_run) highcharter::highchartOutput(ns("pca_after"),height="540px"))),
           note=rv$note_s4))
       meta_cols <- setdiff(colnames(rv$meta_s),"SampleID")
       bslib::card(class="pp-step-card",
@@ -2868,7 +3151,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         ),
         shiny::tags$p(style = "font-size:0.75em;color:#9ca3af;margin:0 0 6px 0;",
           "Colour/PC changes redraw instantly - no re-PCA."),
-        shiny::plotOutput(ns("pca_before"), height = "320px"),
+        highcharter::highchartOutput(ns("pca_before"), height = "500px"),
         .pp_expand_btn(ns("expand_pca_before")),
         shiny::tags$p(style = "font-size:0.8em;font-weight:600;color:#6b7280;
           margin:12px 0 4px 0;text-align:center;", "Scree plot"),
@@ -2915,7 +3198,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           ),
           shiny::tags$p(style = "font-size:0.75em;color:#9ca3af;margin:0 0 6px 0;",
             "Colour/PC changes redraw instantly - no re-PCA."),
-          shiny::plotOutput(ns("pca_after"), height = "320px"),
+          highcharter::highchartOutput(ns("pca_after"), height = "500px"),
           .pp_expand_btn(ns("expand_pca_after")),
           shiny::tags$p(style = "font-size:0.8em;font-weight:600;color:#6b7280;
             margin:12px 0 4px 0;text-align:center;", "Scree plot"),
@@ -2938,6 +3221,32 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           value = shiny::isolate(rv$note_s4), rows = 2,
           placeholder = "e.g. Batch corrected for sequencing run; retained condition effect.",
           width = "100%"),
+        # Placed as the very last thing before finalising: only relevant if
+        # the QC above (Steps 1-3, or the PCA plot just shown) actually
+        # revealed a suspicious sample. If nothing looked wrong, ignore this
+        # box entirely and use the finalise button right below it.
+        .pp_remove_section_ui(ns("s4_remove_picker"), ns("s4_remove_btn"),
+          warning_text = paste0("Only use this if Steps 1-3 or the PCA plot above actually showed ",
+            "something suspicious about a sample. If everything looks fine, skip this and finalise ",
+            "directly below. Removing here updates the metadata to match and resets preprocessing ",
+            "back to Step 1, since gene filtering, normalisation and PCA were computed using these ",
+            "samples and must be redone for the reduced dataset."),
+          # note/evidence IDs carry a generation suffix, bumped after every
+          # removal (.pp_reset_downstream_after_removal) - so each new round
+          # gets a genuinely fresh, empty widget instead of possibly showing
+          # whatever was typed/checked for the previous removal.
+          note_id = ns(paste0("s4_remove_note_", rv$s4_remove_gen %||% 0L)),
+          note_value = shiny::isolate(input[[paste0("s4_remove_note_", rv$s4_remove_gen %||% 0L)]]) %||% "",
+          evidence_id = ns(paste0("s4_remove_evidence_", rv$s4_remove_gen %||% 0L)),
+          already_used = length(rv$removed_samples_log) > 0L,
+          evidence_choices = {
+            ch <- c()
+            if (!is.null(rv$s1_plot_a))  ch <- c(ch, "Sample complexity (Step 1)" = "complexity")
+            if (isTRUE(rv$s2_run))       ch <- c(ch, "Gene filtering (Step 2)" = "filtering")
+            if (isTRUE(rv$s3_norm_done)) ch <- c(ch, "Normalisation (Step 3)" = "normalisation")
+            if (isTRUE(rv$s4_run))       ch <- c(ch, "PCA (Step 4)" = "pca")
+            ch
+          }),
         finalize_ui
       )
     })
@@ -3015,6 +3324,61 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         })
     })
 
+    # ── Remove outlier samples after PCA, before finalising ────────────────────
+    # Placed here (rather than during normalisation) so removal happens once the
+    # user has actually seen how samples separate on the PCA plot. Confirmed via
+    # a modal, since removing samples invalidates gene filtering, normalisation
+    # and PCA (all computed on the pre-removal sample set) and resets Steps 1-4.
+    output$s4_remove_picker <- shiny::renderUI({
+      e <- rv$data_s3; shiny::req(e, rv$s4_run)
+      .pp_native_picker(ns("s4_remove_samples"), colnames(e))
+    })
+    # Note/evidence widget IDs carry a generation suffix (rv$s4_remove_gen,
+    # bumped once per removal) so each round is a genuinely fresh, empty
+    # widget rather than possibly showing the previous round's leftover text.
+    .s4_remove_note_id     <- shiny::reactive(paste0("s4_remove_note_", rv$s4_remove_gen %||% 0L))
+    .s4_remove_evidence_id <- shiny::reactive(paste0("s4_remove_evidence_", rv$s4_remove_gen %||% 0L))
+
+    shiny::observeEvent(input$s4_remove_btn, {
+      to_rm <- input$s4_remove_samples; shiny::req(length(to_rm)>=1L, rv$data_s3)
+      keep <- setdiff(colnames(rv$data_s3), to_rm)
+      if (length(keep)<2L){shiny::showNotification("Cannot remove: fewer than 2 samples would remain.",type="error");return()}
+      note <- trimws(shiny::isolate(input[[.s4_remove_note_id()]]) %||% "")
+      shiny::showModal(shiny::modalDialog(
+        title = "⚠️ Remove samples & reset preprocessing?",
+        shiny::p(shiny::strong(paste0(length(to_rm)," sample(s) selected: ")),
+                 paste(to_rm, collapse = ", ")),
+        if (nchar(note) > 0L)
+          shiny::p(shiny::strong("Reason: "), note)
+        else
+          shiny::p(shiny::em("No reason entered - add one in the box below to include it in the report.")),
+        shiny::p("Gene filtering, normalisation and PCA were computed using these samples. ",
+                 "Removing them now will update the metadata to match and reset preprocessing ",
+                 "back to Step 1, so every step is recomputed on the correct, reduced dataset."),
+        footer = shiny::tagList(
+          shiny::modalButton("Cancel"),
+          shiny::actionButton(ns("s4_remove_confirm"), "Remove & reset", class = "btn-danger")
+        )
+      ))
+    })
+    shiny::observeEvent(input$s4_remove_confirm, {
+      to_rm <- shiny::isolate(input$s4_remove_samples); shiny::req(length(to_rm)>=1L, rv$data_s3)
+      keep <- setdiff(colnames(rv$data_s3), to_rm)
+      shiny::removeModal()
+      if (length(keep)<2L){shiny::showNotification("Cannot remove: fewer than 2 samples would remain.",type="error");return()}
+      note     <- shiny::isolate(input[[.s4_remove_note_id()]]) %||% ""
+      evidence <- .pp_capture_evidence_imgs(shiny::isolate(input[[.s4_remove_evidence_id()]]))
+      .pp_reset_downstream_after_removal(keep, removed_ids = to_rm,
+        step_label = "Step 4 - PCA & Batch Correction", note = note, evidence = evidence)
+      glog(paste0("PCA step: removed ",length(to_rm)," sample(s): [",paste(to_rm,collapse=", "),"].",
+        if (nchar(trimws(note))>0L) paste0(" Reason: ",note,".") else "",
+        " Preprocessing reset to Step 1."))
+      shiny::showNotification(
+        paste0(length(to_rm)," sample(s) removed and metadata updated. ",
+          "Preprocessing has been reset - please redo Steps 1-4."),
+        type="warning",duration=7)
+    })
+
     # PCA OPTIONS PANEL - separate renderUI so checkbox changes react without
     # re-rendering the whole step-4 layout (plots, BC section, etc.)
     output$s4_pca_top_ui <- shiny::renderUI({
@@ -3062,13 +3426,17 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
     })
 
     # PCA RENDERING - reacts to colour + PC selectors (no recomputation)
-    output$pca_before <- shiny::renderPlot({
+    # Interactive (highcharter) in the live app - hover shows the sample ID,
+    # its group, and PC coordinates. Built from the same rv$s4_pca_df_before/
+    # ev_before the static ggplot version (.pp_pca_from_df, still used for
+    # the expand-modal/PNG download and the standalone report) uses.
+    output$pca_before <- highcharter::renderHighchart({
       shiny::req(rv$s4_run, rv$s4_pca_df_before, rv$s4_pca_ev_before)
       col  <- input$s4_pca_color
       pc_x <- input$s4_pc_x %||% "PC1"
       pc_y <- input$s4_pc_y %||% "PC2"
       title <- if (isTRUE(input$s4_do_bc) && rv$s4_bc_run) "PCA - before batch correction" else "PCA"
-      .pp_pca_from_df(rv$s4_pca_df_before, rv$s4_pca_ev_before, rv$meta_s, col, title, pc_x, pc_y)
+      .pp_hc_pca(rv$s4_pca_df_before, rv$s4_pca_ev_before, rv$meta_s, col, title, pc_x, pc_y)
     })
 
     output$scree_before <- shiny::renderPlot({
@@ -3142,13 +3510,13 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
     })
 
     # AFTER-BC PCA RENDERING - reacts to colour + PC selectors
-    output$pca_after <- shiny::renderPlot({
+    output$pca_after <- highcharter::renderHighchart({
       shiny::req(rv$s4_run, rv$s4_bc_run, rv$s4_pca_df_after, rv$s4_pca_ev_after)
       col  <- input$s4_pca_after_color %||% input$s4_pca_color
       pc_x <- input$s4_pc_after_x %||% "PC1"
       pc_y <- input$s4_pc_after_y %||% "PC2"
-      .pp_pca_from_df(rv$s4_pca_df_after, rv$s4_pca_ev_after, rv$meta_s, col,
-                       "PCA - after batch correction", pc_x, pc_y)
+      .pp_hc_pca(rv$s4_pca_df_after, rv$s4_pca_ev_after, rv$meta_s, col,
+                 "PCA - after batch correction", pc_x, pc_y)
     })
     output$scree_after <- shiny::renderPlot({
       shiny::req(rv$s4_bc_run, rv$s4_pca_ev_after)
@@ -3166,7 +3534,8 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         if (is.null(bc)){shiny::showNotification("Batch correction not completed.",type="error");return()}
         rv$final_data <- bc  # linear scale (2^corrected)
       } else {
-        # Use TMM-CPM (non-log, linear scale) - NOT log2 data
+        # Non-log, linear-scale data: CPM (TMM-normalised) or, for DESeq2,
+        # VST back-transformed to a linear scale - NOT log2 data.
         rv$final_data <- as.data.frame(rv$norm_linear)
       }
       n_g  <- nrow(rv$final_data); n_s <- ncol(rv$final_data)
@@ -3182,11 +3551,14 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         bc_vars=bc_vars,
         bc_effect=if(use_bc) rv$bc_effect_cols_used else NULL,
         data_scale=if(use_bc) {
-          paste0("non-log (linear, batch-corrected ", if(norm_method=="DESeq2") "VST→CPM" else "CPM", ")")
+          paste0("non-log, batch-corrected (",
+                 if(norm_method=="DESeq2") "DESeq2 VST, back-transformed to linear scale"
+                 else "CPM, TMM-normalised",
+                 ")")
         } else if (norm_method == "DESeq2") {
-          "non-log (VST→linear scale)"
+          "non-log (DESeq2 VST, back-transformed to linear scale)"
         } else {
-          "non-log (TMM-CPM)"
+          "non-log (CPM, TMM-normalised)"
         },
         bc_label=if(use_bc)
           paste0("batch-corrected ([",paste(bc_vars,collapse=", "),"])")
@@ -3361,7 +3733,143 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       if (sum(valid)>=1L) rv$meta_s <- meta[idx[valid],,drop=FALSE]
     }
 
+    # Renders whichever already-computed plots the user picked (via the
+    # evidence checklist next to the remove-samples control) to static,
+    # embeddable <img> HTML - captured BEFORE
+    # .pp_reset_downstream_after_removal() wipes the underlying reactive data,
+    # so they can still be shown in the report next to that removal event even
+    # after Steps 1-4 are redone. `sel` is a subset of
+    # c("complexity","filtering","normalisation","pca"); returns a named list
+    # (name = section heading, value = HTML) in a fixed, sensible order.
+    .pp_capture_evidence_imgs <- function(sel) {
+      out <- list()
+      if (is.null(sel) || length(sel) == 0L) return(out)
+
+      if ("complexity" %in% sel && !is.null(rv$s1_plot_a)) {
+        # Same height as this plot's own Step 1 report section (.report_gg_img_div's default).
+        out[["Sample complexity (Step 1)"]] <-
+          tryCatch(.report_plot_to_img(rv$s1_plot_a$plot, h = 420), error = function(e) NULL)
+      }
+
+      if ("filtering" %in% sel && !is.null(rv$data_s1) && isTRUE(rv$s2_run)) {
+        tryCatch({
+          thr <- rv$s2_thr %||% 1.0; d <- rv$data_s1
+          lm  <- log2(rowMeans(as.matrix(d)) + 1)
+          p_before <- ggplot2::ggplot(data.frame(log_mean=lm), ggplot2::aes(x=log_mean)) +
+            ggplot2::geom_density(fill="#EBB43E",alpha=0.45,colour="#b8860b",linewidth=0.8) +
+            ggplot2::geom_vline(xintercept=thr,linetype="dashed",colour="firebrick",linewidth=1.2) +
+            ggplot2::theme_bw() + ggplot2::xlab("Mean log2(count+1)") + ggplot2::ylab("Density") +
+            ggplot2::ggtitle(paste0("All genes (threshold >= ",round(thr,3),")"))
+          kv2 <- lm[lm >= thr]
+          p_after <- if (length(kv2) > 0)
+            ggplot2::ggplot(data.frame(log_mean=kv2), ggplot2::aes(x=log_mean)) +
+              ggplot2::geom_density(fill="#28a745",alpha=0.4,colour="#155724",linewidth=0.8) +
+              ggplot2::theme_bw() + ggplot2::xlab("Mean log2(count+1)") + ggplot2::ylab("Density") +
+              ggplot2::ggtitle(paste0("Retained genes (",format(length(kv2),big.mark=","),")"))
+            else NULL
+          # Same 2-column grid + height (420, plot_to_img's default) as this
+          # plot's own Step 2 report section - not a cramped custom flex row.
+          out[["Gene filtering (Step 2)"]] <- paste0(
+            "<div class='img-row'>",
+            "<div>", .report_plot_to_img(p_before), "</div>",
+            if (!is.null(p_after))
+              paste0("<div>", .report_plot_to_img(p_after), "</div>")
+            else "",
+            "</div>")
+        }, error = function(e) NULL)
+      }
+
+      if ("normalisation" %in% sel && !is.null(rv$data_s2)) {
+        tryCatch({
+          disp    <- shiny::isolate(input$s3_sample_display %||% "all")
+          n_box   <- as.integer(shiny::isolate(input$s3_n_box %||% 20L))
+          col_by  <- shiny::isolate(input$s3_color_by)
+          hide_xl <- shiny::isolate(isTRUE(input$s3_hide_xlabels))
+          log_d <- log2(as.matrix(rv$data_s2) + 1)
+          p_before <- .pp_make_boxplot(log_d, colnames(log_d), disp, n_box, col_by, rv$meta_s,
+                                        "Before normalisation", hide_xlabels = hide_xl)
+          p_after <- if (!is.null(rv$norm_linear)) {
+            log_n <- log2(as.matrix(rv$norm_linear) + 1)
+            .pp_make_boxplot(log_n, colnames(log_n), disp, n_box, col_by, rv$meta_s,
+                              "After normalisation", hide_xlabels = hide_xl)
+          } else NULL
+          # Same 2-column grid + height (460, .report_box_div's default) as
+          # this plot's own Step 3 report section.
+          out[["Normalisation (Step 3)"]] <- paste0(
+            "<div class='img-row'>",
+            "<div>", .report_plot_to_img(p_before, h = 460), "</div>",
+            if (!is.null(p_after))
+              paste0("<div>", .report_plot_to_img(p_after, h = 460), "</div>")
+            else "",
+            "</div>")
+        }, error = function(e) NULL)
+      }
+
+      if ("pca" %in% sel && isTRUE(rv$s4_run) && !is.null(rv$s4_pca_df_before)) {
+        tryCatch({
+          pca_col <- shiny::isolate(input$s4_pca_color)
+          pc_x    <- shiny::isolate(input$s4_pc_x %||% "PC1")
+          pc_y    <- shiny::isolate(input$s4_pc_y %||% "PC2")
+          p <- .pp_pca_from_df(rv$s4_pca_df_before, rv$s4_pca_ev_before, rv$meta_s, pca_col,
+                                "PCA", pc_x, pc_y)
+          # Same height AND width constraint (half-width, via the same
+          # .img-row grid) as this plot's own Step 4 report section - without
+          # the grid wrapper this image would render at full report width,
+          # much larger than the PCA plot shown in the Step 4 section above.
+          out[["PCA (Step 4)"]] <- paste0(
+            "<div class='img-row'><div>", .report_plot_to_img(p, h = 620), "</div></div>")
+        }, error = function(e) NULL)
+      }
+
+      out
+    }
+
+    # Removing samples changes gene filtering stats, normalisation factors and
+    # PCA - all of which were computed on the pre-removal sample set. Rather than
+    # let those go stale, keep the reduced expression matrix/metadata but wipe
+    # every downstream step so the user re-runs Steps 1-4 on the correct data.
+    # rv$orig_n_genes / rv$orig_n_samples are left untouched so the final report
+    # still reflects totals relative to the truly original imported dataset.
+    .pp_reset_downstream_after_removal <- function(keep, removed_ids = NULL, step_label = NULL,
+                                                    note = NULL, evidence = NULL) {
+      if (!is.null(removed_ids) && length(removed_ids) > 0L) {
+        rv$removed_samples_log <- c(rv$removed_samples_log, list(list(
+          step = step_label %||% "Preprocessing",
+          ids  = removed_ids,
+          note = trimws(note %||% ""),
+          evidence = evidence
+        )))
+      }
+      rv$s4_remove_gen <- (rv$s4_remove_gen %||% 0L) + 1L
+      if (!is.null(rv$data_s0))
+        rv$data_s0 <- rv$data_s0[, intersect(keep, colnames(rv$data_s0)), drop = FALSE]
+      if (!is.null(rv$data_s1))
+        rv$data_s1 <- rv$data_s1[, intersect(keep, colnames(rv$data_s1)), drop = FALSE]
+      .align_meta(keep)
+
+      rv$data_s2 <- NULL; rv$norm_linear <- NULL; rv$data_s3 <- NULL; rv$final_data <- NULL
+      rv$step <- 1L; rv$active_step <- 1L
+      rv$s1_run <- FALSE; rv$s2_run <- FALSE; rv$s3_run <- FALSE; rv$s3_norm_done <- FALSE
+      rv$s4_run <- FALSE; rv$s4_bc_run <- FALSE
+      # NB: rv$s2_thr is deliberately NOT reset here (unlike a full "reset
+      # preprocessing") - keep whatever gene filtering threshold the user had
+      # chosen, since removing a couple of outlier samples shouldn't force
+      # them to rediscover/retype it in Step 2.
+      rv$s3_method_used <- NULL
+      rv$s1_summary <- ""; rv$s2_summary <- ""; rv$s3_summary <- ""
+      rv$s1_plot_a <- NULL; rv$s1_plot_b <- NULL
+      rv$s4_pca_df_before <- NULL; rv$s4_pca_ev_before <- NULL
+      rv$s4_pca_df_after  <- NULL; rv$s4_pca_ev_after  <- NULL
+      rv$s4_bc_result <- NULL; rv$pp_summary <- NULL; rv$finalized <- 0L
+      rv$downloads_available <- FALSE
+      rv$report_s2_before <- NULL; rv$report_s2_after <- NULL
+      rv$report_s3_before <- NULL; rv$report_s3_after <- NULL
+      rv$report_s4_before <- NULL; rv$report_s4_after <- NULL
+      .finalized_fp(NULL)
+    }
+
     list(final_data = shiny::reactive(rv$final_data),
+         final_meta = shiny::reactive(rv$meta_s),
          finalized  = shiny::reactive(rv$finalized))
   })
 }

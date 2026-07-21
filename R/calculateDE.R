@@ -169,7 +169,7 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL,
       modelmat 
     } else {
       design_formula <- as.formula(paste("~0+", paste(variables, collapse = " + ")))
-      design_matrix <- stats::model.matrix(design_formula, data = metadata) 
+      design_matrix <- stats::model.matrix(design_formula, data = metadata)
       colnames(design_matrix) <-   remove_prefix(colnames(design_matrix), variables)
       colnames(design_matrix) <- gsub(" ", "", colnames(design_matrix)) # remove spaces
       design_matrix
@@ -177,6 +177,7 @@ calculateDE <- function(data, metadata=NULL, variables=NULL, modelmat = NULL,
   }, error = function(e) {
     stop("Error constructing design matrix: ", e$message)
   })
+
 
 
   # Ensure design matrix and data match

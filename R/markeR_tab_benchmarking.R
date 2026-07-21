@@ -123,7 +123,10 @@ benchmarkingUI <- function(id) {
 
       shiny::div(
         style = "padding-bottom:6px;",
-        shiny::h4("Benchmarking Mode", style = "font-weight:700; color:#1E497B; margin-bottom:4px;"),
+        # Matches the "markeR" wordmark colour used for this section on the About
+        # page (black), distinct from Discovery Mode's blue - the two used to
+        # share the same blue, making them hard to tell apart at a glance.
+        shiny::h4("Benchmarking Mode", style = "font-weight:700; color:#020201; margin-bottom:4px;"),
         shiny::div(
           style = "color:#6c757d; font-size:0.85em; line-height:1.5;",
           shiny::tags$b("Score Analysis:"),
@@ -654,6 +657,15 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
     fpr_result        <- shiny::reactiveVal(NULL)
     scores_table_result <- shiny::reactiveVal(NULL)
 
+    # Clear any previously computed plots/results when the underlying
+    # expression data or metadata actually changes (e.g. new file loaded, or
+    # preprocessing re-finalised) - stale results from the old dataset should
+    # not linger on screen.
+    shiny::observeEvent(list(get_expr(), get_meta()), {
+      score_dist_result(NULL); score_roc_result(NULL); score_all_result(NULL)
+      gsea_result(NULL); fpr_result(NULL); scores_table_result(NULL)
+    }, ignoreInit = TRUE)
+
     # Dynamic plot heights
     score_h  <- shiny::reactiveVal(500L)
     roc_h    <- shiny::reactiveVal(600L)
@@ -684,6 +696,20 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         )
       )
     })
+
+    # GSEA (auto mode) builds contrast strings like "A-B" directly from a
+    # metadata group's raw values, then hands them (plus that same metadata
+    # column) to calculateDE(), which uses them as design-matrix/limma
+    # contrast level names. limma::makeContrasts() requires those to be
+    # syntactically valid R names (see help(make.names)) - a value like
+    # "cellstate:growing" contains a colon (the formula-interaction operator)
+    # and crashes it with "levels must be syntactically valid names". Fixed
+    # here in the app layer (not in calculateDE() itself, which is a
+    # general-purpose exported package function) by sanitising the group's
+    # values before they're ever used to build contrasts or passed to
+    # calculateDE. Used identically by both the contrast-checkbox UI and the
+    # actual GSEA run so the two always agree on the same (sanitised) names.
+    .sanitize_group_vals <- function(x) make.names(gsub(" ", "", as.character(x)))
 
     .active_gs <- function() {
       gs    <- get_gene_sets()
@@ -1675,7 +1701,22 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
             enrich_var  <- shiny::isolate(input$enrich_var)
             enrich_mode <- shiny::isolate(input$enrich_mode) %||% "simple"
             shiny::req(enrich_var)
-            uvals <- gsub(" ", "", unique(as.character(meta[[enrich_var]])))
+            # Sanitize the group's values in this local copy of `meta` BEFORE
+            # building contrasts or calling calculateDE(), so the design
+            # matrix calculateDE() builds internally (from this same `meta`)
+            # and the contrast strings built from `uvals` below always refer
+            # to the same, valid names - see .sanitize_group_vals() above.
+            raw_vals  <- as.character(meta[[enrich_var]])
+            safe_vals <- .sanitize_group_vals(raw_vals)
+            if (!identical(raw_vals, safe_vals)) {
+              meta[[enrich_var]] <- safe_vals
+              shiny::showNotification(
+                paste0("Some values of '", enrich_var, "' contained characters not valid ",
+                       "in R names (e.g. ':') and were adjusted for this analysis (e.g. '.' ",
+                       "instead of ':'). This only affects labels in the GSEA results, not your data."),
+                type = "warning", duration = 10)
+            }
+            uvals <- unique(safe_vals)
             all_contrasts <- remove_division(
               generate_all_contrasts(uvals, mode = enrich_mode))
             # Filter to user-selected contrasts
@@ -1939,7 +1980,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       meta <- get_meta(); var <- input$enrich_var; mode <- input$enrich_mode
       shiny::req(!is.null(meta), !is.null(var), nchar(var) > 0)
       contrasts_all <- tryCatch({
-        uvals <- gsub(" ", "", unique(as.character(meta[[var]])))
+        uvals <- unique(.sanitize_group_vals(meta[[var]]))
         remove_division(generate_all_contrasts(uvals, mode = mode %||% "simple"))
       }, error = function(e) character(0))
       if (length(contrasts_all) == 0L) return(NULL)
