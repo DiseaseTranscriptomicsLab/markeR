@@ -659,7 +659,7 @@ markeRapp <- function(...){
   shiny::addResourcePath(
     "methods",
     system.file("shiny/www", package = "markeR")   # points to inst/shiny/www/
-  )
+  ) 
 
   # User tutorial (PDF), served the same way as the workflow schematic above -
   # a separate alias so the URL is self-explanatory (/tutorial/...) even
