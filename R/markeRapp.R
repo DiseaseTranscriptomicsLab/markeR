@@ -260,7 +260,7 @@ ui <- bslib::page_navbar(
   bslib::nav_item(
     shiny::tags$a(
       shiny::icon("circle-info"), " Tutorial",
-      href = "tutorial/Tutorial_markeRShinyWebApp_shinyv0_99_5.pdf",
+      href = "tutorial/Tutorial_markeRShinyWebApp_shinyv0_99_6.pdf",
       target = "_blank", rel = "noopener noreferrer",
       class = "nav-link",
       title = "Open the markeR user tutorial (PDF)"
