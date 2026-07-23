@@ -115,9 +115,9 @@ dataUI <- function() {
                   "This dataset is a manual compilation of RNA-seq experiments on senescence in human cell lines, treated with different senescence inducers and their respective proliferative and quiescent controls. ",
                   "It has been used in Martins-Silva et al., 2026 (",
                   shiny::tags$a(href="https://doi.org/10.1093/nargab/lqag057", "NAR Genomics and Bioinformatics", target="_blank"),
-                  "). The raw read counts for all samples are available for download through ",
+                  "). Loads instantly from the data bundled with the app. The raw read counts for all samples are also permanently archived on ",
                   shiny::tags$a(href="https://zenodo.org/records/18714122", "Zenodo", target="_blank"),
-                  ". Genes are in rows, samples in columns."
+                  " for independent download or citation. Genes are in rows, samples in columns."
                 )
               ),
               
@@ -129,9 +129,9 @@ dataUI <- function() {
                   "This dataset contains the same RNA-seq experiments on senescence in human cell lines, as described for the unprocessed data above, but filtered for lowly expressed genes, normalised, and batch-corrected. ",
                   "Processing followed the methods described in Martins-Silva et al., 2026 (",
                   shiny::tags$a(href="https://doi.org/10.1093/nargab/lqag057", "NAR Genomics and Bioinformatics", target="_blank"),
-                  "). The processed data is available via ",
+                  "). Loads instantly from the data bundled with the app. The processed data is also permanently archived on ",
                   shiny::tags$a(href="https://zenodo.org/records/18714122", "Zenodo", target="_blank"),
-                  ". Genes are in rows, samples in columns."
+                  " for independent download or citation. Genes are in rows, samples in columns."
                 )
               ),
               shiny::conditionalPanel(
@@ -804,7 +804,27 @@ dataServer <- function(input, output, session) {
     utils::download.file(url = url, destfile = destfile, mode = "wb", quiet = TRUE)
   }
 
+  # Example data ships bundled with the package under inst/appdata (installed
+  # alongside the app, so system.file() finds it in any deployment - notably
+  # the Docker image). When present, it's read directly - no network request,
+  # no modal delay. If a given file is missing (e.g. a dev checkout that
+  # hasn't pulled it, or a build that intentionally strips inst/appdata),
+  # we transparently fall back to the original Zenodo download so the app
+  # still works, just slower on first load.
+  .local_appdata_path <- function(filename) {
+    p <- system.file("appdata", filename, package = "markeR")
+    if (nzchar(p) && file.exists(p)) p else NULL
+  }
+
   .dl_expr_raw <- function() {
+    local_path <- .local_appdata_path("counts.rds")
+    if (!is.null(local_path)) {
+      e <- readRDS(local_path)
+      expr_data(e)
+      log_step(paste0("Expression data loaded: example (unprocessed) - ",
+                      nrow(e), " genes × ", ncol(e), " samples."))
+      return(invisible(TRUE))
+    }
     show_loading_modal("Loading example data…",
                        "Downloading unprocessed counts from Zenodo.")
     dl_ok <- tryCatch({
@@ -828,6 +848,14 @@ dataServer <- function(input, output, session) {
   }
 
   .dl_expr_proc <- function() {
+    local_path <- .local_appdata_path("corrcounts.rds")
+    if (!is.null(local_path)) {
+      e <- readRDS(local_path)
+      expr_data(e)
+      log_step(paste0("Expression data loaded: example (processed) - ",
+                      nrow(e), " genes × ", ncol(e), " samples."))
+      return(invisible(TRUE))
+    }
     show_loading_modal("Loading example data…",
                        "Downloading processed counts from Zenodo.")
     dl_ok <- tryCatch({
@@ -851,6 +879,15 @@ dataServer <- function(input, output, session) {
   }
 
   .dl_meta_example <- function() {
+    local_path <- .local_appdata_path("metadata.rds")
+    if (!is.null(local_path)) {
+      m <- readRDS(local_path)
+      m <- align_meta_to_expr(m, expr_data())
+      meta_data(m)
+      log_step(paste0("Metadata loaded: example - ",
+                      nrow(m), " samples × ", ncol(m), " variables."))
+      return(invisible(TRUE))
+    }
     show_loading_modal("Loading example metadata…",
                        "Downloading from Zenodo.")
     dl_ok <- tryCatch({
@@ -875,6 +912,15 @@ dataServer <- function(input, output, session) {
   }
 
   .dl_gs_example <- function() {
+    local_path <- .local_appdata_path("SenescenceGeneSets.rds")
+    if (!is.null(local_path)) {
+      gs <- readRDS(local_path)
+      gene_sets(gs)
+      log_step(paste0("Gene sets loaded: example - ", length(gs), " set(s), ",
+                      sum(sapply(gs, function(x) if (is.data.frame(x)) nrow(x) else length(x))),
+                      " genes total."))
+      return(invisible(TRUE))
+    }
     show_loading_modal("Loading example gene sets…",
                        "Downloading from Zenodo.")
     dl_ok <- tryCatch({

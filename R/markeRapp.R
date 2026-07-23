@@ -47,7 +47,7 @@ ui <- bslib::page_navbar(
     #   target = "_blank",
     #   style = "font-size: 0.85em; color: #949494; text-decoration: none;"
     # )
-    shiny::a("Web App 0.99.5",
+    shiny::a("Web App 0.99.6",
              style = "font-size: 0.7em; color: #949494; text-decoration: none;")
   ),
   
