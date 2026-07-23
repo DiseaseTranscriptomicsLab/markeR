@@ -1,18 +1,3 @@
-# markeR 1.2 (23 Jul, 2026)
-
-## Minor Changes
-- Shiny app example data (raw counts, processed counts, metadata, and
-  senescence gene sets) is now bundled locally under `inst/appdata/` and
-  loaded directly, instead of being downloaded from Zenodo on every session.
-  Zenodo download is kept as an automatic fallback if a bundled file is
-  missing. Updated the corresponding help text in the Data tab to reflect
-  that the example data loads instantly and to frame Zenodo as the
-  permanent archive for independent download/citation.
-- Restructured the Dockerfile to install R dependencies (from `DESCRIPTION`)
-  before copying the package source, so Docker can cache the slow
-  dependency-installation layer and only rebuild it when `DESCRIPTION`
-  changes, rather than on every code or data change.
-
 # markeR 1.1.2 (12 Mar, 2026) 
 
 ## Minor Changes
