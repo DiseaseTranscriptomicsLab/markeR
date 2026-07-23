@@ -12,8 +12,13 @@ WORKDIR /markeR
 # Copy ONLY the dependency manifest first and install everything it lists.
 # Docker only re-runs this (slow, ~9 min) step if DESCRIPTION itself changes.
 # Editing R code or the bundled example data below no longer invalidates it.
+# dependencies = NA (not TRUE): installs Depends/Imports/LinkingTo only, not
+# the full Suggests tree (devtools, roxygen2, covr, BiocStyle, renv, sva,
+# tximport, etc.) - those are for package development/checking, not needed
+# to run the deployed Shiny app, and installing them was what pushed the
+# build from ~8 min to 16+ min.
 COPY DESCRIPTION /markeR/DESCRIPTION
-RUN Rscript -e "remotes::install_deps(dependencies = TRUE)"
+RUN Rscript -e "remotes::install_deps(dependencies = NA)"
 
 # markeR's gene-ID-conversion feature (Preprocessing tab) uses biomaRt
 # (works for all species via the Ensembl API) with AnnotationDbi + a local
