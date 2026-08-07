@@ -731,12 +731,12 @@ align_expr_to_meta <- function(expr_mat, meta_df,
       warnings_out <- c(warnings_out,
         paste0("Sample IDs fuzzy-matched (Levenshtein, max_dist=", max_dist,
                "). Max distance used: ", max(min_dists), ". ",
-               "Please verify the alignment is correct."))
+               "Please verify the match is correct."))
       return(list(expr = expr_mat, meta = meta_aligned,
                   match_type = "fuzzy", warnings = warnings_out))
     }
 
-    # Partial alignment: keep only matched samples
+    # Partial match: keep only matched samples
     if (sum(accepted) > 0) {
       expr_sub  <- expr_mat[, accepted, drop = FALSE]
       meta_aligned <- meta_df[best_idx[accepted], , drop = FALSE]
@@ -765,7 +765,7 @@ align_expr_to_meta <- function(expr_mat, meta_df,
       rownames(meta_aligned) <- expr_cols
       warnings_out <- c(warnings_out, paste0(
         "Sample IDs matched via token overlap against metadata column '",
-        match_col, "'. Verify the alignment in the preview."))
+        match_col, "'. Verify the sample match in the preview."))
       return(list(expr       = expr_mat,
                   meta       = meta_aligned,
                   match_type = "token_match",
@@ -793,8 +793,8 @@ align_expr_to_meta <- function(expr_mat, meta_df,
   }
 
   warnings_out <- c(warnings_out,
-    "⚠️ Could not align sample IDs between expression matrix and metadata. ",
-    "Returning expression matrix with metadata unaligned.")
+    "⚠️ Could not match sample IDs between the expression matrix and the metadata. ",
+    "Returning the expression matrix with unmatched metadata.")
   list(expr = expr_mat, meta = meta_df,
        match_type = "unmatched", warnings = warnings_out)
 }
@@ -1050,14 +1050,14 @@ import_geo_data <- function(gse_accession,
     )
   }
 
-  # ── 9. Align expression ↔ metadata ────────────────────────────────────────
-  .prog(0.88, "Aligning expression matrix to metadata…")
+  # ── 9. Match expression ↔ metadata ────────────────────────────────────────
+  .prog(0.88, "Matching expression matrix to metadata…")
 
   if (!is.null(result$expr) && !is.null(result$meta)) {
     aligned <- tryCatch(
       align_expr_to_meta(result$expr, result$meta),
       error = function(e) {
-        msgs <<- c(msgs, paste("Alignment failed:", e$message))
+        msgs <<- c(msgs, paste("Sample matching failed:", e$message))
         list(expr = result$expr, meta = result$meta,
              match_type = "failed", warnings = e$message)
       }
@@ -1065,7 +1065,7 @@ import_geo_data <- function(gse_accession,
     result$expr <- aligned$expr
     result$meta <- .ensure_sampleid_col(aligned$meta)
     msgs <- c(msgs, aligned$warnings,
-              paste0("Sample ID alignment: ", aligned$match_type))
+              paste0("Sample ID matching: ", aligned$match_type))
   }
 
   .prog(1.0, "Done.")
@@ -1124,13 +1124,13 @@ geoImportUI <- function(id) {
       class = "alert alert-warning", style = "font-size:0.85em; padding:8px 12px;",
       shiny::icon("flask"),
       shiny::tags$b(" GEO import is in beta."),
-      " GEO submissions aren't standardised, so some accessions may not parse or",
+      " GEO submissions are not standardised, so some accessions may not parse or",
       " import correctly. We apologise for any inconvenience.",
-      " If an accession doesn't work as expected, please ",
+      " If an accession does not work as expected, please ",
       shiny::tags$a(href = "https://github.com/DiseaseTranscriptomicsLab/markeR/issues",
                     target = "_blank", rel = "noopener noreferrer",
                     "open an issue on markeR's GitHub page"),
-      " and we'll look into it."
+      " and we will look into it."
     ),
 
     shiny::textInput(
@@ -1170,7 +1170,7 @@ geoImportUI <- function(id) {
     # Metadata column configuration
     shiny::uiOutput(ns("meta_col_selector")),
 
-    # Sample alignment panel - mismatch resolution + optional rename
+    # Sample-matching panel - mismatch resolution + optional rename
     shiny::uiOutput(ns("sample_alignment_ui")),
 
     shiny::hr()
@@ -1204,7 +1204,7 @@ geoImportServer <- function(id, log_fn = NULL) {
       messages         = character(0),
       status           = "idle", # "idle","loading","ok","warning","excluded","error"
       subseries        = character(0),  # detected sub-series for SuperSeries
-      match_col_needed = FALSE,  # TRUE when alignment failed → show column-picker UI
+      match_col_needed = FALSE,  # TRUE when sample matching failed → show column-picker UI
       example_expr_col = "",     # one unmatched expr col name to show in the hint
       geo_info         = NULL    # list(accession, title, abstract, organism, n_samples)
     )
@@ -1333,9 +1333,9 @@ geoImportServer <- function(id, log_fn = NULL) {
 
       shiny::removeModal()
 
-      # Build a clean match-summary string from the aligned data.
-      # Internal pipeline messages (like "Returning expression matrix with
-      # metadata unaligned") are intentionally not shown to the user.
+      # Build a clean match-summary string from the matched data.
+      # Internal pipeline messages (like "Returning the expression matrix with
+      # unmatched metadata") are intentionally not shown to the user.
       .fmt_match <- function() {
         e <- rv$expr; m <- rv$meta
         if (is.null(e) || is.null(m)) return(NULL)
@@ -1353,12 +1353,12 @@ geoImportServer <- function(id, log_fn = NULL) {
         msg
       }
       match_summary <- .fmt_match()
-      # Log import summary (counts only - no alignment performed yet)
+      # Log import summary (counts only - no sample matching performed yet)
       if (!is.null(rv$expr) && !is.null(rv$meta)) {
         glog(paste0("GEO import complete: ",
                     ncol(rv$expr), " expression samples, ",
                     nrow(rv$meta), " metadata rows loaded. ",
-                    "Use the Data tab to review and align before proceeding."))
+                    "Use the Data tab to review and match samples before proceeding."))
       }
 
       # Show result notification
@@ -1809,7 +1809,7 @@ geoImportServer <- function(id, log_fn = NULL) {
       glog(paste0("Metadata columns kept (", length(keep), "): ",
                   paste(keep, collapse = ", "), "."))
 
-      # Re-align if expression also present
+      # Re-match if expression also present
       if (!is.null(rv$expr)) {
         aligned <- tryCatch(
           align_expr_to_meta(rv$expr, rv$meta, id_col = "SampleID"),
@@ -1822,16 +1822,16 @@ geoImportServer <- function(id, log_fn = NULL) {
           rv$messages <- c(rv$messages, aligned$warnings)
           for (w in aligned$warnings) glog(w)
         }
-        glog(paste0("Re-alignment after column filter: ", aligned$match_type, "."))
+        glog(paste0("Sample re-matching after column filter: ", aligned$match_type, "."))
       }
       .check_alignment()
     })
 
-    # ── 8. Unified sample-alignment panel ────────────────────────────────────
+    # ── 8. Unified sample-matching panel ────────────────────────────────────
     #
     # Two modes:
     #  A) Mismatch: amber header + all three fix options shown with descriptions
-    #  B) Aligned:  compact "Edit sample names" section for optional renaming
+    #  B) Matched:  compact "Edit sample names" section for optional renaming
     #
     output$sample_alignment_ui <- shiny::renderUI({
       expr <- rv$expr
@@ -2055,7 +2055,7 @@ geoImportServer <- function(id, log_fn = NULL) {
         )
 
       # ────────────────────────────────────────────────────────────────────────
-      # MODE B: aligned (or data not fully loaded) - compact edit section
+      # MODE B: matched (or data not fully loaded) - compact edit section
       # ────────────────────────────────────────────────────────────────────────
       } else {
         shiny::tags$details(
@@ -2144,7 +2144,7 @@ geoImportServer <- function(id, log_fn = NULL) {
 
       if (aligned$match_type %in% c("token_match", "partial_token_match")) {
         rv$messages <- c(
-          rv$messages[!grepl("Could not align|unmatched|Sample ID alignment: unmatched",
+          rv$messages[!grepl("Could not match|unmatched|Sample ID matching: unmatched",
                              rv$messages, ignore.case = TRUE)],
           paste0("✅ Keyword match via '", mc, "' (", aligned$match_type, ")"),
           aligned$warnings
@@ -2198,15 +2198,15 @@ geoImportServer <- function(id, log_fn = NULL) {
         rv$meta <- .ensure_sampleid_col(aligned$meta)
         for (w in aligned$warnings) glog(w)
         rv$messages <- c(
-          rv$messages[!grepl("Could not align|unmatched|Sample ID alignment: unmatched",
+          rv$messages[!grepl("Could not match|unmatched|Sample ID matching: unmatched",
                              rv$messages, ignore.case = TRUE)],
-          paste0("✅ Expression columns renamed; alignment: ", aligned$match_type)
+          paste0("✅ Expression columns renamed; sample matching: ", aligned$match_type)
         )
-        glog(paste0("Post-rename alignment: ", aligned$match_type, "."))
+        glog(paste0("Post-rename sample matching: ", aligned$match_type, "."))
         .check_alignment()
         shiny::showNotification(
-          if (!rv$match_col_needed) "✅ Columns renamed and aligned."
-          else "⚠️ Columns renamed - alignment still unresolved.",
+          if (!rv$match_col_needed) "✅ Columns renamed and matched."
+          else "⚠️ Columns renamed - sample matching still unresolved.",
           type = if (!rv$match_col_needed) "default" else "warning",
           duration = 6
         )
@@ -2255,15 +2255,15 @@ geoImportServer <- function(id, log_fn = NULL) {
         rv$meta <- .ensure_sampleid_col(aligned$meta)
         for (w in aligned$warnings) glog(w)
         rv$messages <- c(
-          rv$messages[!grepl("Could not align|unmatched|Sample ID alignment: unmatched",
+          rv$messages[!grepl("Could not match|unmatched|Sample ID matching: unmatched",
                              rv$messages, ignore.case = TRUE)],
-          paste0("✅ Metadata sample IDs set; alignment: ", aligned$match_type)
+          paste0("✅ Metadata sample IDs set; sample matching: ", aligned$match_type)
         )
-        glog(paste0("Post-override alignment: ", aligned$match_type, "."))
+        glog(paste0("Post-override sample matching: ", aligned$match_type, "."))
         .check_alignment()
         shiny::showNotification(
-          if (!rv$match_col_needed) "✅ Sample IDs set and aligned."
-          else "⚠️ Sample IDs set - alignment still unresolved.",
+          if (!rv$match_col_needed) "✅ Sample IDs set and matched."
+          else "⚠️ Sample IDs set - sample matching still unresolved.",
           type = if (!rv$match_col_needed) "default" else "warning",
           duration = 6
         )

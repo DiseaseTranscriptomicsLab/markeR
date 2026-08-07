@@ -753,10 +753,7 @@ geneSetsUI <- function(id) {
             style = "display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; margin-bottom:8px;",
             shiny::div(
               shiny::uiOutput(ns("pca_genes_ui")),
-              shiny::uiOutput(ns("pca_overlap_warn_ui")),
-              shiny::tags$small(style = "color:#888; font-size:0.78em; display:block; margin-top:2px;",
-                "All gene set genes with matching expression data are used.",
-                " Higher coverage means the PCA better captures the biology of interest.")
+              shiny::uiOutput(ns("pca_overlap_warn_ui"))
             ),
             shiny::uiOutput(ns("pca_color_var_ui"))
           ),
@@ -1165,7 +1162,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
                   ov$n_gs, ov$n_overlap_ci),
           " Your gene set and expression matrix appear to use",
           " different species conventions (e.g. mouse Title-case vs human ALL-CAPS).",
-          " Per-gene analyses will return empty results unless you fix the organism.")
+          " Correct the organism selection to avoid empty results in per-gene analyses.")
 
       } else if (ov$pct < 25) {
         pct_label <- if (ov$pct == 0 && ov$n_overlap > 0) "<1%" else paste0(ov$pct, "%")
@@ -1219,7 +1216,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
           style = "font-size:0.82em; padding:6px 10px; margin-bottom:8px;",
           shiny::icon("triangle-exclamation"), " ",
           shiny::strong(n), " genes currently selected.",
-          " Violin plots and heatmaps with more than ~20 genes can be very slow",
+          " Violin plots and heatmaps with more than ~20 genes can be slow",
           " or hard to read. Reduce the selection using the gene picker above.")
     })
 
@@ -1324,7 +1321,7 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
           style = "font-size:0.80em; padding:5px 8px; margin-top:4px;",
           shiny::icon("triangle-exclamation"), " ",
           shiny::strong(n_total), " genes in your signature(s).",
-          " Jaccard scores will be low by design - keep Min. Jaccard at 0 to see all pathways."
+          " Jaccard scores tend to be low by design - keep Min. Jaccard at 0 to see all pathways."
         )
       else NULL
     })

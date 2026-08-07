@@ -48,7 +48,7 @@
   shiny::tags$div(
     shiny::tags$b("Log-median:"),
     " log2-transforms expression and median-centres each gene across samples.",
-    " Fast and interpretable; score = mean of centred values.",
+    " Fast and interpretable: the score is the mean of the centred values.",
     shiny::tags$br(),
     shiny::tags$b("Ranking:"),
     " non-parametric; scores based on within-sample rank of gene set members.",
@@ -138,7 +138,7 @@ benchmarkingUI <- function(id) {
           shiny::tags$b("Enrichment Analysis (GSEA):"),
           " uses limma linear models to rank genes per contrast, then fgsea tests",
           " whether each gene set is coordinately shifted towards the top or bottom",
-          " of that ranking, reporting a Normalised Enrichment Score (NES) per",
+          " of that ranking, and reports a Normalised Enrichment Score (NES) per",
           " gene set × contrast."
         ),
         shiny::hr()
@@ -178,7 +178,7 @@ benchmarkingUI <- function(id) {
             " Cohen's d/f heatmap and volcano comparing all three methods at once.",
             shiny::tags$br(),
             shiny::tags$b("Score FPR Simulation:"),
-            " compares observed Cohen's d to a null distribution from random gene sets.",
+            " compares the observed Cohen's d to a null distribution from random gene sets.",
             shiny::tags$br(),
             shiny::tags$em(
               "Run each sub-analysis independently.",
@@ -223,7 +223,7 @@ benchmarkingUI <- function(id) {
                   shiny::tags$small(
                     style = "color:#888; display:block; margin:-4px 0 6px; font-size:0.78em;",
                     "Draws lines between the same sample across groups.",
-                    " Set ", shiny::tags$b("Colour by"), " to the sample / patient identifier",
+                    " Set ", shiny::tags$b("Colour by"), " to the sample or patient identifier",
                     " so each line connects the correct pair."),
                   shiny::tags$hr(style = "margin:6px 0;"),
                   shiny::uiOutput(ns("score_cohend_ui")),
@@ -400,7 +400,7 @@ benchmarkingUI <- function(id) {
                       shiny::numericInput(ns("all_heatmap_textsize"), "Heatmap cell text size (mm):",
                                           value = 2, min = 1, max = 8, step = 0.5),
                       "Font size of the Cohen's d/f and p-value labels drawn inside each",
-                      " heatmap cell. In millimetres, not points, because that's the unit",
+                      " heatmap cell. In millimetres, not points, because that is the unit",
                       " ggplot2's geom_text() uses (roughly pt ÷ 2.85).",
                       placement = "right"
                     ),
@@ -470,11 +470,11 @@ benchmarkingUI <- function(id) {
                 shiny::icon("clock"),
                 " Runtime scales with (gene sets) x (simulations) x 3 methods.",
                 " This can take several minutes or longer for many gene sets or simulations.",
-                " Start with 100 simulations; increase only for publication-quality results.",
+                " Start with 100 simulations and increase only for publication-quality results.",
                 shiny::tags$br(),
                 shiny::icon("lightbulb"),
-                " Tip: to quickly test a single gene set of interest, set the gene set selector",
-                " above to 'Select specific' and choose just that one gene set before running."
+                " Tip: to test a single gene set of interest, set the gene set selector",
+                " above to 'Select specific' and choose that one gene set before running."
               ),
               shiny::tags$details(
                 style = "margin-bottom:10px;",
@@ -550,11 +550,11 @@ benchmarkingUI <- function(id) {
               shiny::icon("circle-question",
                 style = "color:#aaa; cursor:help; font-size:0.82em;"),
               shiny::tags$div(
-                shiny::tags$b("Automatic:"), " Pick a grouping variable. markeR builds",
+                shiny::tags$b("Automatic:"), " pick a grouping variable. markeR builds",
                 " the design matrix and all contrasts automatically. Best for simple",
                 " case/control or multi-group comparisons.",
                 shiny::tags$hr(style = "margin:4px 0;"),
-                shiny::tags$b("Manual:"), " Paste an R formula (e.g. ",
+                shiny::tags$b("Manual:"), " paste an R formula (e.g. ",
                 shiny::tags$code(
                   style = "background:rgba(255,255,255,0.2); color:#f0f0f0; padding:1px 4px; border-radius:3px;",
                   "~ 0 + Condition + Batch"),
@@ -1355,7 +1355,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
 
       if (!p$is_cat) {
         shiny::showNotification(
-          "Classification requires a categorical variable. Please select one above.",
+          "Classification requires a categorical variable. Select one above.",
           type = "warning", duration = 8)
         return(NULL)
       }
@@ -1726,7 +1726,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
             else
               all_contrasts
             if (length(contrasts_vec) == 0L)
-              stop("No contrasts selected. Please select at least one contrast.")
+              stop("No contrasts selected. Select at least one contrast.")
             shiny::incProgress(0.2, detail = "Fitting linear models...")
             DEGs <- calculateDE(data = expr, metadata = meta,
                                 variables = enrich_var, contrasts = contrasts_vec)
@@ -1991,7 +1991,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
           bslib::tooltip(
             shiny::icon("circle-question",
               style = "color:#aaa; cursor:help; font-size:0.85em;"),
-            "All contrasts are pre-selected. Remove any you don't need.",
+            "All contrasts are pre-selected. Remove any you do not need.",
             " Fewer contrasts = faster computation and less multiple-testing correction.",
             placement = "right"
           )
@@ -2454,23 +2454,24 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
               class = "text-muted", style = "font-size:0.78em; padding:4px 6px 8px;",
               shiny::icon("circle-info"),
               " Volcano plot of differential expression for each contrast.",
-              " Points are coloured by gene set membership when gene sets are provided.",
-              " Thresholds mark significance and fold-change cutoffs."
+              " The two \"Highlight\" modes below are mutually exclusive and colour points differently:",
+              shiny::tags$br(),
+              shiny::tags$b("Gene set members:"), " one panel per gene set per contrast",
+              " (rows = gene sets, columns = contrasts). Points are coloured ONLY by gene set",
+              " membership/direction (grey/green/red/navy). Thresholds are not used for colour",
+              " in this mode - they only narrow which set members can get a text label.",
+              shiny::tags$br(),
+              shiny::tags$b("Significant genes (threshold):"), " one genome-wide panel per",
+              " contrast only (no gene-set rows - all ", length(res$gene_sets %||% list()),
+              " gene sets are ignored in this mode). Points are coloured ONLY by",
+              " whether they pass the logFC / adjusted p-value thresholds below",
+              " (light blue = passes, grey = does not). Gene sets are not used for colour",
+              " or filtering in this mode.",
+              shiny::tags$br(),
+              " When labelling top genes, some labels may be hidden in crowded regions to avoid overlap."
             ),
-            # Inline colour key - only relevant when gene set highlighting is on
-            if (!is.null(res$gene_sets) && length(res$gene_sets) > 0L) shiny::div(
-              style = "font-size:0.8em; padding:2px 6px 8px; display:flex; gap:14px; flex-wrap:wrap;",
-              shiny::tags$span(shiny::tags$b(style="color:#B7B7B7;", "■"), " Background"),
-              shiny::tags$span(shiny::tags$b(style="color:#038C65;", "■"),
-                " Annotated UP in gene set",
-                shiny::tags$i(style="font-size:0.9em; color:#666;", "(not observed DE)")),
-              shiny::tags$span(shiny::tags$b(style="color:#8C0303;", "■"),
-                " Annotated DOWN in gene set",
-                shiny::tags$i(style="font-size:0.9em; color:#666;", "(not observed DE)")),
-              shiny::tags$span(shiny::tags$b(style="color:#05254A;", "■"),
-                " In gene set (no direction annotated)"),
-              shiny::tags$span(shiny::tags$b(style="color:#6489B4;", "■"), " Significant (threshold)")
-            ),
+            # Inline colour key - reflects the currently selected Highlight mode
+            shiny::uiOutput(ns("vol_color_key")),
             .bm_collapsible_settings(
               shiny::div(
                 style = "display:grid; grid-template-columns:1fr 1fr; gap:8px;",
@@ -2491,6 +2492,9 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
                   " of each gene set (optionally narrowed by the thresholds above).",
                   " With \"Significant genes\" highlighted: labels the N most extreme genes",
                   " among those passing the thresholds above.",
+                  " Note: labels are placed with automatic overlap avoidance, so in crowded",
+                  " regions some of the N requested labels may be hidden rather than drawn",
+                  " on top of each other, so fewer than N names showing is expected.",
                   placement = "right"
                 ),
                 shiny::numericInput(ns("vol_pointsize"), "Point size:",
@@ -2503,12 +2507,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
                              "Significant genes (threshold)" = "threshold"),
                 selected = "gene_sets", inline = TRUE)
             ),
-            shiny::div(
-              style = paste0("max-width:", gsea_vol_w(), ";"),
-              shiny::plotOutput(ns("gsea_deg_volcano_plot"),
-                                width = "100%",
-                                height = paste0(gsea_vol_h(), "px"))
-            )
+            shiny::uiOutput(ns("gsea_deg_volcano_container"))
           )
         ),
 
@@ -2561,7 +2560,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
                 )
               )
             ),
-            shiny::plotOutput(ns("gsea_combined_plot"), height = paste0(combined_h(), "px"))
+            shiny::uiOutput(ns("gsea_combined_plot_container"))
           )
         ),
 
@@ -2619,7 +2618,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
                 )
               )
             ),
-            shiny::plotOutput(ns("nes_lollipop"), height = paste0(nes_h(), "px"))
+            shiny::uiOutput(ns("nes_lollipop_container"))
           )
         ),
 
@@ -2669,7 +2668,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
                 )
               )
             ),
-            shiny::plotOutput(ns("gsea_enrich_plot"), height = paste0(enrich_h(), "px"))
+            shiny::uiOutput(ns("gsea_enrich_plot_container"))
           )
         ),
 
@@ -2799,6 +2798,10 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
             downreg <- in_gs & !is.na(gene_dir) & gene_dir == -1
             noinfo  <- in_gs & !upreg & !downreg
 
+            # "Gene set members" mode colours ONLY by gene set membership /
+            # direction. Thresholds are not used for colour here (only to
+            # narrow which set members are eligible for text labels below) -
+            # switch to "Significant genes (threshold)" to colour by thresholds.
             gg <- ggplot2::ggplot(df, ggplot2::aes(x = .data$lfc_, y = .data$logp_)) +
               ggplot2::geom_point(data = df[!in_gs, , drop = FALSE],
                                   color = "#B7B7B7", size = pts, alpha = 0.4) +
@@ -2839,6 +2842,65 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
         })
       }
     }
+
+    output$vol_color_key <- shiny::renderUI({
+      res <- gsea_result(); shiny::req(!is.null(res))
+      hl_mode <- input$vol_highlight_mode %||% "gene_sets"
+      if (hl_mode == "gene_sets") {
+        if (is.null(res$gene_sets) || length(res$gene_sets) == 0L) return(NULL)
+        shiny::div(
+          style = "font-size:0.8em; padding:2px 6px 8px; display:flex; gap:14px; flex-wrap:wrap;",
+          shiny::tags$span(shiny::tags$b(style="color:#B7B7B7;", "■"), " Background (not in gene set)"),
+          shiny::tags$span(shiny::tags$b(style="color:#038C65;", "■"),
+            " Annotated UP in gene set"),
+          shiny::tags$span(shiny::tags$b(style="color:#8C0303;", "■"),
+            " Annotated DOWN in gene set"),
+          shiny::tags$span(shiny::tags$b(style="color:#05254A;", "■"),
+            " In gene set (no direction annotated)")
+        )
+      } else {
+        shiny::div(
+          style = "font-size:0.8em; padding:2px 6px 8px; display:flex; gap:14px; flex-wrap:wrap;",
+          shiny::tags$span(shiny::tags$b(style="color:#B7B7B7;", "■"), " Not significant"),
+          shiny::tags$span(shiny::tags$b(style="color:#6489B4;", "■"), " Significant (passes thresholds)")
+        )
+      }
+    })
+
+    # NOTE on the four *_container renderUI outputs below: each plot's
+    # container div/plotOutput needs its height (and sometimes width) style
+    # to update reactively as the plot's dimensions change (e.g. more gene
+    # sets -> more panels -> taller plot). Previously these lived directly
+    # inside the single giant output$gsea_results_ui renderUI, which meant
+    # that ANY change to gsea_vol_h()/gsea_vol_w()/combined_h()/nes_h()/
+    # enrich_h() (all of which are updated on every renderPlot execution,
+    # including ones triggered by unrelated inputs like the DEG Volcano
+    # "Highlight" radio button) invalidated and rebuilt the ENTIRE tab UI -
+    # including every radioButtons/numericInput across all four nav_panels,
+    # silently resetting them back to their hardcoded defaults. Scoping each
+    # container to its own small renderUI means only that one container
+    # re-renders, and the rest of the UI (including user-selected input
+    # values) is left untouched.
+    output$gsea_deg_volcano_container <- shiny::renderUI({
+      shiny::div(
+        style = paste0("max-width:", gsea_vol_w(), ";"),
+        shiny::plotOutput(ns("gsea_deg_volcano_plot"),
+                          width = "100%",
+                          height = paste0(gsea_vol_h(), "px"))
+      )
+    })
+
+    output$gsea_combined_plot_container <- shiny::renderUI({
+      shiny::plotOutput(ns("gsea_combined_plot"), height = paste0(combined_h(), "px"))
+    })
+
+    output$nes_lollipop_container <- shiny::renderUI({
+      shiny::plotOutput(ns("nes_lollipop"), height = paste0(nes_h(), "px"))
+    })
+
+    output$gsea_enrich_plot_container <- shiny::renderUI({
+      shiny::plotOutput(ns("gsea_enrich_plot"), height = paste0(enrich_h(), "px"))
+    })
 
     output$gsea_deg_volcano_plot <- shiny::renderPlot({
       res <- gsea_result(); shiny::req(!is.null(res), !is.null(res$DEGs))
@@ -3036,7 +3098,7 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
           colour = ggplot2::guide_legend(title.position = "top", nrow = 3, order = 1),
           shape  = ggplot2::guide_legend(title.position = "top", nrow = 1, order = 2)
         ) +
-        ggplot2::labs(x = "Normalized Enrichment Score (NES)",
+        ggplot2::labs(x = "Normalised Enrichment Score (NES)",
                       y = "-log10(adj. p-value)") +
         ggplot2::theme_bw() +
         ggplot2::facet_grid(. ~ stat_used,

@@ -91,11 +91,11 @@ discoveryUI <- function(id) {
           class = "alert alert-warning", style = "font-size:0.82em; padding:8px 10px; margin-bottom:0;",
           shiny::icon("circle-exclamation"),
           " Discovery Mode is for ", shiny::tags$b("hypothesis generation"),
-          ": it quickly screens many variables so you can spot promising",
-          " candidates. If something here looks interesting, take it to the",
+          ": it quickly screens many variables to identify promising",
+          " candidates. If a result here looks interesting, examine it in the",
           shiny::tags$b(" Benchmarking"), " tab for a closer, more rigorous",
-          " look. And however it holds up there, it should still be",
-          " confirmed in an independent dataset before you rely on it."
+          " analysis. Regardless of the outcome there, findings should still be",
+          " confirmed in an independent dataset before being relied upon."
         ),
         shiny::hr()
       ),
@@ -137,7 +137,7 @@ discoveryUI <- function(id) {
           shiny::icon("circle-info"),
           " Runs ", shiny::strong("all four methods"),
           " (log2-median, ranking, ssGSEA, GSEA) automatically for the",
-          " variables and gene set selected above - no method choice needed here."
+          " variables and gene set selected above. No method selection is required here."
         )
       ),
 
@@ -191,7 +191,7 @@ discoveryUI <- function(id) {
         ),
         shiny::tags$p(
           style = "color:#888; font-size:0.78em; margin:6px 0 0;",
-          "Slower than a single method - GSEA is run once per variable."
+          "Slower than a single method. GSEA is run once per variable."
         )
       )
     ),
@@ -377,10 +377,10 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
         shiny::tags$p(
           style = "color:#b45309; font-size:0.78em; margin:2px 0 0;",
           shiny::icon("triangle-exclamation"),
-          sprintf(" %s %s more than 6 levels - contrasts/plots may get large",
+          sprintf(" %s %s more than 6 levels. Contrasts and plots may become large",
                   paste(highlvl, collapse = ", "),
                   if (length(highlvl) > 1) "have" else "has"),
-          " and slow, especially in \"All combinations\" mode."
+          " and slow to render, especially in \"All combinations\" mode."
         )
       }
     })
@@ -592,7 +592,7 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
           class = "text-muted", style = "font-size:0.78em; padding:4px 6px 8px;",
           shiny::icon("circle-info"),
           " One row per contrast, across every selected variable.",
-          " Dashed lollipops/grey points mark gene sets ranked by the",
+          " Dashed lollipops and grey points mark gene sets ranked by the",
           " B-statistic (no direction) with negative NES (generally uninformative)."
         ),
         shiny::plotOutput(ns("disc_gsea_plot"), height = paste0(gsea_h(), "px"))
@@ -785,7 +785,7 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
       }
       ggpubr::annotate_figure(combined,
         top = grid::textGrob(
-          paste0("Method summary - ", res$gs_name, "  (* = adjusted p-value < ", res$sig_thr, ")"),
+          paste0("Method summary - ", res$gs_name, " (* = adjusted p-value < ", res$sig_thr, ")"),
           gp = grid::gpar(cex = 1.1, fontsize = titlesize)))
     }
 
@@ -799,8 +799,8 @@ discoveryServer <- function(id, get_expr, get_meta, get_gene_sets) {
           shiny::icon("circle-info"),
           " Left block: Cohen's f from each score-based method (* = adjusted",
           " p-value below threshold). Right column: fraction of that",
-          " variable's GSEA contrasts that were significant - e.g. a 3-level",
-          " categorical variable tested pairwise has 3 contrasts; \"2/3\"",
+          " variable's GSEA contrasts that were significant. For example, a",
+          " 3-level categorical variable tested pairwise has 3 contrasts; \"2/3\"",
           " means 2 of them passed the significance threshold."
         ),
         shiny::plotOutput(ns("disc_summary_plot"), height = paste0(sum_h(), "px"))

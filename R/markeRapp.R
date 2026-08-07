@@ -47,7 +47,7 @@ ui <- bslib::page_navbar(
     #   target = "_blank",
     #   style = "font-size: 0.85em; color: #949494; text-decoration: none;"
     # )
-    shiny::a("Web App 0.99.6",
+    shiny::a("Web App 0.99.7",
              style = "font-size: 0.7em; color: #949494; text-decoration: none;")
   ),
   
@@ -107,9 +107,9 @@ ui <- bslib::page_navbar(
         shiny::p(
           
           shiny::HTML(
-            paste0("Have a collection of genes that putatively mark a phenotype, but not sure how to combine them and turn them into  ",
-                   "<span style='color:#306F1D;'> meaningful metrics for phenotype quantification</span>", 
-                   "? markeR helps you evaluate gene sets as phenotype markers and explore their information. Here’s a quick guide to each 
+            paste0("You may have a collection of genes that putatively mark a phenotype but be unsure how to combine them into ",
+                   "<span style='color:#306F1D;'> meaningful metrics for phenotype quantification</span>",
+                   ". markeR helps you evaluate gene sets as phenotype markers and explore their information. Below is a quick guide to each
                    section of the app:"
             )
           ),
@@ -153,10 +153,10 @@ ui <- bslib::page_navbar(
         padding-right: 15px;
       ",
         shiny::h5("1. Data", style = "color: #306F1D;"),         # blue
-        shiny::p("Load your gene expression datasets and associated metadata, 
-           as well as the gene sets of interest that are hypothesised to mark 
-           a given phenotype. This is the first step to get your data into the app. 
-           Alternatively, you can import data directly from GEO or explore example data on senescence."),
+        shiny::p("Load your gene expression datasets and associated metadata,
+           as well as the gene sets of interest that are hypothesised to mark
+           a given phenotype. This is the first step to get your data into the app.
+           Alternatively, import data directly from GEO or explore example data on senescence."),
         
         shiny::h5("2. Preprocessing", style = "color: #EBB43E;"), # orange
         shiny::p("Filter lowly expressed genes, normalise your data, and explore 
@@ -172,9 +172,9 @@ ui <- bslib::page_navbar(
         
         shiny::h5("4. Benchmarking Mode", style = "color: #020201;"), # red
         shiny::p(
-          "Test the robustness of (one or more) gene sets in distinguishing phenotypic groups using two modules: 
-     Enrichment and Score. Enrichment uses the Gene Set Enrichment Analyses (GSEA) method based on differential gene expression, 
-     while Score offers three methods for sample-wise quantification: ranking, logmedian, and ssGSEA. 
+          "Test the robustness of (one or more) gene sets in distinguishing phenotypic groups using two modules:
+     Enrichment and Score. Enrichment uses the Gene Set Enrichment Analysis (GSEA) method based on differential gene expression,
+     while Score offers three methods for sample-wise quantification: ranking, logmedian, and ssGSEA.
      More details are available in ",
           shiny::a("markeR's paper", href = "https://doi.org/10.1093/nargab/lqag057", target = "_blank"),
           " or ",
@@ -184,12 +184,12 @@ ui <- bslib::page_navbar(
         
         shiny::h5("5. Discovery Mode", style = "color: #1E497B;"), # purple
         shiny::p(
-          "Explores all metrics (scores, enrichment, etc.) 
-     for every user-selected variable to find potential associations 
-     with the phenotype marked by a gene set. It is intended for 
-     hypothesis generation and assumes the gene set is robust in 
-     marking the phenotype, in contrast to benchmarking mode, 
-     where multiple gene sets can be tested to identify the 
+          "Explores all metrics (scores, enrichment, etc.)
+     for every user-selected variable to find potential associations
+     with the phenotype marked by a gene set. It is intended for
+     hypothesis generation and assumes the gene set is robust in
+     marking the phenotype. This differs from benchmarking mode,
+     where multiple gene sets can be tested to identify the
      best-performing one."
         )
       ),
@@ -260,7 +260,7 @@ ui <- bslib::page_navbar(
   bslib::nav_item(
     shiny::tags$a(
       shiny::icon("circle-info"), " Tutorial",
-      href = "tutorial/Tutorial_markeRShinyWebApp_shinyv0_99_6.pdf",
+      href = "tutorial/Tutorial_markeRShinyWebApp_shinyv0_99_7.pdf",
       target = "_blank", rel = "noopener noreferrer",
       class = "nav-link",
       title = "Open the markeR user tutorial (PDF)"
@@ -610,7 +610,7 @@ server <- function(input, output, session) {
     } else if (finalized == 0L) {
       list(locked = TRUE,
            tip = paste0("Complete preprocessing first - click ",
-                        "’Finalize’ or ‘Use Data As-Is’ in the Preprocessing tab."))
+                        "‘Finalise’ or ‘Use Data As-Is’ in the Preprocessing tab."))
     } else {
       list(locked = FALSE, tip = NULL)
     }

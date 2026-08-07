@@ -112,12 +112,14 @@ dataUI <- function() {
                 "input.expr_source == 'example_raw'",
                 shiny::helpText(
                   shiny::tags$strong("Example Unprocessed Data:"),
-                  "This dataset is a manual compilation of RNA-seq experiments on senescence in human cell lines, treated with different senescence inducers and their respective proliferative and quiescent controls. ",
-                  "It has been used in Martins-Silva et al., 2026 (",
-                  shiny::tags$a(href="https://doi.org/10.1093/nargab/lqag057", "NAR Genomics and Bioinformatics", target="_blank"),
-                  "). Loads instantly from the data bundled with the app. The raw read counts for all samples are also permanently archived on ",
-                  shiny::tags$a(href="https://zenodo.org/records/18714122", "Zenodo", target="_blank"),
-                  " for independent download or citation. Genes are in rows, samples in columns."
+                  shiny::HTML(paste0(
+                    "This dataset is a manual compilation of RNA-seq experiments on senescence in human cell lines, treated with different senescence inducers and their respective proliferative and quiescent controls. ",
+                    "It has been used in Martins-Silva et al., 2026 (",
+                    "<a href=\"https://doi.org/10.1093/nargab/lqag057\" target=\"_blank\">NAR Genomics and Bioinformatics</a>",
+                    "). Loads instantly from the data installed with the app. The raw read counts for all samples are also permanently archived on ",
+                    "<a href=\"https://zenodo.org/records/18714122\" target=\"_blank\">Zenodo</a>",
+                    " for independent download or citation. Genes are in rows, samples in columns."
+                  ))
                 )
               ),
               
@@ -126,12 +128,14 @@ dataUI <- function() {
                 "input.expr_source == 'example_proc'",
                 shiny::helpText(
                   shiny::tags$strong("Example Processed Data:"),
-                  "This dataset contains the same RNA-seq experiments on senescence in human cell lines, as described for the unprocessed data above, but filtered for lowly expressed genes, normalised, and batch-corrected. ",
-                  "Processing followed the methods described in Martins-Silva et al., 2026 (",
-                  shiny::tags$a(href="https://doi.org/10.1093/nargab/lqag057", "NAR Genomics and Bioinformatics", target="_blank"),
-                  "). Loads instantly from the data bundled with the app. The processed data is also permanently archived on ",
-                  shiny::tags$a(href="https://zenodo.org/records/18714122", "Zenodo", target="_blank"),
-                  " for independent download or citation. Genes are in rows, samples in columns."
+                  shiny::HTML(paste0(
+                    "This dataset contains the same RNA-seq experiments on senescence in human cell lines, as described for the unprocessed data above, but filtered for lowly expressed genes, normalised, and batch-corrected. ",
+                    "Processing followed the methods described in Martins-Silva et al., 2026 (",
+                    "<a href=\"https://doi.org/10.1093/nargab/lqag057\" target=\"_blank\">NAR Genomics and Bioinformatics</a>",
+                    "). Loads instantly from the data installed with the app. The processed data is also permanently archived on ",
+                    "<a href=\"https://zenodo.org/records/18714122\" target=\"_blank\">Zenodo</a>",
+                    " for independent download or citation. Genes are in rows, samples in columns."
+                  ))
                 )
               ),
               shiny::conditionalPanel(
@@ -274,8 +278,8 @@ dataUI <- function() {
                         shiny::tags$li("Two columns where the first column contains gene names and the second column contains the expected direction of enrichment (+1 or -1)")
                       ),
                       shiny::tags$em(
-                        "Do not include a header row - every line is read as data, starting from ",
-                        "the very first line (just gene names, or gene + direction). ",
+                        "Do not include a header row. Every line is read as data, starting from ",
+                        "the first line (gene names only, or gene plus direction). ",
                         "The separator (comma, semicolon, tab, or plain whitespace) is detected automatically."
                       ),
                       shiny::tags$br(),
@@ -295,7 +299,7 @@ dataUI <- function() {
                   shiny::tags$p(
                     style = "margin-top:6px;",
                     shiny::tags$strong("Multiple files: "),
-                    "you can select more than one file at once - each file becomes its own gene set, all collected into the same list."
+                    "you can select more than one file at once. Each file becomes its own gene set, and all are collected into the same list."
                   )
                 )
               ),
@@ -315,10 +319,10 @@ dataUI <- function() {
                       " (", shiny::tags$code("+1"), "/", shiny::tags$code("-1"), " also work)."
                     ),
                     shiny::tags$li(
-                      "For an ", shiny::strong("undirected"), " gene set, just list genes with no ",
-                      "semicolon at all - e.g. ", shiny::tags$code("ACTB")
+                      "For an ", shiny::strong("undirected"), " gene set, list genes with no ",
+                      "semicolon at all, e.g. ", shiny::tags$code("ACTB")
                     ),
-                    shiny::tags$li(shiny::strong("A single gene set can't mix the two:"),
+                    shiny::tags$li(shiny::strong("A single gene set cannot mix the two:"),
                       " either every line has a direction, or none of them do."),
                     shiny::tags$li("Add more boxes below for additional gene sets - each is collected into the same list.")
                   )
@@ -467,14 +471,15 @@ dataServer <- function(input, output, session) {
         "Example Data Download Failed"
       ),
       shiny::tags$div(
-        shiny::tags$p("Could not download the example data from Zenodo."),
+        shiny::tags$p("Could not find the example data installed with the app, and the fallback download from Zenodo also failed."),
         shiny::tags$p(style = "font-size:0.84em;color:#888;font-family:monospace;word-break:break-all;", msg),
         shiny::tags$p("Check your internet connection and click ", shiny::tags$strong("Try Again"), "."),
         shiny::tags$p(
           style = "background:#f0fdf4;border:1px solid #bbf7d0;border-radius:5px;padding:8px 12px;font-size:0.88em;color:#166534;margin-top:8px;",
           shiny::icon("circle-check", style="margin-right:4px;"),
           shiny::tags$strong("Note:"), " Uploading your own files and importing from GEO ",
-          "still work normally - only the example data requires an internet connection. ",
+          "still work normally. The example data is installed together with the app and does not normally require an internet connection; ",
+          "this message appears because that copy could not be found. ",
           "Click ", shiny::tags$strong("Close"), " to proceed with another data source."
         )
       ),
@@ -994,10 +999,10 @@ dataServer <- function(input, output, session) {
     has_non_num  <- !all(sapply(result, is.numeric))
     warn_msg <- NULL
     if (has_non_num) {
-      warn_msg <- "Some columns are non-numeric - this file may not be an expression matrix. Check that genes are rows and samples are columns."
+      warn_msg <- "Some columns are non-numeric. This file may not be an expression matrix. Check that genes are rows and samples are columns."
     } else if (na_frac > 0.20) {
       warn_msg <- sprintf(
-        "%.0f%% of values are missing after parsing - the file may not be a numeric expression matrix, or the separator / decimal character was misdetected.",
+        "%.0f%% of values are missing after parsing. The file may not be a numeric expression matrix, or the separator or decimal character may have been misdetected.",
         na_frac * 100
       )
     }
@@ -1158,7 +1163,7 @@ dataServer <- function(input, output, session) {
         shiny::tags$strong(style="font-size:0.88em;",
           paste0("⚠️ ", n_common, "/", n_expr, " samples matched")),
         shiny::tags$p(style="font-size:0.83em;margin:4px 0 8px;",
-          paste0("Expression columns don't fully match the SampleID column. ",
+          paste0("Expression columns do not fully match the SampleID column. ",
                  if (n_common > 0)
                    paste0(n_common, " common samples found.")
                  else "No overlap found.")),
@@ -1597,7 +1602,7 @@ dataServer <- function(input, output, session) {
       } else if (!is.null(meta)) {
         m_ids <- as.character(meta[[ colnames(meta)[1] ]])
         n_miss <- length(setdiff(e_nms, m_ids))
-        paste0(n_expr, " samples in both, but names differ - ",
+        paste0(n_expr, " samples in both, but names differ. ",
                n_miss, " expression column", if (n_miss != 1) "s" else "",
                " not found in metadata.")
       } else {
@@ -1759,7 +1764,7 @@ dataServer <- function(input, output, session) {
     # as NA.
     if (!all(has_dir)) {
       missing_genes <- genes[!has_dir]
-      stop("has both directional and non-directional lines - add a direction to ",
+      stop("has both directional and non-directional lines. Add a direction to ",
            if (length(missing_genes) <= 5L) paste(missing_genes, collapse = ", ")
            else paste0(paste(missing_genes[1:5], collapse = ", "), ", … (",
                        length(missing_genes), " genes missing a direction)"),
@@ -1909,7 +1914,7 @@ dataServer <- function(input, output, session) {
     if (is.null(expr) && is.null(meta) && is.null(gs)) {
       return(shiny::tags$p(
         style = "color:#9ca3af;font-size:0.88em;padding:6px 0;",
-        "No data loaded yet - use the sidebar to load expression data, metadata, and gene sets."
+        "No data loaded yet. Use the sidebar to load expression data, metadata, and gene sets."
       ))
     }
 

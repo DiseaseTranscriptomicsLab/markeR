@@ -819,7 +819,7 @@ preprocessingUI <- function(id) {
           style = "padding-bottom:10px;",
           shiny::h4("Preprocessing", style = "font-weight:700; color:#EBB43E; margin-bottom:4px;"),
           shiny::p(
-            "Normalize and quality-control your data before analysis.",
+            "Normalise and quality-control your data before analysis.",
             " Steps are optional and applied in sequence.",
             style = "color:#6c757d; font-size:0.85em; margin-bottom:6px;"
           ),
@@ -997,14 +997,14 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           "\U0001f9ec Gene ID format detected: ", type_label),
         shiny::tags$p(style = "font-size:0.86em;margin-bottom:8px;",
           "Your gene identifiers appear to be in ", shiny::tags$b(type_label), " format. ",
-          "Would you like to convert them to gene symbols?",
+          "You can convert them to gene symbols below.",
           shiny::tags$br(),
           shiny::tags$span(style = "color:#6b7280;font-size:0.9em;",
             "Version numbers (e.g. .2 in ENSG00000141736.2) will be stripped automatically.")),
         shiny::tags$p(style = "font-size:0.82em;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:6px 10px;margin-bottom:8px;",
           "⚠️ Conversion currently supports gene-level IDs only (e.g. Ensembl gene, RefSeq, Entrez). ",
           "Transcript-level IDs (e.g. ENST…, ENSMUST…) will not be recognised or converted correctly - ",
-          "if your IDs are transcripts, keep the original IDs and handle the mapping to genes yourself beforehand."),
+          "if your IDs are transcripts, keep the original IDs and map them to genes beforehand."),
         shiny::selectInput(ns("gene_id_species"), "Species:",
           choices = sp_choices, selected = default_species, width = "300px"),
         shiny::div(style = "display:flex;gap:8px;margin-top:8px;",
@@ -1370,9 +1370,9 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       list(n=1L, label="Sample QC",
         tip="Check sample quality before filtering. Poor-quality or outlier samples caught here prevent downstream artefacts."),
       list(n=2L, label="Gene Filtering",
-        tip="Lowly expressed genes add noise without signal. Removing them improves statistical power and speeds up analysis."),
+        tip="Genes with very low counts vary by chance rather than by biology. Removing them improves statistical power and speeds up analysis."),
       list(n=3L, label="Normalisation",
-        tip="Samples differ in sequencing depth. Normalisation makes them comparable so biological differences aren't confounded by technical ones."),
+        tip="Samples differ in sequencing depth. Normalisation makes them comparable so biological differences are not confounded by technical ones."),
       list(n=4L, label="PCA & Batch",
         tip="PCA reveals major sources of variation. If technical effects dominate, batch correction refocuses the data on biology.")
     )
@@ -2108,7 +2108,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
           style = "padding:10px 12px 4px;",
           shiny::tags$p(
             style = "font-size:0.82em; color:#6b7280; margin:0 0 8px;",
-            "Select the target type for each column. The table below previews the result.",
+            "Select the data type to convert each column to. The table below previews the result.",
             " Columns highlighted in green will be converted; red columns cannot be converted",
             " without data loss and will be left unchanged."
           ),
@@ -2445,7 +2445,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
             bslib::card_header(shiny::tags$div(style="display:flex;align-items:center;",
               shiny::tags$span(class="pp-num pp-num-locked","1"),
               shiny::tags$strong("Step 1 - Sample Complexity QC (Optional)"))),
-            shiny::div(style="padding:14px;color:#9ca3af;","Complete Step 0 (or skip it) to unlock."))))
+            shiny::div(style="padding:14px;color:#9ca3af;","Complete Step 0 (or skip it) for this step to become available."))))
       if (rv$step > 1L && rv$active_step != 1L)
         return(.pp_done_card(1,"Sample Complexity QC",rv$s1_summary,ns("back_to_s1"),
           plot_ui=highcharter::highchartOutput(ns("plot_s1a"),height="360px"),
@@ -2463,7 +2463,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
               shiny::column(6, shiny::numericInput(ns("s1_n_genes"),"N genes (≤1000)",500,min=10,max=1000,step=50)),
               shiny::column(6, shiny::numericInput(ns("s1_n_iter"),"Iterations",5,min=1,max=20))),
             shiny::numericInput(ns("s1_step_reads"),"Read step size",500,min=10,max=10000,step=100),
-            shiny::helpText("⚠️ Sampling is VERY slow as it is more accurate. Use fewer samples and genes to speed it up.",
+            shiny::helpText("⚠️ Sampling is slower than the default method but more accurate. Use fewer samples and genes to speed it up.",
                              style="color:#856404;font-size:0.8em;"))),
         shiny::column(6,
           shiny::tags$b("Samples to visualise"),
@@ -2676,7 +2676,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
             bslib::card_header(shiny::tags$div(style="display:flex;align-items:center;",
               shiny::tags$span(class="pp-num pp-num-locked","2"),
               shiny::tags$strong("Step 2 - Filter Lowly Expressed Genes"))),
-            shiny::div(style="padding:14px;color:#9ca3af;","Complete Step 1 (or skip it) to unlock."))))
+            shiny::div(style="padding:14px;color:#9ca3af;","Complete Step 1 (or skip it) for this step to become available."))))
       if (rv$step > 2L && rv$active_step != 2L)
         return(.pp_done_card(2,"Filter Lowly Expressed Genes",rv$s2_summary,ns("back_to_s2"),
           plot_ui=shiny::fluidRow(
@@ -2796,7 +2796,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
             bslib::card_header(shiny::tags$div(style="display:flex;align-items:center;",
               shiny::tags$span(class="pp-num pp-num-locked","3"),
               shiny::tags$strong("Step 3 - Normalisation"))),
-            shiny::div(style="padding:14px;color:#9ca3af;","Complete Steps 1–2 to unlock."))))
+            shiny::div(style="padding:14px;color:#9ca3af;","Complete Steps 1–2 for this step to become available."))))
       if (rv$step > 3L && rv$active_step != 3L)
         return(.pp_done_card(3,"Normalisation",rv$s3_summary,ns("back_to_s3"),
           plot_ui=shiny::fluidRow(
@@ -2862,7 +2862,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
                 )
               else
                 shiny::div(style="color:#9ca3af;font-size:0.85em;padding:14px 0;",
-                  "Run normalisation first to unlock display options.")
+                  "Run normalisation first to make display options available.")
             )
           ),
           shiny::uiOutput(ns("s3_plots_section"))))
@@ -3057,7 +3057,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
             bslib::card_header(shiny::tags$div(style="display:flex;align-items:center;",
               shiny::tags$span(class="pp-num pp-num-locked","4"),
               shiny::tags$strong("Step 4 - PCA & Batch Correction (Optional)"))),
-            shiny::div(style="padding:14px;color:#9ca3af;","Complete Steps 1–3 to unlock."))))
+            shiny::div(style="padding:14px;color:#9ca3af;","Complete Steps 1–3 for this step to become available."))))
       if (rv$step > 4L && rv$active_step != 4L)
         return(.pp_done_card(4,"PCA & Batch Correction",
           if (!is.null(rv$pp_summary)) rv$pp_summary$bc_label else "done",
@@ -3226,7 +3226,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
         # revealed a suspicious sample. If nothing looked wrong, ignore this
         # box entirely and use the finalise button right below it.
         .pp_remove_section_ui(ns("s4_remove_picker"), ns("s4_remove_btn"),
-          warning_text = paste0("Only use this if Steps 1-3 or the PCA plot above actually showed ",
+          warning_text = paste0("Only use this if Steps 1-3 or the PCA plot above showed ",
             "something suspicious about a sample. If everything looks fine, skip this and finalise ",
             "directly below. Removing here updates the metadata to match and resets preprocessing ",
             "back to Step 1, since gene filtering, normalisation and PCA were computed using these ",
