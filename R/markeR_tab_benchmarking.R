@@ -1717,8 +1717,17 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
                 type = "warning", duration = 10)
             }
             uvals <- unique(safe_vals)
-            all_contrasts <- remove_division(
-              generate_all_contrasts(uvals, mode = enrich_mode))
+            # Keep the "/N" averaging term (e.g. "A - (B + C + D)/3") that
+            # generate_all_contrasts() adds for "vs rest"-style comparisons,
+            # both in what's passed to calculateDE()/limma::makeContrasts()
+            # AND in the displayed contrast names/titles. Previously the "/N"
+            # was stripped via remove_division() before reaching calculateDE(),
+            # which silently turned the averaged "rest" side into a *summed*
+            # one - the contrast was then off by a factor of N, biasing the
+            # result almost entirely to one sign for nearly every gene. Now
+            # the division is both applied and visible, so a "vs rest"
+            # contrast's name makes clear it's a mean, not a sum.
+            all_contrasts <- generate_all_contrasts(uvals, mode = enrich_mode)
             # Filter to user-selected contrasts
             sel <- shiny::isolate(input$gsea_selected_contrasts)
             contrasts_vec <- if (!is.null(sel) && length(sel) > 0L)
@@ -1981,7 +1990,10 @@ benchmarkingServer <- function(id, get_expr, get_meta, get_gene_sets) {
       shiny::req(!is.null(meta), !is.null(var), nchar(var) > 0)
       contrasts_all <- tryCatch({
         uvals <- unique(.sanitize_group_vals(meta[[var]]))
-        remove_division(generate_all_contrasts(uvals, mode = mode %||% "simple"))
+        # Keep the "/N" averaging term visible in the picker labels (see the
+        # comment in the "Auto path" run_gsea observer above) so it's obvious
+        # which contrasts compare against a mean of several groups.
+        generate_all_contrasts(uvals, mode = mode %||% "simple")
       }, error = function(e) character(0))
       if (length(contrasts_all) == 0L) return(NULL)
       shiny::div(
