@@ -3086,10 +3086,10 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
             " samples). This runs once - changing colour or PCs only redraws.")),
           shiny::div(style = "margin: 10px 0 8px 0;",
             shiny::tags$p(style = "font-size:0.82em;font-weight:600;margin-bottom:4px;", "PCA options:"),
-            shiny::checkboxInput(ns("s4_pca_center"), "Center genes (subtract mean per gene - recommended)",
+            shiny::checkboxInput(ns("s4_pca_center"), "Center genes (subtract mean per gene; recommended)",
               value = shiny::isolate(input$s4_pca_center) %||% TRUE),
             shiny::checkboxInput(ns("s4_pca_scale"),
-              "Scale genes (divide by SD - equalises variance; use with caution for RNA-seq)",
+              "Scale genes (divide by SD",
               value = shiny::isolate(input$s4_pca_scale) %||% FALSE)
           ),
           shiny::actionButton(ns("s4_run_btn"), "\U0001f4ca Compute PCA", class = "btn-primary btn-sm")))
