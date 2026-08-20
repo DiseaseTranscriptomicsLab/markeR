@@ -35,8 +35,7 @@ jobs:
           # Two independent tagging schemes, kept apart by which event fired:
           #  - every push to ShinyApp -> overwrites the rolling `shiny_dev`
           #    tag (matches the ShinyProxy config, which always tracks the
-          #    latest commit), plus a branch-name tag so you can see exactly
-          #    what commit produced a given `shiny_dev` build if needed.
+          #    latest commit).
           #  - publishing a GitHub Release -> a separate, never-overwritten
           #    tag using the release's git tag name as-is (e.g. a release
           #    tagged "shinyv1.1" on GitHub publishes image tag
@@ -46,7 +45,6 @@ jobs:
           #    builds from plain pushes).
           tags: |
             type=raw,value=shiny_dev,enable=${{ github.event_name == 'push' }}
-            type=ref,event=branch,enable=${{ github.event_name == 'push' }}
             type=raw,value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' }}
             type=raw,value=latest,enable=${{ github.event_name == 'release' }}
 
@@ -70,3 +68,12 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # Reuse layers from the previous build instead of starting fully
+          # fresh every time. GitHub stores this cache separately from the
+          # pushed image itself (does not affect image size) and manages
+          # its own size cap, evicting old entries automatically - nothing
+          # to clean up here. mode=max caches every intermediate layer
+          # (not just the final ones), which matters most for the
+          # dependency-install layers in the Dockerfile.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
