@@ -1,0 +1,16 @@
+.git
+data_aux
+.Rproj.user
+.obsidian
+docs
+doc
+Meta
+.DS_Store
+**/.DS_Store
+.Rhistory
+.Rproj.user
+markeR.Rproj
+markeR.BiocCheck
+markeR.Rcheck
+/python/.venv
+/renv
