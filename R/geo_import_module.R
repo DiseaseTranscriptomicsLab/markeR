@@ -917,6 +917,21 @@ import_geo_data <- function(gse_accession,
     return(result)
   }
 
+  # The Shiny import/preprocessing pipeline (gene-ID detection, TMM/DESeq2 VST
+  # normalisation) is built for bulk RNA-seq and is not valid for microarray
+  # data. Microarray support isn't implemented in the app yet, so block it
+  # here rather than silently running the RNA-seq pipeline on it.
+  if (assay_info$type == "microarray") {
+    result$status   <- "excluded"
+    result$messages <- c(msgs, paste0(
+      "⛔ ", gse_accession, " is a microarray dataset (", assay_info$reason, "). ",
+      "Microarray import is not yet supported in the markeR Shiny app (planned for a ",
+      "future version). You can still analyse microarray data with the markeR R ",
+      "package directly - preprocess your probe-level matrix to gene symbols yourself ",
+      "(e.g. with limma) and pass it to markeR's analysis functions in R."))
+    return(result)
+  }
+
   # ── 3. Try built-in expression matrix (Series Matrix) ─────────────────────
   .prog(0.30, "Checking Series Matrix expression data…")
   for (obj in geo_objs) {

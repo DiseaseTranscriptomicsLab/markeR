@@ -1133,6 +1133,10 @@ geneSetsServer <- function(id, get_expr, get_meta, get_gene_sets) {
           sprintf("Composition (%d gene%s)", nrow(df), if (nrow(df) != 1) "s" else ""))),
         DT::datatable(df, rownames = FALSE, filter = "none",
           options = list(paging = FALSE, dom = "ft", scrollY = "260px",
+                         deferRender = TRUE,  # see note on expr_preview in
+                                               # markeR_tab_data.R - DataTables'
+                                               # own recommended pairing with
+                                               # scrollY
                          scrollCollapse = TRUE, scrollX = FALSE,
                          columnDefs = list(list(className = "dt-left", targets = "_all"))))
       )

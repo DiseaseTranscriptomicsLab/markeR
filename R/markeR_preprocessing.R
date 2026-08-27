@@ -576,6 +576,19 @@
   if (mean(grepl("^ENS[A-Z]+[0-9]", s)) > 0.5) return("ensembl_other")
   if (mean(grepl("^(NM_|NR_|XM_|XR_)[0-9]", s)) > 0.5) return("refseq")
   if (mean(grepl("^[0-9]+$", s)) > 0.5) return("entrez")
+  # Microarray probe IDs (Affymetrix, Illumina, Agilent, ...). These are
+  # platform-specific and are NOT gene identifiers - without matching them
+  # here they would silently fall through to "symbol" below and neither
+  # trigger a conversion prompt nor block the (RNA-seq-only) normalisation
+  # steps that follow. markeR has no probe->gene mapping path (that requires
+  # platform/GPL-specific annotation, not Ensembl/RefSeq/Entrez lookups), so
+  # these are flagged and blocked instead of auto-converted.
+  if (mean(grepl("^AFFX-", s, ignore.case = TRUE)) > 0.3 ||
+      mean(grepl("^[0-9]+_(a_|s_|x_|i_)?at$", s, ignore.case = TRUE)) > 0.5 ||
+      mean(grepl("^ILMN_[0-9]+$", s, ignore.case = TRUE)) > 0.5 ||
+      mean(grepl("^A_[0-9]+_P[0-9]+$", s, ignore.case = TRUE)) > 0.5) {
+    return("microarray_probe")
+  }
   return("symbol")
 }
 
@@ -631,6 +644,20 @@
                            class = "btn-sm btn-outline-secondary")
     )
   )
+}
+
+#' Blocking card shown for every preprocessing step when microarray probe IDs
+#' are detected (see .pp_detect_gene_id_type / rv$microarray_blocked). Mirrors
+#' the visual style of the step cards but carries no controls - the full
+#' explanation lives in the gene ID banner above Step 0.
+.pp_microarray_blocked_card <- function(step_num, step_name) {
+  bslib::card(class = "pp-step-card",
+    bslib::card_header(shiny::tags$div(style = "display:flex;align-items:center;",
+      shiny::tags$span(class = "pp-num", style = "background:#721c24;color:#fff;", "\U0001f6ab"),
+      shiny::tags$strong(paste0("Step ", step_num, " - ", step_name)))),
+    shiny::div(style = "padding:14px;color:#721c24;",
+      "Locked: microarray probe IDs detected. See the notice above - ",
+      "microarray data isn't supported in the Shiny app yet."))
 }
 
 # ── HTML escaping helper (shiny::htmlEscape is not exported) ──────────────────
@@ -913,6 +940,8 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       gene_id_type      = "symbol",
       gene_id_dismissed = FALSE,
       gene_id_map       = NULL,
+      microarray_blocked = FALSE,  # TRUE when gene_id_type == "microarray_probe" - hard-blocks
+                                    # Steps 0-4 (see gene_id_banner / *_card renderUIs)
       data_s0_orig      = NULL,   # original data before any gene ID conversion
       downloads_available = FALSE,
       pp_summary        = NULL,
@@ -963,6 +992,7 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
       rv$meta_s0_orig  <- m   # immutable snapshot for Step 0 preview (never overwritten)
       rv$orig_n_genes <- nrow(d0); rv$orig_n_samples <- ncol(d0)
       rv$gene_id_type <- .pp_detect_gene_id_type(rownames(d0))
+      rv$microarray_blocked <- identical(rv$gene_id_type, "microarray_probe")
       if (is.null(prev_fp)) rv$gene_id_dismissed <- FALSE  # only clear on first load
     })
 
@@ -973,6 +1003,27 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
     output$gene_id_banner <- shiny::renderUI({
       shiny::req(rv$data_s0)
       id_type <- rv$gene_id_type
+
+      # Microarray probe IDs are a hard block, not a dismissible prompt - the
+      # Shiny app doesn't support microarray data yet, so there is nothing to
+      # offer here (no "convert" or "skip" button). See step1_card...
+      # step4_card for where this also locks the rest of the preprocessing
+      # pipeline.
+      if (identical(id_type, "microarray_probe")) {
+        return(shiny::div(class = "pp-geneid-banner",
+          style = "background:#f8d7da;border:1px solid #f5c6cb;",
+          shiny::tags$h6(style = "margin-bottom:6px;font-weight:700;color:#721c24;",
+            "\U0001f6ab Microarray probe IDs detected - not yet supported"),
+          shiny::tags$p(style = "font-size:0.86em;margin-bottom:0;color:#721c24;",
+            "Your row identifiers look like microarray probe IDs (e.g. Affymetrix, ",
+            "Illumina or Agilent probes), not gene identifiers. Microarray data isn't ",
+            "supported in the markeR Shiny app yet (planned for a future version). ",
+            "You can still analyse microarray data with the ", shiny::tags$b("markeR R package"),
+            " directly: preprocess your probe-level matrix to gene symbols yourself and pass ",
+            "it to markeR's analysis functions in R.")
+        ))
+      }
+
       # Hide once preprocessing has been finalised (any path, including
       # "Skip - use data as-is") or explicitly dismissed. Converting IDs after
       # finalisation wouldn't propagate to rv$final_data/downstream tabs, so
@@ -2039,6 +2090,8 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
 
     output$pp_step0_card <- shiny::renderUI({
       shiny::req(!is.null(rv$meta_s))
+      if (isTRUE(rv$microarray_blocked))
+        return(.pp_microarray_blocked_card(0L, "Metadata Column Types"))
       meta <- rv$meta_s
       cols <- colnames(meta)[-1]
       if (length(cols) == 0L) return(NULL)
@@ -2433,6 +2486,8 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
 
     output$step1_card <- shiny::renderUI({
       e <- rv$data_s0
+      if (isTRUE(rv$microarray_blocked))
+        return(.pp_microarray_blocked_card(1L, "Sample Complexity QC"))
       if (is.null(e))
         return(bslib::card(class="pp-step-card",
           bslib::card_header(shiny::tags$div(style="display:flex;align-items:center;",
@@ -2670,6 +2725,8 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
     }, ignoreInit=TRUE)
 
     output$step2_card <- shiny::renderUI({
+      if (isTRUE(rv$microarray_blocked))
+        return(.pp_microarray_blocked_card(2L, "Filter Lowly Expressed Genes"))
       if (rv$step < 2L)
         return(shiny::div(class="pp-locked",
           bslib::card(class="pp-step-card",
@@ -2790,6 +2847,8 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
     # =========================================================================
 
     output$step3_card <- shiny::renderUI({
+      if (isTRUE(rv$microarray_blocked))
+        return(.pp_microarray_blocked_card(3L, "Normalisation"))
       if (rv$step < 3L)
         return(shiny::div(class="pp-locked",
           bslib::card(class="pp-step-card",
@@ -3051,6 +3110,8 @@ preprocessingServer <- function(id, get_expr, get_meta, log_fn = NULL, get_log =
     # =========================================================================
 
     output$step4_card <- shiny::renderUI({
+      if (isTRUE(rv$microarray_blocked))
+        return(.pp_microarray_blocked_card(4L, "PCA & Batch Correction"))
       if (rv$step < 4L)
         return(shiny::div(class="pp-locked",
           bslib::card(class="pp-step-card",

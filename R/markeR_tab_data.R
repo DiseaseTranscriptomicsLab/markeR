@@ -396,40 +396,38 @@ dataServer <- function(input, output, session) {
   full_geo_meta      <- reactiveVal(NULL)
   upload_meta_raw    <- reactiveVal(NULL)   # Raw uploaded metadata (for SampleID re-mapping)
   module_meta_active <- reactiveVal(FALSE)  # TRUE while geo_import_module owns meta_data()
-  # Session log: initialise with R + all DESCRIPTION dependency versions.
-  .session_preamble <- tryCatch({
-    # Parse Imports + Suggests + Depends from the installed package DESCRIPTION
-    .parse_dep_field <- function(field) {
-      if (is.null(field) || is.na(field)) return(character(0))
-      pkgs <- strsplit(field, ",")[[1]]
-      pkgs <- trimws(sub("\\s*\\(.*?\\)", "", pkgs))  # strip version specs like (>= 4.0)
-      pkgs[nzchar(pkgs) & pkgs != "R"]
-    }
-    desc  <- utils::packageDescription("markeR",
-                                        fields = c("Imports", "Suggests", "Depends"))
-    pkgs  <- sort(unique(c(
-      "markeR",
-      .parse_dep_field(desc$Imports),
-      .parse_dep_field(desc$Suggests),
-      .parse_dep_field(desc$Depends)
-    )))
-    pkg_lines <- vapply(pkgs, function(p) {
-      v <- tryCatch(as.character(utils::packageVersion(p)), error = function(e) "not installed")
-      paste0("[Session]   ", p, ": ", v)   # note: ALL lines prefixed with [Session]
-    }, character(1L))
-    c(
-      paste0("[Session] Session started: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S")),
-      paste0("[Session] R version: ", R.version$major, ".", R.version$minor,
-             " (", R.version$`svn rev`, ") | Platform: ", R.version$platform),
-      "[Session] Package versions:",
-      pkg_lines
-    )
-  }, error = function(e) character(0))
+  # Session log: initialise with the same R-version/package-version
+  # preamble baked into the static UI's global_log_entries placeholder
+  # (see .markeR_session_preamble() in R/markeRapp.R for the full
+  # rationale). Calling it again here (rather than reusing
+  # .markeR_initial_session_lines directly) just gives this session's own
+  # "Session started" timestamp; the package/version lines are identical
+  # either way.
+  .session_preamble <- .markeR_session_preamble()
   data_log <- reactiveVal(.session_preamble)  # Session log with timestamped entries
   expr_quality_warn  <- reactiveVal(NULL)           # Warning message for suspicious expression data
   geo_supp_files  <- reactiveVal(NULL)
   expr_candidates_available <- reactiveVal(FALSE) # Flag to indicate multiple candidate files are available after auto detection
-  
+
+  # For reasons not fully pinned down (tried and ruled out: an initial-
+  # visibility suspension - already disabled via suspendWhenHidden = FALSE
+  # below - and a fixed-delay/polling "kick", which caused visible
+  # flicker), the very FIRST successful invalidation + recompute of
+  # global_log_header/global_log_entries in a session does not reliably
+  # reach the client - only a second one, from a genuinely separate flush,
+  # does. Rather than guess at timing, every place that changes data_log()
+  # also schedules exactly one follow-up nudge via session$onFlushed(once
+  # = TRUE), which fires right after Shiny finishes the "real" flush - so
+  # essentially immediately, not on any arbitrary clock - making it
+  # imperceptible rather than a visible re-render.
+  .log_kick <- shiny::reactiveVal(0L)
+  .nudge_log <- function() {
+    session$onFlushed(function() {
+      .log_kick(shiny::isolate(.log_kick()) + 1L)
+    }, once = TRUE)
+  }
+  .nudge_log()  # covers the very first render too (before any log_step() call)
+
   # Append a timestamped entry to the processing log.
   # isolate() prevents the calling observer from taking a reactive dependency
   # on data_log - without it, writing data_log() re-invalidates the observer
@@ -437,6 +435,7 @@ dataServer <- function(input, output, session) {
   log_step <- function(msg) {
     ts <- format(Sys.time(), "[%Y-%m-%d %H:%M:%S]")
     data_log(c(isolate(data_log()), paste(ts, msg)))
+    .nudge_log()
   }
 
   ###### HELPER FUNCTIONS ######
@@ -1044,6 +1043,24 @@ dataServer <- function(input, output, session) {
       updateRadioButtons(session, "meta_source", selected = "geo")
     }
   })
+
+  # ── Revert to example data when a GEO import fails outright ──────────────
+  # "excluded"/"error" mean no usable expr/meta came back (unsupported assay
+  # type - e.g. microarray, scRNA, ChIP-seq - or a download/parse failure).
+  # Left alone, the "Retrieve from GEO" radio would stay selected while
+  # expr_data()/meta_data() still held whatever was loaded before the failed
+  # attempt, making it unclear whether the Data tab is showing the (failed)
+  # GEO import or leftover previous data. Switching back to the example data
+  # radio re-triggers the existing input$expr_source observer above, which
+  # loads fresh example data and resets meta_source to match - so the app
+  # state unambiguously reflects "GEO import did not take effect."
+  observeEvent(geo_module$status(), {
+    req(input$expr_source == "geo")
+    if (geo_module$status() %in% c("excluded", "error")) {
+      log_step("GEO import failed - reverting to example data.")
+      updateRadioButtons(session, "expr_source", selected = "example_raw")
+    }
+  }, ignoreInit = TRUE)
 
   # ── Legacy helpers kept for the non-GEO upload path ─────────────────────
 
@@ -1654,7 +1671,21 @@ dataServer <- function(input, output, session) {
   })
 
   # ── Global log bar (fixed bottom - visible across all tabs) ───────────────
+  # NOTE: suspendWhenHidden = FALSE is essential for both outputs below.
+  # #global-log-header uses display:flex, so an empty child <div>/<span>
+  # sizes to its own (empty) content rather than the container's width -
+  # i.e. genuinely zero-size before its first render. Shiny automatically
+  # suspends (never even evaluates) a render function it judges bound to a
+  # "not visible" element, using exactly this kind of zero-size check. That
+  # is a real deadlock: the element only gains size once it has content,
+  # and it only gets content once Shiny decides to run it. Likewise
+  # #global-log-entries starts inside #global-log-body, which is
+  # collapsed to max-height:0 until the bar is clicked open - also read as
+  # "hidden" at the moment Shiny would otherwise compute the very first
+  # value. Without disabling suspension here, neither output ever runs
+  # until something incidentally gives its container real size later on.
   output$global_log_header <- shiny::renderUI({
+    .log_kick()  # see .nudge_log() above
     log <- data_log()
     n   <- sum(!startsWith(log, "[Session]"))  # count only action entries
     shiny::tags$span(
@@ -1665,8 +1696,10 @@ dataServer <- function(input, output, session) {
                    " - click to expand)")
     )
   })
+  shiny::outputOptions(output, "global_log_header", suspendWhenHidden = FALSE)
 
   output$global_log_entries <- shiny::renderUI({
+    .log_kick()  # see .nudge_log() above
     log <- data_log()
     action_lines  <- log[!startsWith(log, "[Session]")]
     session_lines <- log[startsWith(log, "[Session]")]
@@ -1701,6 +1734,7 @@ dataServer <- function(input, output, session) {
       )
     )
   })
+  shiny::outputOptions(output, "global_log_entries", suspendWhenHidden = FALSE)
 
   output$download_log <- shiny::downloadHandler(
     filename = function() paste0("markeR_session_log_",
@@ -1996,21 +2030,39 @@ dataServer <- function(input, output, session) {
     )
   })
 
+  # NOTE: expr_preview can easily be tens of thousands of genes x hundreds
+  # of samples (e.g. 13804 x 545 - ~7.5M cells). Returning a fully-built
+  # DT::datatable() object from inside renderDT(), as this used to do,
+  # forces DT into CLIENT-SIDE processing regardless of any `server`
+  # setting - DT only honours server-side processing when the render
+  # function's expression returns a plain data object and `server = TRUE`
+  # is passed to renderDT() itself. Client-side processing serializes the
+  # *entire* matrix to JSON and ships it to the browser in one go, which is
+  # both extremely slow for a table this size and a plausible trigger for
+  # DataTables' internal state getting corrupted under load (matching a
+  # client-side "Cannot read properties of null (reading 'lazyRender')"
+  # error seen from DT's own htmlwidgets binding code). Passing plain data
+  # here and moving pageLength/scrollX/etc. to renderDT()'s own arguments
+  # keeps server-side processing on, so only the current page of data is
+  # ever sent to the browser.
   output$expr_preview <- DT::renderDT({
     shiny::req(expr_data())
-    
-    DT::datatable(
-      round(expr_data(),2),  # round for better display
-      options = list(
-        pageLength = 5,
-        lengthMenu = c(5, 10, 20, 50),
-        scrollX = TRUE,
-        scrollY = "250px",      # <-- added vertical scroll
-        paging = TRUE
-      ),
-      rownames = TRUE
-    )
-  })
+    round(expr_data(), 2)  # round for better display
+  },
+  server = TRUE,
+  options = list(
+    pageLength = 5,
+    lengthMenu = c(5, 10, 20, 50),
+    scrollX = TRUE,
+    scrollY = "250px",      # <-- added vertical scroll
+    deferRender = TRUE,     # DataTables' own recommended pairing with
+                            # scrollY - initialising a scrolling body
+                            # without it is a known trigger for internal
+                            # DataTables/DT client-side errors
+    paging = TRUE
+  ),
+  rownames = TRUE
+  )
   
   output$meta_preview <- DT::renderDT({
     shiny::req(meta_data())
@@ -2022,6 +2074,7 @@ dataServer <- function(input, output, session) {
         lengthMenu = c(5, 10, 20, 50),
         scrollX = TRUE,
         scrollY = "250px",      # <-- added vertical scroll
+        deferRender = TRUE,     # see note on expr_preview above
         paging = TRUE
       ),
       rownames = FALSE
@@ -2062,6 +2115,7 @@ dataServer <- function(input, output, session) {
         pageLength = 5,
         scrollX = TRUE,
         scrollY = "250px",
+        deferRender = TRUE,   # see note on expr_preview above
         lengthMenu = c(5, 10, 20, 50),
         escape = FALSE  # allows + and parentheses to display properly
         
@@ -2102,6 +2156,7 @@ dataServer <- function(input, output, session) {
                 pageLength = 10,
                 scrollX = TRUE,
                 scrollY = "300px",        #  height of scrollable area
+                deferRender = TRUE,       #  see note on expr_preview above
                 scrollCollapse = TRUE,    #  collapse if fewer rows
                 paging = FALSE,           #  optional, better for modal scroll
                 columnDefs = list(

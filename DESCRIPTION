@@ -53,6 +53,7 @@ Imports:
     tibble,
     shiny,
     bslib,
+    htmltools,
     GEOquery,
     DT,
     base64enc,

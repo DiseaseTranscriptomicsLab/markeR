@@ -2,6 +2,7 @@
 #' @import shiny
 #' @import GEOquery
 #' @importFrom DT DTOutput renderDT datatable
+#' @importFrom htmltools findDependencies
 #' @importFrom readxl read_xls read_xlsx
 #' @importFrom R.utils gunzip
 #' @importFrom data.table fread
@@ -10,6 +11,81 @@
 #' @importFrom utils download.file read.csv read.delim read.table untar unzip packageVersion
 #' @importFrom tools file_ext file_path_sans_ext
 #' @importFrom ComplexHeatmap draw
+
+# Session log preamble (R version + package versions the Shiny app runs
+# on): this information is identical for every session and known the
+# moment the app process starts - it doesn't depend on anything
+# per-session. Computing it once here, at package/app-build time, means
+# it can be baked directly into the STATIC UI (see the global_log_entries
+# placeholder below), so it's genuinely present in the page's HTML from
+# the very first byte, with no dependency on Shiny's reactive flush timing
+# at all. dataServer() (R/markeR_tab_data.R) calls this same function again
+# per session, purely so its "Session started" timestamp reflects that
+# session's own start time; the package/version lines themselves are
+# always identical.
+#
+# NOTE: reads DESCRIPTION straight off disk with read.dcf() rather than
+# via utils::packageDescription(): the latter's single-field return value
+# is a bare character string rather than a named/list-like object (so
+# `desc$Imports`-style access silently errors), and its lookup can come up
+# empty under devtools::load_all()-style dev workflows where the package
+# isn't "installed" in the usual sense. find.package()/system.file() are
+# both load_all()-aware, so this path resolves correctly either way.
+.markeR_session_preamble <- function() {
+  tryCatch({
+    .parse_dep_field <- function(field) {
+      if (is.null(field) || length(field) == 0L || is.na(field)) return(character(0))
+      pkgs <- strsplit(field, ",")[[1]]
+      pkgs <- trimws(sub("\\s*\\(.*?\\)", "", pkgs))  # strip version specs like (>= 4.0)
+      pkgs[nzchar(pkgs) & pkgs != "R"]
+    }
+    desc_path <- system.file("DESCRIPTION", package = "markeR")
+    if (!nzchar(desc_path)) {
+      desc_path <- file.path(find.package("markeR", quiet = TRUE), "DESCRIPTION")
+    }
+    dcf <- read.dcf(desc_path)
+    imports_field <- if ("Imports" %in% colnames(dcf)) dcf[1, "Imports"] else NA_character_
+    # These Suggests are genuinely used by the app at runtime (loaded
+    # conditionally via requireNamespace()): biomaRt/AnnotationDbi/
+    # org.Hs.eg.db/org.Mm.eg.db for the Preprocessing tab's gene-ID
+    # conversion, stringdist/tximport for GEO import, BiocManager for
+    # both - so a "not installed" against one of them is meaningful, not
+    # noise. Everything else in Suggests (devtools, testthat, roxygen2,
+    # knitr, rmarkdown, covr, mockery, magick, BiocStyle, sva, ...) is
+    # dev/test/doc tooling the app never touches, so those stay excluded.
+    app_suggests <- c("BiocManager", "biomaRt", "AnnotationDbi",
+                       "org.Hs.eg.db", "org.Mm.eg.db", "stringdist", "tximport")
+    pkgs <- sort(unique(c(
+      "markeR",
+      .parse_dep_field(imports_field),
+      app_suggests
+    )))
+    pkg_lines <- vapply(pkgs, function(p) {
+      v <- tryCatch(as.character(utils::packageVersion(p)), error = function(e) "not installed")
+      paste0("[Session]   ", p, ": ", v)   # note: ALL lines prefixed with [Session]
+    }, character(1L))
+    c(
+      paste0("[Session] Session started: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S")),
+      paste0("[Session] R version: ", R.version$major, ".", R.version$minor,
+             " (", R.version$`svn rev`, ") | Platform: ", R.version$platform),
+      "[Session] Package versions:",
+      pkg_lines
+    )
+  }, error = function(e) {
+    # Never let this come up completely empty - a visible error line is far
+    # easier to diagnose than a session log that silently shows nothing at
+    # all, which is what a swallowed error here used to look like.
+    c(
+      paste0("[Session] Session started: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S")),
+      paste0("[Session] Package info unavailable: ", conditionMessage(e))
+    )
+  })
+}
+
+# Computed once, at package/app-build time (NOT per-session) - shared by
+# every session, and used below to bake real session/package info directly
+# into the static UI. See .markeR_session_preamble()'s comment above.
+.markeR_initial_session_lines <- .markeR_session_preamble()
 
 ui <- bslib::page_navbar(
 
@@ -47,7 +123,7 @@ ui <- bslib::page_navbar(
     #   target = "_blank",
     #   style = "font-size: 0.85em; color: #949494; text-decoration: none;"
     # )
-    shiny::a("Web App 0.99.9",
+    shiny::a("Web App 0.99.10",
              style = "font-size: 0.7em; color: #949494; text-decoration: none;")
   ),
   
@@ -119,23 +195,69 @@ ui <- bslib::page_navbar(
       )
     ),
 
+    # ── Version + citation banners (side by side) ───────────────────────────
+    # The version quoted here (v1.3.1) should be kept in sync with the
+    # "built with markeR v1.3.1" text below and with DESCRIPTION's Version
+    # field - it names the markeR release this app was developed against,
+    # not necessarily whatever markeR version happens to be installed at
+    # runtime. The citation banner cites the NAR Genomics and Bioinformatics
+    # paper (same one linked as "our paper" below) rather than the
+    # Bioconductor package DOI, since that paper is markeR's citable
+    # reference.
     shiny::tags$div(
       style = paste(
-        "max-width: 1000px; margin: 0 auto 20px; padding: 14px 18px;",
-        "background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px;",
-        "font-size: 0.9em; color:#495057; text-align:center;"
+        "display:flex; flex-wrap:wrap; gap:16px; align-items:stretch;",
+        "max-width: 1000px; margin: 0 auto 20px;"
       ),
-      shiny::icon("dna", style = "color:#306F1D; margin-right:6px;"),
-      "This app was built with the ",
-      shiny::tags$b("markeR"), " Bioconductor package ",
-      shiny::a(shiny::tags$b("v1.2"),
-        href = "https://github.com/DiseaseTranscriptomicsLab/markeR/releases/tag/v1.2",
-        target = "_blank", rel = "noopener noreferrer"),
-      ". For more on the methodology behind it, see ",
-      shiny::a("our paper",
-        href = "https://doi.org/10.1093/nargab/lqag057",
-        target = "_blank", rel = "noopener noreferrer"),
-      "."
+
+      # Version banner (narrower)
+      shiny::tags$div(
+        style = paste(
+          "flex: 1 1 240px; max-width: 300px; padding: 14px 18px;",
+          "background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px;",
+          "font-size: 0.9em; color:#495057; text-align:center;",
+          "display:flex; flex-direction:column; align-items:center;",
+          "justify-content:center; gap:8px;"
+        ),
+        shiny::icon("box-open", style = "color:#306F1D; font-size:2em;"),
+        shiny::tags$div(
+          "This app was built with the ",
+          shiny::tags$b("markeR"), " Bioconductor package ",
+          shiny::a(shiny::tags$b("v1.3.1"),
+            href = "https://github.com/DiseaseTranscriptomicsLab/markeR/releases/tag/v1.3.1",
+            target = "_blank", rel = "noopener noreferrer"),
+          ". For more on the methodology behind it, see ",
+          shiny::a("our paper",
+            href = "https://doi.org/10.1093/nargab/lqag057",
+            target = "_blank", rel = "noopener noreferrer"),
+          "."
+        )
+      ),
+
+      # Citation banner (wider)
+      shiny::tags$div(
+        style = paste(
+          "flex: 2 1 400px; padding: 14px 18px;",
+          "background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px;",
+          "font-size: 0.9em; color:#495057; text-align:center;",
+          "display:flex; flex-direction:column; align-items:center;",
+          "justify-content:center; gap:8px;"
+        ),
+        shiny::icon("quote-left", style = "color:#306F1D; font-size:2em;"),
+        shiny::tags$div(
+          shiny::tags$b("To cite this app, please cite:"),
+          shiny::tags$br(),
+          shiny::tags$span(style = "font-style:italic;",
+            "Martins-Silva R, Kaizeler A, Barbosa-Morais NL (2026). Exploring molecular ",
+            "signatures of senescence with markeR, an R toolkit for evaluating gene sets as ",
+            "phenotypic markers. NAR Genomics and Bioinformatics, 8(2), lqag057. ",
+            shiny::a("doi:10.1093/nargab/lqag057",
+              href = "https://doi.org/10.1093/nargab/lqag057",
+              target = "_blank", rel = "noopener noreferrer"),
+            "."
+          )
+        )
+      )
     ),
 
     shiny::tags$div(
@@ -275,6 +397,17 @@ ui <- bslib::page_navbar(
       target = "_blank", rel = "noopener noreferrer",
       class = "nav-link"
     )
+  ),
+
+  ##### SOURCE CODE (right-aligned navbar link) #####
+  bslib::nav_item(
+    shiny::tags$a(
+      shiny::icon("github"), " Source Code",
+      href = "https://github.com/DiseaseTranscriptomicsLab/markeR/tree/ShinyApp",
+      target = "_blank", rel = "noopener noreferrer",
+      class = "nav-link",
+      title = "View the markeR source code on GitHub"
+    )
   )
 
 
@@ -315,37 +448,38 @@ ui <- tagList(
       #shiny-notification-panel .shiny-notification-warning {
         border-left: 4px solid #ffc107 !important;
       }
-      /* ── Global log bar (orange palette) ───────────── */
+      /* ── Global log bar (subtle dark grey, matching the app's neutral
+         palette instead of standing out) ───────────── */
       #global-log-bar {
         position: fixed; bottom: 0; left: 0; right: 0;
         z-index: 1050;
-        background: #7a3800;       /* deep burnt-orange background */
-        color: #fde8c8;
+        background: #495057;       /* medium-dark grey background */
+        color: #f1f3f5;
         font-family: monospace; font-size: 0.79em;
-        box-shadow: 0 -3px 10px rgba(0,0,0,0.28);
+        box-shadow: 0 -3px 10px rgba(0,0,0,0.2);
       }
       #global-log-header {
         display: flex; align-items: center;
         justify-content: space-between;
         padding: 5px 16px; cursor: pointer;
-        border-top: 2px solid #EBB43E;
+        border-top: 2px solid #6c757d;
         user-select: none;
       }
-      #global-log-header:hover { background: #8f4200; }
+      #global-log-header:hover { background: #565e64; }
       #global-log-body {
         max-height: 0px; overflow: hidden;
         transition: max-height 0.22s ease;
-        background: #5c2a00;
+        background: #3d4348;
       }
       #global-log-entries {
         padding: 6px 16px 10px 16px;
         max-height: 200px; overflow-y: auto;
-        line-height: 1.9; color: #fde8c8;
+        line-height: 1.9; color: #dee2e6;
       }
-      /* Most recent entry highlighted in bright orange */
-      #global-log-entries .glog-entry:first-child { color: #EBB43E; font-weight: 600; }
+      /* Most recent entry highlighted, subtly, in off-white */
+      #global-log-entries .glog-entry:first-child { color: #f8f9fa; font-weight: 600; }
       /* Download button in log bar */
-      #global-log-entries .btn { color: #fde8c8; border-color: #EBB43E; }
+      #global-log-entries .btn { color: #dee2e6; border-color: #6c757d; }
 
       /* ── Locked nav tabs ─────────────────────────────── */
       .nav-tab-locked {
@@ -384,17 +518,20 @@ ui <- tagList(
   # (only appearing after the user clicks a "Run" button), and none exist in
   # the app's static UI otherwise. With no DT widget present in the very
   # first page load, the browser can end up never being told to load
-  # DataTables' JS at all. This hidden, always-present output forces that
-  # dependency into the initial HTML regardless of which tab loads first.
-  # NOTE: deliberately NOT `visibility:hidden` / zero-size - some widget
-  # libraries treat invisible/zero-area elements as "not really on screen"
-  # and skip or defer full initialization, which would silently defeat the
-  # whole point of this block. Positioning it off-screen (but still a real,
-  # normally-sized, "visible" element as far as layout/rendering is
-  # concerned) keeps it out of the way without triggering that shortcut.
-  shiny::div(
-    style = "position:absolute; top:0; left:-9999px; width:300px; height:200px; overflow:hidden;",
-    DT::DTOutput("markeR_dep_dt")
+  # DataTables' JS at all. This injects DataTables' JS/CSS dependencies into
+  # the initial HTML <head> directly, regardless of which tab loads first.
+  # NOTE: this used to be a hidden, always-on DT::DTOutput()/renderDT() pair
+  # instantiating a real (empty) table off-screen purely to trigger asset
+  # loading - that live widget instance was the source of a client-side
+  # "Cannot read properties of null (reading 'lazyRender')" error thrown
+  # from DT's own htmlwidgets binding code (datatables.js) on every page
+  # load, which could disrupt whatever other Shiny output updates happened
+  # to be dispatched in the same batch (e.g. the global log bar rendering
+  # blank until an unrelated later reactive flush). Declaring the
+  # dependencies directly - with no live DT widget ever created - preloads
+  # the same JS/CSS without that failure mode.
+  tags$head(
+    htmltools::findDependencies(DT::datatable(data.frame(x = 1)))
   ),
   ui,
   # Global log bar (fixed to bottom of viewport, visible on all tabs)
@@ -403,14 +540,50 @@ ui <- tagList(
     tags$div(
       id = "global-log-header",
       onclick = "toggleMarkeRLog()",
-      shiny::uiOutput("global_log_header", inline = TRUE),
+      # NOTE: deliberately NOT inline = TRUE here (see markeR_tab_data.R,
+      # near outputOptions(..., suspendWhenHidden = FALSE), for the full
+      # story on why). Separately: uiOutput()'s `...` is passed straight
+      # through to its container tag, so anything given here shows up as
+      # placeholder content in the raw, pre-Shiny HTML - and gets replaced
+      # once the real renderUI() value arrives. Even with
+      # suspendWhenHidden = FALSE, this output's very first computed value
+      # does not appear to land on the literal first flush (only from the
+      # next one onward, e.g. the first time you interact with the app) -
+      # this placeholder means the bar never looks empty in the meantime.
+      shiny::uiOutput("global_log_header", inline = FALSE, container = shiny::tags$div, fill = FALSE,
+        shiny::tags$span(style = "color:#e2e8f0; font-size:0.88em;", "📋 Session log")
+      ),
       tags$span(id = "glog-arrow", style = "font-size:0.85em;", "▲")
     ),
     tags$div(
       id = "global-log-body",
       tags$div(
         id = "global-log-entries",
-        shiny::uiOutput("global_log_entries")
+        # Placeholder mirrors real global_log_entries output's markup
+        # exactly (see R/markeR_tab_data.R), built from the same session
+        # preamble computed once above - so real session/package info is
+        # visible from the very first byte of HTML, with no dependency on
+        # when (or whether) Shiny's own render happens to catch up. Once
+        # the user does anything, the real renderUI() output replaces this
+        # with the identical "Session info" block plus the action log.
+        shiny::uiOutput("global_log_entries", inline = FALSE, container = shiny::tags$div, fill = FALSE,
+          shiny::tags$details(
+            style = "margin-bottom:6px;",
+            shiny::tags$summary(
+              style = "font-size:0.8em; color:#94a3b8; cursor:pointer; user-select:none;",
+              "Session info"
+            ),
+            shiny::tags$pre(
+              style = paste0(
+                "font-size:0.75em; color:#94a3b8; padding:4px 0; margin:4px 0 0;",
+                "background:transparent; border:none; white-space:pre-wrap; word-break:break-all;",
+                "max-height:160px; overflow-y:auto;"
+              ),
+              paste(sub("^\\[Session\\]\\s*", "", .markeR_initial_session_lines), collapse = "\n")
+            )
+          ),
+          shiny::tags$div(style = "color:#64748b; padding:4px 0;", "No actions logged yet.")
+        )
       )
     )
   ),
@@ -513,12 +686,6 @@ ui <- tagList(
 server <- function(input, output, session) {
 
   #bs_themer()
-
-  # Minimal, invisible render matching the hidden DT output declared in the
-  # static UI above; see the comment there for why it exists.
-  output$markeR_dep_dt <- DT::renderDT({
-    DT::datatable(data.frame(x = numeric(0)))
-  })
 
   ###### DATA TAB ######
   # All expression/metadata/gene-set loading, validation, and preview logic
