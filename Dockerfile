@@ -24,8 +24,27 @@ RUN apt-get update && apt-get -y upgrade && apt-get install -y --no-install-reco
       libglpk-dev \
     && apt-get -y autoremove
 
-RUN echo "r <- getOption('repos'); r['CRAN'] <- 'http://cran.us.r-project.org'; options(repos = r);" > ~/.Rprofile
-RUN Rscript -e "install.packages(c('remotes', 'BiocManager'))"
+# NOTE: cloud.r-project.org (not a specific regional mirror like
+# cran.us.r-project.org) is CRAN's own canonical, actively-maintained,
+# HTTPS entry point - it automatically redirects to a working mirror near
+# the build server. A specific regional mirror over plain HTTP can and
+# does go offline/get decommissioned without much notice, which is a
+# genuine (not just transient) risk, not just an unlucky one-off.
+RUN echo "r <- getOption('repos'); r['CRAN'] <- 'https://cloud.r-project.org'; options(repos = r);" > ~/.Rprofile
+# install.packages() does NOT raise an error or give a non-zero exit code
+# just because a package failed to install - it only prints a warning, so
+# a transient mirror/network hiccup here would previously be cached by
+# Docker as a "successful" layer even though remotes/BiocManager were
+# never actually installed, surfacing as a confusing failure several
+# steps later (at remotes::install_local()) instead of right here. This
+# explicitly checks that both packages are actually present afterwards
+# and fails the build immediately and clearly if not.
+RUN Rscript -e '\
+  install.packages(c("remotes", "BiocManager")); \
+  missing_pkgs <- setdiff(c("remotes", "BiocManager"), rownames(installed.packages())); \
+  if (length(missing_pkgs) > 0) { \
+    stop("Failed to install: ", paste(missing_pkgs, collapse = ", ")) \
+  }'
 
 # Copy package source code
 WORKDIR /markeR
