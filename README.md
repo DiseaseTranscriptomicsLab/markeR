@@ -5,22 +5,45 @@
 
 <!-- badges: start -->
 
-<!--![](https://img.shields.io/badge/status-development-yellowgreen)-->
-
 [![Pkgdown](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://diseasetranscriptomicslab.github.io/markeR/)
 ![Minimal R
 Version](https://img.shields.io/badge/min%20R-4.5.0-blue.svg)
 [![codecov](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR/graph/badge.svg?token=7T1I4JCJG6)](https://codecov.io/gh/DiseaseTranscriptomicsLab/markeR)
-<!-- [![R-CMD-check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/R-CMD-check.yaml)-->
-<!-- [![Bioconductor Check](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml/badge.svg)](https://github.com/DiseaseTranscriptomicsLab/markeR/actions/workflows/bioc-check.yml) -->
 
 <!-- badges: end -->
 
-**`markeR`** is an R package that provides a modular and extensible
-framework for the systematic evaluation of gene sets as phenotypic
-markers using transcriptomic data. The package is designed to support
-both quantitative analyses and visual exploration of gene set behaviour
-across experimental and clinical phenotypes.
+> ⚠️ **This is the `ShinyApp` branch.** It’s being developed in parallel
+> to `main` and adds the interactive Shiny web app described below on
+> top of the core `markeR` package. It will be merged into `main` once
+> stable.
+
+**`markeR`** is an R package for the systematic evaluation of gene sets
+as phenotypic markers using transcriptomic data. If you have a
+collection of genes putatively marking a phenotype but aren’t sure how
+to combine them into a meaningful metric, `markeR` helps you quantify
+and visualise how well they do.
+
+It offers two modes of analysis:
+
+- **Benchmarking Mode**: test whether one or more gene sets, known to
+  mark a phenotype, consistently discriminate between levels of a given
+  phenotypic variable.
+- **Discovery Mode**: evaluate how a gene set known to mark a phenotype
+  varies across phenotypic variables, to identify potential biological
+  or technical associations.
+
+Both modes combine score-based (log2-median, ranking, ssGSEA) and
+enrichment-based (GSEA) quantification approaches, alongside tools for
+individual gene exploration and comparison against reference gene set
+collections (e.g. MSigDB).
+
+`markeR` also comes with an interactive **Shiny web app** (screenshot
+below) that wraps both modes in a point-and-click interface, so you
+don’t need to write any code. You can [try it
+online](https://compbio.imm.medicina.ulisboa.pt/app/markeR), no
+installation needed, or run it yourself as described below.
+
+![](man/figures/app_screenshot.png)
 
 > **To cite `markeR` please use:**
 >
@@ -29,61 +52,39 @@ across experimental and clinical phenotypes.
 > evaluating gene sets as phenotypic markers.” NAR Genomics and
 > Bioinformatics, 8(2), lqag057. <doi:10.1093/nargab/lqag057>
 
-The folder `inst/Paper/` is in the **paper** branch and contains all
-scripts and materials used in the original `markeR` paper to reproduce
-analyses and figures. You can browse it
-[here](https://github.com/DiseaseTranscriptomicsLab/markeR/tree/paper/inst/Paper).
+To understand the core functionalities behind `markeR`, check out [our
+paper](https://doi.org/10.1093/nargab/lqag057). To learn how to use the
+Shiny app itself, follow the [Shiny app
+tutorial](https://github.com/DiseaseTranscriptomicsLab/markeR/tree/ShinyApp/inst/shiny/www).
 
-![](man/figures/Workflow.png)
+## Requirements
 
-## Table of Contents
-
-- [Installation](#installation)
-- [Shiny App](#shiny-app)
-- [Tutorials](#tutorials)  
-- [Requirements](#requirements)
-- [Common Workflow](#common-workflow)
-  - [1. Input Requirements](#1-input-requirements)  
-  - [2. Select Mode of Analysis](#2-select-mode-of-analysis)  
-  - [3. Choose a Quantification
-    Approach](#3-choose-a-quantification-approach)
-    - [3.1 Score-Based Approach](#31-score-based-approach)  
-    - [3.2 Enrichment-Based Approach](#32-enrichment-based-approach)  
-  - [4. Visualisation and Evaluation](#4-visualisation-and-evaluation)  
-  - [5. Individual Gene Exploration
-    (Optional)](#5-individual-gene-exploration-optional)  
-  - [6. Compare with Reference Gene Sets
-    (Optional)](#6-compare-with-reference-gene-sets-optional)  
-- [Python Bridge](#python-bridge)
-- [Contact](#contact)
+This package is officially supported on `R > 4.5.0`. ⚠️ Older versions
+of `R` may work but are not officially supported due to upstream
+dependency constraints.
 
 ## Installation
 
 Install the latest release from Bioconductor:
 
 ``` r
-# Install from Bioconductor
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install("markeR")
 library(markeR)
 ```
 
-Or install the latest development release of `markeR` from
-[GitHub](https://github.com/) with:
+Or install the latest development version from
+[GitHub](https://github.com/):
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("DiseaseTranscriptomicsLab/markeR@*release")
 ```
 
-## Shiny App
+## Launching the Shiny App
 
-`markeR` ships with an interactive Shiny app that wraps **Benchmarking
-Mode** and **Discovery Mode** in a point-and-click interface, no coding
-required.
-
-### Run locally from R
+### Option 1: From R
 
 ``` r
 library(markeR)
@@ -91,25 +92,25 @@ markeRapp()
 ```
 
 This launches the app in your default web browser. Any additional
-arguments are forwarded to `shiny::runApp()`, so you can also run it
-as a standalone server (e.g. inside a Docker container):
+arguments are forwarded to `shiny::runApp()`, so you can also run it as
+a standalone server:
 
 ``` r
 markeRapp(host = "0.0.0.0", port = 3838, launch.browser = FALSE)
 ```
 
-### Run with Docker
+### Option 2: With Docker
 
-A ready-to-use Docker image is published on Docker Hub as
-[`diseasetranscriptomicslab/marker`](https://hub.docker.com/r/diseasetranscriptomicslab/marker):
+Pull the ready-to-use image from Docker Hub
+([`diseasetranscriptomicslab/marker`](https://hub.docker.com/r/diseasetranscriptomicslab/marker)):
 
 ``` bash
 docker pull diseasetranscriptomicslab/marker
 docker run -p 3838:3838 diseasetranscriptomicslab/marker
 ```
 
-Then open <http://localhost:3838> in your browser. Alternatively,
-build the image yourself from the repository's `Dockerfile`:
+Then open <http://localhost:3838> in your browser. Alternatively, build
+the image yourself from the repository’s `Dockerfile`:
 
 ``` bash
 git clone https://github.com/DiseaseTranscriptomicsLab/markeR.git
@@ -118,227 +119,14 @@ docker build -t markeR .
 docker run -p 3838:3838 markeR
 ```
 
-## Tutorials
-
-The following tutorials are available:
-
-- [Introduction to
-  markeR](https://diseasetranscriptomicslab.github.io/markeR/articles/markeR.html)
-- [Benchmarking
-  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Article_BenchmarkingMode.html)
-- [Discovery
-  Mode](https://diseasetranscriptomicslab.github.io/markeR/articles/Article_DiscoveryMode.html)
-- [Signature
-  Similarity](https://diseasetranscriptomicslab.github.io/markeR/articles/Article_GeneSetSimilarity.html)
-
-## Requirements
-
-This package is officially supported on `R > 4.5.0`. ⚠️ Older versions
-of `R` may work, but are not officially supported due to upstream
-dependency constraints. In some cases, installing older versions of
-dependencies (e.g., via `renv`, `CRAN` snapshots, or `checkpoint`) can
-restore compatibility.
-
-## Common Workflow
-
-### 1. Input Requirements
-
-Depending on the analysis mode, inputs vary slightly.
-
-- **Gene Set(s)**:  
-  A named list where each element represents one gene set:
-
-  - Use a **character vector** for gene sets where direction of
-    enrichment is not known.
-  - Use a **data frame** with gene names and a directionality column
-    (`-1` for down-regulated, `+1` for up-regulated)
-
-This structure supports both **Discovery Mode** (single gene set) and
-**Benchmarking Mode** (multiple gene sets).
-
-``` r
-# Example 
-gene_sets
-#> $Set1
-#> [1] "GeneA" "GeneB" "GeneC" "GeneD"
-#> 
-#> $Set2
-#>    gene direction
-#> 1 GeneX         1
-#> 2 GeneY        -1
-#> 3 GeneZ         1
-```
-
-- **Expression Data Frame**:  
-  A filtered and normalised, non log-transformed, gene expression matrix
-  (genes × samples). Row names must be gene identifiers; column names
-  must match sample IDs in the metadata.
-
-  **Warning:** If you are using microarray data or outputs from common
-  RNA-seq pipelines (*e.g.*, edgeR), note that the expression values may
-  already be log2-normalised. The input to `markeR` must necessarily be
-  **non-log-transformed**. If your data are log2-transformed, you can
-  revert them by applying `2^data`.
-
-``` r
-head(expr_df)
-#>        Sample1  Sample2  Sample3  Sample4  Sample5
-#> GeneA 3.879049 7.448164 2.864353 5.852928 3.610586
-#> GeneB 4.539645 5.719628 4.564050 4.409857 4.584165
-#> GeneC 8.117417 5.801543 2.947991 6.790251 2.469207
-#> GeneD 5.141017 5.221365 3.542218 6.756267 9.337912
-#> GeneX 5.258575 3.888318 3.749921 6.643162 7.415924
-#> GeneY 8.430130 8.573826 1.626613 6.377281 2.753783
-```
-
-- **Sample Metadata**:  
-  A data frame with samples as rows and annotations as columns. The
-  first column should contain sample IDs matching the expression matrix
-  column names.
-
-``` r
-metadata
-#>   SampleID Condition Age
-#> 1  Sample1   Control  49
-#> 2  Sample2 Treatment  44
-#> 3  Sample3   Control  46
-#> 4  Sample4 Treatment  49
-#> 5  Sample5   Control  38
-```
-
-### 2. Select Mode of Analysis
-
-`markeR` provides two modes of operation:
-
-- **Benchmarking**: evaluates gene sets’ performance in marking a
-  metadata variable, *i.e.*, a phenotype, returning comparative
-  visualisations across scoring and enrichment methods.
-
-- **Discovery**: examines the relationship between a gene set and one or
-  more variables of interest, suitable for exploratory or
-  hypothesis-generating analyses.
-
-### 3. Choose a Quantification Approach
-
-Two complementary strategies are implemented for quantifying
-associations between gene sets and phenotypes:
-
-#### 3.1 Score-Based Approach
-
-A score summarising the collective expression of a gene set therein is
-assigned **to each sample**. Scores can be visualised using built-in
-functions, or used directly in downstream analyses (*e.g.*, comparisons
-between phenotypic groups of samples, correlations with numerical
-phenotypes).
-
-Available methods:
-
-- **Log2-median**: mean of the across-sample normalised log2
-  median-centred expression levels of the genes in the set; for
-  bidirectional gene sets, the sample score is the partial score for the
-  subset of putatively upregulated genes minus that of the downregulated
-  subset.
-
-- **Ranking**: mean expression rank of gene set members in each sample;
-  for bidirectional gene sets, the sample score is the partial score for
-  the subset of putatively upregulated genes minus that of the
-  downregulated subset, and normalised by the number of genes in the
-  set.
-
-- **ssGSEA**: single-sample gene set enrichment score using ssGSEA; for
-  bidirectional gene sets, the sample score is the partial score for the
-  subset of putatively upregulated genes minus that of the downregulated
-  subset.
-
-Gene sets that are robust phenotypic markers are expected to yield
-consistently high scores across methods.
-
-#### 3.2 Enrichment-Based Approach
-
-Enrichment-based methods implement **Gene Set Enrichment Analysis
-(GSEA)**. Genes are ranked according to differential expression
-statistics, and a Normalised Enrichment Score (NES) per variable of
-interest is computed, accompanied by a p-value adjusted for multiple
-hypothesis testing.
-
-### 4. Visualisation and Evaluation
-
-In **Benchmarking Mode**, `markeR` offers a range of visual summaries:
-
-- Violin plots of score distributions by categorical phenotype;
-- Scatter plots of association between scores and numerical phenotypes;
-- Volcano plots and heatmaps of scores or differential gene set
-  expression based on effect sizes (Cohen’s *d* or *f*);
-- ROC curves and respective AUC values of gene sets’ phenotypic
-  classification performance;
-- Violin plots of effect size distributions (Cohen’s *d*) for pairwise
-  group differences in scores, for original and simulated gene sets;
-- Plots summarising NES alongside adjusted p-values (*e.g.*, lollipop
-  plots);
-- GSEA plots showing running enrichment scores across ranked gene lists.
-
-In **Discovery Mode**, the output focuses on a single gene set:
-
-- Score distributions stratified by variable;
-- Effect sizes for pairwise and multiple-group differences (Cohen’s *d*
-  and *f*, respectively);
-- Cross-variable summaries of NES and adjusted p-values (*e.g.*,
-  lollipop plots).
-
-The Benchmarking Mode offers the most comprehensive set of features.
-Users are allowed to seamlessly move from Discovery to Benchmarking once
-a variable of interest has been identified and further testing is
-required. Benchmarking is designed to evaluate multiple gene sets
-simultaneously, whereas Discovery focuses on the performance of a single
-gene set.
-
-### 5. Individual Gene Exploration
-
-To better understand the contribution of individual genes within a gene
-set, and identify whether specific genes drive the set’s collective
-signal, `markeR` provides `VisualiseIndividualGenes.` Available options
-include:
-
-- Expression heatmaps of genes across samples or groups of samples;
-- Violin plots showing cross-sample expression distributions of
-  individual genes;
-- Heatmaps of pairwise cross-sample expression correlation between genes
-  in the set;
-- ROC curves and AUC values to evaluate single genes’ performance as
-  phenotypic markers;
-- Effect size estimation (Cohen’s *d*) of expression differences between
-  groups of samples;
-- Principal Component Analysis (PCA) of expression of genes in the set,
-  to evaluate which genes dominate collective variance and how samples
-  separate according to the gene set’s expression.
-
-### 6. Compare with Reference Gene Sets
-
-`markeR` also supports comparison of user-defined gene sets against
-reference collections (e.g., MSigDB). Two complementary similarity
-metrics are implemented:
-
-- **Jaccard Index**: the ratio of the number of genes in common over the
-  total number of genes in the two sets.
-
-- **Log Odds Ratio (logOR)** from Fisher’s exact test of association
-  between gene sets, given a specified gene universe.
-
-Filters can be applied based on similarity thresholds (e.g., minimum
-Jaccard, OR, or Fisher’s test p-value).
-
 ## Python Bridge
 
-For users who prefer Python, a lightweight bridge is available in
-`python/` that allows calling any `markeR` function from a Python
-environment via [`rpy2`](https://rpy2.github.io/). It includes a
-tutorial workflow script and a generic command-line wrapper. See
-[`python/README.md`](inst/python/README.md) for installation
-instructions and usage examples.
+A lightweight bridge for calling `markeR` functions from Python (via
+[`rpy2`](https://rpy2.github.io/)) is available in `python/`. See
+[`python/README.md`](inst/python/README.md) for details.
 
 ## Contact
 
 📩 For any questions or concerns, feel free to reach out:
 
-**Rita Martins-Silva**  
-Email: <rita.silva@medicina.ulisboa.pt>
+**Rita Martins-Silva** Email: <rita.silva@medicina.ulisboa.pt>
